@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Crown, Check, Star, Calendar, CreditCard, Gift, Users } from 'lucide-react'
 
 const ArtistMembership: React.FC = () => {
-  const [currentPlan, setCurrentPlan] = useState('professional')
+  const [currentPlan] = useState('professional')
   
   const plans = [
     {

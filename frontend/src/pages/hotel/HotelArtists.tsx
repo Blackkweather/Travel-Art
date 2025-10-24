@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Filter, Star, MapPin, Music, Calendar, Clock, Users, Heart } from 'lucide-react'
+import { Search, Star, MapPin, Calendar, Heart } from 'lucide-react'
 
 const HotelArtists: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -22,7 +22,8 @@ const HotelArtists: React.FC = () => {
       availability: 'Available',
       nextAvailable: '2024-02-15',
       totalBookings: 24,
-      isFavorite: false
+      isFavorite: false,
+      priceRange: '€500-1000'
     },
     {
       id: '2',
@@ -37,7 +38,8 @@ const HotelArtists: React.FC = () => {
       availability: 'Available',
       nextAvailable: '2024-02-12',
       totalBookings: 18,
-      isFavorite: true
+      isFavorite: true,
+      priceRange: '€300-800'
     },
     {
       id: '3',
@@ -67,7 +69,8 @@ const HotelArtists: React.FC = () => {
       availability: 'Available',
       nextAvailable: '2024-02-18',
       totalBookings: 12,
-      isFavorite: false
+      isFavorite: false,
+      priceRange: '€200-500'
     },
     {
       id: '5',
@@ -97,7 +100,8 @@ const HotelArtists: React.FC = () => {
       availability: 'Available',
       nextAvailable: '2024-02-16',
       totalBookings: 10,
-      isFavorite: false
+      isFavorite: false,
+      priceRange: '€350-600'
     }
   ]
 
@@ -119,7 +123,7 @@ const HotelArtists: React.FC = () => {
       case 'rating':
         return b.rating - a.rating
       case 'price':
-        return parseInt(a.priceRange.split('-')[0].replace('€', '')) - parseInt(b.priceRange.split('-')[0].replace('€', ''))
+        return parseInt((a.priceRange || '€0').split('-')[0].replace('€', '')) - parseInt((b.priceRange || '€0').split('-')[0].replace('€', ''))
       case 'bookings':
         return b.totalBookings - a.totalBookings
       case 'name':

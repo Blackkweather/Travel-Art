@@ -7,8 +7,6 @@ import {
   Calendar, 
   CreditCard, 
   Users, 
-  Star,
-  Settings,
   Gift
 } from 'lucide-react'
 
@@ -17,7 +15,7 @@ interface SidebarProps {
   currentPath: string
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ user, currentPath }) => {
+const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   const location = useLocation()
 
   const getNavItems = () => {

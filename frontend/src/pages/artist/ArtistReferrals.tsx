@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Share2, Copy, Gift, Users, Star, Calendar, CheckCircle } from 'lucide-react'
+import { Copy, Gift, Users, Star, Calendar, CheckCircle } from 'lucide-react'
 
 const ArtistReferrals: React.FC = () => {
   const [copied, setCopied] = useState(false)

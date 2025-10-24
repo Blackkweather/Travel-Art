@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Check, Star, CreditCard, Users, Building, Calendar } from 'lucide-react'
+import { Check, Star, CreditCard, Users, Calendar } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 

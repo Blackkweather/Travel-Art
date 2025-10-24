@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, MapPin, Clock, Star, CheckCircle, XCircle, AlertCircle, Filter, Search, User, Music } from 'lucide-react'
+import { Calendar, MapPin, Clock, Star, CheckCircle, XCircle, AlertCircle, Search, User, Music } from 'lucide-react'
 
 const HotelBookings: React.FC = () => {
   const [filter, setFilter] = useState('all')

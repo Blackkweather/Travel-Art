@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuthStore } from '@/store/authStore'
-import { Calendar, Star, Users, CreditCard, TrendingUp } from 'lucide-react'
+import { Calendar, Star, Users, CreditCard } from 'lucide-react'
 
 const ArtistDashboard: React.FC = () => {
   const { user } = useAuthStore()

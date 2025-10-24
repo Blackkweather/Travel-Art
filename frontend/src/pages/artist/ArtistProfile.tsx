@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { motion } from 'framer-motion'
 import { Camera, Upload, Save, Edit3, Star, MapPin, Music, Calendar } from 'lucide-react'
 
 const ArtistProfile: React.FC = () => {

@@ -1,6 +1,5 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { MapPin, Mail, Phone, Instagram, Twitter, Facebook, Linkedin } from 'lucide-react'
 
 const Footer: React.FC = () => {

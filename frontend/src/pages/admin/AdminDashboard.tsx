@@ -3,7 +3,7 @@ import { useAuthStore } from '@/store/authStore'
 import { Users, Building, Calendar, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 
 const AdminDashboard: React.FC = () => {
-  const { user } = useAuthStore()
+  const { } = useAuthStore()
 
   const stats = [
     { label: 'Total Users', value: '156', icon: Users, color: 'text-blue-600' },

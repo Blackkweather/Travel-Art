@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { Star, MapPin, Music, Calendar, Users } from 'lucide-react'
+import { Star, MapPin, Calendar, Users } from 'lucide-react'
 import Footer from '../components/Footer'
 
 const TopArtistsPage: React.FC = () => {

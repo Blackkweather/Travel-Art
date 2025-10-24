@@ -38,8 +38,8 @@ class ApiClient {
     )
   }
 
-  async get<T>(url: string): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.get(url)
+  async get<T>(url: string, params?: any): Promise<AxiosResponse<ApiResponse<T>>> {
+    return this.client.get(url, { params })
   }
 
   async post<T>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
@@ -79,7 +79,7 @@ export const authApi = {
 // Artists API
 export const artistsApi = {
   getAll: (params?: any) =>
-    apiClient.get('/artists', { params }),
+    apiClient.get('/artists', params),
   
   getById: (id: string) =>
     apiClient.get(`/artists/${id}`),
@@ -97,7 +97,7 @@ export const artistsApi = {
 // Hotels API
 export const hotelsApi = {
   getAll: (params?: any) =>
-    apiClient.get('/hotels', { params }),
+    apiClient.get('/hotels', params),
   
   getById: (id: string) =>
     apiClient.get(`/hotels/${id}`),
@@ -115,7 +115,7 @@ export const hotelsApi = {
     apiClient.post(`/hotels/${id}/credits/purchase`, data),
   
   browseArtists: (id: string, params?: any) =>
-    apiClient.get(`/hotels/${id}/artists`, { params }),
+    apiClient.get(`/hotels/${id}/artists`, params),
   
   requestBooking: (id: string, data: any) =>
     apiClient.post(`/hotels/${id}/bookings`, data),
@@ -133,7 +133,7 @@ export const adminApi = {
     apiClient.get('/admin/dashboard'),
   
   getUsers: (params?: any) =>
-    apiClient.get('/admin/users', { params }),
+    apiClient.get('/admin/users', params),
   
   suspendUser: (id: string, data: any) =>
     apiClient.post(`/admin/users/${id}/suspend`, data),
@@ -142,7 +142,7 @@ export const adminApi = {
     apiClient.post(`/admin/users/${id}/activate`),
   
   getBookings: (params?: any) =>
-    apiClient.get('/admin/bookings', { params }),
+    apiClient.get('/admin/bookings', params),
   
   exportData: (type: string) =>
     apiClient.get(`/admin/export?type=${type}`, { responseType: 'blob' }),
@@ -154,10 +154,10 @@ export const commonApi = {
     apiClient.post('/referrals', data),
   
   getTopArtists: (params?: any) =>
-    apiClient.get('/top?type=artists', { params }),
+    apiClient.get('/top?type=artists', params),
   
   getTopHotels: (params?: any) =>
-    apiClient.get('/top?type=hotels', { params }),
+    apiClient.get('/top?type=hotels', params),
   
   getStats: () =>
     apiClient.get('/stats'),

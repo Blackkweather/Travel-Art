@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { motion } from 'framer-motion'
-import { CreditCard, ShoppingCart, History, TrendingUp, Gift, Star, Calendar, CheckCircle, AlertCircle } from 'lucide-react'
+import { CreditCard, ShoppingCart, TrendingUp, Gift, Star, Calendar, CheckCircle } from 'lucide-react'
 
 const HotelCredits: React.FC = () => {
-  const [selectedPackage, setSelectedPackage] = useState('')
   
   const creditPackages = [
     {
@@ -139,7 +138,6 @@ const HotelCredits: React.FC = () => {
   }
 
   const handlePurchase = (packageId: string) => {
-    setSelectedPackage(packageId)
     // Handle purchase logic here
     console.log('Purchasing package:', packageId)
   }

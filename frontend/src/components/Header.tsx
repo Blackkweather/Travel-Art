@@ -7,9 +7,7 @@ const Header: React.FC = () => {
   
   // Scroll-based animations for header
   const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
-  const headerPadding = useTransform(scrollY, [0, 100], ['10px 80px', '10px 80px'])
   const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
-  const logoScale = useTransform(scrollY, [0, 100], [1, 1])
 
   return (
     <motion.nav 
@@ -30,8 +28,7 @@ const Header: React.FC = () => {
             style={{
               height: '150px',
               width: 'auto',
-              objectFit: 'contain',
-              scale: logoScale
+              objectFit: 'contain'
             }}
           />
         </Link>
