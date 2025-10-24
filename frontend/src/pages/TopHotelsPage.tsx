@@ -1,6 +1,8 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Star, MapPin, Building, Music, Users, Calendar } from 'lucide-react'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 const TopHotelsPage: React.FC = () => {
   const topHotels = [
@@ -80,8 +82,10 @@ const TopHotelsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
+      <Header />
+      
       {/* Hero Section */}
-      <div className="bg-navy text-white py-20">
+      <div className="bg-navy text-white py-20 pt-32">
         <div className="container mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -357,6 +361,8 @@ const TopHotelsPage: React.FC = () => {
           </motion.div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   )
 }

@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/authStore'
 import { RegisterData } from '@/types'
 import toast from 'react-hot-toast'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
@@ -40,7 +42,10 @@ const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-cream">
+      <Header />
+      
+      <div className="flex items-center justify-center py-20 pt-32 px-4 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -203,6 +208,9 @@ const RegisterPage: React.FC = () => {
           </div>
         </form>
       </motion.div>
+      </div>
+      
+      <Footer />
     </div>
   )
 }

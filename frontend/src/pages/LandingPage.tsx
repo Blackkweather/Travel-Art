@@ -105,7 +105,7 @@ const LandingPage: React.FC = () => {
       id: 4,
       title: "Live Performances",
       description: "Theater and dance shows",
-      image: "https://images.unsplash.com/photo-1518611012118-460083e6a187?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+      image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
       category: "Performance"
     },
     {
@@ -152,7 +152,7 @@ const LandingPage: React.FC = () => {
       id: 1,
       name: "Elena Rodriguez",
       specialty: "Jazz Saxophonist",
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
       rating: 4.9,
       location: "Paris, France"
     },
@@ -583,8 +583,8 @@ const LandingPage: React.FC = () => {
           <div className="carousel-container">
             <div className="carousel-track carousel-auto-scroll" style={{ animationDirection: 'reverse' }}>
               {[...hotels, ...hotels].map((hotel, index) => (
-                <div key={`${hotel.id}-${index}`} className="carousel-item w-80">
-                  <div className="card-showcase">
+                <div key={`${hotel.id}-${index}`} className="carousel-item w-64 flex-shrink-0">
+                  <div className="card-showcase h-full flex flex-col">
                     <div className="relative mb-4">
                       <img 
                         src={hotel.image} 
@@ -595,14 +595,18 @@ const LandingPage: React.FC = () => {
                         ⭐ {hotel.rating}
                       </div>
                     </div>
-                    <h3 className="text-xl font-serif font-bold text-navy mb-2">{hotel.name}</h3>
-                    <p className="text-gold font-semibold mb-2">{hotel.location}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {hotel.features.map((feature, idx) => (
-                        <span key={idx} className="bg-gold/20 text-navy px-2 py-1 rounded text-xs font-medium">
-                          {feature}
-                        </span>
-                      ))}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="text-xl font-serif font-bold text-navy mb-2">{hotel.name}</h3>
+                        <p className="text-gold font-semibold mb-3">{hotel.location}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {hotel.features.map((feature, idx) => (
+                          <span key={idx} className="bg-gold/20 text-navy px-2 py-1 rounded text-xs font-medium">
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
