@@ -47,7 +47,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', commonRoutes);
 
 // Serve static files from the frontend build
-app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+const frontendPath = path.join(process.cwd(), 'frontend/dist');
+console.log('Frontend path:', frontendPath);
+app.use(express.static(frontendPath));
 
 // Handle React routing - return index.html for all non-API routes
 app.get('*', (req, res) => {
@@ -55,7 +57,7 @@ app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
-  res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Error handling middleware (must be last)
