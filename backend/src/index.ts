@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
@@ -44,6 +45,18 @@ app.use('/api/artists', artistRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', commonRoutes);
+
+// Serve static files from the frontend build
+app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+
+// Handle React routing - return index.html for all non-API routes
+app.get('*', (req, res) => {
+  // Don't serve index.html for API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+});
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
