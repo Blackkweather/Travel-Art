@@ -12,6 +12,7 @@ import {
   Award,
   Globe
 } from 'lucide-react'
+import Footer from '../components/Footer'
 
 const LandingPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -953,7 +954,7 @@ const LandingPage: React.FC = () => {
             <p>&copy; 2024 Travel Art. All rights reserved. | Applied Club Med Live-inspired redesign — Travel Art 2025.</p>
           </div>
         </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Star, MapPin, Music, Calendar, Users } from 'lucide-react'
+import Footer from '../components/Footer'
 
 const TopArtistsPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -339,6 +340,8 @@ const TopArtistsPage: React.FC = () => {
           </motion.div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   )
 }
