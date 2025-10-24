@@ -28,9 +28,7 @@ const LandingPage: React.FC = () => {
   
   // Scroll-based animations
   const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
-  const headerPadding = useTransform(scrollY, [0, 100], ['10px 80px', '10px 80px'])
   const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
-  const logoScale = useTransform(scrollY, [0, 100], [1, 1])
   
   // Hero parallax effects
   const heroY = useTransform(scrollY, [0, 500], [0, -150])
@@ -268,8 +266,7 @@ const LandingPage: React.FC = () => {
               style={{
                 height: '150px',
                 width: 'auto',
-                objectFit: 'contain',
-                scale: logoScale
+                objectFit: 'contain'
               }}
             />
           </Link>
@@ -312,7 +309,7 @@ const LandingPage: React.FC = () => {
             </motion.div>
             <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
               Join
-            </Link>
+              </Link>
           </div>
         </div>
       </motion.nav>
@@ -597,7 +594,7 @@ const LandingPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex-1 flex flex-col justify-between">
-                      <div>
+                <div>
                         <h3 className="text-xl font-serif font-bold text-navy mb-2">{hotel.name}</h3>
                         <p className="text-gold font-semibold mb-3">{hotel.location}</p>
                       </div>
@@ -954,6 +951,8 @@ const LandingPage: React.FC = () => {
             <p>&copy; 2024 Travel Art. All rights reserved. | Applied Club Med Live-inspired redesign — Travel Art 2025.</p>
           </div>
         </div>
+      </footer>
+      
       <Footer />
     </div>
   )

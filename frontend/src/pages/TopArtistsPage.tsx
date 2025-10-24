@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Star, MapPin, Music, Calendar, Users } from 'lucide-react'
@@ -9,9 +9,7 @@ const TopArtistsPage: React.FC = () => {
   
   // Scroll-based animations for header
   const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
-  const headerPadding = useTransform(scrollY, [0, 100], ['10px 80px', '10px 80px'])
   const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
-  const logoScale = useTransform(scrollY, [0, 100], [1, 1])
   const topArtists = [
     {
       id: '1',
@@ -108,8 +106,7 @@ const TopArtistsPage: React.FC = () => {
               style={{
                 height: '150px',
                 width: 'auto',
-                objectFit: 'contain',
-                scale: logoScale
+                objectFit: 'contain'
               }}
             />
           </Link>
@@ -158,8 +155,19 @@ const TopArtistsPage: React.FC = () => {
       </motion.nav>
 
       {/* Hero Section */}
-      <div className="bg-navy text-white py-20 pt-32">
-        <div className="container mx-auto px-6 text-center">
+      <div className="relative py-20 pt-32 overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            alt="Artist performance" 
+            className="w-full h-full object-cover"
+          />
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-navy/70"></div>
+        </div>
+        
+        <div className="container mx-auto px-6 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}

@@ -79,8 +79,19 @@ const HowItWorksPage: React.FC = () => {
       <Header />
       
       {/* Hero Section */}
-      <div className="bg-navy text-white py-20 pt-32">
-        <div className="container mx-auto px-6 text-center">
+      <div className="relative py-20 pt-32 overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            alt="Luxury hotel" 
+            className="w-full h-full object-cover"
+          />
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-navy/70"></div>
+        </div>
+        
+        <div className="container mx-auto px-6 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
