@@ -26,7 +26,7 @@ const LandingPage: React.FC = () => {
   const topHotelsRef = useRef<HTMLDivElement>(null)
   
   // Scroll-based animations
-  const headerBackground = useTransform(scrollY, [0, 100], ['transparent', '#0B1F3F'])
+  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', '#0B1F3F'])
   const headerPadding = useTransform(scrollY, [0, 100], ['20px 80px', '10px 60px'])
   const textColor = useTransform(scrollY, [0, 100], ['white', '#0B1F3F'])
   const logoScale = useTransform(scrollY, [0, 100], [1, 0.8])

@@ -1037,6 +1037,7 @@ h6 {
   image-rendering: crisp-edges;
   vertical-align: top;
   display: block;
+  mix-blend-mode: multiply !important;
 }
 
 /* Hero logo styling */
@@ -1054,6 +1055,7 @@ h6 {
   image-rendering: crisp-edges;
   vertical-align: top;
   display: block;
+  mix-blend-mode: multiply !important;
 }
 
 /* Header scroll transition */
