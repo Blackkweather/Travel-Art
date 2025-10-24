@@ -26,10 +26,10 @@ const LandingPage: React.FC = () => {
   const topHotelsRef = useRef<HTMLDivElement>(null)
   
   // Scroll-based animations
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', '#0B1F3F'])
-  const headerPadding = useTransform(scrollY, [0, 100], ['20px 80px', '10px 60px'])
-  const textColor = useTransform(scrollY, [0, 100], ['white', '#0B1F3F'])
-  const logoScale = useTransform(scrollY, [0, 100], [1, 0.8])
+  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
+  const headerPadding = useTransform(scrollY, [0, 100], ['10px 80px', '10px 80px'])
+  const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
+  const logoScale = useTransform(scrollY, [0, 100], [1, 1])
   
   // Hero parallax effects
   const heroY = useTransform(scrollY, [0, 500], [0, -150])
@@ -248,67 +248,70 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-cream">
       {/* Transparent Navigation */}
+      {/* Header */}
       <motion.nav 
         className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
         style={{
           background: headerBackground,
-          padding: headerPadding,
+          padding: '10px 80px',
+          height: '55px',
+          overflow: 'visible'
         }}
       >
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <img 
-                src="/logo-transparent.png" 
-                alt="Travel Art" 
-                className="h-12 w-auto object-contain"
-                style={{
-                  scale: logoScale
-                }}
-              />
-            </Link>
-            
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <motion.div style={{ color: textColor }}>
-                <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
+        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity -ml-4">
+            <img 
+              src="/logo-transparent.png" 
+              alt="Travel Art" 
+              style={{
+                height: '150px',
+                width: 'auto',
+                objectFit: 'contain',
+                scale: logoScale
+              }}
+            />
+          </Link>
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <motion.div style={{ color: textColor }}>
+              <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
                 How it Works
               </Link>
-              </motion.div>
-              <motion.div style={{ color: textColor }}>
-                <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
                 Partners
               </Link>
-              </motion.div>
-              <motion.div style={{ color: textColor }}>
-                <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-sm">
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-sm">
                 Pricing
               </Link>
-              </motion.div>
-              <motion.div style={{ color: textColor }}>
-                <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
-                  Top Artists
-                </Link>
-              </motion.div>
-              <motion.div style={{ color: textColor }}>
-                <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-sm">
-                  Top Hotels
-                </Link>
-              </motion.div>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex items-center space-x-3">
-              <motion.div style={{ color: textColor }}>
-                <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
+                Top Artists
+              </Link>
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-sm">
+                Top Hotels
+              </Link>
+            </motion.div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-3">
+            <motion.div style={{ color: textColor }}>
+              <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
                 Sign In
               </Link>
-              </motion.div>
-              <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
-                Join
-              </Link>
-            </div>
+            </motion.div>
+            <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
+              Join
+            </Link>
           </div>
         </div>
       </motion.nav>
@@ -341,20 +344,6 @@ const LandingPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            {/* Logo in Hero */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mb-8"
-            >
-              <img 
-                src="/logo-transparent.png" 
-                alt="Travel Art" 
-                className="h-16 w-auto object-contain mx-auto mb-6"
-              />
-            </motion.div>
-
             <h1 className="hero-title">
               Where Creativity Meets
               <span className="block text-gold">

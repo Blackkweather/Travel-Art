@@ -10,7 +10,7 @@ const PartnersPage: React.FC = () => {
       category: 'Luxury Palace',
       rating: 4.9,
       bookings: 45,
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
       description: 'Iconic luxury hotel in the heart of Paris with stunning Eiffel Tower views and world-class rooftop venues.',
       specialties: ['Eiffel Tower Views', 'Intimate Concerts', 'Classical Music'],
       performanceSpots: ['Rooftop Terrace', 'Grand Ballroom', 'Elegant Lounge']
@@ -21,7 +21,7 @@ const PartnersPage: React.FC = () => {
       category: 'Historic Luxury',
       rating: 4.8,
       bookings: 38,
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
       description: 'Historic luxury hotel on the French Riviera with Mediterranean views and legendary rooftop performances.',
       specialties: ['Mediterranean Views', 'Jazz Performances', 'Sunset Sets'],
       performanceSpots: ['Rooftop Jazz Lounge', 'Garden Terrace', 'Beach Club']
@@ -32,7 +32,7 @@ const PartnersPage: React.FC = () => {
       category: 'Palace Hotel',
       rating: 4.9,
       bookings: 32,
-      image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
       description: 'Iconic palace hotel with traditional Moroccan architecture and magical rooftop performances under the stars.',
       specialties: ['Atlas Mountain Views', 'Traditional Music', 'Cultural Performances'],
       performanceSpots: ['Atlas Rooftop Bar', 'Pool Deck Stage', 'Traditional Courtyard']
@@ -43,7 +43,7 @@ const PartnersPage: React.FC = () => {
       category: 'Boutique Palace',
       rating: 4.7,
       bookings: 28,
-      image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
       description: 'Boutique palace hotel with panoramic views of Lisbon and intimate rooftop concerts.',
       specialties: ['Lisbon Views', 'Fado Music', 'Intimate Venues'],
       performanceSpots: ['Terrace Bar', 'Wine Cellar', 'Garden Pavilion']
@@ -54,7 +54,7 @@ const PartnersPage: React.FC = () => {
       category: 'Beach Resort',
       rating: 4.8,
       bookings: 25,
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
       description: 'Luxury beachfront hotel with world-class dining and legendary rooftop DJ performances.',
       specialties: ['Beach Views', 'Electronic Music', 'DJ Sets'],
       performanceSpots: ['Rooftop Beach Club', 'Sunset Lounge', 'Pool Deck']
@@ -65,7 +65,7 @@ const PartnersPage: React.FC = () => {
       category: 'Luxury Chain',
       rating: 4.6,
       bookings: 22,
-      image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
       description: 'Elegant hotel in Barcelona with stunning city views and sophisticated performance spaces.',
       specialties: ['City Views', 'Sophisticated Venues', 'Cultural Events'],
       performanceSpots: ['Sky Terrace', 'Elegant Lounge', 'Conference Center']

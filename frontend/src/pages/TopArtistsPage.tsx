@@ -12,7 +12,7 @@ const TopArtistsPage: React.FC = () => {
       rating: 4.9,
       bookings: 24,
       specialties: ['Rooftop Piano', 'Intimate Concerts', 'Classical Music'],
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
       description: 'Award-winning classical pianist specializing in intimate rooftop performances with stunning city views.',
       recentVenues: ['Hotel Plaza Athénée', 'La Mamounia', 'Palácio Belmonte']
     },
@@ -24,7 +24,7 @@ const TopArtistsPage: React.FC = () => {
       rating: 4.8,
       bookings: 18,
       specialties: ['Sunset DJ Sets', 'Deep House', 'Electronic Music'],
-      image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
       description: 'International DJ creating unforgettable rooftop experiences with stunning sunset sets.',
       recentVenues: ['Hotel Negresco', 'Nobu Hotel Ibiza', 'La Mamounia']
     },
@@ -36,7 +36,7 @@ const TopArtistsPage: React.FC = () => {
       rating: 4.9,
       bookings: 15,
       specialties: ['Jazz Ensembles', 'Bebop', 'Contemporary Jazz'],
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
       description: 'Professional jazz saxophonist creating magical moments on hotel rooftops with intimate jazz ensembles.',
       recentVenues: ['Hotel Plaza Athénée', 'Hotel Negresco', 'Palácio Belmonte']
     },
@@ -72,7 +72,7 @@ const TopArtistsPage: React.FC = () => {
       rating: 4.6,
       bookings: 10,
       specialties: ['Fado Music', 'Portuguese Culture', 'Intimate Performances'],
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
       description: 'Traditional fado singer bringing Portuguese soul to luxury hotel terraces and intimate venues.',
       recentVenues: ['Palácio Belmonte', 'Hotel Negresco', 'Hotel Plaza Athénée']
     }
