@@ -1039,6 +1039,23 @@ h6 {
   display: block;
 }
 
+/* Hero logo styling */
+.hero-logo {
+  max-height: 80px;
+  max-width: auto;
+  object-fit: contain;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+  image-rendering: crisp-edges;
+  vertical-align: top;
+  display: block;
+}
+
 /* Header scroll transition */
 header {
   position: fixed;

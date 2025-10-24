@@ -39,7 +39,7 @@ const LandingPage: React.FC = () => {
   const [currentWord, setCurrentWord] = useState(0)
   const [currentText, setCurrentText] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
-  const words = ['Luxury', 'Hospitality', 'Excellence', 'Perfection', 'Art', 'Experience', 'Magic']
+  const words = ['Hospitality', 'Luxury', 'Excellence', 'Perfection']
 
   // Typing effect
   useEffect(() => {
@@ -341,8 +341,22 @@ const LandingPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
+            {/* Logo in Hero */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mb-8"
+            >
+              <img 
+                src="/logo-1-final.png" 
+                alt="Travel Art" 
+                className="hero-logo mx-auto mb-6"
+              />
+            </motion.div>
+
             <h1 className="hero-title">
-              Where Art Meets
+              Where Creativity Meets
               <span className="block text-gold">
                 {currentText}
                 <span className="animate-pulse text-gold">|</span>
