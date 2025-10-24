@@ -1,0 +1,214 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         String   @default("ARTIST") // ARTIST, HOTEL, ADMIN
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  country      String?
+  language     String   @default("en")
+  isActive     Boolean  @default(true)
+
+  // Relations
+  artist       Artist?
+  hotel        Hotel?
+  notifications Notification[]
+  referralsSent Referral[] @relation("Referrer")
+  referralsReceived Referral[] @relation("Referee")
+  adminLogs    AdminLog[]
+
+  @@map("users")
+}
+
+model Artist {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  bio               String?
+  discipline        String
+  priceRange        String
+  membershipStatus  String   @default("INACTIVE") // ACTIVE, INACTIVE, EXPIRED, PENDING
+  membershipRenewal DateTime?
+  images            String?  // JSON string of image URLs
+  videos            String?  // JSON string of video URLs
+  mediaUrls         String?  // JSON string of media URLs
+  referralCode      String   @unique @default(cuid())
+  loyaltyPoints     Int      @default(0)
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availability      ArtistAvailability[]
+  bookings          Booking[]
+  ratings           Rating[]
+  transactions      Transaction[]
+
+  @@map("artists")
+}
+
+model Hotel {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  name            String
+  description     String?
+  location        String   // JSON string: {city, country, coords}
+  contactPhone    String?
+  images          String?  // JSON string of image URLs
+  performanceSpots String? // JSON string of performance spots
+  rooms           String?  // JSON string of room data
+  repName         String?
+
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availabilities  Availability[]
+  bookings        Booking[]
+  ratings         Rating[]
+  credits         Credit[]
+  transactions    Transaction[]
+
+  @@map("hotels")
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  hotelId   String
+  roomId    String
+  dateFrom  DateTime
+  dateTo    DateTime
+  price     Float?
+
+  // Relations
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+model ArtistAvailability {
+  id        String   @id @default(cuid())
+  artistId  String
+  dateFrom  DateTime
+  dateTo    DateTime
+
+  // Relations
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@map("artist_availability")
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  hotelId     String
+  artistId    String
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("PENDING") // PENDING, CONFIRMED, REJECTED, COMPLETED, CANCELLED
+  creditsUsed Int
+  createdAt   DateTime @default(now())
+
+  // Relations
+  hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  artist      Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  ratings     Rating[]
+
+  @@map("bookings")
+}
+
+model Rating {
+  id                   String   @id @default(cuid())
+  bookingId            String
+  hotelId              String
+  artistId             String
+  stars                Int
+  textReview           String
+  createdAt            DateTime @default(now())
+  isVisibleToArtist    Boolean  @default(false)
+
+  // Relations
+  booking              Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel                Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  artist               Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@map("ratings")
+}
+
+model Credit {
+  id           String @id @default(cuid())
+  hotelId      String @unique
+  totalCredits Int    @default(0)
+  usedCredits  Int    @default(0)
+
+  // Relations
+  hotel        Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("credits")
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  hotelId   String?
+  artistId  String?
+  type      String   // CREDIT_PURCHASE, MEMBERSHIP, BOOKING_FEE, REFUND
+  amount    Float
+  createdAt DateTime @default(now())
+
+  // Relations
+  hotel     Hotel?   @relation(fields: [hotelId], references: [id], onDelete: SetNull)
+  artist    Artist?  @relation(fields: [artistId], references: [id], onDelete: SetNull)
+
+  @@map("transactions")
+}
+
+model Referral {
+  id             String   @id @default(cuid())
+  inviterUserId   String
+  inviteeUserId   String
+  rewardPoints    Int      @default(100)
+  createdAt       DateTime @default(now())
+
+  // Relations
+  inviter         User     @relation("Referrer", fields: [inviterUserId], references: [id], onDelete: Cascade)
+  invitee         User     @relation("Referee", fields: [inviteeUserId], references: [id], onDelete: Cascade)
+
+  @@unique([inviterUserId, inviteeUserId])
+  @@map("referrals")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // BOOKING_CONFIRMED, BOOKING_CANCELLED, RATING_RECEIVED, MEMBERSHIP_EXPIRING, REFERRAL_REWARD, ADMIN_NOTIFICATION
+  payload   String   // JSON string
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model AdminLog {
+  id           String   @id @default(cuid())
+  action       String
+  actorUserId  String
+  targetId     String?
+  createdAt    DateTime @default(now())
+
+  // Relations
+  actor        User     @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@map("admin_logs")
+}
+
+// Note: SQLite doesn't support enums, so we use String fields with comments
+// Valid values are documented in the model field comments above

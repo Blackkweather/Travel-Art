@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo-1-final.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Travel Art - Luxury Hotel & Artist Exchange</title>
+    <meta name="description" content="Connect luxury hotels with talented artists for unique accommodation and performance experiences." />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Simple CSS animations -->
+    <style>
+      /* Floating animation */
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+      }
+      
+      .float-animation {
+        animation: float 6s ease-in-out infinite;
+      }
+      
+      /* Gradient text animation */
+      @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      
+      .gradient-text {
+        background: linear-gradient(-45deg, #C9A63C, #0B1F3F, #C9A63C, #0B1F3F);
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 3s ease infinite;
+      }
+      
+      /* Glow effect */
+      .glow-effect {
+        box-shadow: 0 0 20px rgba(201, 166, 60, 0.3);
+        transition: box-shadow 0.3s ease;
+      }
+      
+      .glow-effect:hover {
+        box-shadow: 0 0 30px rgba(201, 166, 60, 0.5);
+      }
+      
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+      
+      /* Typing animation */
+      @keyframes typing {
+        from { width: 0; }
+        to { width: 100%; }
+      }
+      
+      @keyframes blink-cursor {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+      }
+      
+      .typing-animation {
+        overflow: hidden;
+        border-right: 3px solid #C9A63C;
+        white-space: nowrap;
+        animation: typing 3s steps(40, end), blink-cursor 0.75s step-end infinite;
+      }
+      
+      /* Enhanced gradient text for hero */
+      .gradient-text {
+        background: linear-gradient(-45deg, #C9A63C, #FFFFFF, #C9A63C, #FFFFFF);
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 3s ease infinite;
+      }
+      
+      /* Drop shadow for better text readability */
+      .drop-shadow-lg {
+        filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+      }
+      
+      .drop-shadow-md {
+        filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));
+      }
+      
+      /* Hero image parallax effect */
+      .hero-image {
+        transform: scale(1.1);
+        transition: transform 0.3s ease-out;
+      }
+      
+      .hero-image:hover {
+        transform: scale(1.05);
+      }
+      
+      /* Enhanced floating animation */
+      @keyframes float-enhanced {
+        0%, 100% { 
+          transform: translateY(0px) rotate(0deg); 
+        }
+        33% { 
+          transform: translateY(-15px) rotate(1deg); 
+        }
+        66% { 
+          transform: translateY(-25px) rotate(-1deg); 
+        }
+      }
+      
+      .float-enhanced {
+        animation: float-enhanced 8s ease-in-out infinite;
+      }
+    </style>
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
