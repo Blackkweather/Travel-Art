@@ -47,7 +47,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', commonRoutes);
 
 // Serve static files from the frontend build
-const frontendPath = path.join(process.cwd(), 'frontend/dist');
+const frontendPath = path.join(process.cwd(), '../frontend/dist');
 console.log('Frontend path:', frontendPath);
 app.use(express.static(frontendPath));
 
