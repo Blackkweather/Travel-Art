@@ -54,9 +54,11 @@ const RegisterPage: React.FC = () => {
       >
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center">
-              <span className="text-navy font-bold text-2xl">🧭</span>
-            </div>
+            <img 
+              src="/logo-transparent.png" 
+              alt="Travel Art" 
+              className="h-32 w-auto"
+            />
           </div>
           <h2 className="text-3xl font-serif font-bold text-navy gold-underline">
             Join Travel Art
