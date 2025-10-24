@@ -259,10 +259,10 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-              <motion.img 
-                src="/logo-1-final.png" 
+              <img 
+                src="/logo-transparent.png" 
                 alt="Travel Art" 
-                className="logo"
+                className="h-12 w-auto object-contain"
                 style={{
                   scale: logoScale
                 }}
@@ -273,18 +273,18 @@ const LandingPage: React.FC = () => {
             <div className="hidden md:flex items-center space-x-8">
               <motion.div style={{ color: textColor }}>
                 <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
-                  How it Works
-                </Link>
+                How it Works
+              </Link>
               </motion.div>
               <motion.div style={{ color: textColor }}>
                 <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
-                  Partners
-                </Link>
+                Partners
+              </Link>
               </motion.div>
               <motion.div style={{ color: textColor }}>
                 <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-sm">
-                  Pricing
-                </Link>
+                Pricing
+              </Link>
               </motion.div>
               <motion.div style={{ color: textColor }}>
                 <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
@@ -302,8 +302,8 @@ const LandingPage: React.FC = () => {
             <div className="flex items-center space-x-3">
               <motion.div style={{ color: textColor }}>
                 <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
-                  Sign In
-                </Link>
+                Sign In
+              </Link>
               </motion.div>
               <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
                 Join
@@ -349,9 +349,9 @@ const LandingPage: React.FC = () => {
               className="mb-8"
             >
               <img 
-                src="/logo-1-final.png" 
+                src="/logo-transparent.png" 
                 alt="Travel Art" 
-                className="hero-logo mx-auto mb-6"
+                className="h-16 w-auto object-contain mx-auto mb-6"
               />
             </motion.div>
 
