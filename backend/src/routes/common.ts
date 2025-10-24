@@ -15,7 +15,7 @@ const referralSchema = z.object({
 
 // Create referral
 router.post('/referrals', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const { inviteeEmail, inviteeName } = referralSchema.parse(req.body);
+  const { inviteeEmail } = referralSchema.parse(req.body);
 
   // Check if invitee already exists
   const existingUser = await prisma.user.findUnique({
@@ -58,7 +58,7 @@ router.post('/referrals', authenticate, asyncHandler(async (req: AuthRequest, re
 
 // Get top artists/hotels
 router.get('/top', asyncHandler(async (req, res) => {
-  const { type, period = 'month' } = req.query;
+  const { type } = req.query;
 
   if (type === 'artists') {
     // Get top artists by booking count and ratings
@@ -187,5 +187,6 @@ router.get('/stats', asyncHandler(async (req, res) => {
 }));
 
 export { router as commonRoutes };
+
 
 

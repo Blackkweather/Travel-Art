@@ -100,7 +100,7 @@ router.post('/', authenticate, authorize('ARTIST'), asyncHandler(async (req: Aut
     create: {
       userId: req.user!.id,
       ...profileData
-    },
+    } as any,
     include: {
       user: {
         select: {
@@ -197,7 +197,7 @@ router.get('/', asyncHandler(async (req, res) => {
       },
       skip,
       take: limitNum,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' } as any
     }),
     prisma.artist.count({ where })
   ]);
@@ -247,5 +247,6 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 export { router as artistRoutes };
+
 
 

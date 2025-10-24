@@ -33,7 +33,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
     }),
     prisma.booking.findMany({
       take: 10,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'desc' } as any,
       include: {
         artist: {
           include: {
@@ -53,7 +53,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
     }),
     prisma.artist.findMany({
       take: 5,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'desc' } as any,
       include: {
         user: {
           select: { name: true, email: true }
@@ -62,7 +62,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
     }),
     prisma.hotel.findMany({
       take: 5,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'desc' } as any,
       include: {
         user: {
           select: { name: true, email: true }
@@ -91,7 +91,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
 // Suspend user
 router.post('/users/:id/suspend', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
   const { id } = req.params;
-  const { reason } = suspendUserSchema.parse(req.body);
+  const { } = suspendUserSchema.parse(req.body);
 
   const user = await prisma.user.findUnique({
     where: { id }
@@ -320,5 +320,6 @@ router.get('/bookings', authenticate, authorize('ADMIN'), asyncHandler(async (re
 }));
 
 export { router as adminRoutes };
+
 
 

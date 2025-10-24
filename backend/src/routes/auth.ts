@@ -59,7 +59,7 @@ router.post('/register', asyncHandler(async (req, res) => {
   });
 
   // Generate JWT token
-  const token = jwt.sign(
+  const token = (jwt.sign as any)(
     { userId: user.id, role: user.role },
     config.jwtSecret,
     { expiresIn: config.jwtExpiresIn }
@@ -98,7 +98,7 @@ router.post('/login', asyncHandler(async (req, res) => {
   }
 
   // Generate JWT token
-  const token = jwt.sign(
+  const token = (jwt.sign as any)(
     { userId: user.id, role: user.role },
     config.jwtSecret,
     { expiresIn: config.jwtExpiresIn }
@@ -122,7 +122,7 @@ router.post('/login', asyncHandler(async (req, res) => {
 
 // Refresh token
 router.post('/refresh', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const token = jwt.sign(
+  const token = (jwt.sign as any)(
     { userId: req.user!.id, role: req.user!.role },
     config.jwtSecret,
     { expiresIn: config.jwtExpiresIn }

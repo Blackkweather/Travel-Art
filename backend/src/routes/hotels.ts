@@ -94,7 +94,7 @@ router.post('/', authenticate, authorize('HOTEL'), asyncHandler(async (req: Auth
     create: {
       userId: req.user!.id,
       ...profileData
-    },
+    } as any,
     include: {
       user: {
         select: {
@@ -190,7 +190,6 @@ router.post('/:id/credits/purchase', authenticate, authorize('HOTEL'), asyncHand
 
 // Browse artists with filters
 router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
   const { discipline, location, dateFrom, dateTo, page = '1', limit = '10' } = req.query;
 
   const pageNum = parseInt(page as string);
@@ -239,7 +238,7 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
       },
       skip,
       take: limitNum,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' } as any
     }),
     prisma.artist.count({ where })
   ]);
@@ -291,7 +290,7 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
 // Request booking
 router.post('/:id/bookings', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
   const { id } = req.params;
-  const { artistId, startDate, endDate, specialRequests } = bookingSchema.parse(req.body);
+  const { artistId, startDate, endDate } = bookingSchema.parse(req.body);
 
   // Verify hotel belongs to user
   const hotel = await prisma.hotel.findFirst({
@@ -462,5 +461,6 @@ router.post('/:id/bookings/:bookingId/rate', authenticate, authorize('HOTEL'), a
 }));
 
 export { router as hotelRoutes };
+
 
 
