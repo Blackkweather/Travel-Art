@@ -39,6 +39,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Test image serving
+app.get('/test-logo', (req, res) => {
+  const logoPath = path.join(frontendPath, 'logo-transparent.png');
+  console.log('Logo path:', logoPath);
+  console.log('Logo exists:', require('fs').existsSync(logoPath));
+  res.sendFile(logoPath);
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/artists', artistRoutes);
@@ -49,6 +57,7 @@ app.use('/api', commonRoutes);
 // Serve static files from the frontend build
 const frontendPath = path.join(process.cwd(), '../frontend/dist');
 console.log('Frontend path:', frontendPath);
+console.log('Files in frontend dist:', require('fs').readdirSync(frontendPath));
 app.use(express.static(frontendPath));
 
 // Handle React routing - return index.html for all non-API routes
