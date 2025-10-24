@@ -58,6 +58,9 @@ app.use('/api', commonRoutes);
 const frontendPath = path.join(process.cwd(), '../frontend/dist');
 console.log('Frontend path:', frontendPath);
 console.log('Files in frontend dist:', require('fs').readdirSync(frontendPath));
+
+// Serve static files with explicit configuration
+app.use('/static', express.static(frontendPath));
 app.use(express.static(frontendPath));
 
 // Handle React routing - return index.html for all non-API routes
