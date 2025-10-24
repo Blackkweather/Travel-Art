@@ -1,8 +1,16 @@
-import React from 'react'
-import { motion } from 'framer-motion'
+import React, { useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { Star, MapPin, Music, Calendar, Users } from 'lucide-react'
 
 const TopArtistsPage: React.FC = () => {
+  const { scrollY } = useScroll()
+  
+  // Scroll-based animations for header
+  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
+  const headerPadding = useTransform(scrollY, [0, 100], ['10px 80px', '10px 80px'])
+  const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
+  const logoScale = useTransform(scrollY, [0, 100], [1, 1])
   const topArtists = [
     {
       id: '1',
@@ -80,8 +88,76 @@ const TopArtistsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
+      {/* Header */}
+      <motion.nav 
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
+        style={{
+          background: headerBackground,
+          padding: '10px 80px',
+          height: '55px',
+          overflow: 'visible'
+        }}
+      >
+        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity -ml-4">
+            <img 
+              src="/logo-transparent.png" 
+              alt="Travel Art" 
+              style={{
+                height: '150px',
+                width: 'auto',
+                objectFit: 'contain',
+                scale: logoScale
+              }}
+            />
+          </Link>
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <motion.div style={{ color: textColor }}>
+              <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
+                How it Works
+              </Link>
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
+                Partners
+              </Link>
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-sm">
+                Pricing
+              </Link>
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
+                Top Artists
+              </Link>
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-sm">
+                Top Hotels
+              </Link>
+            </motion.div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-3">
+            <motion.div style={{ color: textColor }}>
+              <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
+                Sign In
+              </Link>
+            </motion.div>
+            <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
+              Join
+            </Link>
+          </div>
+        </div>
+      </motion.nav>
+
       {/* Hero Section */}
-      <div className="bg-navy text-white py-20">
+      <div className="bg-navy text-white py-20 pt-32">
         <div className="container mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -179,6 +255,9 @@ const TopArtistsPage: React.FC = () => {
                   src={artist.image}
                   alt={artist.name}
                   className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://via.placeholder.com/400x400/0B1F3F/C9A63C?text=' + encodeURIComponent(artist.name)
+                  }}
                 />
                 <div className="absolute top-4 right-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-medium">
                   ⭐ {artist.rating}
