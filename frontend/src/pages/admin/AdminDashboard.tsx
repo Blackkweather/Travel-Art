@@ -127,7 +127,10 @@ const AdminDashboard: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-navy">{artist.bookings} bookings</p>
-                  <p className="text-xs text-gray-500">⭐ {artist.rating}</p>
+                  <p className="text-xs text-gray-500 flex items-center space-x-1">
+                    <span className="text-gold font-bold">◆</span>
+                    <span>{artist.rating}</span>
+                  </p>
                 </div>
               </div>
             ))}

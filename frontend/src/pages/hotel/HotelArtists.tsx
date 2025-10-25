@@ -295,7 +295,7 @@ const HotelArtists: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center justify-center mb-1">
-                    <Star className="w-4 h-4 text-gold mr-1" />
+                    <span className="text-gold font-bold mr-1">◆</span>
                     <span className="text-sm font-medium text-navy">{artist.hotelRating}</span>
                   </div>
                   <p className="text-xs text-gray-600">Hotel Rating</p>

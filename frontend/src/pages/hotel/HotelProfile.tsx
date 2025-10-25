@@ -171,7 +171,7 @@ const HotelProfile: React.FC = () => {
             <div className="mt-6 grid grid-cols-3 gap-4">
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-center mb-2">
-                  <Star className="w-5 h-5 text-gold mr-1" />
+                  <span className="text-gold font-bold mr-1">◆</span>
                   <span className="text-lg font-bold text-navy">{profile.rating}</span>
                 </div>
                 <p className="text-sm text-gray-600">Average Rating</p>
