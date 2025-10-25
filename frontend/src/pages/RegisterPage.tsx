@@ -51,20 +51,20 @@ const RegisterPage: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="max-w-md w-full space-y-8"
+        className="max-w-lg w-full space-y-8"
       >
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-8">
             <img 
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
-              className="h-32 w-auto"
+              className="h-20 w-auto"
             />
           </div>
-          <h2 className="text-3xl font-serif font-bold text-navy gold-underline">
+          <h2 className="text-4xl font-serif font-bold text-navy mb-4">
             Join Travel Art
           </h2>
-          <p className="mt-2 text-gray-600">
+          <p className="text-lg text-gray-600">
             Create your account and start your journey
           </p>
         </div>
@@ -72,43 +72,61 @@ const RegisterPage: React.FC = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>
-              <label className="form-label">I am a</label>
+              <label className="block text-lg font-semibold text-navy mb-4">I am a</label>
               <div className="grid grid-cols-2 gap-4">
-                <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className={`relative flex flex-col items-center p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
+                  watchedRole === 'ARTIST' 
+                    ? 'border-gold bg-gold/5 shadow-md' 
+                    : 'border-gray-200 hover:border-gold/50'
+                }`}>
                   <input
                     {...register('role', { required: 'Please select your role' })}
                     type="radio"
                     value="ARTIST"
                     className="sr-only"
                   />
-                  <div className={`w-full text-center ${watchedRole === 'ARTIST' ? 'text-gold' : 'text-gray-600'}`}>
-                    <div className="text-2xl mb-2">◆</div>
-                    <div className="font-medium">Artist</div>
-                    <div className="text-sm">Perform & Create</div>
+                  <div className={`text-center transition-colors duration-300 ${
+                    watchedRole === 'ARTIST' ? 'text-gold' : 'text-gray-600'
+                  }`}>
+                    <div className="text-4xl mb-3">◆</div>
+                    <div className="font-semibold text-lg mb-1">Artist</div>
+                    <div className="text-sm opacity-80">Perform & Create</div>
                   </div>
+                  {watchedRole === 'ARTIST' && (
+                    <div className="absolute top-2 right-2 w-3 h-3 bg-gold rounded-full"></div>
+                  )}
                 </label>
                 
-                <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className={`relative flex flex-col items-center p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
+                  watchedRole === 'HOTEL' 
+                    ? 'border-gold bg-gold/5 shadow-md' 
+                    : 'border-gray-200 hover:border-gold/50'
+                }`}>
                   <input
                     {...register('role', { required: 'Please select your role' })}
                     type="radio"
                     value="HOTEL"
                     className="sr-only"
                   />
-                  <div className={`w-full text-center ${watchedRole === 'HOTEL' ? 'text-gold' : 'text-gray-600'}`}>
-                    <div className="text-2xl mb-2">◈</div>
-                    <div className="font-medium">Hotel</div>
-                    <div className="text-sm">Host & Entertain</div>
+                  <div className={`text-center transition-colors duration-300 ${
+                    watchedRole === 'HOTEL' ? 'text-gold' : 'text-gray-600'
+                  }`}>
+                    <div className="text-4xl mb-3">◈</div>
+                    <div className="font-semibold text-lg mb-1">Hotel</div>
+                    <div className="text-sm opacity-80">Host & Entertain</div>
                   </div>
+                  {watchedRole === 'HOTEL' && (
+                    <div className="absolute top-2 right-2 w-3 h-3 bg-gold rounded-full"></div>
+                  )}
                 </label>
               </div>
               {errors.role && (
-                <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+                <p className="mt-2 text-sm text-red-600">{errors.role.message}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="name" className="form-label">
+              <label htmlFor="name" className="block text-sm font-semibold text-navy mb-2">
                 Full Name
               </label>
               <input
@@ -120,7 +138,7 @@ const RegisterPage: React.FC = () => {
                   }
                 })}
                 type="text"
-                className="form-input"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors duration-200"
                 placeholder="Enter your full name"
               />
               {errors.name && (
@@ -129,7 +147,7 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="email" className="form-label">
+              <label htmlFor="email" className="block text-sm font-semibold text-navy mb-2">
                 Email Address
               </label>
               <input
@@ -141,7 +159,7 @@ const RegisterPage: React.FC = () => {
                   }
                 })}
                 type="email"
-                className="form-input"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors duration-200"
                 placeholder="Enter your email"
               />
               {errors.email && (
@@ -150,7 +168,7 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="form-label">
+              <label htmlFor="password" className="block text-sm font-semibold text-navy mb-2">
                 Password
               </label>
               <input
@@ -162,7 +180,7 @@ const RegisterPage: React.FC = () => {
                   }
                 })}
                 type="password"
-                className="form-input"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors duration-200"
                 placeholder="Create a password"
               />
               {errors.password && (
@@ -171,21 +189,21 @@ const RegisterPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-start space-x-3">
             <input
               id="terms"
               name="terms"
               type="checkbox"
               required
-              className="h-4 w-4 text-gold focus:ring-gold border-gray-300 rounded"
+              className="mt-1 h-4 w-4 text-gold focus:ring-gold border-gray-300 rounded"
             />
-            <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="terms" className="text-sm text-gray-700 leading-relaxed">
               I agree to the{' '}
-              <Link to="/terms" className="text-gold hover:text-gold-600">
+              <Link to="/terms" className="text-gold hover:text-gold-600 font-medium">
                 Terms of Service
               </Link>{' '}
               and{' '}
-              <Link to="/privacy" className="text-gold hover:text-gold-600">
+              <Link to="/privacy" className="text-gold hover:text-gold-600 font-medium">
                 Privacy Policy
               </Link>
             </label>
@@ -195,7 +213,7 @@ const RegisterPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn-primary py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gold hover:bg-gold/90 text-navy font-semibold py-4 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
             >
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
@@ -204,7 +222,7 @@ const RegisterPage: React.FC = () => {
           <div className="text-center">
             <p className="text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-gold hover:text-gold-600 font-medium">
+              <Link to="/login" className="text-gold hover:text-gold-600 font-semibold">
                 Sign in here
               </Link>
             </p>
