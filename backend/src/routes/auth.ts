@@ -16,6 +16,7 @@ const registerSchema = z.object({
   name: z.string().min(2).max(100),
   email: z.string().email(),
   password: z.string().min(8),
+  phone: z.string().optional(),
   locale: z.string().optional().default('en')
 });
 
@@ -26,7 +27,7 @@ const loginSchema = z.object({
 
 // Register new user
 router.post('/register', asyncHandler(async (req, res) => {
-  const { role, name, email, password, locale } = registerSchema.parse(req.body);
+  const { role, name, email, password, phone, locale } = registerSchema.parse(req.body);
 
   // Check if user already exists
   const existingUser = await prisma.user.findUnique({
@@ -47,6 +48,7 @@ router.post('/register', asyncHandler(async (req, res) => {
       name,
       email,
       passwordHash,
+      phone: phone || null,
       language: locale
     },
     select: {
@@ -54,6 +56,7 @@ router.post('/register', asyncHandler(async (req, res) => {
       role: true,
       name: true,
       email: true,
+      phone: true,
       createdAt: true
     }
   });

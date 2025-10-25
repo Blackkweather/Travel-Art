@@ -3,6 +3,7 @@ export interface User {
   role: 'ARTIST' | 'HOTEL' | 'ADMIN'
   email: string
   name: string
+  phone?: string
   country?: string
   language: string
   createdAt: string

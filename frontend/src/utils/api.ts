@@ -6,8 +6,13 @@ class ApiClient {
   private client: AxiosInstance
 
   constructor() {
+    // In production, use relative path since backend serves frontend
+    // In development, use localhost:4000
+    const isProduction = (import.meta as any).env?.MODE === 'production'
+    const apiUrl = (import.meta as any).env?.VITE_API_URL || (isProduction ? '/api' : 'http://localhost:4000/api')
+    
     this.client = axios.create({
-      baseURL: (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api',
+      baseURL: apiUrl,
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
