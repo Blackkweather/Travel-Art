@@ -97,10 +97,12 @@ export const getAssetConfig = (): AssetConfig => {
   const environment = (import.meta as any).env?.MODE || 'development'
   const cdnProvider = (import.meta as any).env?.VITE_CDN_PROVIDER || 'local'
   
+  // In development, always use local assets
   if (environment === 'development') {
     return developmentConfig
   }
   
+  // In production, default to Cloudinary if no provider is specified
   switch (cdnProvider) {
     case 'jsdelivr':
       return productionConfig
@@ -112,8 +114,11 @@ export const getAssetConfig = (): AssetConfig => {
       return vercelBlobConfig
     case 'cloudinary':
       return cloudinaryConfig
-    default:
+    case 'local':
       return developmentConfig
+    default:
+      // Default to Cloudinary in production for better reliability
+      return cloudinaryConfig
   }
 }
 
