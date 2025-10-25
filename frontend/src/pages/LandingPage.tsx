@@ -12,7 +12,6 @@ import {
   Award,
   Globe
 } from 'lucide-react'
-import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
 
 const LandingPage: React.FC = () => {
@@ -1009,8 +1008,6 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </footer>
-      
-      <Footer />
     </div>
   )
 }
