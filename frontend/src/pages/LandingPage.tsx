@@ -327,6 +327,8 @@ const LandingPage: React.FC = () => {
             alt="Luxury hotel rooftop with city view" 
             className="w-full h-full object-cover"
             style={{ minHeight: '100vh' }}
+            loading="eager"
+            fetchPriority="high"
           />
           {/* Gradient Overlay - Transparent to match header */}
           <div className="absolute inset-0 bg-gradient-to-br from-navy/20 via-transparent to-gold/10"></div>
@@ -494,6 +496,7 @@ const LandingPage: React.FC = () => {
                   src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
                   alt="Artist performing at luxury hotel" 
                   className="w-full h-64 sm:h-80 md:h-96 object-cover rounded-xl shadow-luxury"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy/20 to-transparent rounded-xl"></div>
                 <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 text-white">
