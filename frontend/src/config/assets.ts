@@ -24,60 +24,6 @@ const developmentConfig: AssetConfig = {
   }
 }
 
-// Production configuration (CDN assets)
-const productionConfig: AssetConfig = {
-  logo: {
-    // Replace these URLs with your actual CDN URLs
-    transparent: 'https://cdn.jsdelivr.net/gh/yourusername/travel-art-assets@main/logo-transparent.png',
-    final: 'https://cdn.jsdelivr.net/gh/yourusername/travel-art-assets@main/logo-1-final.png',
-    test: 'https://cdn.jsdelivr.net/gh/yourusername/travel-art-assets@main/test-logo.png'
-  },
-  icons: {
-    compass: 'https://cdn.jsdelivr.net/gh/yourusername/travel-art-assets@main/compass-icon.svg',
-    favicon: 'https://cdn.jsdelivr.net/gh/yourusername/travel-art-assets@main/favicon.svg'
-  }
-}
-
-// Alternative CDN configurations (uncomment to use)
-
-// Cloudflare R2 configuration
-const cloudflareR2Config: AssetConfig = {
-  logo: {
-    transparent: 'https://your-bucket.your-account.r2.cloudflarestorage.com/logo-transparent.png',
-    final: 'https://your-bucket.your-account.r2.cloudflarestorage.com/logo-1-final.png',
-    test: 'https://your-bucket.your-account.r2.cloudflarestorage.com/test-logo.png'
-  },
-  icons: {
-    compass: 'https://your-bucket.your-account.r2.cloudflarestorage.com/compass-icon.svg',
-    favicon: 'https://your-bucket.your-account.r2.cloudflarestorage.com/favicon.svg'
-  }
-}
-
-// AWS S3 configuration
-const awsS3Config: AssetConfig = {
-  logo: {
-    transparent: 'https://your-bucket.s3.amazonaws.com/logo-transparent.png',
-    final: 'https://your-bucket.s3.amazonaws.com/logo-1-final.png',
-    test: 'https://your-bucket.s3.amazonaws.com/test-logo.png'
-  },
-  icons: {
-    compass: 'https://your-bucket.s3.amazonaws.com/compass-icon.svg',
-    favicon: 'https://your-bucket.s3.amazonaws.com/favicon.svg'
-  }
-}
-
-// Vercel Blob configuration
-const vercelBlobConfig: AssetConfig = {
-  logo: {
-    transparent: 'https://your-blob-store.vercel-storage.com/logo-transparent.png',
-    final: 'https://your-blob-store.vercel-storage.com/logo-1-final.png',
-    test: 'https://your-blob-store.vercel-storage.com/test-logo.png'
-  },
-  icons: {
-    compass: 'https://your-blob-store.vercel-storage.com/compass-icon.svg',
-    favicon: 'https://your-blob-store.vercel-storage.com/favicon.svg'
-  }
-}
 
 // Cloudinary configuration
 const cloudinaryConfig: AssetConfig = {
