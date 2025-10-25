@@ -62,7 +62,6 @@ const LoginPage: React.FC = () => {
               onLoad={(e) => {
                 console.log('Logo loaded successfully:', e.currentTarget.src);
               }}
-              style={{ border: '2px solid red' }} // Temporary debug border
             />
             <div id="logo-fallback" className="hidden">
               <div className="text-4xl font-serif font-bold text-navy">

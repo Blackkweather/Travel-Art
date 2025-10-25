@@ -14,9 +14,9 @@ export interface AssetConfig {
 // Development configuration (local assets)
 const developmentConfig: AssetConfig = {
   logo: {
-    transparent: '/logo-transparent.png',
+    transparent: '/logo-1-final.png',
     final: '/logo-1-final.png',
-    test: '/test-logo.png'
+    test: '/logo-1-final.png'
   },
   icons: {
     compass: '/compass-icon.svg',
