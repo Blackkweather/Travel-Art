@@ -7,6 +7,7 @@ import { RegisterData } from '@/types'
 import toast from 'react-hot-toast'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { getLogoUrl } from '@/config/assets'
 
 const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
@@ -55,7 +56,7 @@ const RegisterPage: React.FC = () => {
         <div className="text-center">
           <div className="flex justify-center mb-6">
             <img 
-              src="/logo-transparent.png" 
+              src={getLogoUrl('transparent')} 
               alt="Travel Art" 
               className="h-32 w-auto"
             />

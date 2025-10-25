@@ -13,6 +13,7 @@ import {
   Globe
 } from 'lucide-react'
 import Footer from '../components/Footer'
+import { getLogoUrl } from '@/config/assets'
 
 const LandingPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -261,7 +262,7 @@ const LandingPage: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity -ml-4">
             <img 
-              src="/logo-transparent.png" 
+              src={getLogoUrl('transparent')} 
               alt="Travel Art" 
               style={{
                 height: '150px',

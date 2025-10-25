@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
+import { getLogoUrl } from '@/config/assets'
 
 const Header: React.FC = () => {
   const { scrollY } = useScroll()
@@ -23,7 +24,7 @@ const Header: React.FC = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center hover:opacity-80 transition-opacity -ml-4">
           <img 
-            src="/logo-transparent.png" 
+            src={getLogoUrl('transparent')} 
             alt="Travel Art" 
             style={{
               height: '150px',

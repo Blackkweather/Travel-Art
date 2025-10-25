@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Mail, Phone, Instagram, Twitter, Facebook, Linkedin } from 'lucide-react'
+import { getLogoUrl } from '@/config/assets'
 
 const Footer: React.FC = () => {
   return (
@@ -11,7 +12,7 @@ const Footer: React.FC = () => {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-6">
               <img 
-                src="/logo-transparent.png" 
+                src={getLogoUrl('transparent')} 
                 alt="Travel Art" 
                 className="h-36 w-auto object-contain"
               />

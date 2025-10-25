@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Building, Star, MapPin, Users, Calendar, Award } from 'lucide-react'
 import Footer from '../components/Footer'
+import { getLogoUrl } from '@/config/assets'
 
 const PartnersPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -125,7 +126,7 @@ const PartnersPage: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity -ml-4">
             <img 
-              src="/logo-transparent.png" 
+              src={getLogoUrl('transparent')} 
               alt="Travel Art" 
               style={{
                 height: '150px',
