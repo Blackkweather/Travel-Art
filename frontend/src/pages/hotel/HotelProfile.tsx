@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Camera, Upload, Save, Edit3, Star, MapPin, Building, Calendar, Users } from 'lucide-react'
+import { Camera, Upload, Save, Edit3, MapPin, Building, Calendar, Users } from 'lucide-react'
 
 const HotelProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false)

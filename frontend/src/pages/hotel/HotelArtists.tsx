@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Star, MapPin, Calendar, Heart } from 'lucide-react'
+import { Search, MapPin, Calendar, Heart } from 'lucide-react'
 
 const HotelArtists: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')

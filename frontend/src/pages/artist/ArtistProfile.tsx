@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Camera, Upload, Save, Edit3, Star, MapPin, Music, Calendar } from 'lucide-react'
+import { Camera, Upload, Save, Edit3, MapPin, Music, Calendar } from 'lucide-react'
 
 const ArtistProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false)
