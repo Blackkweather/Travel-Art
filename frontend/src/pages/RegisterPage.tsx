@@ -82,7 +82,7 @@ const RegisterPage: React.FC = () => {
                     className="sr-only"
                   />
                   <div className={`w-full text-center ${watchedRole === 'ARTIST' ? 'text-gold' : 'text-gray-600'}`}>
-                    <div className="text-2xl mb-2">🎨</div>
+                    <div className="text-2xl mb-2">◆</div>
                     <div className="font-medium">Artist</div>
                     <div className="text-sm">Perform & Create</div>
                   </div>
@@ -96,7 +96,7 @@ const RegisterPage: React.FC = () => {
                     className="sr-only"
                   />
                   <div className={`w-full text-center ${watchedRole === 'HOTEL' ? 'text-gold' : 'text-gray-600'}`}>
-                    <div className="text-2xl mb-2">🏨</div>
+                    <div className="text-2xl mb-2">◈</div>
                     <div className="font-medium">Hotel</div>
                     <div className="text-sm">Host & Entertain</div>
                   </div>
