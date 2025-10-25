@@ -269,6 +269,9 @@ const TopArtistsPage: React.FC = () => {
                     e.currentTarget.src = 'https://via.placeholder.com/400x400/0B1F3F/C9A63C?text=' + encodeURIComponent(artist.name)
                   }}
                 />
+                <div className="absolute top-4 right-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-medium">
+                  ⭐ {artist.rating}
+                </div>
               </div>
               
               <div className="p-6">
