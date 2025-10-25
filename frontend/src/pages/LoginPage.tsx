@@ -55,8 +55,22 @@ const LoginPage: React.FC = () => {
               onError={(e) => {
                 console.log('Logo failed to load:', e.currentTarget.src);
                 e.currentTarget.style.display = 'none';
+                // Show fallback text logo
+                const fallback = document.getElementById('logo-fallback');
+                if (fallback) fallback.style.display = 'block';
               }}
+              onLoad={(e) => {
+                console.log('Logo loaded successfully:', e.currentTarget.src);
+              }}
+              style={{ border: '2px solid red' }} // Temporary debug border
             />
+            <div id="logo-fallback" className="hidden">
+              <div className="text-4xl font-serif font-bold text-navy">
+                <span className="text-navy">TRAVEL</span>
+                <span className="text-gold mx-2">+</span>
+                <span className="text-navy">ART</span>
+              </div>
+            </div>
           </div>
           <h2 className="text-3xl font-serif font-bold text-navy gold-underline">
             Welcome Back
