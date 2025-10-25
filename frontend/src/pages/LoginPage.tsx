@@ -47,11 +47,15 @@ const LoginPage: React.FC = () => {
         className="max-w-md w-full space-y-8"
       >
         <div className="text-center">
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-8">
             <img 
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
-              className="h-32 w-auto"
+              className="h-24 w-auto"
+              onError={(e) => {
+                console.log('Logo failed to load:', e.currentTarget.src);
+                e.currentTarget.style.display = 'none';
+              }}
             />
           </div>
           <h2 className="text-3xl font-serif font-bold text-navy gold-underline">
