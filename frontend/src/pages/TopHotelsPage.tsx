@@ -195,10 +195,6 @@ const TopHotelsPage: React.FC = () => {
                   alt={hotel.name}
                   className="w-full h-64 object-cover"
                 />
-                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1 shadow-lg border border-white/20">
-                  <span className="text-gold font-bold text-base">◆</span>
-                  <span className="font-bold">{hotel.rating}</span>
-                </div>
               </div>
               
               <div className="p-6">
