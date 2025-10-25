@@ -174,6 +174,27 @@ const RegisterPage: React.FC = () => {
                 <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
+
+            <div>
+              <label htmlFor="phone" className="form-label">
+                Phone Number
+              </label>
+              <input
+                {...register('phone', {
+                  required: 'Phone number is required',
+                  pattern: {
+                    value: /^[\+]?[1-9][\d]{0,15}$/,
+                    message: 'Please enter a valid phone number'
+                  }
+                })}
+                type="tel"
+                className="form-input"
+                placeholder="Enter your phone number"
+              />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center">
