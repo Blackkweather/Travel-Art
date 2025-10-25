@@ -832,7 +832,6 @@ const LandingPage: React.FC = () => {
               {[...hotels, ...hotels].map((hotel, index) => (
                 <div key={`top-hotel-${hotel.id}-${index}`} className="carousel-item w-80">
                   <div className="card-showcase relative">
-                    <div className="top-badge">TOP</div>
                     <div className="relative mb-4">
                       <img 
                         src={hotel.image} 
