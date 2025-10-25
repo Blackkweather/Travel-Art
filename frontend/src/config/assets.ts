@@ -100,29 +100,18 @@ export const getAssetConfig = (): AssetConfig => {
   const environment = (import.meta as any).env?.MODE || 'development'
   const cdnProvider = (import.meta as any).env?.VITE_CDN_PROVIDER || 'local'
   
+  console.log('Environment:', environment)
+  console.log('CDN Provider:', cdnProvider)
+  
   // In development, always use local assets
   if (environment === 'development') {
+    console.log('Using development config')
     return developmentConfig
   }
   
   // In production, default to Cloudinary if no provider is specified
-  switch (cdnProvider) {
-    case 'jsdelivr':
-      return productionConfig
-    case 'cloudflare':
-      return cloudflareR2Config
-    case 'aws':
-      return awsS3Config
-    case 'vercel':
-      return vercelBlobConfig
-    case 'cloudinary':
-      return cloudinaryConfig
-    case 'local':
-      return developmentConfig
-    default:
-      // Default to Cloudinary in production for better reliability
-      return cloudinaryConfig
-  }
+  console.log('Using production config with Cloudinary')
+  return cloudinaryConfig
 }
 
 // Export the current configuration
@@ -131,7 +120,9 @@ export const assets = getAssetConfig()
 // Helper function to get logo URL with fallback
 export const getLogoUrl = (type: keyof AssetConfig['logo'] = 'transparent'): string => {
   const config = getAssetConfig()
-  return config.logo[type] || config.logo.transparent
+  const url = config.logo[type] || config.logo.transparent
+  console.log(`Getting logo URL for type '${type}':`, url)
+  return url
 }
 
 // Helper function to get icon URL with fallback
