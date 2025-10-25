@@ -258,9 +258,6 @@ const HotelArtists: React.FC = () => {
               >
                 <Heart className={`w-4 h-4 ${artist.isFavorite ? 'fill-current' : ''}`} />
               </button>
-              <div className="absolute top-4 left-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-medium">
-                ⭐ {artist.rating}
-              </div>
             </div>
             
             <div className="p-6">
