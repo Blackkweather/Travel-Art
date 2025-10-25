@@ -255,7 +255,7 @@ const ArtistReferrals: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <Star className="w-4 h-4 text-gold" />
+                  <span className="text-gold font-bold">◆</span>
                   <span className="text-sm text-gray-600">4.8</span>
                 </div>
               </div>

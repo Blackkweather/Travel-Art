@@ -794,8 +794,9 @@ const LandingPage: React.FC = () => {
                         alt={artist.name}
                         className="w-full h-48 object-cover rounded-lg"
                       />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy">
-                        ⭐ {artist.rating}
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
+                        <span className="text-gold font-bold">◆</span>
+                        <span>{artist.rating}</span>
                       </div>
                     </div>
                     <h3 className="text-xl font-serif font-bold text-navy mb-2">{artist.name}</h3>
