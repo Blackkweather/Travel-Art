@@ -263,8 +263,9 @@ const PartnersPage: React.FC = () => {
                     e.currentTarget.src = 'https://via.placeholder.com/600x400/0B1F3F/C9A63C?text=' + encodeURIComponent(partner.name)
                   }}
                 />
-                <div className="absolute top-4 right-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-medium">
-                  ⭐ {partner.rating}
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
+                  <span className="text-gold font-bold">◆</span>
+                  <span>{partner.rating}</span>
                 </div>
                 <div className="absolute bottom-4 left-4 bg-navy text-white px-3 py-1 rounded-full text-sm font-medium">
                   {partner.category}

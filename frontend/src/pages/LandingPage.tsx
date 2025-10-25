@@ -588,8 +588,9 @@ const LandingPage: React.FC = () => {
                         alt={hotel.name}
                         className="w-full h-48 object-cover rounded-lg"
                       />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy">
-                        ⭐ {hotel.rating}
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
+                        <span className="text-gold font-bold">◆</span>
+                        <span>{hotel.rating}</span>
                       </div>
                     </div>
                     <div className="flex-1 flex flex-col justify-between">

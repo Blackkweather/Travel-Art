@@ -246,7 +246,7 @@ const HotelBookings: React.FC = () => {
                   </h3>
                   <p className="text-gold font-medium mb-2">{booking.artist.discipline}</p>
                   <div className="flex items-center space-x-2 mb-2">
-                    <Star className="w-4 h-4 text-gold" />
+                    <span className="text-gold font-bold">◆</span>
                     <span className="text-sm text-gray-600">{booking.artist.rating}</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
