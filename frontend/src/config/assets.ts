@@ -82,13 +82,16 @@ const vercelBlobConfig: AssetConfig = {
 // Cloudinary configuration
 const cloudinaryConfig: AssetConfig = {
   logo: {
-    transparent: 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/logo-transparent.png',
+    // Use the working logo as the main transparent logo
+    transparent: 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/logo_1_final_fcn3q5.png',
     final: 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/logo_1_final_fcn3q5.png',
-    test: 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/test-logo.png'
+    test: 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/logo_1_final_fcn3q5.png'
   },
   icons: {
-    compass: 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/compass-icon.svg',
-    favicon: 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/favicon.svg'
+    // Use a simple compass emoji as fallback for compass icon
+    compass: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjQzlBNjNDIi8+Cjwvc3ZnPgo=',
+    // Use a simple favicon as fallback
+    favicon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzBCMUYzRiIvPgo8cGF0aCBkPSJNMTYgOEwxOCA5TDE2IDE2TDE0IDE1TDE2IDhaIiBmaWxsPSIjQzlBNjNDIi8+Cjwvc3ZnPgo='
   }
 }
 
