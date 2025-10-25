@@ -332,10 +332,9 @@ const LandingPage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-navy/20 via-transparent to-gold/10"></div>
         </motion.div>
 
-
         {/* Hero Content */}
         <motion.div 
-          className="container mx-auto px-6 text-center relative z-10"
+          className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"
           style={{ opacity: heroOpacity }}
         >
           <motion.div
@@ -343,67 +342,66 @@ const LandingPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="hero-title">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif font-bold text-white mb-4 sm:mb-6 leading-tight">
               Where Creativity Meets
-              <span className="block text-gold">
+              <span className="block text-gold mt-2 sm:mt-4">
                 {currentText}
                 <span className="animate-pulse text-gold">|</span>
               </span>
             </h1>
-            <p className="hero-subtitle">
+            <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed px-4">
               Connect luxury hotels with talented artists for unforgettable rooftop performances, 
               intimate concerts, and magical experiences that inspire and delight.
             </p>
             
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
-              <Link to="/register?role=artist" className="btn-gold text-lg px-8 py-4 animate-gold-glow hover:scale-105 transition-all duration-300">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-8 sm:mb-12 px-4">
+              <Link to="/register?role=artist" className="w-full sm:w-auto bg-gold text-navy px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-300 text-base sm:text-lg shadow-lg hover:scale-105 flex items-center justify-center">
                 Join as Artist
-                <ArrowRight className="w-5 h-5 ml-2 inline" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
               </Link>
-              <Link to="/register?role=hotel" className="btn-gold-outline text-lg px-8 py-4 hover:scale-105 transition-all duration-300">
+              <Link to="/register?role=hotel" className="w-full sm:w-auto border-2 border-gold text-gold px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold hover:bg-gold hover:text-navy transition-all duration-300 text-base sm:text-lg hover:scale-105 flex items-center justify-center">
                 Join as Hotel
               </Link>
             </div>
           </motion.div>
         </motion.div>
-
       </section>
 
       {/* About/Story Section - 60/40 Split */}
-      <section ref={aboutRef} className="py-24 bg-cream relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-5 gap-12 items-center">
+      <section ref={aboutRef} className="py-12 sm:py-16 md:py-20 lg:py-24 bg-cream relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-5 gap-8 sm:gap-12 items-center">
             {/* Text Content - 60% */}
             <motion.div 
-              className="lg:col-span-3"
+              className="lg:col-span-3 order-2 lg:order-1"
               initial={{ opacity: 0, x: -50 }}
               animate={aboutInView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.8 }}
             >
-              <div className="gold-underline mb-6">
-                <h2 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-4">
+              <div className="gold-underline mb-4 sm:mb-6">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-navy mb-2 sm:mb-4">
                   We Love Artists
                 </h2>
               </div>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4 sm:mb-6 md:mb-8 leading-relaxed">
                 At Travel Art, we believe that exceptional hospitality and artistic talent create 
                 the most memorable experiences. Our platform connects world-class artists with 
                 luxury hotels to create moments that guests will treasure forever.
               </p>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                 From intimate jazz sessions on Parisian rooftops to sunset photography workshops 
                 in Tokyo, we curate experiences that celebrate creativity and bring communities together.
               </p>
-              <Link to="/how-it-works" className="btn-primary inline-flex items-center">
+              <Link to="/how-it-works" className="btn-primary inline-flex items-center text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
                 Learn More
-                <ChevronRight className="w-5 h-5 ml-2" />
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
               </Link>
             </motion.div>
 
             {/* Image Content - 40% */}
             <motion.div 
-              className="lg:col-span-2"
+              className="lg:col-span-2 order-1 lg:order-2"
               initial={{ opacity: 0, x: 50 }}
               animate={aboutInView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -412,11 +410,11 @@ const LandingPage: React.FC = () => {
                 <img 
                   src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
                   alt="Artist performing at luxury hotel" 
-                  className="w-full h-96 object-cover rounded-xl shadow-luxury"
+                  className="w-full h-64 sm:h-80 md:h-96 object-cover rounded-xl shadow-luxury"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy/20 to-transparent rounded-xl"></div>
-                <div className="absolute bottom-6 left-6 text-white">
-                  <p className="text-sm font-medium">Live Performance</p>
+                <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 text-white">
+                  <p className="text-xs sm:text-sm font-medium">Live Performance</p>
                   <p className="text-xs opacity-80">The Ritz Paris</p>
                 </div>
               </div>
