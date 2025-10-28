@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { Star, MapPin, Calendar, Users } from 'lucide-react'
 import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
+import { ArtistRank, getQuickRank, RANK_CONFIG } from '@/components/ArtistRank'
 
 const TopArtistsPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -269,17 +270,27 @@ const TopArtistsPage: React.FC = () => {
                     e.currentTarget.src = 'https://via.placeholder.com/400x400/0B1F3F/C9A63C?text=' + encodeURIComponent(artist.name)
                   }}
                 />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
-                  <span className="text-gold font-bold">◆</span>
-                  <span>{artist.rating}</span>
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
+                  <ArtistRank tier={getQuickRank(artist.rating, artist.bookings)} size="sm" />
+                  <span className="text-sm font-semibold text-navy">{artist.rating}</span>
                 </div>
               </div>
               
               <div className="p-6">
-                <h3 className="text-xl font-serif font-semibold text-navy mb-2">
-                  {artist.name}
-                </h3>
-                <p className="text-gold font-medium mb-3">{artist.discipline}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xl font-serif font-semibold text-navy">
+                    {artist.name}
+                  </h3>
+                  <ArtistRank 
+                    tier={getQuickRank(artist.rating, artist.bookings)} 
+                    size="md"
+                    showLabel={false}
+                  />
+                </div>
+                <p className="text-gold font-medium mb-1">{artist.discipline}</p>
+                <p className="text-xs text-gray-500 mb-3">
+                  {RANK_CONFIG[getQuickRank(artist.rating, artist.bookings)].label} • {RANK_CONFIG[getQuickRank(artist.rating, artist.bookings)].description}
+                </p>
                 <p className="text-gray-600 text-sm mb-4 flex items-center">
                   <MapPin className="w-4 h-4 mr-2" />
                   {artist.location}

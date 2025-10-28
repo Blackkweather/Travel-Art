@@ -46,7 +46,6 @@ const ArtistMembership: React.FC = () => {
   const membershipStats = [
     { label: 'Member Since', value: 'Jan 15, 2023', icon: Calendar },
     { label: 'Total Performances', value: '24', icon: Star },
-    { label: 'Earnings This Year', value: '€12,400', icon: CreditCard },
     { label: 'Referrals Sent', value: '8', icon: Users }
   ]
 
@@ -81,7 +80,7 @@ const ArtistMembership: React.FC = () => {
           Membership & Billing
         </h1>
         <p className="text-gray-600">
-          Manage your membership plan and track your performance earnings
+          Manage your membership plan and track your performance
         </p>
       </div>
 
@@ -103,7 +102,7 @@ const ArtistMembership: React.FC = () => {
         </div>
 
         {/* Membership Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {membershipStats.map((stat, index) => {
             const Icon = stat.icon
             return (

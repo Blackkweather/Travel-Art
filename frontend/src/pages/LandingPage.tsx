@@ -6,13 +6,13 @@ import {
   Users, 
   MapPin, 
   Compass,
-  Star,
   ChevronRight,
   Heart,
   Award,
   Globe
 } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
+import { ArtistRank, getQuickRank } from '@/components/ArtistRank'
 
 const LandingPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -21,7 +21,6 @@ const LandingPage: React.FC = () => {
   const experienceRef = useRef<HTMLDivElement>(null)
   const stepsRef = useRef<HTMLDivElement>(null)
   const showcaseRef = useRef<HTMLDivElement>(null)
-  const pricingRef = useRef<HTMLDivElement>(null)
   const journalRef = useRef<HTMLDivElement>(null)
   const topArtistsRef = useRef<HTMLDivElement>(null)
   const topHotelsRef = useRef<HTMLDivElement>(null)
@@ -72,7 +71,6 @@ const LandingPage: React.FC = () => {
   const experienceInView = useInView(experienceRef, { once: true, margin: "-100px" })
   const stepsInView = useInView(stepsRef, { once: true, margin: "-100px" })
   const showcaseInView = useInView(showcaseRef, { once: true, margin: "-100px" })
-  const pricingInView = useInView(pricingRef, { once: true, margin: "-100px" })
   const journalInView = useInView(journalRef, { once: true, margin: "-100px" })
   const topArtistsInView = useInView(topArtistsRef, { once: true, margin: "-100px" })
   const topHotelsInView = useInView(topHotelsRef, { once: true, margin: "-100px" })
@@ -153,6 +151,7 @@ const LandingPage: React.FC = () => {
       specialty: "Jazz Saxophonist",
       image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
       rating: 4.9,
+      bookings: 52,
       location: "Paris, France"
     },
     {
@@ -161,6 +160,7 @@ const LandingPage: React.FC = () => {
       specialty: "Visual Artist",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
       rating: 4.8,
+      bookings: 35,
       location: "Tokyo, Japan"
     },
     {
@@ -169,6 +169,7 @@ const LandingPage: React.FC = () => {
       specialty: "Photographer",
       image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
       rating: 4.9,
+      bookings: 48,
       location: "New York, USA"
     },
     {
@@ -177,6 +178,7 @@ const LandingPage: React.FC = () => {
       specialty: "DJ & Producer",
       image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
       rating: 4.7,
+      bookings: 28,
       location: "Ibiza, Spain"
     }
   ]
@@ -602,9 +604,9 @@ const LandingPage: React.FC = () => {
                         alt={artist.name}
                         className="w-full h-48 object-cover rounded-lg"
                       />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
-                        <span className="text-gold font-bold">◆</span>
-                        <span>{artist.rating}</span>
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
+                        <ArtistRank tier={getQuickRank(artist.rating, artist.bookings)} size="sm" />
+                        <span className="text-sm font-semibold text-navy">{artist.rating}</span>
                       </div>
                     </div>
                     <h3 className="text-xl font-serif font-bold text-navy mb-2">{artist.name}</h3>
@@ -670,112 +672,6 @@ const LandingPage: React.FC = () => {
               </div>
       </section>
         
-      {/* Membership/Pricing Split */}
-      <section ref={pricingRef} className="py-24 bg-navy relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={pricingInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Membership Plans</h2>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto">
-              Choose the plan that fits your creative journey
-            </p>
-            </motion.div>
-
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Artists Plan */}
-            <motion.div
-              className="relative overflow-hidden rounded-xl"
-              initial={{ opacity: 0, x: -50 }}
-              animate={pricingInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <div className="parallax-bg" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80')" }}></div>
-              <div className="gradient-overlay"></div>
-              <div className="relative z-10 p-8 text-white">
-                <div className="mb-6">
-                  <h3 className="text-3xl font-serif font-bold mb-4">For Artists</h3>
-                  <div className="flex items-center gap-4 mb-4">
-                  <span className="text-4xl font-bold text-gold">50-100€</span>
-                    <span className="text-lg">per year</span>
-                  </div>
-                  <p className="text-white/90 mb-6">
-                    Join our exclusive community of artists and showcase your talent to luxury hotels worldwide.
-                  </p>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold" />
-                    <span>Premium profile visibility</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold" />
-                    <span>Direct booking opportunities</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold" />
-                    <span>Free Travel Art t-shirt</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold" />
-                    <span>24/7 support</span>
-                  </li>
-                </ul>
-                <Link to="/register?role=artist" className="btn-gold w-full text-center">
-                  Join as Artist
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* Hotels Plan */}
-            <motion.div
-              className="relative overflow-hidden rounded-xl"
-              initial={{ opacity: 0, x: 50 }}
-              animate={pricingInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              <div className="parallax-bg" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80')" }}></div>
-              <div className="gradient-overlay"></div>
-              <div className="relative z-10 p-8 text-white">
-                <div className="mb-6">
-                  <h3 className="text-3xl font-serif font-bold mb-4">For Hotels</h3>
-                  <div className="flex items-center gap-4 mb-4">
-                    <span className="text-4xl font-bold text-gold">Per Artist</span>
-                    <span className="text-lg">credit system</span>
-                  </div>
-                  <p className="text-white/90 mb-6">
-                    Enhance your guest experience with curated artistic performances and cultural events.
-                  </p>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold" />
-                    <span>Curated artist selection</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold" />
-                    <span>Flexible booking system</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold" />
-                    <span>Event management support</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Star className="w-5 h-5 text-gold" />
-                    <span>Marketing assistance</span>
-                  </li>
-                </ul>
-                <Link to="/register?role=hotel" className="btn-gold w-full text-center">
-                  Join as Hotel
-                </Link>
-              </div>
-            </motion.div>
-              </div>
-            </div>
-      </section>
 
       {/* Journal/Stories Section */}
       <section ref={journalRef} className="py-24 bg-white relative overflow-hidden">
@@ -851,9 +747,9 @@ const LandingPage: React.FC = () => {
                         alt={artist.name}
                         className="w-full h-48 object-cover rounded-lg"
                       />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
-                        <span className="text-gold font-bold">◆</span>
-                        <span>{artist.rating}</span>
+                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
+                        <ArtistRank tier={getQuickRank(artist.rating, artist.bookings)} size="sm" />
+                        <span className="text-sm font-semibold text-navy">{artist.rating}</span>
                       </div>
                     </div>
                     <h3 className="text-xl font-serif font-bold text-navy mb-2">{artist.name}</h3>
@@ -1004,7 +900,7 @@ const LandingPage: React.FC = () => {
           </div>
           
           <div className="border-t border-white/20 mt-12 pt-8 text-center text-white/60">
-            <p>&copy; 2024 Travel Art. All rights reserved. | Applied Club Med Live-inspired redesign — Travel Art 2025.</p>
+            <p>&copy; 2024 Travel Art. All rights reserved.</p>
           </div>
         </div>
       </footer>

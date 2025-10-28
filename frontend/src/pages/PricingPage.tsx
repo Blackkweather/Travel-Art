@@ -1,8 +1,9 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Check, Star, CreditCard, Users, Calendar } from 'lucide-react'
+import { Check, Star, CreditCard, Users, Calendar, Award } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { ArtistRank, RANK_CONFIG, type RankTier } from '../components/ArtistRank'
 
 const PricingPage: React.FC = () => {
   const artistPlans = [
@@ -12,6 +13,7 @@ const PricingPage: React.FC = () => {
       period: '/year',
       description: 'Perfect for emerging artists starting their journey',
       features: [
+        'Earn €50 per booking credit',
         'Create detailed artist profile',
         'Upload portfolio (up to 20 images)',
         'Set availability calendar',
@@ -28,6 +30,7 @@ const PricingPage: React.FC = () => {
       period: '/year',
       description: 'Ideal for established artists seeking more opportunities',
       features: [
+        'Earn €50 per booking credit',
         'Everything in Artist plan',
         'Unlimited portfolio uploads',
         'Priority in search results',
@@ -48,7 +51,7 @@ const PricingPage: React.FC = () => {
       price: '€1,500',
       description: 'Perfect for boutique hotels and intimate venues',
       features: [
-        '10 artist booking credits',
+        '10 artist booking credits (€150 each - First Purchase)',
         'Access to all artist profiles',
         'Basic venue management',
         'Booking confirmation system',
@@ -60,10 +63,11 @@ const PricingPage: React.FC = () => {
     {
       name: 'Professional Package',
       credits: '25',
+      bonusCredits: '4',
       price: '€3,500',
       description: 'Ideal for luxury hotels with regular events',
       features: [
-        '25 artist booking credits',
+        '25 artist booking credits + 4 FREE bonus credits (€150 each - First Purchase)',
         'Everything in Starter',
         'Advanced venue management',
         'Priority artist matching',
@@ -76,10 +80,11 @@ const PricingPage: React.FC = () => {
     {
       name: 'Enterprise Package',
       credits: '50',
+      bonusCredits: '10',
       price: '€6,500',
       description: 'For large hotel chains and exclusive venues',
       features: [
-        '50 artist booking credits',
+        '50 artist booking credits + 10 FREE bonus credits (€150 each - First Purchase)',
         'Everything in Professional',
         'Multi-venue management',
         'Exclusive artist access',
@@ -142,7 +147,7 @@ const PricingPage: React.FC = () => {
               <span className="block text-gold">Pricing</span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Choose the perfect plan for your needs. Artists pay annual membership, hotels purchase credits for bookings.
+              Choose the perfect plan for your needs. Artists earn €50 per booking and pay annual membership. Hotels get 50% off first credit purchase.
             </p>
           </motion.div>
         </div>
@@ -206,6 +211,28 @@ const PricingPage: React.FC = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* Artist Earnings Explanation */}
+        <div className="max-w-4xl mx-auto mt-12">
+          <div className="card-luxury bg-gold/10 border-2 border-gold">
+            <div className="flex items-start space-x-4">
+              <div className="bg-gold/20 p-3 rounded-full">
+                <CreditCard className="w-8 h-8 text-gold" />
+              </div>
+              <div>
+                <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+                  How Artist Earnings Work
+                </h3>
+                <p className="text-gray-700 mb-2">
+                  Every time a hotel books you using 1 credit (€300), you earn <strong className="text-gold">€50</strong> directly.
+                </p>
+                <p className="text-sm text-gray-600">
+                  Multiple bookings = more earnings! Plus accommodation and meals are included during your performance stay.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Hotel Plans */}
@@ -218,6 +245,12 @@ const PricingPage: React.FC = () => {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Purchase credits to book artists for your luxury venues and events
             </p>
+            <div className="mt-6 inline-flex items-center space-x-2 bg-gold/20 px-6 py-3 rounded-xl">
+              <Star className="w-5 h-5 text-gold" />
+              <p className="text-navy font-semibold">
+                First Purchase: 50% OFF - €150 per credit | Regular Price: €300 per credit
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -245,15 +278,33 @@ const PricingPage: React.FC = () => {
                   <div className="mb-4">
                     <span className="text-3xl font-bold text-navy">{plan.credits}</span>
                     <span className="text-gray-600 ml-2">credits</span>
+                    {plan.bonusCredits && (
+                      <div className="mt-2">
+                        <span className="bg-gold/20 text-gold px-3 py-1 rounded-full text-sm font-bold">
+                          + {plan.bonusCredits} FREE BONUS
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-2xl font-bold text-gold">{plan.price}</div>
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-gold">{plan.price}</div>
+                    <div className="text-sm text-gray-500">
+                      <span className="line-through">€{parseInt(plan.price.replace('€', '').replace(',', '')) * 2}</span>
+                      <span className="ml-2 text-green-600 font-semibold">50% OFF First Purchase</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Next purchase: €300 per credit
+                    </div>
+                  </div>
                 </div>
 
                 <ul className="space-y-4 mb-8">
                   {plan.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-start">
                       <Check className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-600">{feature}</span>
+                      <span className={`${feature.includes('FREE') ? 'text-gold font-semibold' : 'text-gray-600'}`}>
+                        {feature}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -267,6 +318,71 @@ const PricingPage: React.FC = () => {
                 </button>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Artist Ranking System */}
+      <div className="bg-white py-20">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-serif font-bold text-navy mb-6 gold-underline">
+              Artist Ranking System
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Artists earn ranks based on performance, ratings, and experience. Each tier unlocks new opportunities and visibility.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {(Object.keys(RANK_CONFIG) as RankTier[]).map((tier, index) => (
+              <motion.div
+                key={tier}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="card-luxury text-center hover:scale-105 transition-transform"
+                style={{ borderTop: `4px solid ${RANK_CONFIG[tier].color}` }}
+              >
+                <div className="flex justify-center mb-4">
+                  <ArtistRank tier={tier} size="lg" animated={false} />
+                </div>
+                <h3 
+                  className="text-2xl font-serif font-bold mb-2"
+                  style={{ color: RANK_CONFIG[tier].color }}
+                >
+                  {RANK_CONFIG[tier].label}
+                </h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  {RANK_CONFIG[tier].description}
+                </p>
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+                    {tier === 'red' && 'Starting Point - Everyone Begins Here'}
+                    {tier === 'blue' && '2+ Bookings'}
+                    {tier === 'green' && '10+ Bookings'}
+                    {tier === 'gold' && '20+ Bookings'}
+                    {tier === 'platinum' && '30+ Bookings'}
+                    {tier === 'diamond' && 'On Request Only'}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center space-y-4">
+            <div className="inline-flex items-center space-x-2 bg-blue-50 border-2 border-blue-500 px-6 py-4 rounded-xl">
+              <Award className="w-6 h-6 text-blue-600" />
+              <p className="text-navy font-medium">
+                All artists start as <span className="font-bold text-blue-600">Rising (Blue)</span> and can progress to <span className="font-bold text-gray-600">Master (Platinum)</span> through excellent performance!
+              </p>
+            </div>
+            <div className="inline-flex items-center space-x-2 bg-cyan-50 border-2 border-cyan-500 px-6 py-4 rounded-xl">
+              <Star className="w-6 h-6 text-cyan-600" />
+              <p className="text-navy font-medium">
+                <span className="font-bold text-cyan-500">Superstar (Diamond)</span> tier is exclusive and available on request only to exceptional artists!
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -322,10 +438,10 @@ const PricingPage: React.FC = () => {
               className="card-luxury"
             >
               <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                How do artist bookings work?
+                How does pricing work?
               </h3>
               <p className="text-gray-600">
-                Hotels purchase credits and use them to book artists for performances. Each booking typically costs 1-3 credits depending on the artist's level and performance duration. Artists receive accommodation and performance fees.
+                Artists pay an annual membership fee to join the platform. Hotels purchase credits to book artists. We offer different packages to suit your needs, with special offers for new partners.
               </p>
             </motion.div>
 
@@ -336,10 +452,10 @@ const PricingPage: React.FC = () => {
               className="card-luxury"
             >
               <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                Can I cancel or reschedule bookings?
+                Can I cancel or reschedule?
               </h3>
               <p className="text-gray-600">
-                Yes! We offer flexible cancellation policies. Hotels can cancel up to 48 hours before the performance and receive a full credit refund. Artists can also reschedule with sufficient notice.
+                Yes! We offer flexible policies. You can cancel or reschedule with advance notice. Specific terms vary depending on your membership or package.
               </p>
             </motion.div>
 
@@ -350,10 +466,10 @@ const PricingPage: React.FC = () => {
               className="card-luxury"
             >
               <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                How are artists verified?
+                What payment methods are accepted?
               </h3>
               <p className="text-gray-600">
-                All artists go through a comprehensive verification process including portfolio review, reference checks, and performance history verification. We maintain high standards to ensure quality experiences.
+                We accept all major credit cards, bank transfers, and PayPal. All payments are processed securely.
               </p>
             </motion.div>
 
@@ -364,10 +480,10 @@ const PricingPage: React.FC = () => {
               className="card-luxury"
             >
               <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                What payment methods do you accept?
+                Is there a free trial?
               </h3>
               <p className="text-gray-600">
-                We accept all major credit cards, bank transfers, and PayPal. All payments are processed securely with fraud protection and encrypted data transmission.
+                Contact us to learn about special introductory offers and trial options for new members.
               </p>
             </motion.div>
           </div>

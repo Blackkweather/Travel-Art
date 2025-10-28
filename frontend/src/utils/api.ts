@@ -149,8 +149,15 @@ export const adminApi = {
   getBookings: (params?: any) =>
     apiClient.get('/admin/bookings', params),
   
-  exportData: (type: string) =>
-    apiClient.get(`/admin/export?type=${type}`, { responseType: 'blob' }),
+  exportData: async (type: string) => {
+    const response = await axios.get(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api'}/admin/export?type=${type}`, {
+      responseType: 'blob',
+      headers: {
+        'Authorization': `Bearer ${useAuthStore.getState().token}`
+      }
+    })
+    return response
+  },
 }
 
 // Common API
