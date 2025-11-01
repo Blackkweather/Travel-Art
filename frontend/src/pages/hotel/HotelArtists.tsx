@@ -135,7 +135,7 @@ const HotelArtists: React.FC = () => {
 
   const toggleFavorite = (artistId: string) => {
     // Toggle favorite logic here
-    console.log('Toggle favorite for artist:', artistId)
+    // TODO: Implement favorite toggle functionality
   }
 
   const getAvailabilityColor = (availability: string) => {

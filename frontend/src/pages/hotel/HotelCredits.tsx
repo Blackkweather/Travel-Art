@@ -139,7 +139,7 @@ const HotelCredits: React.FC = () => {
 
   const handlePurchase = (packageId: string) => {
     // Handle purchase logic here
-    console.log('Purchasing package:', packageId)
+    // TODO: Implement purchase functionality
   }
 
   return (

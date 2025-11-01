@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { User } from '@/types'
 import { LogOut, Bell, Settings, Menu, X, User as UserIcon } from 'lucide-react'
+import { getLogoUrl } from '@/config/assets'
 
 interface NavbarProps {
   user: User
@@ -25,12 +27,26 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo - Top Left */}
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center">
-              <span className="text-navy font-bold text-lg">🧭</span>
+          <Link to="/dashboard" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <img 
+              src={getLogoUrl('transparent')} 
+              alt="Travel Art" 
+              className="h-8 w-auto"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+                const fallback = e.currentTarget.nextElementSibling
+                if (fallback) {
+                  (fallback as HTMLElement).style.display = 'flex'
+                }
+              }}
+            />
+            <div className="hidden items-center space-x-2">
+              <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center">
+                <span className="text-navy font-bold text-lg">🧭</span>
+              </div>
+              <h1 className="text-xl font-serif font-bold text-white">Travel Art</h1>
             </div>
-            <h1 className="text-xl font-serif font-bold text-white">Travel Art</h1>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">

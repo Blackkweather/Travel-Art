@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
+import { useAuthStore } from '@/store/authStore'
 
 const Header: React.FC = () => {
+  const { user, logout } = useAuthStore()
   const { scrollY } = useScroll()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
@@ -34,7 +36,20 @@ const Header: React.FC = () => {
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
               className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
+              onError={(e) => {
+                // Hide broken image and show fallback
+                e.currentTarget.style.display = 'none'
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                if (fallback) {
+                  fallback.style.display = 'flex'
+                }
+              }}
             />
+            <div className="hidden items-center text-2xl md:text-3xl font-serif font-bold text-white">
+              <span className="text-white">TRAVEL</span>
+              <span className="text-gold mx-2">+</span>
+              <span className="text-white">ART</span>
+            </div>
           </Link>
           
           {/* Desktop Navigation */}
@@ -68,14 +83,35 @@ const Header: React.FC = () => {
           
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <motion.div style={{ color: textColor }}>
-              <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
-                Sign In
-              </Link>
-            </motion.div>
-            <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
-              Join
-            </Link>
+            {user ? (
+              <>
+                <motion.div style={{ color: textColor }}>
+                  <Link to="/dashboard" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
+                    Dashboard
+                  </Link>
+                </motion.div>
+                <button
+                  onClick={() => {
+                    logout()
+                    window.location.href = '/'
+                  }}
+                  className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <motion.div style={{ color: textColor }}>
+                  <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
+                    Sign In
+                  </Link>
+                </motion.div>
+                <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
+                  Join
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -139,20 +175,44 @@ const Header: React.FC = () => {
             
             {/* Mobile Action Buttons */}
             <div className="pt-4 border-t border-white/20 space-y-3">
-              <Link 
-                to="/login" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-              <Link 
-                to="/register" 
-                className="block bg-gold text-navy px-6 py-3 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-center shadow-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Join Travel Art
-              </Link>
+              {user ? (
+                <>
+                  <Link 
+                    to="/dashboard" 
+                    className="block text-white hover:text-gold transition-colors font-medium py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout()
+                      setIsMobileMenuOpen(false)
+                      window.location.href = '/'
+                    }}
+                    className="w-full bg-gold text-navy px-6 py-3 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-center shadow-lg"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    to="/login" 
+                    className="block text-white hover:text-gold transition-colors font-medium py-2"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Link 
+                    to="/register" 
+                    className="block bg-gold text-navy px-6 py-3 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-center shadow-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Join Travel Art
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </motion.div>

@@ -48,7 +48,7 @@ router.post('/referrals', authenticate, asyncHandler(async (req: AuthRequest, re
   });
 
   // TODO: Send email invitation
-  console.log(`Referral invitation sent to ${inviteeEmail} by ${req.user!.email}`);
+  // Referral invitation sent successfully
 
   res.status(201).json({
     success: true,
