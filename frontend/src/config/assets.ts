@@ -16,24 +16,32 @@ const isProduction = import.meta.env.PROD
 const useCloudinary = import.meta.env.VITE_USE_CLOUDINARY === 'true'
 const cloudinaryCloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'desowqsmy'
 const cloudinaryVersion = import.meta.env.VITE_CLOUDINARY_VERSION || 'v1761401364'
+const logoFinalOverride = import.meta.env.VITE_LOGO_FINAL_URL
+const logoTransparentOverride = import.meta.env.VITE_LOGO_TRANSPARENT_URL
 
 // Cloudinary URLs (fallback if local assets fail)
 const cloudinaryBaseUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${cloudinaryVersion}`
 
+// Respect app base URL so assets load under sub-path deployments (e.g., MAMP subfolders)
+const baseUrl = import.meta.env.BASE_URL || '/'
+const withBase = (p: string) => `${baseUrl.replace(/\/$/, '')}/${p.replace(/^\//, '')}`
+
 // Asset configuration with CDN fallback support
 const assetConfig: AssetConfig = {
   logo: {
-    transparent: useCloudinary && isProduction 
-      ? `${cloudinaryBaseUrl}/logo_1_final_fcn3q5.png`
-      : '/logo-transparent.png',
-    final: useCloudinary && isProduction
-      ? `${cloudinaryBaseUrl}/logo_1_final_fcn3q5.png`
-      : '/logo-1-final.png',
-    test: '/test-logo.png'
+    transparent: logoTransparentOverride 
+      || (useCloudinary && isProduction 
+        ? `${cloudinaryBaseUrl}/logo_1_final_fcn3q5.png`
+        : withBase('logo-transparent.png')),
+    final: logoFinalOverride 
+      || (useCloudinary && isProduction
+        ? `${cloudinaryBaseUrl}/logo_1_final_fcn3q5.png`
+        : withBase('logo-1-final.png')),
+    test: withBase('test-logo.png')
   },
   icons: {
-    compass: '/compass-icon.svg',
-    favicon: '/favicon.svg'
+    compass: withBase('compass-icon.svg'),
+    favicon: withBase('favicon.svg')
   }
 }
 
