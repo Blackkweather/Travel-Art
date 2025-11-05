@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/authStore'
@@ -13,8 +13,6 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuthStore()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/dashboard'
 
   const {
     register,
@@ -27,7 +25,8 @@ const LoginPage: React.FC = () => {
     try {
       await login(data)
       toast.success('Welcome back!')
-      navigate(redirectTo)
+      // Always redirect to dashboard - it will route to correct role dashboard
+      navigate('/dashboard')
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Login failed')
     } finally {
@@ -53,22 +52,17 @@ const LoginPage: React.FC = () => {
               alt="Travel Art" 
               className="h-24 w-auto"
               onError={(e) => {
-                console.log('Logo failed to load:', e.currentTarget.src);
-                e.currentTarget.style.display = 'none';
-                // Show fallback text logo
-                const fallback = document.getElementById('logo-fallback');
-                if (fallback) fallback.style.display = 'block';
-              }}
-              onLoad={(e) => {
-                console.log('Logo loaded successfully:', e.currentTarget.src);
+                e.currentTarget.style.display = 'none'
+                const fallback = document.getElementById('logo-fallback-login')
+                if (fallback) {
+                  fallback.style.display = 'block'
+                }
               }}
             />
-            <div id="logo-fallback" className="hidden">
-              <div className="text-4xl font-serif font-bold text-navy">
-                <span className="text-navy">TRAVEL</span>
-                <span className="text-gold mx-2">+</span>
-                <span className="text-navy">ART</span>
-              </div>
+            <div id="logo-fallback-login" className="hidden text-4xl font-serif font-bold">
+              <span className="text-navy">TRAVEL</span>
+              <span className="text-gold mx-2">+</span>
+              <span className="text-navy">ART</span>
             </div>
           </div>
           <h2 className="text-3xl font-serif font-bold text-navy gold-underline">

@@ -1,0 +1,24 @@
+// Admin Service Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminLog {
+  id           String   @id @default(cuid())
+  action       String
+  actorUserId  String
+  targetId     String?
+  details      String?  // JSON string with additional information
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId])
+  @@map("admin_logs")
+}
+
+

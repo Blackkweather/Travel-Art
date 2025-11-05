@@ -468,6 +468,8 @@ h6 {
   padding: 0 20px;
 }
 
+/* (reverted readability block) */
+
 @media (max-width: 640px) {
   .container {
     padding: 0 16px;
@@ -509,6 +511,12 @@ h6 {
 
 .text-right {
   text-align: right;
+}
+/* (removed text-readable and content frame) */
+@media (max-width: 640px) {
+  .text-readable {
+    text-shadow: 0 2px 6px rgba(0,0,0,0.55), 0 4px 14px rgba(0,0,0,0.35);
+  }
 }
 
 .mb-4 {
@@ -1102,6 +1110,8 @@ header {
   transition: background 0.4s ease, padding 0.4s ease;
   z-index: 1000;
 }
+
+/* removed temporary neutral overrides to restore gold luxury accents */
 
 header.scrolled {
   background: #0B1F3F;

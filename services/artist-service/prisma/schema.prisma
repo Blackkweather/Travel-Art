@@ -1,0 +1,49 @@
+// Artist Service Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Artist {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  bio               String?
+  discipline        String
+  priceRange        String
+  membershipStatus  String   @default("INACTIVE") // ACTIVE, INACTIVE, EXPIRED, PENDING
+  membershipRenewal DateTime?
+  images            String?  // JSON string of image URLs
+  videos            String?  // JSON string of video URLs
+  mediaUrls         String?  // JSON string of media URLs
+  referralCode      String   @unique @default(cuid())
+  loyaltyPoints     Int      @default(0)
+  rank              String   @default("STANDARD") // STANDARD, PROFESSIONAL, DIAMOND, SUPERSTAR
+  totalEarnings     Float    @default(0)
+  totalBookings     Int      @default(0)
+  averageRating     Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  availability      ArtistAvailability[]
+
+  @@map("artists")
+}
+
+model ArtistAvailability {
+  id        String   @id @default(cuid())
+  artistId  String
+  dateFrom  DateTime
+  dateTo    DateTime
+  isBooked  Boolean  @default(false)
+
+  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@map("artist_availability")
+}
+
+

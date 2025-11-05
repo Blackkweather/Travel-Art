@@ -1,0 +1,58 @@
+// Hotel Service Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Hotel {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  name            String
+  description     String?
+  location        String   // JSON string: {city, country, coords}
+  contactPhone    String?
+  images          String?  // JSON string of image URLs
+  performanceSpots String? // JSON string of performance spots
+  rooms           String?  // JSON string of room data
+  repName         String?
+  totalBookings   Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  credits         Credit?
+  availabilities  Availability[]
+
+  @@map("hotels")
+}
+
+model Credit {
+  id           String @id @default(cuid())
+  hotelId      String @unique
+  totalCredits Int    @default(0)
+  usedCredits  Int    @default(0)
+  
+  hotel        Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("credits")
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  hotelId   String
+  roomId    String
+  dateFrom  DateTime
+  dateTo    DateTime
+  price     Float?
+  isBooked  Boolean  @default(false)
+
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+

@@ -1,0 +1,44 @@
+// Booking Service Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  hotelId     String
+  artistId    String
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("PENDING") // PENDING, CONFIRMED, REJECTED, COMPLETED, CANCELLED
+  creditsUsed Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  notes       String?
+
+  ratings     Rating[]
+
+  @@map("bookings")
+}
+
+model Rating {
+  id                   String   @id @default(cuid())
+  bookingId            String
+  hotelId              String
+  artistId             String
+  stars                Int
+  textReview           String
+  createdAt            DateTime @default(now())
+  isVisibleToArtist    Boolean  @default(false)
+
+  booking              Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("ratings")
+}
+
+

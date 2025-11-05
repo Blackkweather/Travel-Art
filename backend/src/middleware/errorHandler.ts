@@ -25,10 +25,14 @@ export const errorHandler = (
 ): void => {
   const { statusCode = 500, message } = error;
 
-  // Log error in development
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Error:', error);
-  }
+  // Always log errors for debugging
+  console.error('Error:', {
+    message: error.message,
+    stack: error.stack,
+    path: req.path,
+    method: req.method,
+    ...(error as any).name && { name: (error as any).name }
+  });
 
   // Send error response
   res.status(statusCode).json({

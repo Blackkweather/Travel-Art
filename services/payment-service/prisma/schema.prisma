@@ -1,0 +1,40 @@
+// Payment Service Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  hotelId   String?
+  artistId  String?
+  type      String   // CREDIT_PURCHASE, MEMBERSHIP, BOOKING_FEE, REFUND, ARTIST_EARNINGS
+  amount    Float
+  currency  String   @default("EUR")
+  status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
+  paymentMethod String?
+  metadata  String?  // JSON string for additional data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("transactions")
+}
+
+model CreditPackage {
+  id          String  @id @default(cuid())
+  name        String
+  credits     Int
+  price       Float
+  discount    Float   @default(0)
+  isActive    Boolean @default(true)
+  description String?
+
+  @@map("credit_packages")
+}
+
+

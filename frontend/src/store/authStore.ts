@@ -70,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: async () => {
         const { token } = get()
         if (!token) {
-          set({ isLoading: false })
+          set({ isLoading: false, isAuthenticated: false })
           return
         }
 
@@ -83,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false
           })
         } catch (error) {
+          // Token invalid or expired - clear auth state
           set({
             user: null,
             token: null,

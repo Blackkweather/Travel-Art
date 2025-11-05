@@ -112,6 +112,92 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
                 </div>
               </div>
 
+              {/* Mobile Navigation Links */}
+              <div className="pt-2 pb-2 border-t border-gray-600">
+                <Link 
+                  to="/dashboard" 
+                  className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                {user.role === 'ARTIST' && (
+                  <>
+                    <Link 
+                      to="/dashboard/profile" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      My Profile
+                    </Link>
+                    <Link 
+                      to="/dashboard/bookings" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      My Bookings
+                    </Link>
+                    <Link 
+                      to="/dashboard/membership" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Membership
+                    </Link>
+                  </>
+                )}
+                {user.role === 'HOTEL' && (
+                  <>
+                    <Link 
+                      to="/dashboard/profile" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Hotel Profile
+                    </Link>
+                    <Link 
+                      to="/dashboard/artists" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Browse Artists
+                    </Link>
+                    <Link 
+                      to="/dashboard/bookings" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Bookings
+                    </Link>
+                    <Link 
+                      to="/dashboard/credits" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Credits
+                    </Link>
+                  </>
+                )}
+                {user.role === 'ADMIN' && (
+                  <>
+                    <Link 
+                      to="/dashboard/users" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Users
+                    </Link>
+                    <Link 
+                      to="/dashboard/bookings" 
+                      className="block px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors text-sm"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Bookings
+                    </Link>
+                  </>
+                )}
+              </div>
+
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-navy/80 transition-colors"
@@ -141,7 +227,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
 
         {/* Notifications Dropdown */}
         {showNotifications && (
-          <div className="absolute right-6 top-16 bg-white text-navy rounded-lg shadow-large border border-gray-200 w-80 max-w-sm">
+          <div className="absolute right-0 md:right-6 top-16 bg-white text-navy rounded-lg shadow-large border border-gray-200 w-[calc(100%-1.5rem)] md:w-80 max-w-sm mx-3 md:mx-0">
             <div className="p-4 border-b border-gray-200">
               <h3 className="font-semibold text-navy">Notifications</h3>
             </div>

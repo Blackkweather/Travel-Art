@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
 import { ArtistRank, getQuickRank } from '@/components/ArtistRank'
+import Footer from '@/components/Footer'
 
 const LandingPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -251,25 +252,19 @@ const LandingPage: React.FC = () => {
       {/* Transparent Navigation */}
       {/* Header */}
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10 px-5 md:px-20 h-[55px]"
         style={{
           background: headerBackground,
-          padding: '10px 80px',
-          height: '55px',
           overflow: 'visible'
         }}
       >
         <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity -ml-4">
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             <img 
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
-              style={{
-                height: '150px',
-                width: 'auto',
-                objectFit: 'contain'
-              }}
+              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
             />
           </Link>
           
@@ -398,9 +393,8 @@ const LandingPage: React.FC = () => {
               Connect luxury hotels with talented artists for unforgettable rooftop performances, 
               intimate concerts, and magical experiences that inspire and delight.
             </p>
-            
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-8 sm:mb-12 px-4">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -812,98 +806,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-navy py-16 relative overflow-hidden">
-        {/* Compass Watermark */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-5">
-          <Compass className="w-96 h-96 text-gold" />
-        </div>
-        
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="grid md:grid-cols-3 gap-12">
-            {/* Logo & Mission */}
-            <div>
-              <div className="flex items-center space-x-3 mb-6">
-                <img 
-                  src="/logo-1-final.png" 
-                  alt="Travel Art" 
-                  className="h-12 w-auto"
-                />
-                <h3 className="text-2xl font-serif font-bold text-white">Travel Art</h3>
-              </div>
-              <p className="text-white/80 mb-6 leading-relaxed">
-                Connecting luxury hotels with talented artists for unique experiences 
-                that create lasting memories and inspire communities worldwide.
-              </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-white/60 hover:text-gold transition-colors">
-                  <Globe className="w-6 h-6" />
-                </a>
-                <a href="#" className="text-white/60 hover:text-gold transition-colors">
-                  <Heart className="w-6 h-6" />
-                </a>
-                <a href="#" className="text-white/60 hover:text-gold transition-colors">
-                  <Award className="w-6 h-6" />
-                </a>
-              </div>
-            </div>
-            
-            {/* Quick Links */}
-            <div>
-              <h4 className="text-xl font-serif font-bold text-white mb-6">Quick Links</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h5 className="text-gold font-semibold mb-3">For Artists</h5>
-                  <ul className="space-y-2 text-white/80">
-                    <li><Link to="/how-it-works" className="hover:text-gold transition-colors">How it Works</Link></li>
-                    <li><Link to="/pricing" className="hover:text-gold transition-colors">Pricing</Link></li>
-                    <li><Link to="/top-artists" className="hover:text-gold transition-colors">Success Stories</Link></li>
-              </ul>
-            </div>
-            <div>
-                  <h5 className="text-gold font-semibold mb-3">For Hotels</h5>
-                  <ul className="space-y-2 text-white/80">
-                    <li><Link to="/partners" className="hover:text-gold transition-colors">Partners</Link></li>
-                    <li><Link to="/top-hotels" className="hover:text-gold transition-colors">Featured Hotels</Link></li>
-                    <li><Link to="/pricing" className="hover:text-gold transition-colors">Credit Packages</Link></li>
-              </ul>
-                </div>
-              </div>
-            </div>
-            
-            {/* Support & Contact */}
-            <div>
-              <h4 className="text-xl font-serif font-bold text-white mb-6">Support</h4>
-              <ul className="space-y-3 text-white/80">
-                <li><Link to="/contact" className="hover:text-gold transition-colors">Contact Us</Link></li>
-                <li><Link to="/help" className="hover:text-gold transition-colors">Help Center</Link></li>
-                <li><Link to="/privacy" className="hover:text-gold transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="hover:text-gold transition-colors">Terms of Service</Link></li>
-              </ul>
-              
-              <div className="mt-8">
-                <h5 className="text-gold font-semibold mb-3">Newsletter</h5>
-                <p className="text-white/80 text-sm mb-4">
-                  Stay updated with our latest artists and experiences
-                </p>
-                <div className="flex">
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email"
-                    className="flex-1 px-4 py-2 rounded-l-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-gold"
-                  />
-                  <button className="px-4 py-2 bg-gold text-navy rounded-r-lg font-semibold hover:bg-gold/90 transition-colors">
-                    Subscribe
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-white/20 mt-12 pt-8 text-center text-white/60">
-            <p>&copy; 2024 Travel Art. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

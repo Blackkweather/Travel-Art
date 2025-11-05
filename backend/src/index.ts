@@ -15,6 +15,17 @@ import { commonRoutes } from './routes/common';
 const app = express();
 const prisma = new PrismaClient();
 
+// Test database connection on startup
+prisma.$connect()
+  .then(() => {
+    console.log('✅ Database connected successfully');
+  })
+  .catch((error) => {
+    console.error('❌ Database connection failed:', error);
+    console.error('Please check your DATABASE_URL environment variable');
+    // Don't exit - let the server start and errors will be caught by error handler
+  });
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -70,8 +81,23 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      database: 'connected'
+    });
+  } catch (error: any) {
+    res.status(503).json({ 
+      status: 'ERROR', 
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 // API routes
@@ -82,7 +108,14 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', commonRoutes);
 
 // Serve static files from the frontend build
-app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+app.use(express.static(path.join(__dirname, '../../frontend/dist'), {
+  setHeaders: (res, filePath) => {
+    // Set correct Content-Type for webmanifest files
+    if (filePath.endsWith('.webmanifest')) {
+      res.setHeader('Content-Type', 'application/manifest+json');
+    }
+  }
+}));
 
 // Handle React routing - return index.html for all non-API routes
 app.get('*', (req, res) => {

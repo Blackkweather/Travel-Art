@@ -3,12 +3,10 @@ import { motion } from 'framer-motion'
 import { Crown, Check, Star, Calendar, Gift, Users } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { paymentsApi } from '@/utils/api'
+import { toast } from 'react-hot-toast'
 
 function showToast(message: string) {
-  // Lightweight toast fallback
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const toast = require('react-hot-toast')
     toast.success(message)
   } catch {
     alert(message)

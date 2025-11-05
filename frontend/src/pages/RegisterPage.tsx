@@ -35,6 +35,7 @@ const RegisterPage: React.FC = () => {
     try {
       await registerUser(data)
       toast.success('Account created successfully!')
+      // Always redirect to dashboard - it will route to correct role dashboard
       navigate('/dashboard')
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Registration failed')

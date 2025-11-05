@@ -1,0 +1,136 @@
+{
+  "column_color_map": {
+    "1": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "2": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "3": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "4": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "5": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "6": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "7": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "8": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "9": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "10": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "FFFFFF00"
+    },
+    "11": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "12": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "13": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "14": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "15": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "16": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "17": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "18": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "19": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "20": {
+      "header_color": null,
+      "data_color": null
+    },
+    "21": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "22": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "23": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "24": {
+      "header_color": "Values must be of type <class 'str'>",
+      "data_color": "Values must be of type <class 'str'>"
+    },
+    "25": {
+      "header_color": null,
+      "data_color": null
+    },
+    "28": {
+      "header_color": null,
+      "data_color": null
+    }
+  },
+  "header_colors": {
+    "1": "Values must be of type <class 'str'>",
+    "2": "Values must be of type <class 'str'>",
+    "3": "Values must be of type <class 'str'>",
+    "4": "Values must be of type <class 'str'>",
+    "5": "Values must be of type <class 'str'>",
+    "6": "Values must be of type <class 'str'>",
+    "7": "Values must be of type <class 'str'>",
+    "8": "Values must be of type <class 'str'>",
+    "9": "Values must be of type <class 'str'>",
+    "10": "Values must be of type <class 'str'>",
+    "11": "Values must be of type <class 'str'>",
+    "12": "Values must be of type <class 'str'>",
+    "13": "Values must be of type <class 'str'>",
+    "14": "Values must be of type <class 'str'>",
+    "15": "Values must be of type <class 'str'>",
+    "16": "Values must be of type <class 'str'>",
+    "17": "Values must be of type <class 'str'>",
+    "18": "Values must be of type <class 'str'>",
+    "19": "Values must be of type <class 'str'>",
+    "20": null,
+    "21": "Values must be of type <class 'str'>",
+    "22": "Values must be of type <class 'str'>",
+    "23": "Values must be of type <class 'str'>",
+    "24": "Values must be of type <class 'str'>",
+    "25": null,
+    "28": null
+  }
+}
