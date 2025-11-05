@@ -21,11 +21,9 @@ const Header: React.FC = () => {
   return (
     <>
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10 px-5 md:px-20 h-[55px]"
         style={{
           background: headerBackground,
-          padding: '10px 20px md:10px 80px',
-          height: '55px',
           overflow: 'visible'
         }}
       >
@@ -33,13 +31,20 @@ const Header: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             <img 
-              src={getLogoUrl('transparent')} 
+              src={getLogoUrl('final')} 
               alt="Travel Art" 
               className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
               onError={(e) => {
-                // Hide broken image and show fallback
-                e.currentTarget.style.display = 'none'
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                const img = e.currentTarget
+                // Try Cloudinary fallback if local fails
+                const currentSrc = img.getAttribute('src') || ''
+                if (!currentSrc.includes('cloudinary.com') && !currentSrc.includes('res.cloudinary.com')) {
+                  img.src = 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/logo_1_final_fcn3q5.png'
+                  return
+                }
+                // If Cloudinary also fails, show text fallback
+                img.style.display = 'none'
+                const fallback = img.nextElementSibling as HTMLElement
                 if (fallback) {
                   fallback.style.display = 'flex'
                 }

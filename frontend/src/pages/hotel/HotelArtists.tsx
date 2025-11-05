@@ -171,7 +171,7 @@ const HotelArtists: React.FC = () => {
     try {
       setProcessing(true)
       setBookingError(null)
-      await bookingsApi.create({
+      const res = await bookingsApi.create({
         hotelId,
         artistId: bookingModal.artistId,
         startDate: new Date(bookingModal.start).toISOString(),
@@ -179,7 +179,26 @@ const HotelArtists: React.FC = () => {
         creditsUsed: 1
       })
       setBookingModal({ open: false })
-      alert('Booking request sent')
+      try {
+        // generate simple PDF confirmation client-side
+        const { jsPDF } = await import('jspdf')
+        const pdf = new jsPDF()
+        pdf.setFontSize(16)
+        pdf.text('Travel Art - Booking Confirmation', 14, 20)
+        pdf.setFontSize(12)
+        pdf.text(`Booking ID: ${(res.data as any)?.data?.id || 'N/A'}`, 14, 32)
+        pdf.text(`Hotel ID: ${hotelId}`, 14, 40)
+        pdf.text(`Artist ID: ${bookingModal.artistId}`, 14, 48)
+        pdf.text(`Start: ${bookingModal.start}`, 14, 56)
+        pdf.text(`End: ${bookingModal.end}`, 14, 64)
+        pdf.text(`Credits Used: 1`, 14, 72)
+        pdf.text(`Status: PENDING`, 14, 80)
+        pdf.text('Thank you for booking with Travel Art.', 14, 96)
+        pdf.save('booking-confirmation.pdf')
+      } catch {
+        // fallback
+        alert('Booking request sent. PDF download will be available soon.')
+      }
     } catch (e: any) {
       setBookingError(e?.response?.data?.message || 'Failed to create booking')
     } finally {
