@@ -1,115 +1,53 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CreditCard, ShoppingCart, TrendingUp, Gift, Star, Calendar, CheckCircle } from 'lucide-react'
+import { useAuthStore } from '@/store/authStore'
+import { hotelsApi, paymentsApi } from '@/utils/api'
 
 const HotelCredits: React.FC = () => {
-  
-  const creditPackages = [
-    {
-      id: 'starter',
-      name: 'Starter Package',
-      credits: 10,
-      price: 1500,
-      originalPrice: 1800,
-      savings: 300,
-      popular: false,
-      features: [
-        '10 artist booking credits',
-        'Access to all artist profiles',
-        'Basic venue management',
-        'Email support'
-      ]
-    },
-    {
-      id: 'professional',
-      name: 'Professional Package',
-      credits: 25,
-      price: 3500,
-      originalPrice: 4000,
-      savings: 500,
-      popular: true,
-      features: [
-        '25 artist booking credits',
-        'Priority artist matching',
-        'Advanced analytics',
-        'Priority support',
-        'Custom performance requests'
-      ]
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise Package',
-      credits: 50,
-      price: 6500,
-      originalPrice: 7500,
-      savings: 1000,
-      popular: false,
-      features: [
-        '50 artist booking credits',
-        'Multi-venue management',
-        'Dedicated account manager',
-        '24/7 premium support',
-        'Custom event packages'
-      ]
-    }
-  ]
+  const { user } = useAuthStore()
+  const [loading, setLoading] = useState(true)
+  const [hotelId, setHotelId] = useState<string>('')
+  const [packages, setPackages] = useState<any[]>([])
+  const [credits, setCredits] = useState<{ availableCredits: number; totalCredits: number; usedCredits: number } | null>(null)
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [processing, setProcessing] = useState<string | null>(null)
 
-  const transactions = [
-    {
-      id: '1',
-      type: 'purchase',
-      credits: 25,
-      amount: 3500,
-      date: '2024-01-15',
-      status: 'completed',
-      description: 'Professional Package Purchase',
-      paymentMethod: 'Credit Card ****1234'
-    },
-    {
-      id: '2',
-      type: 'booking',
-      credits: -2,
-      amount: 0,
-      date: '2024-01-20',
-      status: 'completed',
-      description: 'Sophie Laurent - Rooftop Terrace',
-      paymentMethod: 'Credits Used'
-    },
-    {
-      id: '3',
-      type: 'booking',
-      credits: -3,
-      amount: 0,
-      date: '2024-01-25',
-      status: 'completed',
-      description: 'Marco Silva - Beach Club DJ Set',
-      paymentMethod: 'Credits Used'
-    },
-    {
-      id: '4',
-      type: 'refund',
-      credits: 1,
-      amount: 0,
-      date: '2024-02-01',
-      status: 'completed',
-      description: 'Cancellation Refund - Isabella Garcia',
-      paymentMethod: 'Credit Refund'
-    },
-    {
-      id: '5',
-      type: 'booking',
-      credits: -2,
-      amount: 0,
-      date: '2024-02-05',
-      status: 'completed',
-      description: 'Jean-Michel Dubois - Jazz Concert',
-      paymentMethod: 'Credits Used'
-    }
-  ]
+  const totalSpent = useMemo(() => {
+    const purchases = transactions.filter((t) => t.type === 'CREDIT_PURCHASE')
+    return purchases.reduce((sum, t) => sum + (t.amount || 0), 0)
+  }, [transactions])
 
-  const currentCredits = 19
-  const totalSpent = 3500
-  const totalBookings = 4
+  const totalBookings = useMemo(() => transactions.filter((t) => t.type === 'BOOKING_FEE').length, [transactions])
+
+  async function loadAll() {
+    if (!user) return
+    setLoading(true)
+    setError(null)
+    try {
+      const [hotelRes, pkgRes] = await Promise.all([
+        hotelsApi.getByUser(user.id),
+        paymentsApi.getPackages(),
+      ])
+      const hotel = hotelRes.data.data
+      setHotelId(hotel.id)
+      setPackages(pkgRes.data.data || [])
+      const creditsRes = await hotelsApi.getCredits(hotel.id)
+      setCredits(creditsRes.data.data)
+      const txRes = await paymentsApi.transactions({ userId: hotel.id, limit: 20 })
+      setTransactions(txRes.data.data.transactions || [])
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to load credits data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadAll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -137,9 +75,24 @@ const HotelCredits: React.FC = () => {
     }
   }
 
-  const handlePurchase = (packageId: string) => {
-    // Handle purchase logic here
-    // TODO: Implement purchase functionality
+  const handlePurchase = async (packageId: string) => {
+    // Ensure TypeScript recognizes the parameter as used in all build environments
+    void packageId
+    if (!hotelId) return
+    try {
+      setProcessing(packageId)
+      await paymentsApi.purchaseCredits(hotelId, packageId, 'CARD')
+      const [creditsRes, txRes] = await Promise.all([
+        hotelsApi.getCredits(hotelId),
+        paymentsApi.transactions({ userId: hotelId, limit: 20 })
+      ])
+      setCredits(creditsRes.data.data)
+      setTransactions(txRes.data.data.transactions || [])
+    } catch (e) {
+      setError('Failed to complete purchase')
+    } finally {
+      setProcessing(null)
+    }
   }
 
   return (
@@ -165,7 +118,7 @@ const HotelCredits: React.FC = () => {
           <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CreditCard className="w-8 h-8 text-gold" />
           </div>
-          <h3 className="text-3xl font-bold text-navy mb-2">{currentCredits}</h3>
+          <h3 className="text-3xl font-bold text-navy mb-2">{credits ? credits.availableCredits : (loading ? '—' : 0)}</h3>
           <p className="text-gray-600">Available Credits</p>
         </motion.div>
 
@@ -201,8 +154,11 @@ const HotelCredits: React.FC = () => {
         <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
           Purchase Credit Packages
         </h2>
+        {error && (
+          <div className="mb-4 text-sm text-red-600">{error}</div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {creditPackages.map((pkg, index) => (
+          {packages.map((pkg: any, index: number) => (
             <motion.div
               key={pkg.id}
               initial={{ opacity: 0, y: 30 }}
@@ -230,31 +186,36 @@ const HotelCredits: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <span className="text-2xl font-bold text-gold">€{pkg.price.toLocaleString()}</span>
-                  <span className="text-lg text-gray-500 line-through">€{pkg.originalPrice.toLocaleString()}</span>
+                  {pkg.originalPrice && (
+                    <span className="text-lg text-gray-500 line-through">€{pkg.originalPrice.toLocaleString()}</span>
+                  )}
                 </div>
-                <div className="text-sm text-green-600 font-medium">
-                  Save €{pkg.savings.toLocaleString()}
-                </div>
+                {pkg.savings ? (
+                  <div className="text-sm text-green-600 font-medium">Save €{pkg.savings.toLocaleString()}</div>
+                ) : null}
               </div>
 
-              <ul className="space-y-3 mb-6">
-                {pkg.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start">
-                    <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              {Array.isArray(pkg.features) && (
+                <ul className="space-y-3 mb-6">
+                  {pkg.features.map((feature: string, featureIndex: number) => (
+                    <li key={featureIndex} className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               <button
                 onClick={() => handlePurchase(pkg.id)}
+                disabled={processing === pkg.id}
                 className={`w-full py-3 rounded-lg font-medium transition-colors ${
                   pkg.popular 
                     ? 'bg-gold text-navy hover:bg-gold/90' 
                     : 'bg-navy text-white hover:bg-navy/90'
-                }`}
+                } disabled:opacity-60`}
               >
-                Purchase Package
+                {processing === pkg.id ? 'Processing…' : 'Purchase Package'}
               </button>
             </motion.div>
           ))}
@@ -277,25 +238,20 @@ const HotelCredits: React.FC = () => {
             >
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                  {getTransactionIcon(transaction.type)}
+                  {getTransactionIcon(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-navy">{transaction.description}</h3>
-                  <p className="text-sm text-gray-600">{transaction.paymentMethod}</p>
-                  <p className="text-xs text-gray-500">{new Date(transaction.date).toLocaleDateString()}</p>
+                  <h3 className="font-semibold text-navy">{transaction.type.replace('_', ' ')}</h3>
+                  <p className="text-sm text-gray-600">{transaction.paymentMethod || '—'}</p>
+                  <p className="text-xs text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
               
               <div className="text-right">
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${getTransactionColor(transaction.type)}`}>
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${getTransactionColor(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}`}>
                   {transaction.type}
                 </div>
                 <div className="mt-2">
-                  <div className={`text-lg font-bold ${
-                    transaction.credits > 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.credits > 0 ? '+' : ''}{transaction.credits} credits
-                  </div>
                   {transaction.amount > 0 && (
                     <div className="text-sm text-gray-600">
                       €{transaction.amount.toLocaleString()}
