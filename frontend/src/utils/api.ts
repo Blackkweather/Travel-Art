@@ -43,23 +43,23 @@ class ApiClient {
     )
   }
 
-  async get<T>(url: string, params?: any): Promise<AxiosResponse<ApiResponse<T>>> {
+  async get<T = any>(url: string, params?: any): Promise<AxiosResponse<ApiResponse<T>>> {
     return this.client.get(url, { params })
   }
 
-  async post<T>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
+  async post<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
     return this.client.post(url, data)
   }
 
-  async put<T>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
+  async put<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
     return this.client.put(url, data)
   }
 
-  async delete<T>(url: string): Promise<AxiosResponse<ApiResponse<T>>> {
+  async delete<T = any>(url: string): Promise<AxiosResponse<ApiResponse<T>>> {
     return this.client.delete(url)
   }
 
-  async patch<T>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
+  async patch<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
     return this.client.patch(url, data)
   }
 }
@@ -79,6 +79,12 @@ export const authApi = {
   
   getCurrentUser: () =>
     apiClient.get<{ user: User }>('/auth/me'),
+  
+  forgotPassword: (email: string) =>
+    apiClient.post('/auth/forgot-password', { email }),
+  
+  resetPassword: (data: { token: string; password: string }) =>
+    apiClient.post('/auth/reset-password', data),
 }
 
 // Artists API
@@ -92,8 +98,8 @@ export const artistsApi = {
   createProfile: (data: any) =>
     apiClient.post('/artists', data),
   
-  updateProfile: (data: any) =>
-    apiClient.put('/artists', data),
+  updateProfile: (id: string, data: any) =>
+    apiClient.put(`/artists/${id}`, data),
   
   setAvailability: (id: string, data: any) =>
     apiClient.post(`/artists/${id}/availability`, data),
@@ -107,29 +113,26 @@ export const hotelsApi = {
   getById: (id: string) =>
     apiClient.get(`/hotels/${id}`),
   
+  getByUser: (userId: string) =>
+    apiClient.get(`/hotels/user/${userId}`),
+  
   createProfile: (data: any) =>
     apiClient.post('/hotels', data),
   
-  updateProfile: (data: any) =>
-    apiClient.put('/hotels', data),
+  updateProfile: (id: string, data: any) =>
+    apiClient.put(`/hotels/${id}`, data),
   
   addRoomAvailability: (id: string, data: any) =>
     apiClient.post(`/hotels/${id}/rooms`, data),
+
+  // Browse artists (service is artists, not hotels)
+  browseArtists: (_hotelId: string, params?: any) =>
+    apiClient.get(`/artists`, params),
   
-  purchaseCredits: (id: string, data: any) =>
-    apiClient.post(`/hotels/${id}/credits/purchase`, data),
+  getCredits: (id: string) =>
+    apiClient.get(`/hotels/${id}/credits`),
   
-  browseArtists: (id: string, params?: any) =>
-    apiClient.get(`/hotels/${id}/artists`, params),
-  
-  requestBooking: (id: string, data: any) =>
-    apiClient.post(`/hotels/${id}/bookings`, data),
-  
-  confirmBooking: (id: string, bookingId: string) =>
-    apiClient.post(`/hotels/${id}/bookings/${bookingId}/confirm`),
-  
-  rateArtist: (id: string, bookingId: string, data: any) =>
-    apiClient.post(`/hotels/${id}/bookings/${bookingId}/rate`, data),
+  // Credits purchase moved to payments service (see paymentsApi)
 }
 
 // Admin API
@@ -150,7 +153,7 @@ export const adminApi = {
     apiClient.get('/admin/bookings', params),
   
   exportData: async (type: string) => {
-    const response = await axios.get(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:4000/api'}/admin/export?type=${type}`, {
+    const response = await axios.get(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api'}/admin/export?type=${type}`, {
       responseType: 'blob',
       headers: {
         'Authorization': `Bearer ${useAuthStore.getState().token}`
@@ -173,4 +176,27 @@ export const commonApi = {
   
   getStats: () =>
     apiClient.get('/stats'),
+}
+
+// Bookings API
+export const bookingsApi = {
+  list: (params?: any) => apiClient.get('/bookings', params),
+  getById: (id: string) => apiClient.get(`/bookings/${id}`),
+  create: (data: { hotelId: string; artistId: string; startDate: string; endDate: string; creditsUsed: number; notes?: string }) =>
+    apiClient.post('/bookings', data),
+  updateStatus: (id: string, status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED') =>
+    apiClient.patch(`/bookings/${id}/status`, { status }),
+  rate: (data: { bookingId: string; hotelId: string; artistId: string; stars: number; textReview: string; isVisibleToArtist?: boolean }) =>
+    apiClient.post('/bookings/ratings', data),
+}
+
+// Payments API
+export const paymentsApi = {
+  getPackages: () => apiClient.get('/payments/packages'),
+  purchaseCredits: (hotelId: string, packageId: string, paymentMethod: string) =>
+    apiClient.post('/payments/credits/purchase', { hotelId, packageId, paymentMethod }),
+  membership: (artistId: string, membershipType: 'PROFESSIONAL' | 'ENTERPRISE', paymentMethod: string) =>
+    apiClient.post('/payments/membership', { artistId, membershipType, paymentMethod }),
+  transactions: (params?: any) => apiClient.get('/payments/transactions', params),
+  refund: (transactionId: string) => apiClient.post(`/payments/refund/${transactionId}`),
 }

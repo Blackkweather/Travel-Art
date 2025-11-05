@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Crown, Check, Star, Calendar, CreditCard, Gift, Users } from 'lucide-react'
+import { Crown, Check, Star, Calendar, Gift, Users } from 'lucide-react'
 
 const ArtistMembership: React.FC = () => {
   const [currentPlan] = useState('professional')

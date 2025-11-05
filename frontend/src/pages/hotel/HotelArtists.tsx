@@ -133,7 +133,7 @@ const HotelArtists: React.FC = () => {
     }
   })
 
-  const toggleFavorite = (artistId: string) => {
+  const toggleFavorite = (_artistId: string) => {
     // Toggle favorite logic here
     // TODO: Implement favorite toggle functionality
   }
