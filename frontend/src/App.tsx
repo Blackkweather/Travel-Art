@@ -3,9 +3,9 @@ import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
 import Layout from '@/components/Layout'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import ProtectedRoute from './components/ProtectedRoute'
-import RoleRoute from './components/RoleRoute'
-import RoleAwareRoute from './components/RoleAwareRoute'
+import ProtectedRoute from './components/ProtectedRoute.tsx'
+import RoleRoute from './components/RoleRoute.tsx'
+import RoleAwareRoute from './components/RoleAwareRoute.tsx'
 
 // Public pages
 import LandingPage from '@/pages/LandingPage'
@@ -16,8 +16,8 @@ import TopHotelsPage from '@/pages/TopHotelsPage'
 import PricingPage from '@/pages/PricingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage.tsx'
+import ResetPasswordPage from './pages/ResetPasswordPage.tsx'
 
 // Protected pages
 import ArtistDashboard from '@/pages/artist/ArtistDashboard'
