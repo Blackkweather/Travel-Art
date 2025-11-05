@@ -1,8 +1,11 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
 import Layout from '@/components/Layout'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import RoleRoute from '@/components/RoleRoute'
+import RoleAwareRoute from '@/components/RoleAwareRoute'
 
 // Public pages
 import LandingPage from '@/pages/LandingPage'
@@ -13,6 +16,8 @@ import TopHotelsPage from '@/pages/TopHotelsPage'
 import PricingPage from '@/pages/PricingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 
 // Protected pages
 import ArtistDashboard from '@/pages/artist/ArtistDashboard'
@@ -30,9 +35,32 @@ import HotelCredits from '@/pages/hotel/HotelCredits'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminUsers from '@/pages/admin/AdminUsers'
 import AdminBookings from '@/pages/admin/AdminBookings'
+import AdminAnalytics from '@/pages/admin/AdminAnalytics'
+import AdminModeration from '@/pages/admin/AdminModeration'
+
+// Dashboard redirect component
+const DashboardRedirect = () => {
+  const { user } = useAuthStore()
+  
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Already in dashboard, just render the appropriate dashboard
+  switch (user.role) {
+    case 'ARTIST':
+      return <ArtistDashboard />
+    case 'HOTEL':
+      return <HotelDashboard />
+    case 'ADMIN':
+      return <AdminDashboard />
+    default:
+      return <Navigate to="/" replace />
+  }
+}
 
 function App() {
-  const { user, isLoading, checkAuth } = useAuthStore()
+  const { isLoading, checkAuth } = useAuthStore()
 
   useEffect(() => {
     checkAuth()
@@ -57,36 +85,93 @@ function App() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected Routes */}
-      <Route path="/dashboard" element={<Layout />}>
-        {user?.role === 'ARTIST' && (
-          <>
-            <Route index element={<ArtistDashboard />} />
-            <Route path="profile" element={<ArtistProfile />} />
-            <Route path="bookings" element={<ArtistBookings />} />
-            <Route path="membership" element={<ArtistMembership />} />
-            <Route path="referrals" element={<ArtistReferrals />} />
-          </>
-        )}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<DashboardRedirect />} />
         
-        {user?.role === 'HOTEL' && (
-          <>
-            <Route index element={<HotelDashboard />} />
-            <Route path="profile" element={<HotelProfile />} />
-            <Route path="artists" element={<HotelArtists />} />
-            <Route path="bookings" element={<HotelBookings />} />
-            <Route path="credits" element={<HotelCredits />} />
-          </>
-        )}
-        
-        {user?.role === 'ADMIN' && (
-          <>
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="bookings" element={<AdminBookings />} />
-          </>
-        )}
+        {/* Role-based routes */}
+        <Route 
+          path="profile" 
+          element={
+            <RoleRoute allowedRoles={['ARTIST', 'HOTEL']}>
+              <RoleAwareRoute componentType="profile" />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="bookings" 
+          element={
+            <RoleRoute allowedRoles={['ARTIST', 'HOTEL', 'ADMIN']}>
+              <RoleAwareRoute componentType="bookings" />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="membership" 
+          element={
+            <RoleRoute allowedRoles={['ARTIST']}>
+              <ArtistMembership />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="referrals" 
+          element={
+            <RoleRoute allowedRoles={['ARTIST']}>
+              <ArtistReferrals />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="artists" 
+          element={
+            <RoleRoute allowedRoles={['HOTEL']}>
+              <HotelArtists />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="credits" 
+          element={
+            <RoleRoute allowedRoles={['HOTEL']}>
+              <HotelCredits />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="users" 
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminUsers />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="analytics" 
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminAnalytics />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="moderation" 
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminModeration />
+            </RoleRoute>
+          } 
+        />
       </Route>
 
       {/* Artist Public Profile */}
@@ -94,11 +179,16 @@ function App() {
       
       {/* Hotel Public Profile */}
       <Route path="/hotel/:id" element={<HotelProfile />} />
+      
+      {/* Catch all */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
 
 export default App
+
+
 
 
 

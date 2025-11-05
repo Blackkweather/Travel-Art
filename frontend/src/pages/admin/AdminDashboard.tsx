@@ -1,9 +1,11 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Users, Building, Calendar, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 
 const AdminDashboard: React.FC = () => {
   const { } = useAuthStore()
+  const navigate = useNavigate()
 
   const stats = [
     { label: 'Total Users', value: '156', icon: Users, color: 'text-blue-600' },
@@ -167,7 +169,7 @@ const AdminDashboard: React.FC = () => {
           <p className="text-gray-600 mb-4">
             Manage users, verify accounts, and handle support requests.
           </p>
-          <button className="btn-primary">
+          <button className="btn-primary" onClick={() => navigate('/dashboard/users')}>
             Manage Users
           </button>
         </div>
@@ -179,7 +181,7 @@ const AdminDashboard: React.FC = () => {
           <p className="text-gray-600 mb-4">
             View detailed analytics and performance metrics for the platform.
           </p>
-          <button className="btn-secondary">
+          <button className="btn-secondary" onClick={() => navigate('/dashboard/analytics')}>
             View Analytics
           </button>
         </div>
@@ -191,7 +193,7 @@ const AdminDashboard: React.FC = () => {
           <p className="text-gray-600 mb-4">
             Review artist profiles, hotel listings, and user-generated content.
           </p>
-          <button className="btn-secondary">
+          <button className="btn-secondary" onClick={() => navigate('/dashboard/moderation')}>
             Moderate Content
           </button>
         </div>

@@ -7,7 +7,8 @@ import {
   Calendar, 
   CreditCard, 
   Users, 
-  Gift
+  Gift,
+  TrendingUp
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -41,6 +42,8 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           { path: '/dashboard', label: 'Dashboard', icon: Home },
           { path: '/dashboard/users', label: 'Users', icon: Users },
           { path: '/dashboard/bookings', label: 'Bookings', icon: Calendar },
+          { path: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp },
+          { path: '/dashboard/moderation', label: 'Moderation', icon: UserIcon },
         ]
       default:
         return []
@@ -50,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   const navItems = getNavItems()
 
   return (
-    <aside className="w-64 bg-white shadow-medium min-h-screen">
+    <aside className="hidden md:block w-64 bg-white shadow-medium min-h-screen">
       <div className="p-6">
         <nav className="space-y-2">
           {navItems.map((item) => {
