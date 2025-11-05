@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { artistsApi, hotelsApi, adminApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { CheckCircle, XCircle, User, Building } from 'lucide-react'
+import { User, Building } from 'lucide-react'
 
 type ArtistListItem = {
   id: string

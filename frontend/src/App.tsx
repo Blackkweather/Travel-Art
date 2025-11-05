@@ -3,9 +3,9 @@ import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
 import Layout from '@/components/Layout'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import RoleRoute from '@/components/RoleRoute'
-import RoleAwareRoute from '@/components/RoleAwareRoute'
+import ProtectedRoute from './components/ProtectedRoute'
+import RoleRoute from './components/RoleRoute'
+import RoleAwareRoute from './components/RoleAwareRoute'
 
 // Public pages
 import LandingPage from '@/pages/LandingPage'
@@ -16,25 +16,25 @@ import TopHotelsPage from '@/pages/TopHotelsPage'
 import PricingPage from '@/pages/PricingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
-import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
-import ResetPasswordPage from '@/pages/ResetPasswordPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 
 // Protected pages
 import ArtistDashboard from '@/pages/artist/ArtistDashboard'
 import ArtistProfile from '@/pages/artist/ArtistProfile'
-import ArtistBookings from '@/pages/artist/ArtistBookings'
+// removed unused direct import: ArtistBookings (resolved inside RoleAwareRoute)
 import ArtistMembership from '@/pages/artist/ArtistMembership'
 import ArtistReferrals from '@/pages/artist/ArtistReferrals'
 
 import HotelDashboard from '@/pages/hotel/HotelDashboard'
 import HotelProfile from '@/pages/hotel/HotelProfile'
 import HotelArtists from '@/pages/hotel/HotelArtists'
-import HotelBookings from '@/pages/hotel/HotelBookings'
+// removed unused direct import: HotelBookings (resolved inside RoleAwareRoute)
 import HotelCredits from '@/pages/hotel/HotelCredits'
 
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminUsers from '@/pages/admin/AdminUsers'
-import AdminBookings from '@/pages/admin/AdminBookings'
+// removed unused direct import: AdminBookings (resolved inside RoleAwareRoute)
 import AdminAnalytics from '@/pages/admin/AdminAnalytics'
 import AdminModeration from '@/pages/admin/AdminModeration'
 
