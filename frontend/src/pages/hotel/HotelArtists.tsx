@@ -1,12 +1,31 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, MapPin, Calendar, Heart } from 'lucide-react'
+import { useAuthStore } from '@/store/authStore'
+import { bookingsApi, hotelsApi } from '@/utils/api'
 
 const HotelArtists: React.FC = () => {
+  const { user } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDiscipline, setSelectedDiscipline] = useState('all')
   const [selectedLocation, setSelectedLocation] = useState('all')
   const [sortBy, setSortBy] = useState('rating')
+  const [hotelId, setHotelId] = useState<string>('')
+  const [bookingModal, setBookingModal] = useState<{ open: boolean; artistId?: string; start?: string; end?: string }>({ open: false })
+  const [bookingError, setBookingError] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
+
+  useEffect(() => {
+    ;(async () => {
+      if (!user?.id) return
+      try {
+        const res = await hotelsApi.getByUser(user.id)
+        setHotelId((res.data as any)?.data?.id || '')
+      } catch {
+        // ignore
+      }
+    })()
+  }, [user?.id])
   
   const artists = [
     {
@@ -136,6 +155,36 @@ const HotelArtists: React.FC = () => {
   const toggleFavorite = (_artistId: string) => {
     // Toggle favorite logic here
     // TODO: Implement favorite toggle functionality
+  }
+
+  const openBooking = (artistId: string) => {
+    const start = new Date()
+    start.setDate(start.getDate() + 7)
+    const end = new Date(start)
+    end.setDate(start.getDate() + 1)
+    setBookingModal({ open: true, artistId, start: start.toISOString().slice(0,10), end: end.toISOString().slice(0,10) })
+    setBookingError(null)
+  }
+
+  const createBooking = async () => {
+    if (!hotelId || !bookingModal.artistId || !bookingModal.start || !bookingModal.end) return
+    try {
+      setProcessing(true)
+      setBookingError(null)
+      await bookingsApi.create({
+        hotelId,
+        artistId: bookingModal.artistId,
+        startDate: new Date(bookingModal.start).toISOString(),
+        endDate: new Date(bookingModal.end).toISOString(),
+        creditsUsed: 1
+      })
+      setBookingModal({ open: false })
+      alert('Booking request sent')
+    } catch (e: any) {
+      setBookingError(e?.response?.data?.message || 'Failed to create booking')
+    } finally {
+      setProcessing(false)
+    }
   }
 
   const getAvailabilityColor = (availability: string) => {
@@ -319,10 +368,10 @@ const HotelArtists: React.FC = () => {
               </div>
 
               <div className="flex space-x-2">
-                <button className="flex-1 btn-primary">
+                <a className="flex-1 btn-primary" href={`/artist/${artist.id}`}>
                   View Profile
-                </button>
-                <button className="btn-secondary">
+                </a>
+                <button className="btn-secondary" onClick={() => openBooking(artist.id)}>
                   Book Now
                 </button>
               </div>
@@ -330,6 +379,30 @@ const HotelArtists: React.FC = () => {
           </motion.div>
         ))}
       </div>
+
+      {/* Booking Modal */}
+      {bookingModal.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-soft p-6 w-full max-w-md">
+            <h3 className="text-xl font-serif font-semibold text-navy mb-4">Request Booking</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="form-label">Start date</label>
+                <input type="date" className="form-input w-full" value={bookingModal.start || ''} onChange={(e)=>setBookingModal(m=>({...m,start:e.target.value}))} />
+              </div>
+              <div>
+                <label className="form-label">End date</label>
+                <input type="date" className="form-input w-full" value={bookingModal.end || ''} onChange={(e)=>setBookingModal(m=>({...m,end:e.target.value}))} />
+              </div>
+              {bookingError && <div className="text-sm text-red-600">{bookingError}</div>}
+              <div className="flex justify-end space-x-2 pt-2">
+                <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>Cancel</button>
+                <button className="btn-primary" disabled={processing} onClick={createBooking}>{processing? 'Sending…':'Send Request'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* No Results */}
       {sortedArtists.length === 0 && (
