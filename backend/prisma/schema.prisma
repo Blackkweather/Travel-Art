@@ -8,7 +8,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -212,5 +211,5 @@ model AdminLog {
   @@map("admin_logs")
 }
 
-// Note: SQLite doesn't support enums, so we use String fields with comments
+// Note: Using String fields for enums for compatibility
 // Valid values are documented in the model field comments above

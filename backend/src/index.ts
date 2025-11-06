@@ -3,26 +3,28 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
+import { quickAuthRoutes } from './routes/quick-auth';
 import { artistRoutes } from './routes/artists';
 import { hotelRoutes } from './routes/hotels';
 import { adminRoutes } from './routes/admin';
 import { commonRoutes } from './routes/common';
+import { paymentRoutes } from './routes/payments';
+import { initializeDatabase, prisma } from './db';
 
 const app = express();
-const prisma = new PrismaClient();
 
-// Test database connection on startup
-prisma.$connect()
+// Initialize database connection (Prisma or fallback to pg) - non-blocking
+initializeDatabase()
   .then(() => {
-    console.log('✅ Database connected successfully');
+    console.log('✅ Database initialized successfully');
   })
   .catch((error) => {
-    console.error('❌ Database connection failed:', error);
+    console.error('❌ Database initialization failed:', error);
     console.error('Please check your DATABASE_URL environment variable');
+    console.error('Server will start anyway - database will be initialized on first request');
     // Don't exit - let the server start and errors will be caught by error handler
   });
 
@@ -80,15 +82,17 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check endpoint
+// Health check endpoints
 app.get('/health', async (req, res) => {
   try {
-    // Test database connection
-    await prisma.$queryRaw`SELECT 1`;
+    // Test database connection using Prisma
+    const { prisma } = await import('./db');
+    await prisma.$queryRaw`SELECT 1 as test`;
     res.json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),
-      database: 'connected'
+      database: 'connected',
+      method: 'prisma'
     });
   } catch (error: any) {
     res.status(503).json({ 
@@ -100,11 +104,33 @@ app.get('/health', async (req, res) => {
   }
 });
 
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection using Prisma
+    const { prisma } = await import('./db');
+    await prisma.$queryRaw`SELECT 1 as test`;
+    res.json({ 
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      database: 'connected'
+    });
+  } catch (error: any) {
+    res.status(503).json({ 
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/quick-auth', quickAuthRoutes);
 app.use('/api/artists', artistRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api', commonRoutes);
 
 // Serve static files from the frontend build
@@ -132,13 +158,23 @@ app.use(errorHandler);
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down gracefully...');
-  await prisma.$disconnect();
+  const { prisma } = await import('./db');
+  try {
+    await prisma.$disconnect();
+  } catch (e) {
+    // Ignore disconnect errors
+  }
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('Shutting down gracefully...');
-  await prisma.$disconnect();
+  const { prisma } = await import('./db');
+  try {
+    await prisma.$disconnect();
+  } catch (e) {
+    // Ignore disconnect errors
+  }
   process.exit(0);
 });
 
@@ -148,5 +184,5 @@ app.listen(PORT, () => {
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
 });
 
-export { app, prisma };
+export { app };
 

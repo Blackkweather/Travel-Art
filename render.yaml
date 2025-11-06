@@ -1,0 +1,86 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: travel-art-backend
+    env: node
+    plan: starter
+    region: oregon
+    buildCommand: cd backend && npm install && npx prisma migrate deploy && npm run build
+    startCommand: cd backend && npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: travel-art-db
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: CORS_ORIGIN
+        fromService:
+          type: static_site
+          name: travel-art-frontend
+          property: url
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: MAX_FILE_SIZE
+        value: 10485760
+      - key: UPLOAD_PATH
+        value: ./uploads
+      - key: FROM_EMAIL
+        value: noreply@travelart.com
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+
+  # Frontend Static Site
+  - type: static_site
+    name: travel-art-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    publishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: travel-art-backend
+          property: url
+      - key: VITE_MODE
+        value: production
+      - key: VITE_CDN_PROVIDER
+        value: cloudinary
+      - key: VITE_USE_CLOUDINARY
+        value: "true"
+      - key: VITE_CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: VITE_CLOUDINARY_VERSION
+        sync: false
+      - key: VITE_LOGO_FINAL_URL
+        sync: false
+      - key: VITE_LOGO_TRANSPARENT_URL
+        sync: false
+
+databases:
+  # PostgreSQL Database
+  - name: travel-art-db
+    databaseName: travelart
+    user: travelart
+    plan: starter
+    region: oregon
+
