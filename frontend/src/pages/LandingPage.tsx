@@ -252,7 +252,7 @@ const LandingPage: React.FC = () => {
       {/* Transparent Navigation */}
       {/* Header */}
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 px-5 md:px-20 h-[55px]"
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm border-b border-white/10 px-5 md:px-20 h-[55px]"
         style={{
           background: 'transparent',
           overflow: 'visible'

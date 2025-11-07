@@ -1427,7 +1427,7 @@ html {
   }
 }
 
-/* Header/Navbar Styles - Fully Transparent */
+/* Header/Navbar Styles - Transparent with subtle blur */
 .navbar-transparent,
 nav[class*="fixed"] {
   position: fixed !important;
@@ -1435,7 +1435,7 @@ nav[class*="fixed"] {
   left: 0 !important;
   width: 100% !important;
   background: transparent !important;
-  backdrop-filter: none !important;
+  backdrop-filter: blur(8px) !important;
   z-index: 50 !important;
   box-shadow: none !important;
   transition: background 0.3s ease !important;
