@@ -28,7 +28,6 @@ const LandingPage: React.FC = () => {
   const topHotelsRef = useRef<HTMLDivElement>(null)
   
   // Scroll-based animations - Transparent header
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0)'])
   const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
   
   // Hero parallax effects
@@ -253,9 +252,9 @@ const LandingPage: React.FC = () => {
       {/* Transparent Navigation */}
       {/* Header */}
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10 px-5 md:px-20 h-[55px]"
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm border-b border-white/10 px-5 md:px-20 h-[55px]"
         style={{
-          background: headerBackground,
+          background: 'transparent',
           overflow: 'visible'
         }}
       >

@@ -10,8 +10,7 @@ const Header: React.FC = () => {
   const { scrollY } = useScroll()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
-  // Transparent header background
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0)'])
+  // Fully transparent header - no background
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -20,9 +19,9 @@ const Header: React.FC = () => {
   return (
     <>
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10 px-5 md:px-20 h-[55px]"
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm border-b border-white/10 px-5 md:px-20 h-[55px]"
         style={{
-          background: headerBackground,
+          background: 'transparent',
           overflow: 'visible'
         }}
       >
