@@ -27,8 +27,8 @@ const LandingPage: React.FC = () => {
   const topArtistsRef = useRef<HTMLDivElement>(null)
   const topHotelsRef = useRef<HTMLDivElement>(null)
   
-  // Scroll-based animations
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
+  // Scroll-based animations - Dark navy header (consistent with other pages)
+  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(15, 23, 42, 0.95)', 'rgba(15, 23, 42, 1)'])
   const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
   
   // Hero parallax effects
@@ -265,35 +265,40 @@ const LandingPage: React.FC = () => {
             <img 
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
-              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
+              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain brightness-0 invert"
             />
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6 xl:space-x-8 flex-wrap justify-center">
             <motion.div style={{ color: textColor }}>
-              <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
+              <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
                 How it Works
               </Link>
             </motion.div>
             <motion.div style={{ color: textColor }}>
-              <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
+              <Link to="/partners" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
                 Partners
               </Link>
             </motion.div>
             <motion.div style={{ color: textColor }}>
-              <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-sm">
+              <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
                 Pricing
               </Link>
             </motion.div>
             <motion.div style={{ color: textColor }}>
-              <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
+              <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
                 Top Artists
               </Link>
             </motion.div>
             <motion.div style={{ color: textColor }}>
-              <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-sm">
+              <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
                 Top Hotels
+              </Link>
+            </motion.div>
+            <motion.div style={{ color: textColor }}>
+              <Link to="/experiences" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
+                Experiences
               </Link>
             </motion.div>
           </div>
@@ -307,7 +312,7 @@ const LandingPage: React.FC = () => {
             </motion.div>
             <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
               Join
-              </Link>
+            </Link>
           </div>
         </div>
       </motion.nav>
