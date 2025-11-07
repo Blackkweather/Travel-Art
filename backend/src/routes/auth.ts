@@ -2,13 +2,12 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { config } from '../config';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { getUserByEmail, createUser, initializeDatabase } from '../simple-db';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Validation schemas
 const registerSchema = z.object({
@@ -30,12 +29,13 @@ router.post('/register', asyncHandler(async (req, res) => {
   try {
     const { role, name, email, password, phone, locale } = registerSchema.parse(req.body);
 
+    // Ensure database is initialized
+    await initializeDatabase();
+
     // Check if user already exists with error handling
     let existingUser;
     try {
-      existingUser = await prisma.user.findUnique({
-        where: { email }
-      });
+      existingUser = await getUserByEmail(email);
     } catch (dbError: any) {
       console.error('Database error during registration check:', dbError);
       throw new CustomError('Database connection error. Please try again later.', 500);
@@ -51,28 +51,56 @@ router.post('/register', asyncHandler(async (req, res) => {
     // Create user with error handling
     let user;
     try {
-      user = await prisma.user.create({
-        data: {
-          role,
-          name,
-          email,
-          passwordHash,
-          phone: phone || null,
-          language: locale
-        },
-        select: {
-          id: true,
-          role: true,
-          name: true,
-          email: true,
-          phone: true,
-          createdAt: true
-        }
+      user = await createUser({
+        email,
+        name,
+        passwordHash,
+        role: role as 'ARTIST' | 'HOTEL',
+        language: locale || 'en',
+        phone: phone || null,
       });
     } catch (dbError: any) {
       console.error('Database error during user creation:', dbError);
       throw new CustomError('Failed to create account. Please try again later.', 500);
     }
+
+    // Create Artist or Hotel profile based on role
+    try {
+      const { prisma } = await import('../db');
+      if (role === 'ARTIST') {
+        await prisma.artist.create({
+          data: {
+            userId: user.id,
+            bio: '',
+            discipline: '',
+            priceRange: '',
+            membershipStatus: 'INACTIVE',
+            mediaUrls: JSON.stringify([]),
+            loyaltyPoints: 0
+          }
+        });
+        console.log(`✅ Artist profile created for: ${user.email}`);
+      } else if (role === 'HOTEL') {
+        await prisma.hotel.create({
+          data: {
+            userId: user.id,
+            name: name,
+            description: '',
+            location: JSON.stringify({ city: '', country: '', coords: { lat: 0, lng: 0 } }),
+            images: JSON.stringify([]),
+            performanceSpots: JSON.stringify([]),
+            rooms: JSON.stringify([])
+          }
+        });
+        console.log(`✅ Hotel profile created for: ${user.email}`);
+      }
+    } catch (profileError: any) {
+      console.error('Error creating profile:', profileError);
+      // Don't fail registration if profile creation fails - user can create it later
+    }
+
+    // Fetch user again with profile included
+    const userWithProfile = await getUserByEmail(email);
 
     // Generate JWT token
     const token = (jwt.sign as any)(
@@ -84,7 +112,16 @@ router.post('/register', asyncHandler(async (req, res) => {
     res.status(201).json({
       success: true,
       data: {
-        user,
+        user: {
+          id: userWithProfile!.id,
+          role: userWithProfile!.role,
+          name: userWithProfile!.name,
+          email: userWithProfile!.email,
+          phone: userWithProfile!.phone,
+          createdAt: userWithProfile!.createdAt,
+          artist: userWithProfile!.artist,
+          hotel: userWithProfile!.hotel
+        },
         token
       }
     });
@@ -108,16 +145,13 @@ router.post('/login', asyncHandler(async (req, res) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
 
+    // Ensure database is initialized
+    await initializeDatabase();
+
     // Find user with error handling for database issues
     let user;
     try {
-      user = await prisma.user.findUnique({
-        where: { email },
-        include: {
-          artist: true,
-          hotel: true
-        }
-      });
+      user = await getUserByEmail(email);
     } catch (dbError: any) {
       console.error('Database error during login:', dbError);
       throw new CustomError('Database connection error. Please try again later.', 500);
@@ -165,7 +199,9 @@ router.post('/login', asyncHandler(async (req, res) => {
     }
     // Handle other errors
     console.error('Login error:', error);
-    throw new CustomError('Login failed. Please try again later.', 500);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    throw new CustomError(`Login failed: ${error.message || 'Unknown error'}. Please try again later.`, 500);
   }
 }));
 
@@ -185,13 +221,12 @@ router.post('/refresh', authenticate, asyncHandler(async (req: AuthRequest, res)
 
 // Get current user
 router.get('/me', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user!.id },
-    include: {
-      artist: true,
-      hotel: true
-    }
-  });
+  await initializeDatabase();
+  const user = await getUserByEmail(req.user!.email);
+  
+  if (!user) {
+    throw new CustomError('User not found.', 404);
+  }
 
   res.json({
     success: true,
@@ -207,10 +242,9 @@ const forgotPasswordSchema = z.object({
 router.post('/forgot-password', asyncHandler(async (req, res) => {
   const { email } = forgotPasswordSchema.parse(req.body);
 
+  await initializeDatabase();
   // Find user
-  const user = await prisma.user.findUnique({
-    where: { email }
-  });
+  const user = await getUserByEmail(email);
 
   // Always return success for security (don't reveal if email exists)
   if (user) {
@@ -249,11 +283,14 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
       throw new CustomError('Invalid token type.', 400);
     }
 
-    // Find user
+    await initializeDatabase();
+    
+    // Find user by ID using Prisma
+    const { prisma } = await import('../db');
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId }
     });
-
+    
     if (!user) {
       throw new CustomError('User not found.', 404);
     }
@@ -261,7 +298,7 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
     // Hash new password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Update password
+    // Update password using Prisma
     await prisma.user.update({
       where: { id: user.id },
       data: { passwordHash }

@@ -50,9 +50,10 @@ const HotelProfile: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          {/* Page Header */}
+          <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
             Hotel Profile
@@ -364,7 +365,8 @@ const HotelProfile: React.FC = () => {
           </button>
         </div>
       )}
-    </div>
+        </div>
+      </div>
   )
 }
 

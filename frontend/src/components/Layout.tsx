@@ -1,12 +1,11 @@
 import React from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import Navbar from '@/components/Navbar'
+import Header from '@/components/Header'
 import Sidebar from '@/components/Sidebar'
 
 const Layout: React.FC = () => {
-  const { user, logout } = useAuthStore()
-  const navigate = useNavigate()
+  const { user } = useAuthStore()
   const location = useLocation()
 
   // User is guaranteed to exist due to ProtectedRoute wrapper
@@ -14,16 +13,11 @@ const Layout: React.FC = () => {
     return null
   }
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
-
   return (
     <div className="min-h-screen bg-cream">
-      <Navbar user={user} onLogout={handleLogout} />
+      <Header />
       
-      <div className="flex flex-col md:flex-row">
+      <div className="flex flex-col md:flex-row pt-[55px]">
         <Sidebar user={user} currentPath={location.pathname} />
         
         <main className="flex-1 p-4 md:p-8">

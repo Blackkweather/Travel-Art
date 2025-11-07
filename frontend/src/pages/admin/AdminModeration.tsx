@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { artistsApi, hotelsApi, adminApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { User, Building } from 'lucide-react'
+import { User, Building, Download, FileText } from 'lucide-react'
 
 type ArtistListItem = {
   id: string
@@ -32,13 +32,53 @@ const AdminModeration: React.FC = () => {
       setLoading(true)
       setError(null)
       const [aRes, hRes] = await Promise.all([
-        artistsApi.getAll({ limit: 10 }),
-        hotelsApi.getAll({ limit: 10 })
+        artistsApi.getAll({ limit: 100 }),
+        hotelsApi.getAll({ limit: 100 })
       ])
-      setArtists(((aRes.data as any)?.data ?? []) as ArtistListItem[])
-      setHotels(((hRes.data as any)?.data ?? []) as HotelListItem[])
+      
+      // Handle artists response - can be { data: { artists: [...], pagination: {...} } } or { data: [...] }
+      let artistsData: ArtistListItem[] = []
+      if (aRes.data?.data) {
+        if (Array.isArray(aRes.data.data)) {
+          artistsData = aRes.data.data as ArtistListItem[]
+        } else if (aRes.data.data.artists && Array.isArray(aRes.data.data.artists)) {
+          artistsData = aRes.data.data.artists.map((a: any) => ({
+            id: a.id,
+            userId: a.userId,
+            user: a.user,
+            name: a.user?.name || a.name,
+            discipline: a.discipline
+          })) as ArtistListItem[]
+        }
+      }
+      
+      // Handle hotels response - can be { data: [...] } or { data: { hotels: [...], pagination: {...} } }
+      let hotelsData: HotelListItem[] = []
+      if (hRes.data?.data) {
+        if (Array.isArray(hRes.data.data)) {
+          hotelsData = hRes.data.data.map((h: any) => ({
+            id: h.id,
+            userId: h.userId,
+            user: h.user,
+            name: h.name || h.user?.name || 'Hotel',
+            location: typeof h.location === 'string' ? h.location : (h.location?.city || h.location?.country || '')
+          })) as HotelListItem[]
+        } else if (hRes.data.data.hotels && Array.isArray(hRes.data.data.hotels)) {
+          hotelsData = hRes.data.data.hotels.map((h: any) => ({
+            id: h.id,
+            userId: h.userId,
+            user: h.user,
+            name: h.name || h.user?.name || 'Hotel',
+            location: typeof h.location === 'string' ? h.location : (h.location?.city || h.location?.country || '')
+          })) as HotelListItem[]
+        }
+      }
+      
+      setArtists(artistsData)
+      setHotels(hotelsData)
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Failed to load content')
+      console.error('Moderation load error:', e)
+      setError(e?.response?.data?.message || e?.message || 'Failed to load content')
     } finally {
       setLoading(false)
     }
@@ -75,6 +115,41 @@ const AdminModeration: React.FC = () => {
     }
   }
 
+  const exportToCSV = (data: ArtistListItem[] | HotelListItem[], type: 'artists' | 'hotels') => {
+    const headers = type === 'artists' 
+      ? ['ID', 'Name', 'Email', 'Discipline', 'User ID']
+      : ['ID', 'Name', 'Email', 'Location', 'User ID']
+    
+    const rows = data.map(item => {
+      const name = item.user?.name || item.name || 'N/A'
+      const email = item.user?.email || 'N/A'
+      const userId = item.user?.id || item.userId || 'N/A'
+      
+      if (type === 'artists') {
+        const artist = item as ArtistListItem
+        return [item.id, name, email, artist.discipline || 'N/A', userId]
+      } else {
+        const hotel = item as HotelListItem
+        return [item.id, name, email, hotel.location || 'N/A', userId]
+      }
+    })
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `${type}-moderation-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -82,9 +157,19 @@ const AdminModeration: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">Content Moderation</h1>
           <p className="text-gray-600">Review artists and hotels; suspend or re-activate accounts.</p>
         </div>
-        <div className="flex space-x-2">
-          <button onClick={() => setTab('artists')} className={`btn-secondary ${tab==='artists' ? 'bg-navy text-white' : ''}`}>Artists</button>
-          <button onClick={() => setTab('hotels')} className={`btn-secondary ${tab==='hotels' ? 'bg-navy text-white' : ''}`}>Hotels</button>
+        <div className="flex items-center space-x-4">
+          <div className="flex space-x-2">
+            <button onClick={() => setTab('artists')} className={`btn-secondary ${tab==='artists' ? 'bg-navy text-white' : ''}`}>Artists</button>
+            <button onClick={() => setTab('hotels')} className={`btn-secondary ${tab==='hotels' ? 'bg-navy text-white' : ''}`}>Hotels</button>
+          </div>
+          <button
+            onClick={() => exportToCSV(tab === 'artists' ? artists : hotels, tab)}
+            className="flex items-center space-x-2 btn-secondary"
+            title="Export to CSV"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export</span>
+          </button>
         </div>
       </div>
 
@@ -96,7 +181,13 @@ const AdminModeration: React.FC = () => {
         <div className="card-luxury">
           {tab === 'artists' ? (
             <div className="space-y-3">
-              {artists.map((a) => (
+              {artists.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <User className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p>No artists found</p>
+                </div>
+              ) : (
+                artists.map((a) => (
                 <div key={a.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center"><User className="w-5 h-5 text-gold" /></div>
@@ -111,17 +202,30 @@ const AdminModeration: React.FC = () => {
                     <button onClick={() => activateUser(a.userId || a.user?.id)} disabled={processing === (a.userId || a.user?.id)} className="text-green-600 hover:text-green-800">Activate</button>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {hotels.map((h) => (
+              {hotels.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Building className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p>No hotels found</p>
+                </div>
+              ) : (
+                hotels.map((h) => (
                 <div key={h.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center"><Building className="w-5 h-5 text-gold" /></div>
                     <div>
                       <div className="font-medium text-navy">{h.name}</div>
-                      <div className="text-sm text-gray-600">{h.location || ''}</div>
+                      <div className="text-sm text-gray-600">
+                        {typeof h.location === 'string' 
+                          ? h.location 
+                          : (h.location?.city && h.location?.country 
+                              ? `${h.location.city}, ${h.location.country}` 
+                              : h.location?.city || h.location?.country || 'N/A')}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -130,7 +234,8 @@ const AdminModeration: React.FC = () => {
                     <button onClick={() => activateUser(h.userId || h.user?.id)} disabled={processing === (h.userId || h.user?.id)} className="text-green-600 hover:text-green-800">Activate</button>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           )}
         </div>

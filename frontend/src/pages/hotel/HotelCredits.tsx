@@ -35,7 +35,7 @@ const HotelCredits: React.FC = () => {
       setPackages(pkgRes.data.data || [])
       const creditsRes = await hotelsApi.getCredits(hotel.id)
       setCredits(creditsRes.data.data)
-      const txRes = await paymentsApi.transactions({ userId: hotel.id, limit: 20 })
+      const txRes = await paymentsApi.transactions({ limit: 20 })
       setTransactions(txRes.data.data.transactions || [])
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Failed to load credits data')
@@ -84,7 +84,7 @@ const HotelCredits: React.FC = () => {
       await paymentsApi.purchaseCredits(hotelId, packageId, 'CARD')
       const [creditsRes, txRes] = await Promise.all([
         hotelsApi.getCredits(hotelId),
-        paymentsApi.transactions({ userId: hotelId, limit: 20 })
+        paymentsApi.transactions({ limit: 20 })
       ])
       setCredits(creditsRes.data.data)
       setTransactions(txRes.data.data.transactions || [])
@@ -98,60 +98,60 @@ const HotelCredits: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+      <div className="fade-in-up">
+        <h1 className="dashboard-title mb-3 gold-underline">
           Credit Management
         </h1>
-        <p className="text-gray-600">
+        <p className="dashboard-subtitle">
           Manage your credits and purchase packages for artist bookings
         </p>
       </div>
 
       {/* Current Credits Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="card-luxury text-center"
+          className="dashboard-stat-card text-center"
         >
-          <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-gold/20 to-gold/10 rounded-xl flex items-center justify-center mx-auto mb-4">
             <CreditCard className="w-8 h-8 text-gold" />
           </div>
-          <h3 className="text-3xl font-bold text-navy mb-2">{credits ? credits.availableCredits : (loading ? '—' : 0)}</h3>
-          <p className="text-gray-600">Available Credits</p>
+          <h3 className="text-3xl font-bold text-navy mb-2 count-up">{credits ? credits.availableCredits : (loading ? '—' : 0)}</h3>
+          <p className="section-subtitle">Available Credits</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="card-luxury text-center"
+          className="dashboard-stat-card text-center"
         >
-          <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <TrendingUp className="w-8 h-8 text-gold" />
+          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <TrendingUp className="w-8 h-8 text-green-600" />
           </div>
-          <h3 className="text-3xl font-bold text-navy mb-2">€{totalSpent.toLocaleString()}</h3>
-          <p className="text-gray-600">Total Spent</p>
+          <h3 className="text-3xl font-bold text-navy mb-2 count-up">€{totalSpent.toLocaleString()}</h3>
+          <p className="section-subtitle">Total Spent</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="card-luxury text-center"
+          className="dashboard-stat-card text-center"
         >
-          <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-gold" />
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-8 h-8 text-blue-600" />
           </div>
-          <h3 className="text-3xl font-bold text-navy mb-2">{totalBookings}</h3>
-          <p className="text-gray-600">Total Bookings</p>
+          <h3 className="text-3xl font-bold text-navy mb-2 count-up">{totalBookings}</h3>
+          <p className="section-subtitle">Total Bookings</p>
         </motion.div>
       </div>
 
       {/* Credit Packages */}
-      <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
+      <div className="card-luxury fade-in-up-delay-1">
+        <h2 className="section-title gold-underline">
           Purchase Credit Packages
         </h2>
         {error && (
@@ -164,8 +164,8 @@ const HotelCredits: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={`border-2 rounded-lg p-6 relative ${
-                pkg.popular ? 'border-gold bg-gold/5' : 'border-gray-200'
+              className={`border-2 rounded-xl p-6 relative transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                pkg.popular ? 'border-gold bg-gradient-to-br from-gold/10 to-gold/5 shadow-md' : 'border-gray-200 hover:border-gold/30'
               }`}
             >
               {pkg.popular && (
@@ -223,26 +223,26 @@ const HotelCredits: React.FC = () => {
       </div>
 
       {/* Transaction History */}
-      <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
+      <div className="card-luxury fade-in-up-delay-2">
+        <h2 className="section-title gold-underline">
           Transaction History
         </h2>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {transactions.map((transaction, index) => (
             <motion.div
               key={transaction.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-gold/30 transition-all duration-300 hover:shadow-md"
             >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
                   {getTransactionIcon(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}
                 </div>
-                <div>
-                  <h3 className="font-semibold text-navy">{transaction.type.replace('_', ' ')}</h3>
-                  <p className="text-sm text-gray-600">{transaction.paymentMethod || '—'}</p>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-navy text-lg mb-1">{transaction.type.replace('_', ' ')}</h3>
+                  <p className="text-sm text-gray-600 font-medium mb-1">{transaction.paymentMethod || '—'}</p>
                   <p className="text-xs text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>

@@ -1,7 +1,28 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import path from 'path';
 
-const prisma = new PrismaClient();
+// Load .env files (same as config.ts)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Get database URL from environment
+const getDatabaseUrl = () => {
+  const envUrl = process.env.DATABASE_URL;
+  if (envUrl && envUrl.startsWith('file:')) {
+    return envUrl;
+  }
+  return 'file:./prisma/dev.db';
+};
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: getDatabaseUrl(),
+    },
+  },
+});
 
 async function main() {
   console.log('🌱 Starting database seeding...');

@@ -23,8 +23,20 @@ const logoTransparentOverride = import.meta.env.VITE_LOGO_TRANSPARENT_URL
 const cloudinaryBaseUrl = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/${cloudinaryVersion}`
 
 // Respect app base URL so assets load under sub-path deployments (e.g., MAMP subfolders)
+// In development, Vite serves public assets from root '/'
+// In production, we respect BASE_URL for sub-path deployments
 const baseUrl = import.meta.env.BASE_URL || '/'
-const withBase = (p: string) => `${baseUrl.replace(/\/$/, '')}/${p.replace(/^\//, '')}`
+const withBase = (p: string) => {
+  // Remove leading slash from path if present
+  const cleanPath = p.replace(/^\//, '')
+  // If baseUrl is just '/', use simple root path for Vite dev server
+  if (baseUrl === '/' || baseUrl === '') {
+    return `/${cleanPath}`
+  }
+  // Otherwise, combine baseUrl with path
+  const cleanBase = baseUrl.replace(/\/$/, '')
+  return `${cleanBase}/${cleanPath}`
+}
 
 // Asset configuration with CDN fallback support
 const assetConfig: AssetConfig = {

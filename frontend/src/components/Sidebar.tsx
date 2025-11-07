@@ -53,9 +53,9 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   const navItems = getNavItems()
 
   return (
-    <aside className="hidden md:block w-64 bg-white shadow-medium min-h-screen">
+    <aside className="hidden md:block w-64 bg-white shadow-lg min-h-screen border-r border-gray-100">
       <div className="p-6">
-        <nav className="space-y-2">
+        <nav className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.path
@@ -64,14 +64,21 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative ${
                   isActive
-                    ? 'bg-navy text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-gradient-to-r from-navy to-navy/95 text-white shadow-md'
+                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-gold/10 hover:to-gold/5'
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gold rounded-r-full"></div>
+                )}
+                <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${
+                  isActive ? 'text-white' : 'text-gray-600 group-hover:text-gold'
+                } ${isActive ? '' : 'group-hover:scale-110'}`} />
+                <span className={`font-medium text-sm ${
+                  isActive ? 'text-white' : 'text-gray-700 group-hover:text-navy'
+                }`}>{item.label}</span>
               </Link>
             )
           })}

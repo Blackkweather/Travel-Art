@@ -21,6 +21,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage'
 import TermsPage from '@/pages/TermsPage'
 import CookiePolicyPage from '@/pages/CookiePolicyPage'
+import AboutPage from '@/pages/AboutPage'
 
 // Protected pages
 import ArtistDashboard from '@/pages/artist/ArtistDashboard'
@@ -40,6 +41,8 @@ import AdminUsers from '@/pages/admin/AdminUsers'
 // removed unused direct import: AdminBookings (resolved inside RoleAwareRoute)
 import AdminAnalytics from '@/pages/admin/AdminAnalytics'
 import AdminModeration from '@/pages/admin/AdminModeration'
+import AdminReferrals from '@/pages/admin/AdminReferrals'
+import TravelerExperiencesPage from '@/pages/TravelerExperiencesPage'
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
@@ -86,6 +89,7 @@ function App() {
       <Route path="/top-artists" element={<TopArtistsPage />} />
       <Route path="/top-hotels" element={<TopHotelsPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/experiences" element={<TravelerExperiencesPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -93,6 +97,7 @@ function App() {
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/cookies" element={<CookiePolicyPage />} />
+      <Route path="/about" element={<AboutPage />} />
 
       {/* Protected Routes */}
       <Route 
@@ -175,6 +180,14 @@ function App() {
           element={
             <RoleRoute allowedRoles={['ADMIN']}>
               <AdminModeration />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="referrals"
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminReferrals />
             </RoleRoute>
           } 
         />

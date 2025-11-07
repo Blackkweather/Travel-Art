@@ -1,15 +1,36 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, CreditCard as CardIcon, Shield } from 'lucide-react'
 import { BillingForm, BillingDetails } from '@/components/payment/BillingForm'
 import { PaymentMethods, PaymentMethod } from '@/components/payment/PaymentMethods'
 import { SummaryBox } from '@/components/payment/SummaryBox'
+import PaymentReceipt from '@/components/payment/PaymentReceipt'
+import { getLogoUrl } from '@/config/assets'
 
 type CardDetails = {
   number: string
   expiry: string
   cvv: string
 }
+
+type MockTransaction = {
+  transactionId: string
+  reference: string
+  method: string
+  amount: number
+  currency: string
+  status: 'APPROVED' | 'DECLINED'
+  processedAt: string
+  payerEmail?: string
+  cardLast4?: string
+}
+
+type PaymentResponse = {
+  success: boolean
+  transaction: MockTransaction
+}
+
+const TRANSACTION_STORAGE_KEY = 'travel-art:last-transaction'
 
 const initialBilling: BillingDetails = {
   fullName: '',
@@ -26,13 +47,43 @@ const initialCard: CardDetails = {
   cvv: ''
 }
 
-// Placeholder functions for real integrations
-async function processStripePayment(_billing: BillingDetails, _card: CardDetails, _brand: string) {
-  return new Promise<{ success: boolean }>((resolve) => setTimeout(() => resolve({ success: true }), 900))
+function createMockTransaction(method: string, amount: number, currency: string, billing: BillingDetails, card?: CardDetails): MockTransaction {
+  const timestamp = new Date()
+  const last4 = card?.number ? card.number.slice(-4) : undefined
+  return {
+    transactionId: `txn_${Math.random().toString(36).slice(2, 10)}`,
+    reference: `TA-${timestamp.getTime().toString(36).toUpperCase()}`,
+    method,
+    amount,
+    currency,
+    status: 'APPROVED',
+    processedAt: timestamp.toISOString(),
+    payerEmail: billing.email,
+    cardLast4: last4,
+  }
 }
 
-async function processPayPalPayment(_billing: BillingDetails) {
-  return new Promise<{ success: boolean }>((resolve) => setTimeout(() => resolve({ success: true }), 900))
+// Mock payment processors that simulate external providers
+async function processStripePayment(billing: BillingDetails, card: CardDetails, brand: string, amount: number, currency: string): Promise<PaymentResponse> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        success: true,
+        transaction: createMockTransaction(`${brand.toUpperCase()} (Stripe)`, amount, currency, billing, card),
+      })
+    }, 900)
+  })
+}
+
+async function processPayPalPayment(billing: BillingDetails, amount: number, currency: string): Promise<PaymentResponse> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        success: true,
+        transaction: createMockTransaction('PayPal', amount, currency, billing),
+      })
+    }, 900)
+  })
 }
 
 const fieldRequired = 'This field is required'
@@ -44,8 +95,39 @@ const PaymentPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [transaction, setTransaction] = useState<MockTransaction | null>(null)
 
   const isCardMethod = useMemo(() => method && ['visa', 'mastercard', 'maestro', 'amex', 'other'].includes(method), [method])
+
+  const subtotal = 1499
+  const taxRate = 0.2
+  const tax = useMemo(() => Math.round(subtotal * taxRate * 100) / 100, [subtotal, taxRate])
+  const total = useMemo(() => Math.round((subtotal + tax) * 100) / 100, [subtotal, tax])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(TRANSACTION_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored) as MockTransaction
+        setTransaction(parsed)
+        setSuccess(true)
+      }
+    } catch (error) {
+      console.warn('Failed to load stored transaction', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!transaction) {
+      localStorage.removeItem(TRANSACTION_STORAGE_KEY)
+      return
+    }
+    try {
+      localStorage.setItem(TRANSACTION_STORAGE_KEY, JSON.stringify(transaction))
+    } catch (error) {
+      console.warn('Failed to persist transaction', error)
+    }
+  }, [transaction])
 
   function updateBilling(patch: Partial<BillingDetails>) {
     setBilling((prev) => ({ ...prev, ...patch }))
@@ -78,16 +160,18 @@ const PaymentPage: React.FC = () => {
     if (!validate()) return
     setSubmitting(true)
     setSuccess(false)
+    setTransaction(null)
     try {
-      let result = { success: false }
+      let result: PaymentResponse | null = null
       if (method === 'paypal') {
-        result = await processPayPalPayment(billing)
+        result = await processPayPalPayment(billing, total, '€')
       } else if (isCardMethod && method) {
-        result = await processStripePayment(billing, card, method)
+        result = await processStripePayment(billing, card, method, total, '€')
       }
-      if (result.success) {
+      if (result?.success) {
         setSuccess(true)
         setErrors({})
+        setTransaction(result.transaction)
         // reset form in mock flow
         setBilling(initialBilling)
         setCard(initialCard)
@@ -240,11 +324,157 @@ const PaymentPage: React.FC = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {transaction && (
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                    <PaymentReceipt
+                      transaction={transaction}
+                      onDownload={async () => {
+                        try {
+                          const jsPDFModule = await import('jspdf')
+                          const jsPDF = (jsPDFModule.default || jsPDFModule) as typeof import('jspdf')
+                          const pdf = new (jsPDF as any)()
+                          
+                          const marginLeft = 20
+                          const marginTop = 20
+                          let cursor = marginTop
+                          const pageWidth = pdf.internal.pageSize.getWidth()
+                          const pageHeight = pdf.internal.pageSize.getHeight()
+
+                          // Load and add logo
+                          try {
+                            const logoUrl = getLogoUrl('final')
+                            // Convert logo URL to base64 for PDF
+                            const logoResponse = await fetch(logoUrl)
+                            const logoBlob = await logoResponse.blob()
+                            const logoBase64 = await new Promise<string>((resolve) => {
+                              const reader = new FileReader()
+                              reader.onloadend = () => resolve(reader.result as string)
+                              reader.readAsDataURL(logoBlob)
+                            })
+                            
+                            // Add logo at top (50x20mm)
+                            pdf.addImage(logoBase64, 'PNG', marginLeft, cursor, 50, 20)
+                            cursor += 25
+                          } catch (logoError) {
+                            console.warn('Could not load logo, continuing without it', logoError)
+                            // Add text header if logo fails
+                            pdf.setFontSize(20)
+                            pdf.setTextColor(11, 31, 63) // Navy color
+                            pdf.text('Travel Art', marginLeft, cursor)
+                            cursor += 10
+                          }
+
+                          // Receipt title
+                          pdf.setFontSize(18)
+                          pdf.setTextColor(11, 31, 63) // Navy color
+                          pdf.text('Payment Receipt', marginLeft, cursor)
+                          cursor += 12
+
+                          // Date
+                          pdf.setFontSize(10)
+                          pdf.setTextColor(100, 100, 100) // Gray
+                          const paymentDate = new Date(transaction.processedAt)
+                          pdf.text(`Date: ${paymentDate.toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}`, marginLeft, cursor)
+                          cursor += 15
+
+                          // Divider line
+                          pdf.setDrawColor(200, 200, 200)
+                          pdf.line(marginLeft, cursor, pageWidth - marginLeft, cursor)
+                          cursor += 10
+
+                          // Payment details
+                          pdf.setFontSize(11)
+                          pdf.setTextColor(0, 0, 0) // Black
+
+                          const details: Array<{ label: string; value: string; highlight?: boolean }> = [
+                            { label: 'Transaction ID', value: transaction.transactionId },
+                            { label: 'Reference Number', value: transaction.reference },
+                            { label: 'Payment Method', value: transaction.method },
+                            { label: 'Status', value: transaction.status, highlight: true },
+                            { label: 'Amount Paid', value: `${transaction.currency}${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, highlight: true },
+                            { label: 'Payment Date', value: paymentDate.toLocaleString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) },
+                          ]
+
+                          if (transaction.payerEmail) {
+                            details.push({ label: 'Email', value: transaction.payerEmail })
+                          }
+                          if (transaction.cardLast4) {
+                            details.push({ label: 'Card Number', value: `•••• ${transaction.cardLast4}` })
+                          }
+
+                          details.forEach(({ label, value, highlight }) => {
+                            if (cursor > pageHeight - 30) {
+                              pdf.addPage()
+                              cursor = marginTop
+                            }
+                            
+                            pdf.setFontSize(9)
+                            pdf.setTextColor(100, 100, 100) // Gray for labels
+                            pdf.text(label + ':', marginLeft, cursor)
+                            
+                            pdf.setFontSize(11)
+                            if (highlight) {
+                              pdf.setTextColor(11, 31, 63) // Navy for highlighted values
+                              pdf.setFont('helvetica', 'bold')
+                            } else {
+                              pdf.setTextColor(0, 0, 0) // Black for regular values
+                              pdf.setFont('helvetica', 'normal')
+                            }
+                            pdf.text(value, marginLeft + 60, cursor)
+                            
+                            cursor += 8
+                          })
+
+                          cursor += 5
+                          
+                          // Divider line
+                          pdf.setDrawColor(200, 200, 200)
+                          pdf.line(marginLeft, cursor, pageWidth - marginLeft, cursor)
+                          cursor += 10
+
+                          // Footer
+                          pdf.setFontSize(8)
+                          pdf.setTextColor(100, 100, 100)
+                          pdf.setFont('helvetica', 'italic')
+                          pdf.text(
+                            'Thank you for your payment. This receipt serves as proof of payment.',
+                            marginLeft,
+                            cursor,
+                            { maxWidth: pageWidth - (marginLeft * 2) }
+                          )
+                          cursor += 8
+                          pdf.text(
+                            'For questions, please contact support@travelart.com',
+                            marginLeft,
+                            cursor
+                          )
+
+                          // Save PDF
+                          pdf.save(`receipt-${transaction.reference}-${paymentDate.toISOString().split('T')[0]}.pdf`)
+                        } catch (error) {
+                          console.error('Error generating receipt PDF:', error)
+                          alert('Failed to generate receipt PDF. Please try again.')
+                        }
+                      }}
+                    />
+                  </motion.div>
+                )}
               </div>
             </div>
 
             <div className="lg:col-span-1">
-              <SummaryBox subtotal={1499} taxRate={0.2} currency="€" />
+              <SummaryBox subtotal={subtotal} taxRate={taxRate} currency="€" />
             </div>
           </div>
         </form>
@@ -254,6 +484,10 @@ const PaymentPage: React.FC = () => {
 }
 
 export default PaymentPage
+
+
+
+
 
 
 

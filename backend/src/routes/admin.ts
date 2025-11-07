@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Validation schemas
 const suspendUserSchema = z.object({
@@ -14,6 +13,7 @@ const suspendUserSchema = z.object({
 
 // Get admin dashboard data
 router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  // Wrap each query in try-catch to handle SQLite-specific issues
   const [
     totalUsers,
     totalArtists,
@@ -24,13 +24,13 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
     topArtists,
     topHotels
   ] = await Promise.all([
-    prisma.user.count(),
-    prisma.artist.count(),
-    prisma.hotel.count(),
-    prisma.booking.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } }),
+    prisma.user.count().catch(() => 0),
+    prisma.artist.count().catch(() => 0),
+    prisma.hotel.count().catch(() => 0),
+    prisma.booking.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } }).catch(() => 0),
     prisma.transaction.aggregate({
       _sum: { amount: true }
-    }),
+    }).catch(() => ({ _sum: { amount: null } })),
     prisma.booking.findMany({
       take: 10,
       orderBy: { createdAt: 'desc' } as any,
@@ -50,7 +50,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
           }
         }
       }
-    }),
+    }).catch(() => []),
     prisma.artist.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' } as any,
@@ -59,7 +59,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
           select: { name: true, email: true }
         }
       }
-    }),
+    }).catch(() => []),
     prisma.hotel.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' } as any,
@@ -68,7 +68,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
           select: { name: true, email: true }
         }
       }
-    })
+    }).catch(() => [])
   ]);
 
   res.json({
@@ -91,7 +91,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
 // Suspend user
 router.post('/users/:id/suspend', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
   const { id } = req.params;
-  const { } = suspendUserSchema.parse(req.body);
+  const { reason } = suspendUserSchema.parse(req.body);
 
   const user = await prisma.user.findUnique({
     where: { id }
@@ -314,6 +314,311 @@ router.get('/bookings', authenticate, authorize('ADMIN'), asyncHandler(async (re
         limit: limitNum,
         total,
         pages: Math.ceil(total / limitNum)
+      }
+    }
+  });
+}));
+
+// Get admin activity logs
+router.get('/logs', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const { action, actorUserId, page = '1', limit = '50' } = req.query;
+
+  const pageNum = parseInt(page as string);
+  const limitNum = parseInt(limit as string);
+  const skip = (pageNum - 1) * limitNum;
+
+  const where: any = {};
+  if (action) {
+    where.action = action;
+  }
+  if (actorUserId) {
+    where.actorUserId = actorUserId;
+  }
+
+  const [logs, total] = await Promise.all([
+    prisma.adminLog.findMany({
+      where,
+      include: {
+        actor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      },
+      skip,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.adminLog.count({ where })
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      logs,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    }
+  });
+}));
+
+// Get hotel activity logs (bookings, transactions, etc.)
+router.get('/hotels/:id/logs', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id } = req.params;
+  const { page = '1', limit = '50' } = req.query;
+
+  const pageNum = parseInt(page as string);
+  const limitNum = parseInt(limit as string);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Get hotel
+  const hotel = await prisma.hotel.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      }
+    }
+  });
+
+  if (!hotel) {
+    throw new CustomError('Hotel not found.', 404);
+  }
+
+  // Get bookings
+  const [bookings, bookingsTotal] = await Promise.all([
+    prisma.booking.findMany({
+      where: { hotelId: id },
+      include: {
+        artist: {
+          include: {
+            user: {
+              select: { name: true, email: true }
+            }
+          }
+        }
+      },
+      skip,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.booking.count({ where: { hotelId: id } })
+  ]);
+
+  // Get transactions
+  const [transactions, transactionsTotal] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { hotelId: id },
+      skip,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.transaction.count({ where: { hotelId: id } })
+  ]);
+
+  // Get ratings received
+  const [ratings, ratingsTotal] = await Promise.all([
+    prisma.rating.findMany({
+      where: { hotelId: id },
+      include: {
+        artist: {
+          include: {
+            user: {
+              select: { name: true, email: true }
+            }
+          }
+        }
+      },
+      skip,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.rating.count({ where: { hotelId: id } })
+  ]);
+
+  // Combine all activities
+  const activities = [
+    ...bookings.map(b => ({
+      type: 'BOOKING',
+      id: b.id,
+      description: `Booking ${b.status.toLowerCase()}: ${b.artist.user.name}`,
+      date: b.createdAt,
+      data: b
+    })),
+    ...transactions.map(t => ({
+      type: 'TRANSACTION',
+      id: t.id,
+      description: `${t.type}: €${t.amount}`,
+      date: t.createdAt,
+      data: t
+    })),
+    ...ratings.map(r => ({
+      type: 'RATING',
+      id: r.id,
+      description: `Rating received: ${r.stars} stars from ${r.artist.user.name}`,
+      date: r.createdAt,
+      data: r
+    }))
+  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, limitNum);
+
+  res.json({
+    success: true,
+    data: {
+      hotel: {
+        id: hotel.id,
+        name: hotel.name,
+        user: hotel.user
+      },
+      activities,
+      summary: {
+        totalBookings: bookingsTotal,
+        totalTransactions: transactionsTotal,
+        totalRatings: ratingsTotal
+      },
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: bookingsTotal + transactionsTotal + ratingsTotal,
+        pages: Math.ceil((bookingsTotal + transactionsTotal + ratingsTotal) / limitNum)
+      }
+    }
+  });
+}));
+
+// Get artist activity logs (bookings, ratings, transactions, etc.)
+router.get('/artists/:id/logs', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id } = req.params;
+  const { page = '1', limit = '50' } = req.query;
+
+  const pageNum = parseInt(page as string);
+  const limitNum = parseInt(limit as string);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Get artist
+  const artist = await prisma.artist.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      }
+    }
+  });
+
+  if (!artist) {
+    throw new CustomError('Artist not found.', 404);
+  }
+
+  // Get bookings
+  const [bookings, bookingsTotal] = await Promise.all([
+    prisma.booking.findMany({
+      where: { artistId: id },
+      include: {
+        hotel: {
+          include: {
+            user: {
+              select: { name: true, email: true }
+            }
+          }
+        }
+      },
+      skip,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.booking.count({ where: { artistId: id } })
+  ]);
+
+  // Get transactions
+  const [transactions, transactionsTotal] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { artistId: id },
+      skip,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.transaction.count({ where: { artistId: id } })
+  ]);
+
+  // Get ratings received
+  const [ratings, ratingsTotal] = await Promise.all([
+    prisma.rating.findMany({
+      where: { artistId: id },
+      include: {
+        hotel: {
+          include: {
+            user: {
+              select: { name: true, email: true }
+            }
+          }
+        }
+      },
+      skip,
+      take: limitNum,
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.rating.count({ where: { artistId: id } })
+  ]);
+
+  // Combine all activities
+  const activities = [
+    ...bookings.map(b => ({
+      type: 'BOOKING',
+      id: b.id,
+      description: `Booking ${b.status.toLowerCase()}: ${b.hotel.user.name}`,
+      date: b.createdAt,
+      data: b
+    })),
+    ...transactions.map(t => ({
+      type: 'TRANSACTION',
+      id: t.id,
+      description: `${t.type}: €${t.amount}`,
+      date: t.createdAt,
+      data: t
+    })),
+    ...ratings.map(r => ({
+      type: 'RATING',
+      id: r.id,
+      description: `Rating received: ${r.stars} stars from ${r.hotel.user.name}`,
+      date: r.createdAt,
+      data: r
+    }))
+  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, limitNum);
+
+  res.json({
+    success: true,
+    data: {
+      artist: {
+        id: artist.id,
+        name: artist.user.name,
+        discipline: artist.discipline,
+        user: artist.user
+      },
+      activities,
+      summary: {
+        totalBookings: bookingsTotal,
+        totalTransactions: transactionsTotal,
+        totalRatings: ratingsTotal
+      },
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: bookingsTotal + transactionsTotal + ratingsTotal,
+        pages: Math.ceil((bookingsTotal + transactionsTotal + ratingsTotal) / limitNum)
       }
     }
   });

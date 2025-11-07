@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Validation schemas
 const artistProfileSchema = z.object({
@@ -30,6 +29,154 @@ const searchSchema = z.object({
   page: z.string().optional().default('1'),
   limit: z.string().optional().default('10')
 });
+
+// Search and filter artists (must come before /:id route)
+router.get('/', asyncHandler(async (req, res) => {
+  try {
+    const query = req.query;
+    const { discipline, location, dateFrom, dateTo, page, limit } = {
+      discipline: query.discipline as string | undefined,
+      location: query.location as string | undefined,
+      dateFrom: query.dateFrom as string | undefined,
+      dateTo: query.dateTo as string | undefined,
+      page: query.page as string || '1',
+      limit: query.limit as string || '10'
+    };
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Simple where clause - avoid nested queries for SQLite compatibility
+    const where: any = {};
+
+    // Only add discipline filter if provided (simple contains works in SQLite)
+    if (discipline) {
+      where.discipline = { contains: discipline };
+    }
+
+    // Fetch artists with user info
+    const [allArtists, total] = await Promise.all([
+      prisma.artist.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              country: true
+            }
+          },
+          availability: {
+            where: {
+              dateFrom: { gte: new Date() }
+            },
+            orderBy: { dateFrom: 'asc' },
+            take: 1
+          }
+        },
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' } as any
+      }).catch(() => []),
+      prisma.artist.count({ where }).catch(() => 0)
+    ]);
+
+    // Apply location filter in memory if needed (SQLite-friendly)
+    let artists = allArtists;
+    if (location) {
+      artists = allArtists.filter(a => 
+        a.user?.country?.toLowerCase().includes(location.toLowerCase())
+      );
+    }
+
+    // Apply date filter in memory if needed
+    if (dateFrom && dateTo) {
+      const dateFromFilter = new Date(dateFrom);
+      const dateToFilter = new Date(dateTo);
+      artists = artists.filter(a => 
+        a.availability.some(av => 
+          av.dateFrom <= dateToFilter && av.dateTo >= dateFromFilter
+        )
+      );
+    }
+
+    // Add rating badges for each artist
+    const artistsWithBadges = await Promise.all(
+    artists.map(async (artist) => {
+      const ratings = await prisma.rating.findMany({
+        where: { artistId: artist.id },
+        select: { stars: true }
+      });
+
+      let ratingBadge = null;
+      if (ratings.length > 0) {
+        const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
+        if (avgRating >= 4.5) {
+          ratingBadge = 'Top 10% Performer';
+        } else if (avgRating >= 4.0) {
+          ratingBadge = 'Excellent Performer';
+        } else if (avgRating >= 3.5) {
+          ratingBadge = 'Good Performer';
+        }
+      }
+
+      let images = [];
+      let videos = [];
+      let mediaUrls = [];
+      
+      if (artist.images) {
+        try {
+          images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
+        } catch (e) {
+          images = [];
+        }
+      }
+      
+      if (artist.videos) {
+        try {
+          videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
+        } catch (e) {
+          videos = [];
+        }
+      }
+      
+      if (artist.mediaUrls) {
+        try {
+          mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
+        } catch (e) {
+          mediaUrls = [];
+        }
+      }
+
+      return {
+        ...artist,
+        ratingBadge,
+        images: images,
+        videos: videos,
+        mediaUrls: mediaUrls
+      };
+    })
+    );
+
+    res.json({
+      success: true,
+      data: {
+        artists: artistsWithBadges,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum)
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching artists:', error);
+    throw new CustomError('Failed to fetch artists', 500);
+  }
+}));
 
 // Get public artist profile
 router.get('/:id', asyncHandler(async (req, res) => {
@@ -77,15 +224,42 @@ router.get('/:id', asyncHandler(async (req, res) => {
     }
   }
 
+  let images = [];
+  let videos = [];
+  let mediaUrls = [];
+  
+  if (artist.images) {
+    try {
+      images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
+    } catch (e) {
+      images = [];
+    }
+  }
+  
+  if (artist.videos) {
+    try {
+      videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
+    } catch (e) {
+      videos = [];
+    }
+  }
+  
+  if (artist.mediaUrls) {
+    try {
+      mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
+    } catch (e) {
+      mediaUrls = [];
+    }
+  }
+
   res.json({
     success: true,
     data: {
       ...artist,
       ratingBadge,
-      // Parse JSON strings
-      images: artist.images ? JSON.parse(artist.images) : [],
-      videos: artist.videos ? JSON.parse(artist.videos) : [],
-      mediaUrls: artist.mediaUrls ? JSON.parse(artist.mediaUrls) : []
+      images: images,
+      videos: videos,
+      mediaUrls: mediaUrls
     }
   });
 }));
@@ -147,104 +321,6 @@ router.post('/:id/availability', authenticate, authorize('ARTIST'), asyncHandler
   });
 }));
 
-// Search and filter artists
-router.get('/', asyncHandler(async (req, res) => {
-  const { discipline, location, dateFrom, dateTo, page, limit } = searchSchema.parse(req.query);
-
-  const pageNum = parseInt(page);
-  const limitNum = parseInt(limit);
-  const skip = (pageNum - 1) * limitNum;
-
-  const where: any = {};
-
-  if (discipline) {
-    where.discipline = { contains: discipline, mode: 'insensitive' };
-  }
-
-  if (location) {
-    where.user = {
-      country: { contains: location, mode: 'insensitive' }
-    };
-  }
-
-  if (dateFrom && dateTo) {
-    where.availability = {
-      some: {
-        dateFrom: { lte: new Date(dateTo) },
-        dateTo: { gte: new Date(dateFrom) }
-      }
-    };
-  }
-
-  const [artists, total] = await Promise.all([
-    prisma.artist.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            country: true
-          }
-        },
-        availability: {
-          where: {
-            dateFrom: { gte: new Date() }
-          },
-          orderBy: { dateFrom: 'asc' },
-          take: 1
-        }
-      },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' } as any
-    }),
-    prisma.artist.count({ where })
-  ]);
-
-  // Add rating badges for each artist
-  const artistsWithBadges = await Promise.all(
-    artists.map(async (artist) => {
-      const ratings = await prisma.rating.findMany({
-        where: { artistId: artist.id },
-        select: { stars: true }
-      });
-
-      let ratingBadge = null;
-      if (ratings.length > 0) {
-        const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
-        if (avgRating >= 4.5) {
-          ratingBadge = 'Top 10% Performer';
-        } else if (avgRating >= 4.0) {
-          ratingBadge = 'Excellent Performer';
-        } else if (avgRating >= 3.5) {
-          ratingBadge = 'Good Performer';
-        }
-      }
-
-      return {
-        ...artist,
-        ratingBadge,
-        images: artist.images ? JSON.parse(artist.images) : [],
-        videos: artist.videos ? JSON.parse(artist.videos) : [],
-        mediaUrls: artist.mediaUrls ? JSON.parse(artist.mediaUrls) : []
-      };
-    })
-  );
-
-  res.json({
-    success: true,
-    data: {
-      artists: artistsWithBadges,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum)
-      }
-    }
-  });
-}));
 
 export { router as artistRoutes };
 

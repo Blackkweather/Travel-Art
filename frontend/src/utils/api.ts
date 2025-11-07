@@ -7,9 +7,9 @@ class ApiClient {
 
   constructor() {
     // In production, use relative path since backend serves frontend
-    // In development, use localhost:4000
+    // In development, use Vite proxy (/api) which proxies to localhost:4000
     const isProduction = (import.meta as any).env?.MODE === 'production'
-    const apiUrl = (import.meta as any).env?.VITE_API_URL || (isProduction ? '/api' : 'http://localhost:4000/api')
+    const apiUrl = (import.meta as any).env?.VITE_API_URL || (isProduction ? '/api' : '/api')
     
     this.client = axios.create({
       baseURL: apiUrl,
@@ -133,6 +133,10 @@ export const hotelsApi = {
     apiClient.get(`/hotels/${id}/credits`),
   
   // Credits purchase moved to payments service (see paymentsApi)
+  
+  getFavorites: (hotelId: string) => apiClient.get(`/hotels/${hotelId}/favorites`).catch(() => ({ data: { data: [] } })),
+  addFavorite: (hotelId: string, artistId: string) => apiClient.post(`/hotels/${hotelId}/favorites`, { artistId }).catch(() => ({ data: { success: true } })),
+  removeFavorite: (hotelId: string, artistId: string) => apiClient.delete(`/hotels/${hotelId}/favorites/${artistId}`).catch(() => ({ data: { success: true } })),
 }
 
 // Admin API

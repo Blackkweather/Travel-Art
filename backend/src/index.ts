@@ -12,6 +12,7 @@ import { hotelRoutes } from './routes/hotels';
 import { adminRoutes } from './routes/admin';
 import { commonRoutes } from './routes/common';
 import { paymentRoutes } from './routes/payments';
+import { bookingRoutes } from './routes/bookings';
 import { initializeDatabase, prisma } from './db';
 
 const app = express();
@@ -131,6 +132,7 @@ app.use('/api/artists', artistRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/bookings', bookingRoutes);
 app.use('/api', commonRoutes);
 
 // Serve static files from the frontend build

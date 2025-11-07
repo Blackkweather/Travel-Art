@@ -10,9 +10,8 @@ const Header: React.FC = () => {
   const { scrollY } = useScroll()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
-  // Scroll-based animations for header
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
-  const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
+  // Scroll-based background opacity (subtle change)
+  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(255, 255, 255, 0.85)', 'rgba(255, 255, 255, 0.95)'])
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -31,70 +30,41 @@ const Header: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             <img 
-              src={getLogoUrl('final')} 
+              src={getLogoUrl('transparent')} 
               alt="Travel Art" 
               className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
-              onError={(e) => {
-                const img = e.currentTarget
-                // Try Cloudinary fallback if local fails
-                const currentSrc = img.getAttribute('src') || ''
-                if (!currentSrc.includes('cloudinary.com') && !currentSrc.includes('res.cloudinary.com')) {
-                  img.src = 'https://res.cloudinary.com/desowqsmy/image/upload/v1761401364/logo_1_final_fcn3q5.png'
-                  return
-                }
-                // If Cloudinary also fails, show text fallback
-                img.style.display = 'none'
-                const fallback = img.nextElementSibling as HTMLElement
-                if (fallback) {
-                  fallback.style.display = 'flex'
-                }
-              }}
             />
-            <div className="hidden items-center text-2xl md:text-3xl font-serif font-bold text-white">
-              <span className="text-white">TRAVEL</span>
-              <span className="text-gold mx-2">+</span>
-              <span className="text-white">ART</span>
-            </div>
           </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <motion.div style={{ color: textColor }}>
-              <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
-                How it Works
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
-                Partners
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-sm">
-                Pricing
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
-                Top Artists
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-sm">
-                Top Hotels
-              </Link>
-            </motion.div>
+            <Link to="/how-it-works" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+              How it Works
+            </Link>
+            <Link to="/partners" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+              Partners
+            </Link>
+            <Link to="/pricing" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+              Pricing
+            </Link>
+            <Link to="/top-artists" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+              Top Artists
+            </Link>
+            <Link to="/top-hotels" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+              Top Hotels
+            </Link>
+            <Link to="/experiences" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+              Experiences
+            </Link>
           </div>
           
-          {/* Desktop Action Buttons */}
-          <div className="hidden md:flex items-center space-x-3">
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-3">
             {user ? (
               <>
-                <motion.div style={{ color: textColor }}>
-                  <Link to="/dashboard" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
-                    Dashboard
-                  </Link>
-                </motion.div>
+                <Link to="/dashboard" className="text-navy hover:text-gold transition-colors font-medium text-sm px-4 py-2">
+                  Dashboard
+                </Link>
                 <button
                   onClick={() => {
                     logout()
@@ -107,11 +77,9 @@ const Header: React.FC = () => {
               </>
             ) : (
               <>
-                <motion.div style={{ color: textColor }}>
-                  <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
-                    Sign In
-                  </Link>
-                </motion.div>
+                <Link to="/login" className="text-navy hover:text-gold transition-colors font-medium text-sm px-4 py-2">
+                  Sign In
+                </Link>
                 <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
                   Join
                 </Link>
@@ -122,7 +90,7 @@ const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden text-white hover:text-gold transition-colors p-2"
+            className="md:hidden text-navy hover:text-gold transition-colors p-2"
             aria-label="Toggle mobile menu"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -136,55 +104,62 @@ const Header: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="fixed top-[55px] left-0 right-0 z-40 bg-navy/95 backdrop-blur-md border-b border-white/10 md:hidden"
+          className="fixed top-[55px] left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg md:hidden"
         >
           <div className="px-6 py-4 space-y-4">
             {/* Mobile Navigation Links */}
             <div className="space-y-3">
               <Link 
                 to="/how-it-works" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
+                className="block text-navy hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 How it Works
               </Link>
               <Link 
                 to="/partners" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
+                className="block text-navy hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Partners
               </Link>
               <Link 
                 to="/pricing" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
+                className="block text-navy hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Pricing
               </Link>
               <Link 
                 to="/top-artists" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
+                className="block text-navy hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Top Artists
               </Link>
-              <Link 
-                to="/top-hotels" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
+              <Link
+                to="/top-hotels"
+                className="block text-navy hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Top Hotels
               </Link>
+              <Link
+                to="/experiences"
+                className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Experiences
+              </Link>
             </div>
             
             {/* Mobile Action Buttons */}
-            <div className="pt-4 border-t border-white/20 space-y-3">
+            <div className="pt-4 border-t border-gray-200 space-y-3">
               {user ? (
                 <>
                   <Link 
                     to="/dashboard" 
-                    className="block text-white hover:text-gold transition-colors font-medium py-2"
+                    className="block text-navy hover:text-gold transition-colors font-medium py-2"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Dashboard
@@ -204,7 +179,7 @@ const Header: React.FC = () => {
                 <>
                   <Link 
                     to="/login" 
-                    className="block text-white hover:text-gold transition-colors font-medium py-2"
+                    className="block text-navy hover:text-gold transition-colors font-medium py-2"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign In

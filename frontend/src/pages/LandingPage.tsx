@@ -14,6 +14,7 @@ import {
 import { getLogoUrl } from '@/config/assets'
 import { ArtistRank, getQuickRank } from '@/components/ArtistRank'
 import Footer from '@/components/Footer'
+import NewsletterSignup from '@/components/NewsletterSignup'
 
 const LandingPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -646,7 +647,7 @@ const LandingPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex-1 flex flex-col justify-between">
-                <div>
+                      <div>
                         <h3 className="text-xl font-serif font-bold text-navy mb-2">{hotel.name}</h3>
                         <p className="text-gold font-semibold mb-3">{hotel.location}</p>
                       </div>
@@ -662,8 +663,8 @@ const LandingPage: React.FC = () => {
                 </div>
               ))}
             </div>
-                </div>
-              </div>
+          </div>
+        </div>
       </section>
         
 
@@ -787,7 +788,7 @@ const LandingPage: React.FC = () => {
                         <span className="text-gold font-bold">◆</span>
                         <span>{hotel.rating}</span>
                       </div>
-              </div>
+                    </div>
                     <h3 className="text-xl font-serif font-bold text-navy mb-2">{hotel.name}</h3>
                     <p className="text-gold font-semibold mb-2">{hotel.location}</p>
                     <div className="flex flex-wrap gap-1">
@@ -796,13 +797,18 @@ const LandingPage: React.FC = () => {
                           {feature}
                         </span>
                       ))}
-              </div>
-              </div>
-            </div>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-16 bg-cream">
+        <NewsletterSignup variant="banner" />
       </section>
 
       {/* Footer */}

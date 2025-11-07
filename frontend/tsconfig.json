@@ -18,7 +18,6 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
-    "types": ["vite/client"],
     "paths": {
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
@@ -29,7 +28,7 @@
       "@/store/*": ["./src/store/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src/**/*", "src/**/*.ts", "src/**/*.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
 

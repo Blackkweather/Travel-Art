@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Mail, Phone, Instagram, Twitter, Facebook, Linkedin } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
+import NewsletterSignup from './NewsletterSignup'
 
 const Footer: React.FC = () => {
   return (
@@ -21,6 +22,10 @@ const Footer: React.FC = () => {
               Connecting luxury hotels with talented artists to create unforgettable rooftop performances, 
               intimate concerts, and magical experiences that inspire and delight guests worldwide.
             </p>
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-navy mb-3">Stay Updated</h4>
+              <NewsletterSignup variant="inline" />
+            </div>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-600 hover:text-gold transition-colors">
                 <Instagram className="w-6 h-6" />
@@ -103,6 +108,9 @@ const Footer: React.FC = () => {
             </Link>
             <Link to="/cookies" className="text-gray-500 hover:text-gold transition-colors text-sm">
               Cookie Policy
+            </Link>
+            <Link to="/about" className="text-gray-500 hover:text-gold transition-colors text-sm">
+              About
             </Link>
           </div>
         </div>

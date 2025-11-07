@@ -1,119 +1,165 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, MapPin, Clock, Star, CheckCircle, XCircle, AlertCircle, Search, User, Music } from 'lucide-react'
+import { useAuthStore } from '@/store/authStore'
+import { hotelsApi, bookingsApi } from '@/utils/api'
+import LoadingSpinner from '@/components/LoadingSpinner'
+
+interface Booking {
+  id: string
+  artist: {
+    id: string
+    name: string
+    discipline: string
+    image?: string
+    rating?: number
+  }
+  hotelId: string
+  startDate: string
+  endDate: string
+  status: string
+  creditsUsed: number
+  performanceSpot?: string
+  notes?: string
+}
 
 const HotelBookings: React.FC = () => {
+  const { user } = useAuthStore()
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
-  
-  const bookings = [
-    {
-      id: '1',
-      artist: {
-        name: 'Sophie Laurent',
-        discipline: 'Classical Pianist',
-        image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop',
-        rating: 4.9
-      },
-      venue: 'Rooftop Terrace',
-      date: '2024-02-10',
-      time: '19:00',
-      duration: '2 hours',
-      status: 'confirmed',
-      credits: 2,
-      guestCount: 25,
-      specialRequests: 'Please provide a grand piano and soft lighting for intimate atmosphere',
-      performanceType: 'Intimate Concert',
-      contactEmail: 'sophie@example.com',
-      contactPhone: '+33 6 12 34 56 78'
-    },
-    {
-      id: '2',
-      artist: {
-        name: 'Marco Silva',
-        discipline: 'DJ',
-        image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=100&h=100&fit=crop',
-        rating: 4.8
-      },
-      venue: 'Rooftop Beach Club',
-      date: '2024-02-15',
-      time: '20:30',
-      duration: '3 hours',
-      status: 'pending',
-      credits: 3,
-      guestCount: 50,
-      specialRequests: 'Sunset DJ set with electronic music, need sound system and lighting',
-      performanceType: 'DJ Performance',
-      contactEmail: 'marco@example.com',
-      contactPhone: '+351 91 23 45 67'
-    },
-    {
-      id: '3',
-      artist: {
-        name: 'Jean-Michel Dubois',
-        discipline: 'Jazz Saxophonist',
-        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100&h=100&fit=crop',
-        rating: 4.9
-      },
-      venue: 'Grand Ballroom',
-      date: '2024-02-20',
-      time: '18:00',
-      duration: '2.5 hours',
-      status: 'completed',
-      credits: 2,
-      guestCount: 80,
-      specialRequests: 'Jazz ensemble performance, need piano and drum set',
-      performanceType: 'Jazz Concert',
-      contactEmail: 'jean@example.com',
-      contactPhone: '+33 6 98 76 54 32'
-    },
-    {
-      id: '4',
-      artist: {
-        name: 'Isabella Garcia',
-        discipline: 'Flamenco Dancer',
-        image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=100&h=100&fit=crop',
-        rating: 4.7
-      },
-      venue: 'Elegant Lounge',
-      date: '2024-02-25',
-      time: '19:30',
-      duration: '1.5 hours',
-      status: 'cancelled',
-      credits: 1,
-      guestCount: 30,
-      specialRequests: 'Cancelled due to weather conditions',
-      performanceType: 'Cultural Performance',
-      contactEmail: 'isabella@example.com',
-      contactPhone: '+34 6 11 22 33 44'
-    },
-    {
-      id: '5',
-      artist: {
-        name: 'Yoga Master Ananda',
-        discipline: 'Yoga Instructor',
-        image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=100&h=100&fit=crop',
-        rating: 4.8
-      },
-      venue: 'Rooftop Terrace',
-      date: '2024-03-01',
-      time: '07:00',
-      duration: '1 hour',
-      status: 'confirmed',
-      credits: 1,
-      guestCount: 20,
-      specialRequests: 'Sunrise yoga session, need yoga mats and peaceful atmosphere',
-      performanceType: 'Wellness Session',
-      contactEmail: 'ananda@example.com',
-      contactPhone: '+212 6 55 44 33 22'
+  const [bookings, setBookings] = useState<Booking[]>([])
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!user?.id) return
+
+      try {
+        setLoading(true)
+
+        // Get hotel profile
+        const hotelRes = await hotelsApi.getByUser(user.id)
+        const hotel = hotelRes.data?.data
+        if (!hotel) return
+
+        // Get bookings for this hotel
+        const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
+        const bookingsData = bookingsRes.data?.data || []
+        
+        // Transform bookings to match component format
+        const transformedBookings = bookingsData.map((b: any) => ({
+          id: b.id,
+          artist: {
+            id: b.artist?.id || '',
+            name: b.artist?.name || 'Unknown Artist',
+            discipline: b.artist?.discipline || '',
+            image: b.artist?.image || 'https://via.placeholder.com/100?text=Artist',
+            rating: b.artist?.rating || 0
+          },
+          hotelId: b.hotelId,
+          startDate: b.startDate,
+          endDate: b.endDate,
+          status: b.status.toLowerCase(),
+          creditsUsed: b.creditsUsed || 0,
+          performanceSpot: b.performanceSpot || 'TBD',
+          notes: b.notes || '',
+          // Calculate duration
+          duration: calculateDuration(b.startDate, b.endDate),
+          // Format date/time
+          date: b.startDate,
+          time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          // Additional fields for display
+          guestCount: 0, // Would need to come from booking details
+          performanceType: b.performanceType || 'Performance',
+          contactEmail: b.artist?.email || '',
+          contactPhone: b.artist?.phone || ''
+        }))
+
+        setBookings(transformedBookings)
+      } catch (error) {
+        console.error('Error fetching bookings:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    fetchBookings()
+  }, [user?.id])
+
+  const calculateDuration = (start: string, end: string): string => {
+    const startDate = new Date(start)
+    const endDate = new Date(end)
+    const diffMs = endDate.getTime() - startDate.getTime()
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+    
+    if (diffHours > 0) {
+      return diffMins > 0 ? `${diffHours}h ${diffMins}m` : `${diffHours} hour${diffHours > 1 ? 's' : ''}`
+    }
+    return `${diffMins} minute${diffMins !== 1 ? 's' : ''}`
+  }
+
+  const handleStatusUpdate = async (bookingId: string, status: 'CONFIRMED' | 'REJECTED' | 'CANCELLED') => {
+    try {
+      await bookingsApi.updateStatus(bookingId, status)
+      // Notification
+      const statusText = status === 'CONFIRMED' ? 'confirmed' : status === 'REJECTED' ? 'rejected' : 'cancelled'
+      console.log(`Booking ${statusText} successfully`)
+      alert(`Booking ${statusText} successfully`)
+      
+      // Refresh bookings - get hotel first
+      const hotelRes = await hotelsApi.getByUser(user?.id || '')
+      const hotel = hotelRes.data?.data
+      if (!hotel) return
+
+      const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
+      const bookingsData = bookingsRes.data?.data || []
+      
+      const transformedBookings = bookingsData.map((b: any) => ({
+        id: b.id,
+        artist: {
+          id: b.artist?.id || '',
+          name: b.artist?.name || 'Unknown Artist',
+          discipline: b.artist?.discipline || '',
+          image: b.artist?.image || 'https://via.placeholder.com/100?text=Artist',
+          rating: b.artist?.rating || 0
+        },
+        hotelId: b.hotelId,
+        startDate: b.startDate,
+        endDate: b.endDate,
+        status: b.status.toLowerCase(),
+        creditsUsed: b.creditsUsed || 0,
+        performanceSpot: b.performanceSpot || 'TBD',
+        notes: b.notes || '',
+        duration: calculateDuration(b.startDate, b.endDate),
+        date: b.startDate,
+        time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        guestCount: 0,
+        performanceType: b.performanceType || 'Performance',
+        contactEmail: b.artist?.email || '',
+        contactPhone: b.artist?.phone || ''
+      }))
+      
+      setBookings(transformedBookings)
+    } catch (error) {
+      console.error('Error updating booking status:', error)
+      alert('Failed to update booking status')
+    }
+  }
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <LoadingSpinner />
+      </div>
+    )
+  }
 
   const filteredBookings = bookings.filter(booking => {
     const matchesFilter = filter === 'all' || booking.status === filter
     const matchesSearch = booking.artist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.venue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.performanceType.toLowerCase().includes(searchTerm.toLowerCase())
+                         (booking.performanceSpot || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (booking.notes || '').toLowerCase().includes(searchTerm.toLowerCase())
     
     return matchesFilter && matchesSearch
   })
@@ -190,18 +236,18 @@ const HotelBookings: React.FC = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="card-luxury">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="search-container">
+        <div className="filters-row">
           <div className="flex-1">
             <label className="form-label">Search Bookings</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <div className="search-icon-container">
+              <Search className="search-icon" />
               <input
                 type="text"
                 placeholder="Search by artist, venue, or performance type..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input pl-10"
+                className="search-input"
               />
             </div>
           </div>
@@ -210,7 +256,7 @@ const HotelBookings: React.FC = () => {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="form-input"
+              className="filter-select"
             >
               <option value="all">All Status</option>
               <option value="confirmed">Confirmed</option>
@@ -245,14 +291,12 @@ const HotelBookings: React.FC = () => {
                     {booking.artist.name}
                   </h3>
                   <p className="text-gold font-medium mb-2">{booking.artist.discipline}</p>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-gold font-bold">◆</span>
-                    <span className="text-sm text-gray-600">{booking.artist.rating}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <User className="w-4 h-4 mr-1" />
-                    <span>{booking.guestCount} guests expected</span>
-                  </div>
+                  {booking.artist.rating > 0 && (
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Star className="w-4 h-4 text-gold" />
+                      <span className="text-sm text-gray-600">{booking.artist.rating.toFixed(1)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -264,19 +308,19 @@ const HotelBookings: React.FC = () => {
                     <div className="space-y-1 text-sm text-gray-600">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>{new Date(booking.date).toLocaleDateString()}</span>
+                        <span>{new Date(booking.startDate).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2" />
-                        <span>{booking.time} ({booking.duration})</span>
+                        <span>{new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({booking.duration})</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2" />
-                        <span>{booking.venue}</span>
+                        <span>{booking.performanceSpot || 'TBD'}</span>
                       </div>
                       <div className="flex items-center">
                         <Music className="w-4 h-4 mr-2" />
-                        <span>{booking.performanceType}</span>
+                        <span>{booking.performanceType || 'Performance'}</span>
                       </div>
                     </div>
                   </div>
@@ -284,18 +328,18 @@ const HotelBookings: React.FC = () => {
                   <div>
                     <h4 className="text-sm font-medium text-navy mb-2">Booking Info</h4>
                     <div className="space-y-1 text-sm text-gray-600">
-                      <div>Credits: <span className="font-medium text-gold">{booking.credits}</span></div>
-                      <div>Contact: {booking.contactEmail}</div>
-                      <div>Phone: {booking.contactPhone}</div>
+                      <div>Credits: <span className="font-medium text-gold">{booking.creditsUsed}</span></div>
+                      {booking.contactEmail && <div>Contact: {booking.contactEmail}</div>}
+                      {booking.contactPhone && <div>Phone: {booking.contactPhone}</div>}
                     </div>
                   </div>
                 </div>
 
-                {booking.specialRequests && (
+                {booking.notes && (
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium text-navy mb-2">Special Requests</h4>
+                    <h4 className="text-sm font-medium text-navy mb-2">Notes</h4>
                     <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                      {booking.specialRequests}
+                      {booking.notes}
                     </p>
                   </div>
                 )}
@@ -309,8 +353,18 @@ const HotelBookings: React.FC = () => {
                   <div className="flex space-x-2">
                     {booking.status === 'pending' && (
                       <>
-                        <button className="btn-primary text-sm">Confirm</button>
-                        <button className="btn-secondary text-sm">Decline</button>
+                        <button 
+                          onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')}
+                          className="btn-primary text-sm"
+                        >
+                          Confirm
+                        </button>
+                        <button 
+                          onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
+                          className="btn-secondary text-sm"
+                        >
+                          Decline
+                        </button>
                       </>
                     )}
                     {booking.status === 'confirmed' && (

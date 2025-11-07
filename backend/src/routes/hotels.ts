@@ -1,11 +1,73 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 
 const router = Router();
-const prisma = new PrismaClient();
+
+// Get all hotels (for admin/moderation)
+router.get('/', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  try {
+    const { page = '1', limit = '50' } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [hotels, total] = await Promise.all([
+      prisma.hotel.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              country: true
+            }
+          }
+        },
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' } as any
+      }).catch(() => []),
+      prisma.hotel.count().catch(() => 0)
+    ]);
+
+    // Format hotels for moderation view
+    const formattedHotels = hotels.map(hotel => {
+      let location = null;
+      if (hotel.location) {
+        try {
+          location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
+        } catch (e) {
+          // If parsing fails, use as string
+          location = typeof hotel.location === 'string' ? hotel.location : null;
+        }
+      }
+      return {
+        id: hotel.id,
+        userId: hotel.userId,
+        user: hotel.user,
+        name: hotel.name,
+        location: location
+      };
+    });
+
+    res.json({
+      success: true,
+      data: formattedHotels,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching hotels:', error);
+    throw new CustomError('Failed to fetch hotels', 500);
+  }
+}));
 
 // Validation schemas
 const hotelProfileSchema = z.object({
@@ -43,6 +105,164 @@ const ratingSchema = z.object({
   textReview: z.string().min(10).max(500)
 });
 
+// Get hotel by user ID
+router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+  const { userId } = req.params;
+
+  // Users can only access their own hotel data unless they're admin
+  if (req.user!.role !== 'ADMIN' && req.user!.id !== userId) {
+    throw new CustomError('Access denied.', 403);
+  }
+
+  let hotel = await prisma.hotel.findUnique({
+    where: { userId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          country: true,
+          createdAt: true
+        }
+      },
+      credits: true,
+      bookings: {
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          artist: {
+            include: {
+              user: {
+                select: { name: true, email: true }
+              }
+            }
+          }
+        }
+      },
+      transactions: {
+        take: 10,
+        orderBy: { createdAt: 'desc' }
+      }
+    }
+  });
+
+  // If hotel doesn't exist and user is a hotel, create a default one
+  if (!hotel && req.user!.role === 'HOTEL' && req.user!.id === userId) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user) {
+      // Create location JSON string
+      const location = JSON.stringify({
+        city: '',
+        country: user.country || '',
+        coords: null
+      });
+      
+      hotel = await prisma.hotel.create({
+        data: {
+          userId: userId,
+          name: user.name,
+          description: '',
+          location: location,
+          contactPhone: user.phone || null,
+          repName: null
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              country: true,
+              createdAt: true
+            }
+          },
+          credits: true,
+          bookings: {
+            take: 10,
+            orderBy: { createdAt: 'desc' },
+            include: {
+              artist: {
+                include: {
+                  user: {
+                    select: { name: true, email: true }
+                  }
+                }
+              }
+            }
+          },
+          transactions: {
+            take: 10,
+            orderBy: { createdAt: 'desc' }
+          }
+        }
+      });
+    }
+  }
+
+  if (!hotel) {
+    throw new CustomError('Hotel not found.', 404);
+  }
+
+  // Calculate available credits
+  const credits = hotel.credits[0];
+  const availableCredits = credits ? credits.totalCredits - credits.usedCredits : 0;
+  const totalSpent = hotel.transactions
+    .filter(t => t.type === 'CREDIT_PURCHASE')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  let location = null;
+  let images = [];
+  let performanceSpots = [];
+  let rooms = [];
+  
+  if (hotel.location) {
+    try {
+      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
+    } catch (e) {
+      location = null;
+    }
+  }
+  
+  if (hotel.images) {
+    try {
+      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
+    } catch (e) {
+      images = [];
+    }
+  }
+  
+  if (hotel.performanceSpots) {
+    try {
+      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
+    } catch (e) {
+      performanceSpots = [];
+    }
+  }
+  
+  if (hotel.rooms) {
+    try {
+      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
+    } catch (e) {
+      rooms = [];
+    }
+  }
+
+  res.json({
+    success: true,
+    data: {
+      ...hotel,
+      availableCredits,
+      totalSpent,
+      totalBookings: hotel.bookings.length,
+      location: location,
+      images: images,
+      performanceSpots: performanceSpots,
+      rooms: rooms
+    }
+  });
+}));
+
 // Get hotel profile
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -71,15 +291,51 @@ router.get('/:id', asyncHandler(async (req, res) => {
     throw new CustomError('Hotel not found.', 404);
   }
 
+  let location = null;
+  let images = [];
+  let performanceSpots = [];
+  let rooms = [];
+  
+  if (hotel.location) {
+    try {
+      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
+    } catch (e) {
+      location = null;
+    }
+  }
+  
+  if (hotel.images) {
+    try {
+      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
+    } catch (e) {
+      images = [];
+    }
+  }
+  
+  if (hotel.performanceSpots) {
+    try {
+      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
+    } catch (e) {
+      performanceSpots = [];
+    }
+  }
+  
+  if (hotel.rooms) {
+    try {
+      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
+    } catch (e) {
+      rooms = [];
+    }
+  }
+
   res.json({
     success: true,
     data: {
       ...hotel,
-      // Parse JSON strings
-      location: hotel.location ? JSON.parse(hotel.location) : null,
-      images: hotel.images ? JSON.parse(hotel.images) : [],
-      performanceSpots: hotel.performanceSpots ? JSON.parse(hotel.performanceSpots) : [],
-      rooms: hotel.rooms ? JSON.parse(hotel.rooms) : []
+      location: location,
+      images: images,
+      performanceSpots: performanceSpots,
+      rooms: rooms
     }
   });
 }));
@@ -140,6 +396,36 @@ router.post('/:id/rooms', authenticate, authorize('HOTEL'), asyncHandler(async (
   res.status(201).json({
     success: true,
     data: availability
+  });
+}));
+
+// Get hotel credits
+router.get('/:id/credits', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id } = req.params;
+
+  // Verify hotel belongs to user
+  const hotel = await prisma.hotel.findFirst({
+    where: { id, userId: req.user!.id }
+  });
+
+  if (!hotel) {
+    throw new CustomError('Hotel not found or access denied.', 404);
+  }
+
+  // Get or create credits record
+  const credits = await prisma.credit.findUnique({
+    where: { hotelId: id }
+  });
+
+  const availableCredits = credits ? credits.totalCredits - credits.usedCredits : 0;
+
+  res.json({
+    success: true,
+    data: {
+      availableCredits,
+      totalCredits: credits?.totalCredits || 0,
+      usedCredits: credits?.usedCredits || 0
+    }
   });
 }));
 
@@ -263,12 +549,40 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
         }
       }
 
+      let images = [];
+      let videos = [];
+      let mediaUrls = [];
+      
+      if (artist.images) {
+        try {
+          images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
+        } catch (e) {
+          images = [];
+        }
+      }
+      
+      if (artist.videos) {
+        try {
+          videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
+        } catch (e) {
+          videos = [];
+        }
+      }
+      
+      if (artist.mediaUrls) {
+        try {
+          mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
+        } catch (e) {
+          mediaUrls = [];
+        }
+      }
+
       return {
         ...artist,
         ratingBadge,
-        images: artist.images ? JSON.parse(artist.images) : [],
-        videos: artist.videos ? JSON.parse(artist.videos) : [],
-        mediaUrls: artist.mediaUrls ? JSON.parse(artist.mediaUrls) : []
+        images: images,
+        videos: videos,
+        mediaUrls: mediaUrls
       };
     })
   );

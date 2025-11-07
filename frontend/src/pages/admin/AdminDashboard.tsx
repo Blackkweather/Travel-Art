@@ -1,63 +1,204 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
 import { Users, Building, Calendar, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
+import LoadingSpinner from '@/components/LoadingSpinner'
+import { adminApi, commonApi, paymentsApi } from '@/utils/api'
+
+type DashboardStats = {
+  totalUsers: number
+  totalArtists: number
+  totalHotels: number
+  totalBookings: number
+  totalRevenue?: number
+}
+
+type ActivityItem = {
+  id: string
+  message: string
+  time: string
+  status: 'success' | 'warning'
+  timestamp?: number
+}
+
+type Performer = {
+  id: string
+  name: string
+  bookings: number
+  rating?: number
+  specialty?: string
+}
+
+type HotelPerformer = {
+  id: string
+  name: string
+  bookings: number
+  location?: string
+  highlight?: string
+}
+
+const extractArray = (payload: any, key: string): any[] => {
+  if (!payload) return []
+  if (Array.isArray(payload)) return payload
+  if (Array.isArray(payload[key])) return payload[key]
+  if (payload.data) {
+    if (Array.isArray(payload.data[key])) return payload.data[key]
+    if (Array.isArray(payload.data)) return payload.data
+  }
+  return []
+}
+
+const formatDateTimeRelative = (value: string | Date) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Recently'
+  const diffMs = Date.now() - date.getTime()
+  const diffMinutes = Math.round(diffMs / 60000)
+  if (diffMinutes < 1) return 'Just now'
+  if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`
+  const diffHours = Math.round(diffMinutes / 60)
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
+  const diffDays = Math.round(diffHours / 24)
+  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+  return date.toLocaleString()
+}
 
 const AdminDashboard: React.FC = () => {
-  const { } = useAuthStore()
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [activity, setActivity] = useState<ActivityItem[]>([])
+  const [topArtists, setTopArtists] = useState<Performer[]>([])
+  const [topHotels, setTopHotels] = useState<HotelPerformer[]>([])
 
-  const stats = [
-    { label: 'Total Users', value: '156', icon: Users, color: 'text-blue-600' },
-    { label: 'Active Hotels', value: '23', icon: Building, color: 'text-green-600' },
-    { label: 'Registered Artists', value: '89', icon: Users, color: 'text-purple-600' },
-    { label: 'Total Bookings', value: '342', icon: Calendar, color: 'text-orange-600' }
-  ]
+  const totalRevenueFormatted = useMemo(() => {
+    if (!stats?.totalRevenue) return '€0'
+    return `€${stats.totalRevenue.toLocaleString()}`
+  }, [stats?.totalRevenue])
 
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'booking',
-      message: 'New booking: Sophie Laurent at Hotel Plaza Athénée',
-      time: '2 hours ago',
-      status: 'success'
-    },
-    {
-      id: '2',
-      type: 'registration',
-      message: 'New artist registered: Isabella Garcia (Flamenco Dancer)',
-      time: '4 hours ago',
-      status: 'success'
-    },
-    {
-      id: '3',
-      type: 'payment',
-      message: 'Payment issue: Hotel Negresco credit purchase failed',
-      time: '6 hours ago',
-      status: 'warning'
-    },
-    {
-      id: '4',
-      type: 'rating',
-      message: 'New rating: Jean-Michel Dubois received 5 stars',
-      time: '8 hours ago',
-      status: 'success'
-    }
-  ]
+  useEffect(() => {
+    ;(async () => {
+      try {
+        setLoading(true)
+        setError(null)
 
-  const topArtists = [
-    { name: 'Sophie Laurent', bookings: 24, rating: 4.9, specialty: 'Rooftop Piano' },
-    { name: 'Marco Silva', bookings: 18, rating: 4.8, specialty: 'Sunset DJ Sets' },
-    { name: 'Jean-Michel Dubois', bookings: 15, rating: 4.9, specialty: 'Jazz Ensembles' },
-    { name: 'Isabella Garcia', bookings: 12, rating: 4.7, specialty: 'Flamenco Shows' }
-  ]
+        const [dashboardRes, bookingsRes, transactionsRes, topArtistsRes, topHotelsRes] = await Promise.all([
+          adminApi.getDashboard(),
+          adminApi.getBookings({ limit: 10 }).catch(() => ({ data: { data: [] } })),
+          paymentsApi.transactions({ limit: 10 }).catch(() => ({ data: { data: [] } })),
+          commonApi.getTopArtists({ limit: 5 }).catch(() => ({ data: { data: [] } })),
+          commonApi.getTopHotels({ limit: 5 }).catch(() => ({ data: { data: [] } }))
+        ])
 
-  const topHotels = [
-    { name: 'Hotel Plaza Athénée', bookings: 45, location: 'Paris', rooftop: 'Eiffel Tower Views' },
-    { name: 'Hotel Negresco', bookings: 38, location: 'Nice', rooftop: 'Mediterranean Lounge' },
-    { name: 'La Mamounia', bookings: 32, location: 'Marrakech', rooftop: 'Atlas Mountain Bar' },
-    { name: 'Nobu Hotel Ibiza', bookings: 28, location: 'Ibiza', rooftop: 'Beach Club' }
-  ]
+        const dashboardData = (dashboardRes.data?.data as any) || {}
+        setStats({
+          totalUsers: Number(dashboardData?.stats?.totalUsers ?? dashboardData?.totalUsers ?? 0),
+          totalArtists: Number(dashboardData?.stats?.totalArtists ?? dashboardData?.totalArtists ?? 0),
+          totalHotels: Number(dashboardData?.stats?.totalHotels ?? dashboardData?.totalHotels ?? 0),
+          totalBookings: Number(dashboardData?.stats?.activeBookings ?? dashboardData?.totalBookings ?? 0),
+          totalRevenue: Number(dashboardData?.stats?.totalRevenue?._sum?.amount ?? dashboardData?.totalRevenue ?? 0)
+        })
+
+        const recentBookings = extractArray(bookingsRes.data?.data, 'bookings')
+        const recentTransactions = extractArray(transactionsRes.data?.data, 'transactions')
+
+        const bookingActivity: ActivityItem[] = recentBookings.slice(0, 6).map((booking: any) => {
+          const status = (booking?.status || 'PENDING').toString().toUpperCase()
+          const friendlyStatus = status === 'PENDING' || status === 'CANCELLED' ? 'warning' : 'success'
+          const hotelName = booking?.hotel?.name || booking?.hotelId || 'Hotel'
+          const artistName = booking?.artist?.name || booking?.artistId || 'Artist'
+          const start = booking?.startDate || booking?.createdAt
+          const time = start ? formatDateTimeRelative(start) : 'Recently'
+          const timestamp = start ? new Date(start).getTime() : 0
+          const message = `Booking ${status.toLowerCase()}: ${artistName} → ${hotelName}`
+          return {
+            id: `booking-${booking?.id ?? Math.random()}`,
+            message,
+            time,
+            status: friendlyStatus,
+            timestamp
+          }
+        })
+
+        const paymentActivity: ActivityItem[] = recentTransactions.slice(0, 4).map((txn: any) => {
+          const amount = Number(txn?.amount ?? 0)
+          const hotel = txn?.hotel?.name || txn?.hotelId || 'Hotel'
+          const label = amount >= 0 ? 'Payment captured' : 'Refund issued'
+          const message = `${label}: ${hotel} (${amount >= 0 ? '+' : '-'}€${Math.abs(amount).toLocaleString()})`
+          const createdAt = txn?.createdAt
+          const time = createdAt ? formatDateTimeRelative(createdAt) : 'Recently'
+          const timestamp = createdAt ? new Date(createdAt).getTime() : 0
+          return {
+            id: `txn-${txn?.id ?? Math.random()}`,
+            message,
+            time,
+            status: amount >= 0 ? 'success' : 'warning',
+            timestamp
+          }
+        })
+
+        const combined = [...bookingActivity, ...paymentActivity]
+          .sort((a, b) => {
+            // Sort by timestamp descending (most recent first)
+            return (b.timestamp || 0) - (a.timestamp || 0)
+          })
+          .slice(0, 8)
+
+        setActivity(combined)
+
+        const topArtistEntries = extractArray(topArtistsRes.data?.data, 'artists')
+        setTopArtists(
+          topArtistEntries.slice(0, 4).map((artist: any) => ({
+            id: artist?.id ?? artist?.artistId ?? Math.random().toString(36),
+            name: artist?.user?.name || artist?.name || 'Unknown Artist',
+            bookings: Number(artist?.bookingCount ?? artist?.totalBookings ?? 0),
+            rating: Number(artist?.averageRating ?? artist?.rating ?? 0) || undefined,
+            specialty: Array.isArray(artist?.mediaUrls) ? artist.mediaUrls[0] : artist?.discipline
+          }))
+        )
+
+        const topHotelEntries = extractArray(topHotelsRes.data?.data, 'hotels')
+        setTopHotels(
+          topHotelEntries.slice(0, 4).map((hotel: any) => {
+            const location = hotel?.location ? (typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location) : {}
+            return {
+              id: hotel?.id ?? Math.random().toString(36),
+              name: hotel?.name || 'Hotel',
+              bookings: Number(hotel?.bookingCount ?? hotel?.totalBookings ?? 0),
+              location: location?.city ? `${location.city}, ${location.country ?? ''}`.trim() : hotel?.location || undefined,
+              highlight: Array.isArray(hotel?.performanceSpots) ? hotel.performanceSpots[0]?.name : undefined
+            }
+          })
+        )
+      } catch (err: any) {
+        console.error(err)
+        setError(err?.response?.data?.message || 'Unable to load dashboard data')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [])
+
+  const statsCards = useMemo(() => {
+    if (!stats) return []
+    return [
+      { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-600' },
+      { label: 'Active Hotels', value: stats.totalHotels, icon: Building, color: 'text-green-600' },
+      { label: 'Registered Artists', value: stats.totalArtists, icon: Users, color: 'text-purple-600' },
+      { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: 'text-orange-600' }
+    ]
+  }, [stats])
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (error) {
+    return <div className="card-luxury text-red-700 bg-red-50">{error}</div>
+  }
 
   return (
     <div className="space-y-8">
@@ -72,14 +213,14 @@ const AdminDashboard: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
+        {statsCards.map((stat, index) => {
           const Icon = stat.icon
           return (
             <div key={index} className="card-luxury">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-navy">{stat.value}</p>
+                  <p className="text-2xl font-bold text-navy">{stat.value.toLocaleString()}</p>
                 </div>
                 <Icon className={`w-8 h-8 ${stat.color}`} />
               </div>
@@ -91,27 +232,40 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Activity */}
         <div className="card-luxury">
-          <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
-            Recent Activity
-          </h2>
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
+                Recent Activity
+              </h2>
+              <p className="text-sm text-gray-500">Latest bookings, payments, and platform updates.</p>
+            </div>
+            <div className="text-right text-sm text-gray-600">
+              <span className="block font-semibold text-navy">{totalRevenueFormatted}</span>
+              <span className="text-xs text-gray-500">Lifetime revenue</span>
+            </div>
+          </div>
           <div className="space-y-4">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  activity.status === 'success' ? 'bg-green-100' : 'bg-yellow-100'
-                }`}>
-                  {activity.status === 'success' ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-yellow-600" />
-                  )}
+            {activity.length > 0 ? (
+              activity.map((item) => (
+                <div key={item.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    item.status === 'success' ? 'bg-green-100' : 'bg-yellow-100'
+                  }`}>
+                    {item.status === 'success' ? (
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-yellow-600" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-navy">{item.message}</p>
+                    <p className="text-xs text-gray-500">{item.time}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-navy">{activity.message}</p>
-                  <p className="text-xs text-gray-500">{activity.time}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">No recent activity</p>
+            )}
           </div>
         </div>
 
@@ -121,21 +275,27 @@ const AdminDashboard: React.FC = () => {
             Top Performing Artists
           </h2>
           <div className="space-y-4">
-            {topArtists.map((artist, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-semibold text-navy">{artist.name}</h3>
-                  <p className="text-sm text-gray-600">{artist.specialty}</p>
+            {topArtists.length > 0 ? (
+              topArtists.map((artist) => (
+                <div key={artist.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <h3 className="font-semibold text-navy">{artist.name}</h3>
+                    <p className="text-sm text-gray-600">{artist.specialty || artist.id}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-navy">{artist.bookings} bookings</p>
+                    {artist.rating && (
+                      <p className="text-xs text-gray-500 flex items-center space-x-1">
+                        <span className="text-gold font-bold">◆</span>
+                        <span>{artist.rating.toFixed(1)}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-navy">{artist.bookings} bookings</p>
-                  <p className="text-xs text-gray-500 flex items-center space-x-1">
-                    <span className="text-gold font-bold">◆</span>
-                    <span>{artist.rating}</span>
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">No artist data available</p>
+            )}
           </div>
         </div>
       </div>
@@ -146,17 +306,21 @@ const AdminDashboard: React.FC = () => {
           Most Active Hotels
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {topHotels.map((hotel, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-soft p-4">
-              <h3 className="font-semibold text-navy mb-2">{hotel.name}</h3>
-              <p className="text-sm text-gray-600 mb-2">{hotel.location}</p>
-              <p className="text-xs text-gray-500 mb-3">{hotel.rooftop}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-navy">{hotel.bookings} bookings</span>
-                <TrendingUp className="w-4 h-4 text-green-600" />
+          {topHotels.length > 0 ? (
+            topHotels.map((hotel) => (
+              <div key={hotel.id} className="bg-white rounded-lg shadow-soft p-4">
+                <h3 className="font-semibold text-navy mb-2">{hotel.name}</h3>
+                {hotel.location && <p className="text-sm text-gray-600 mb-2">{hotel.location}</p>}
+                {hotel.highlight && <p className="text-xs text-gray-500 mb-3">{hotel.highlight}</p>}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-navy">{hotel.bookings} bookings</span>
+                  <TrendingUp className="w-4 h-4 text-green-600" />
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="col-span-full text-center py-8 text-gray-500">No hotel data available</div>
+          )}
         </div>
       </div>
 
@@ -195,6 +359,21 @@ const AdminDashboard: React.FC = () => {
           </p>
           <button className="btn-secondary" onClick={() => navigate('/dashboard/moderation')}>
             Moderate Content
+          </button>
+        </div>
+      </div>
+
+      {/* Additional Admin Tools */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="card-luxury">
+          <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+            Referral Tracking
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Monitor referral program performance and track rewards.
+          </p>
+          <button className="btn-secondary" onClick={() => navigate('/dashboard/referrals')}>
+            View Referrals
           </button>
         </div>
       </div>
