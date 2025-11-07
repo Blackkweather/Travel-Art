@@ -17,6 +17,9 @@ import { initializeDatabase, prisma } from './db';
 
 const app = express();
 
+// Trust proxy for rate limiting behind reverse proxy (Render, etc.)
+app.set('trust proxy', true);
+
 // Initialize database connection (Prisma or fallback to pg) - non-blocking
 initializeDatabase()
   .then(() => {
