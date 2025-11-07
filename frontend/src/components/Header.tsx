@@ -32,7 +32,7 @@ const Header: React.FC = () => {
             <img 
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
-              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
+              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain brightness-0 invert"
             />
           </Link>
           
