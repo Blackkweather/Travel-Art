@@ -350,25 +350,25 @@ const TravelerExperiencesPage: React.FC = () => {
               {
                 title: 'The Rooftop Revolution: How Artists Are Redefining Hotel Experiences',
                 excerpt: 'Explore how luxury hotels are partnering with world-class artists to create unique cultural experiences that guests will never forget.',
-                image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
+                image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
                 date: '2024-05-15'
               },
               {
                 title: 'From Studio to Rooftop: A Pianist\'s Journey',
                 excerpt: 'Follow Sophie Laurent as she performs at iconic hotels across Europe, bringing classical music to unexpected places.',
-                image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
+                image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
                 date: '2024-04-22'
               },
               {
                 title: 'Cultural Immersion: Artist Residencies That Transform Travel',
                 excerpt: 'Learn how week-long artist residencies create deeper connections between travelers and local culture.',
-                image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73a6e?w=800',
+                image: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800&q=80',
                 date: '2024-03-10'
               },
               {
                 title: 'The Art of Intimate Performance: Creating Magic in Small Spaces',
                 excerpt: 'Discover how intimate performances create more meaningful connections between artists and audiences.',
-                image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800',
+                image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80',
                 date: '2024-02-28'
               }
             ].map((story, index) => (
