@@ -27,8 +27,8 @@ const LandingPage: React.FC = () => {
   const topArtistsRef = useRef<HTMLDivElement>(null)
   const topHotelsRef = useRef<HTMLDivElement>(null)
   
-  // Scroll-based animations - Dark navy header (consistent with other pages)
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(15, 23, 42, 0.95)', 'rgba(15, 23, 42, 1)'])
+  // Scroll-based animations - Transparent header
+  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0)'])
   const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
   
   // Hero parallax effects
@@ -265,7 +265,7 @@ const LandingPage: React.FC = () => {
             <img 
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
-              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain brightness-0 invert"
+              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
             />
           </Link>
           

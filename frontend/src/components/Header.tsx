@@ -10,8 +10,8 @@ const Header: React.FC = () => {
   const { scrollY } = useScroll()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
-  // Dark navy header background (consistent across all pages)
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(15, 23, 42, 0.95)', 'rgba(15, 23, 42, 1)'])
+  // Transparent header background
+  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0)'])
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -32,7 +32,7 @@ const Header: React.FC = () => {
             <img 
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
-              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain brightness-0 invert"
+              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
             />
           </Link>
           
