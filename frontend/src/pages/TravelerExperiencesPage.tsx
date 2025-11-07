@@ -7,7 +7,7 @@ import Footer from '@/components/Footer'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import L from 'leaflet'
+import L, { LatLngTuple } from 'leaflet'
 
 // Fix for default marker icons in Leaflet with Vite
 import icon from 'leaflet/dist/images/marker-icon.png'
@@ -108,12 +108,12 @@ const TravelerExperiencesPage: React.FC = () => {
   }, [])
 
   // Calculate map center based on filtered experiences
-  const mapCenter = useMemo(() => {
-    if (filteredExperiences.length === 0) return [45, 2] // Default center of Europe
+  const mapCenter: LatLngTuple = useMemo(() => {
+    if (filteredExperiences.length === 0) return [45, 2] as LatLngTuple // Default center of Europe
     
     const avgLat = filteredExperiences.reduce((sum, exp) => sum + exp.location.lat, 0) / filteredExperiences.length
     const avgLng = filteredExperiences.reduce((sum, exp) => sum + exp.location.lng, 0) / filteredExperiences.length
-    return [avgLat, avgLng] as [number, number]
+    return [avgLat, avgLng] as LatLngTuple
   }, [filteredExperiences])
 
   // Calculate zoom level based on number of experiences
