@@ -45,7 +45,7 @@ const experiences: Experience[] = [
     artist: 'Sophie Laurent',
     hotel: 'Hotel Plaza Athénée',
     date: '2024-06-15',
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
+    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
     type: 'rooftop',
     rating: 4.9,
     description: 'An intimate jazz performance overlooking the Eiffel Tower at sunset.'
