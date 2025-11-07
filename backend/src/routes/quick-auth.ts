@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { config } from '../config';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
@@ -53,13 +53,10 @@ router.post('/register', asyncHandler(async (req, res) => {
   console.log(`✅ User registered: ${email}`);
 
   // Generate token
-  const signOptions: SignOptions = {
-    expiresIn: config.jwtExpiresIn as string
-  };
   const token = jwt.sign(
     { userId: user.id, role: user.role },
     config.jwtSecret,
-    signOptions
+    { expiresIn: config.jwtExpiresIn as any }
   );
 
   res.status(201).json({
@@ -95,13 +92,10 @@ router.post('/login', asyncHandler(async (req, res) => {
   }
 
   // Generate token
-  const signOptions: SignOptions = {
-    expiresIn: config.jwtExpiresIn as string
-  };
   const token = jwt.sign(
     { userId: user.id, role: user.role },
     config.jwtSecret,
-    signOptions
+    { expiresIn: config.jwtExpiresIn as any }
   );
 
   console.log(`✅ User logged in: ${email}`);
