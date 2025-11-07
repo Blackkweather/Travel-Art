@@ -26,7 +26,7 @@ const Header: React.FC = () => {
           overflow: 'visible'
         }}
       >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
+        <div className="max-w-7xl mx-auto h-full flex items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             <img 
@@ -37,23 +37,23 @@ const Header: React.FC = () => {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8" data-testid="desktop-menu">
-            <Link to="/how-it-works" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6 xl:space-x-8 flex-wrap justify-center" data-testid="desktop-menu">
+            <Link to="/how-it-works" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               How it Works
             </Link>
-            <Link to="/partners" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+            <Link to="/partners" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Partners
             </Link>
-            <Link to="/pricing" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+            <Link to="/pricing" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Pricing
             </Link>
-            <Link to="/top-artists" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+            <Link to="/top-artists" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Top Artists
             </Link>
-            <Link to="/top-hotels" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+            <Link to="/top-hotels" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Top Hotels
             </Link>
-            <Link to="/experiences" className="text-navy hover:text-gold transition-colors font-medium text-sm">
+            <Link to="/experiences" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Experiences
             </Link>
           </div>
