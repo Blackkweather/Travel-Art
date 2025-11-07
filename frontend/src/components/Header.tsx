@@ -106,7 +106,7 @@ const Header: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="fixed top-[55px] left-0 right-0 z-40 bg-navy/95 backdrop-blur-md border-b border-white/10 shadow-lg md:hidden"
+          className="fixed top-[55px] left-0 right-0 z-40 bg-transparent backdrop-blur-md border-b border-white/10 shadow-lg md:hidden"
           data-testid="mobile-menu"
         >
           <div className="px-6 py-4 space-y-4">
