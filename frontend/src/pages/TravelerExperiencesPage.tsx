@@ -69,7 +69,7 @@ const experiences: Experience[] = [
     artist: 'Marco Silva',
     hotel: 'Hotel Negresco',
     date: '2024-08-10',
-    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800',
+    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80',
     type: 'intimate',
     rating: 4.9,
     description: 'Classical piano in an intimate setting with Mediterranean views.'
@@ -81,7 +81,7 @@ const experiences: Experience[] = [
     artist: 'Jean-Michel Dubois',
     hotel: 'La Mamounia',
     date: '2024-09-05',
-    image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73a6e?w=800',
+    image: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800&q=80',
     type: 'residency',
     rating: 5.0,
     description: 'A week-long residency featuring daily performances and cultural immersion.'
