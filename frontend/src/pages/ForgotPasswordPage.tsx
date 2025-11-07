@@ -29,15 +29,20 @@ const ForgotPasswordPage: React.FC = () => {
       setEmailSent(true)
       
       // In development, show the reset link if provided
-      if (import.meta.env.DEV && response.data?.dev?.resetLink) {
-        toast.success('Password reset link generated! Check console for details.', {
-          duration: 10000
-        })
-        console.log('🔐 Password Reset Link (Dev Mode):')
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-        console.log(`Reset Link: ${response.data.dev.resetLink}`)
-        console.log(`Token: ${response.data.dev.token}`)
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      if (import.meta.env.DEV) {
+        const responseData = response.data?.data as any
+        if (responseData?.dev?.resetLink) {
+          toast.success('Password reset link generated! Check console for details.', {
+            duration: 10000
+          })
+          console.log('🔐 Password Reset Link (Dev Mode):')
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+          console.log(`Reset Link: ${responseData.dev.resetLink}`)
+          console.log(`Token: ${responseData.dev.token}`)
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        } else {
+          toast.success('If an account exists with that email, you will receive reset instructions.')
+        }
       } else {
         toast.success('If an account exists with that email, you will receive reset instructions.')
       }
