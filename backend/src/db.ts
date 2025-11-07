@@ -7,29 +7,28 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-// Ensure DATABASE_URL is set before Prisma Client is imported
-// This is required because Prisma schema references env("DATABASE_URL")
-if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.startsWith('file:')) {
-  // Default to the expected database path (absolute path)
-  const defaultDbPath = path.resolve(__dirname, '../prisma/dev.db');
-  process.env.DATABASE_URL = `file:${defaultDbPath.replace(/\\/g, '/')}`;
-}
-
-// Now import PrismaClient - it will use the DATABASE_URL we just set
+// Now import PrismaClient - it will use the DATABASE_URL from environment
 import { PrismaClient } from '@prisma/client';
 import { config } from './config';
 
-// Create Prisma client for SQLite
-// Use the DATABASE_URL directly from config or environment
+// Create Prisma client for PostgreSQL
+// Use the DATABASE_URL directly from environment or config
 const getDatabaseUrl = () => {
-  // Check environment variable first, then config
+  // Check environment variable first (required for production)
   const envUrl = process.env.DATABASE_URL;
-  if (envUrl && envUrl.startsWith('file:')) {
+  if (envUrl) {
     return envUrl;
   }
-  // Fallback to config
-  return config.databaseUrl || 'file:./prisma/dev.db';
+  // Fallback to config (for local development)
+  return config.databaseUrl;
 };
+
+// Validate DATABASE_URL is set
+if (!getDatabaseUrl()) {
+  console.error('❌ DATABASE_URL environment variable is not set!');
+  console.error('Please set DATABASE_URL to a PostgreSQL connection string.');
+  console.error('Example: postgresql://user:password@localhost:5432/dbname');
+}
 
 const prisma = new PrismaClient({
   datasources: {
@@ -49,31 +48,29 @@ async function initializeDatabase() {
     // Test connection
     await prisma.$connect();
     await prisma.$queryRaw`SELECT 1 as test`;
-    console.log('✅ SQLite database connected via Prisma');
+    const dbUrl = getDatabaseUrl();
+    const dbType = dbUrl?.startsWith('postgresql://') || dbUrl?.startsWith('postgres://') ? 'PostgreSQL' : 'Database';
+    console.log(`✅ ${dbType} connected via Prisma`);
     dbInitialized = true;
   } catch (error: any) {
-    console.error('❌ SQLite connection failed:', error.message);
+    console.error('❌ Database connection failed:', error.message);
+    if (error.message.includes('protocol')) {
+      console.error('⚠️  DATABASE_URL must start with postgresql:// or postgres://');
+      console.error('Current DATABASE_URL:', process.env.DATABASE_URL ? 'Set but invalid format' : 'Not set');
+    }
     throw error;
   }
 }
 
-// Database query wrapper for SQLite (using Prisma raw queries)
-// Note: SQLite uses ? placeholders instead of $1, $2, etc.
+// Database query wrapper for PostgreSQL (using Prisma raw queries)
 export async function dbQuery<T = any>(query: string, params?: any[]): Promise<T[]> {
   if (!dbInitialized) {
     await initializeDatabase();
   }
 
   try {
-    // Convert PostgreSQL-style placeholders ($1, $2) to SQLite placeholders (?)
-    let sqliteQuery = query;
-    if (params && params.length > 0) {
-      // Replace $1, $2, etc. with ?
-      sqliteQuery = query.replace(/\$(\d+)/g, '?');
-    }
-    
-    // Use Prisma raw query for SQLite
-    const result = await prisma.$queryRawUnsafe(sqliteQuery, ...(params || [])) as T[];
+    // Use Prisma raw query for PostgreSQL (supports $1, $2, etc. placeholders)
+    const result = await prisma.$queryRawUnsafe(query, ...(params || [])) as T[];
     return result;
   } catch (error: any) {
     console.error('Database query error:', error.message);
@@ -82,7 +79,7 @@ export async function dbQuery<T = any>(query: string, params?: any[]): Promise<T
   }
 }
 
-// Export usePrisma flag (always true for SQLite)
+// Export usePrisma flag (always true for PostgreSQL)
 export function isUsingPrisma(): boolean {
   return true;
 }
