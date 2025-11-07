@@ -78,8 +78,7 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
   const existingTransactions = await prisma.transaction.findMany({
     where: {
       hotelId: hotelId,
-      type: 'CREDIT_PURCHASE',
-      status: 'COMPLETED'
+      type: 'CREDIT_PURCHASE'
     }
   });
 
@@ -114,18 +113,7 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
     data: {
       hotelId: hotelId,
       type: 'CREDIT_PURCHASE',
-      amount: finalPrice,
-      paymentMethod: paymentMethod || 'CARD',
-      status: 'COMPLETED',
-      metadata: JSON.stringify({
-        packageId: packageId,
-        credits: totalCredits,
-        baseCredits: selectedPackage.credits,
-        bonusCredits: bonusCredits,
-        isFirstPurchase: isFirstPurchase,
-        originalPrice: selectedPackage.price,
-        finalPrice: finalPrice
-      })
+      amount: finalPrice
     }
   });
 
