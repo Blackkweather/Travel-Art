@@ -17,6 +17,7 @@ type EventCategory =
   | 'favorite'
   | 'registration'
   | 'authentication'
+  | 'experiment'
 
 type EventAction = string
 type EventLabel = string

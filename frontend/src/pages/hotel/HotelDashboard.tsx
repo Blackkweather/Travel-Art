@@ -25,6 +25,16 @@ interface PerformanceSpot {
   image?: string
 }
 
+interface UpcomingPerformance {
+  id: string
+  artist: string
+  discipline: string
+  date: string
+  time: string
+  spot: string
+  status: string
+}
+
 const HotelDashboard: React.FC = () => {
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(true)
@@ -35,7 +45,7 @@ const HotelDashboard: React.FC = () => {
     performanceSpots: 0,
     totalCreditsUsed: 0
   })
-  const [upcomingPerformances, setUpcomingPerformances] = useState<Booking[]>([])
+  const [upcomingPerformances, setUpcomingPerformances] = useState<UpcomingPerformance[]>([])
   const [performanceSpots, setPerformanceSpots] = useState<PerformanceSpot[]>([])
   const [favoriteArtists, setFavoriteArtists] = useState<any[]>([])
   const [hotelId, setHotelId] = useState<string>('')
@@ -71,10 +81,10 @@ const HotelDashboard: React.FC = () => {
           ['PENDING', 'CONFIRMED'].includes(b.status)
         ).length
 
-        const totalCreditsUsed = bookings.reduce((sum: number, b: Booking) => sum + (b.creditsUsed || 0), 0)
+        const totalCreditsUsed = 0 // Credits used would come from booking data if available
 
         const uniqueArtists = new Set(
-          bookings.map((b: Booking) => b.artist?.id || b.artist?.name).filter(Boolean)
+          bookings.map((b: Booking) => b.artist?.name).filter(Boolean)
         )
 
         // Parse performance spots from hotel profile

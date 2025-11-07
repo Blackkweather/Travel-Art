@@ -51,7 +51,7 @@ const ArtistDashboard: React.FC = () => {
         ).length
 
         const uniqueHotels = new Set(
-          bookings.map((b: Booking) => b.hotel?.id || b.hotel?.name).filter(Boolean)
+          bookings.map((b: Booking) => b.hotel?.name).filter(Boolean)
         )
 
         // Calculate average rating (if ratings exist)
@@ -153,9 +153,9 @@ const ArtistDashboard: React.FC = () => {
               style={{ animationDelay: `${0.1 + idx * 0.05}s` }}
             >
               <div className="flex-1">
-                <h3 className="font-semibold text-navy text-lg mb-1">{booking.hotel}</h3>
-                <p className="text-sm text-gray-600 font-medium mb-1">{booking.location} • {booking.performanceSpot}</p>
-                <p className="text-xs text-gray-500">{booking.date}</p>
+                <h3 className="font-semibold text-navy text-lg mb-1">{booking.hotel?.name || 'Hotel'}</h3>
+                <p className="text-sm text-gray-600 font-medium mb-1">{booking.hotel?.city && booking.hotel?.country ? `${booking.hotel.city}, ${booking.hotel.country}` : ''} • {booking.performanceSpot || 'TBD'}</p>
+                <p className="text-xs text-gray-500">{new Date(booking.startDate).toLocaleDateString()}</p>
               </div>
               <span className={`px-4 py-2 rounded-full text-sm font-semibold shadow-sm ${
                 booking.status === 'confirmed' ? 'bg-green-100 text-green-800 border border-green-200' :

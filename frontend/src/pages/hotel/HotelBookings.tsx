@@ -312,7 +312,7 @@ const HotelBookings: React.FC = () => {
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2" />
-                        <span>{new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({booking.duration})</span>
+                        <span>{new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2" />
@@ -320,7 +320,7 @@ const HotelBookings: React.FC = () => {
                       </div>
                       <div className="flex items-center">
                         <Music className="w-4 h-4 mr-2" />
-                        <span>{booking.performanceType || 'Performance'}</span>
+                        <span>{booking.artist?.discipline || 'Performance'}</span>
                       </div>
                     </div>
                   </div>
@@ -329,8 +329,7 @@ const HotelBookings: React.FC = () => {
                     <h4 className="text-sm font-medium text-navy mb-2">Booking Info</h4>
                     <div className="space-y-1 text-sm text-gray-600">
                       <div>Credits: <span className="font-medium text-gold">{booking.creditsUsed}</span></div>
-                      {booking.contactEmail && <div>Contact: {booking.contactEmail}</div>}
-                      {booking.contactPhone && <div>Phone: {booking.contactPhone}</div>}
+                      {booking.notes && <div>Notes: {booking.notes}</div>}
                     </div>
                   </div>
                 </div>

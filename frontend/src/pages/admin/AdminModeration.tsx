@@ -220,11 +220,7 @@ const AdminModeration: React.FC = () => {
                     <div>
                       <div className="font-medium text-navy">{h.name}</div>
                       <div className="text-sm text-gray-600">
-                        {typeof h.location === 'string' 
-                          ? h.location 
-                          : (h.location?.city && h.location?.country 
-                              ? `${h.location.city}, ${h.location.country}` 
-                              : h.location?.city || h.location?.country || 'N/A')}
+                        {h.location || 'N/A'}
                       </div>
                     </div>
                   </div>
