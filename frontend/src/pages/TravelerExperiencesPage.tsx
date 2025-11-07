@@ -6,6 +6,23 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import L from 'leaflet'
+
+// Fix for default marker icons in Leaflet with Vite
+import icon from 'leaflet/dist/images/marker-icon.png'
+import iconShadow from 'leaflet/dist/images/marker-shadow.png'
+
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+})
+
+L.Marker.prototype.options.icon = DefaultIcon
 
 interface Experience {
   id: string
@@ -74,7 +91,6 @@ const experiences: Experience[] = [
 const TravelerExperiencesPage: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
-  const mapRef = useRef<HTMLDivElement>(null)
   const storiesRef = useRef<HTMLDivElement>(null)
   const storiesInView = useInView(storiesRef, { once: true, margin: '-100px' })
 
@@ -90,6 +106,23 @@ const TravelerExperiencesPage: React.FC = () => {
     const unique = new Set(experiences.map(e => e.location.city))
     return Array.from(unique).sort()
   }, [])
+
+  // Calculate map center based on filtered experiences
+  const mapCenter = useMemo(() => {
+    if (filteredExperiences.length === 0) return [45, 2] // Default center of Europe
+    
+    const avgLat = filteredExperiences.reduce((sum, exp) => sum + exp.location.lat, 0) / filteredExperiences.length
+    const avgLng = filteredExperiences.reduce((sum, exp) => sum + exp.location.lng, 0) / filteredExperiences.length
+    return [avgLat, avgLng] as [number, number]
+  }, [filteredExperiences])
+
+  // Calculate zoom level based on number of experiences
+  const mapZoom = useMemo(() => {
+    if (filteredExperiences.length === 0) return 4
+    if (filteredExperiences.length === 1) return 8
+    if (filteredExperiences.length <= 3) return 5
+    return 4
+  }, [filteredExperiences])
 
   const handleMapPinClick = (city: string) => {
     setSelectedLocation(city === selectedLocation ? null : city)
@@ -143,48 +176,43 @@ const TravelerExperiencesPage: React.FC = () => {
             </p>
           </motion.div>
 
-          {/* Map Placeholder with Interactive Pins */}
-          <div className="relative bg-gray-100 rounded-xl overflow-hidden mb-8" style={{ height: '500px' }}>
-            <div ref={mapRef} className="w-full h-full relative">
-              {/* Simple map background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 opacity-50" />
-              
-              {/* Interactive Pins */}
-              {experiences.map((exp) => {
-                // Simplified positioning (in real app, use actual map coordinates)
-                const left = 20 + (exp.location.lat % 10) * 8
-                const top = 30 + (Math.abs(exp.location.lng) % 10) * 6
+          {/* Interactive Map */}
+          <div className="relative rounded-xl overflow-hidden mb-8 shadow-lg" style={{ height: '500px' }}>
+            <MapContainer
+              center={mapCenter}
+              zoom={mapZoom}
+              style={{ height: '100%', width: '100%', zIndex: 0 }}
+              scrollWheelZoom={true}
+              key={`${mapCenter[0]}-${mapCenter[1]}-${filteredExperiences.length}`} // Force re-render on filter change
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {filteredExperiences.map((exp) => {
                 const isActive = selectedLocation === exp.location.city
-                
                 return (
-                  <button
+                  <Marker
                     key={exp.id}
-                    onClick={() => handleMapPinClick(exp.location.city)}
-                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all ${
-                      isActive ? 'scale-150 z-10' : 'hover:scale-110'
-                    }`}
-                    style={{ left: `${left}%`, top: `${top}%` }}
-                    aria-label={`View experiences in ${exp.location.city}`}
+                    position={[exp.location.lat, exp.location.lng]}
+                    eventHandlers={{
+                      click: () => handleMapPinClick(exp.location.city),
+                    }}
                   >
-                    <MapPin 
-                      className={`w-8 h-8 ${
-                        isActive ? 'text-gold fill-current' : 'text-navy hover:text-gold'
-                      } transition-colors`}
-                    />
-                    {isActive && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg p-3 w-48 z-20"
-                      >
+                    <Popup>
+                      <div className="p-2">
                         <h3 className="font-semibold text-navy text-sm mb-1">{exp.location.city}</h3>
-                        <p className="text-xs text-gray-600">{exp.title}</p>
-                      </motion.div>
-                    )}
-                  </button>
+                        <p className="text-xs text-gray-600 mb-2">{exp.title}</p>
+                        <p className="text-xs text-gray-500">{exp.artist} at {exp.hotel}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(exp.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
                 )
               })}
-            </div>
+            </MapContainer>
           </div>
 
           {/* Location Filter */}

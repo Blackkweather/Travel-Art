@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import './index.css'
+import 'leaflet/dist/leaflet.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
