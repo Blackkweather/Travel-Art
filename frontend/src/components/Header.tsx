@@ -19,7 +19,7 @@ const Header: React.FC = () => {
   return (
     <>
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm border-b border-white/10 px-5 md:px-20 h-[55px]"
+        className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 px-5 md:px-20 h-[55px]"
         style={{
           background: 'transparent',
           overflow: 'visible'
@@ -105,7 +105,7 @@ const Header: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="fixed top-[55px] left-0 right-0 z-40 bg-transparent backdrop-blur-md border-b border-white/10 shadow-lg md:hidden"
+          className="fixed top-[55px] left-0 right-0 z-40 bg-transparent border-b border-white/10 shadow-lg md:hidden"
           data-testid="mobile-menu"
         >
           <div className="px-6 py-4 space-y-4">
