@@ -24,10 +24,17 @@ const getDatabaseUrl = () => {
 };
 
 // Validate DATABASE_URL is set
-if (!getDatabaseUrl()) {
+const dbUrl = getDatabaseUrl();
+if (!dbUrl) {
   console.error('❌ DATABASE_URL environment variable is not set!');
-  console.error('Please set DATABASE_URL to a PostgreSQL connection string.');
-  console.error('Example: postgresql://user:password@localhost:5432/dbname');
+  console.error('For SQLite (dev): file:./prisma/dev.db');
+  console.error('For PostgreSQL (prod): postgresql://user:password@localhost:5432/dbname');
+} else if (dbUrl.startsWith('file:')) {
+  console.log('📦 Using SQLite database for development');
+} else if (dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://')) {
+  console.log('🐘 Using PostgreSQL database');
+} else {
+  console.error('⚠️  Invalid DATABASE_URL format. Must start with file: (SQLite) or postgresql:// (PostgreSQL)');
 }
 
 const prisma = new PrismaClient({
@@ -47,16 +54,31 @@ async function initializeDatabase() {
   try {
     // Test connection
     await prisma.$connect();
-    await prisma.$queryRaw`SELECT 1 as test`;
     const dbUrl = getDatabaseUrl();
-    const dbType = dbUrl?.startsWith('postgresql://') || dbUrl?.startsWith('postgres://') ? 'PostgreSQL' : 'Database';
-    console.log(`✅ ${dbType} connected via Prisma`);
+    
+    // For SQLite, use a simple query. For PostgreSQL, use raw query
+    if (dbUrl?.startsWith('file:')) {
+      // SQLite - simple query
+      await prisma.$queryRaw`SELECT 1 as test`;
+      console.log(`✅ SQLite database connected via Prisma`);
+    } else {
+      // PostgreSQL - raw query
+      await prisma.$queryRaw`SELECT 1 as test`;
+      console.log(`✅ PostgreSQL database connected via Prisma`);
+    }
     dbInitialized = true;
   } catch (error: any) {
     console.error('❌ Database connection failed:', error.message);
-    if (error.message.includes('protocol')) {
-      console.error('⚠️  DATABASE_URL must start with postgresql:// or postgres://');
-      console.error('Current DATABASE_URL:', process.env.DATABASE_URL ? 'Set but invalid format' : 'Not set');
+    const dbUrl = getDatabaseUrl();
+    if (error.message.includes('protocol') || error.message.includes('file:')) {
+      if (dbUrl?.startsWith('file:')) {
+        console.error('⚠️  For SQLite, DATABASE_URL must start with file:');
+        console.error('Example: file:./prisma/dev.db');
+      } else {
+        console.error('⚠️  For PostgreSQL, DATABASE_URL must start with postgresql:// or postgres://');
+        console.error('Example: postgresql://user:password@localhost:5432/dbname');
+      }
+      console.error('Current DATABASE_URL:', dbUrl || 'Not set');
     }
     throw error;
   }

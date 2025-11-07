@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { adminApi } from '@/utils/api'
 import { Calendar, MapPin, User, Building, Download, Filter, Clock, DollarSign } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select'
 
 interface BookingData {
   id: string
@@ -196,20 +203,24 @@ const AdminBookings: React.FC = () => {
         <div className="filters-row">
           <div className="flex items-center gap-2">
             <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            <select
+            <Select
               value={selectedStatus}
-              onChange={(e) => {
-                setSelectedStatus(e.target.value)
+              onValueChange={(value) => {
+                setSelectedStatus(value)
                 setCurrentPage(1)
               }}
-              className="filter-select"
             >
-              <option value="all">All Status</option>
-              <option value="PENDING">Pending</option>
-              <option value="CONFIRMED">Confirmed</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

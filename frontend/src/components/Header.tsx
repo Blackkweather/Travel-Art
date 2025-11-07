@@ -37,7 +37,7 @@ const Header: React.FC = () => {
           </Link>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8" data-testid="desktop-menu">
             <Link to="/how-it-works" className="text-navy hover:text-gold transition-colors font-medium text-sm">
               How it Works
             </Link>
@@ -71,6 +71,7 @@ const Header: React.FC = () => {
                     window.location.href = '/'
                   }}
                   className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg"
+                  data-testid="user-menu"
                 >
                   Logout
                 </button>
@@ -92,6 +93,7 @@ const Header: React.FC = () => {
             onClick={toggleMobileMenu}
             className="md:hidden text-navy hover:text-gold transition-colors p-2"
             aria-label="Toggle mobile menu"
+            data-testid="mobile-menu-toggle"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -105,6 +107,7 @@ const Header: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           className="fixed top-[55px] left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg md:hidden"
+          data-testid="mobile-menu"
         >
           <div className="px-6 py-4 space-y-4">
             {/* Mobile Navigation Links */}

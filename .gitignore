@@ -92,6 +92,8 @@ temp/
 *.swp
 *.swo
 *~
+.cursor/
+.cursorrules
 
 # OS generated files
 .DS_Store

@@ -255,9 +255,34 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    // TODO: Send email with reset link
-    // In production, send email with link: `${config.frontendUrl}/reset-password?token=${resetToken}`
-    // Password reset token generated
+    const resetLink = `${config.frontendUrl || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+
+    // In development, log the reset link to console and include it in response
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔐 Password Reset Token Generated:');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`Email: ${email}`);
+      console.log(`Reset Link: ${resetLink}`);
+      console.log(`Token: ${resetToken}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      return res.json({
+        success: true,
+        message: 'If an account exists with that email, you will receive reset instructions.',
+        // Include reset link in dev mode for testing
+        dev: {
+          resetLink,
+          token: resetToken,
+          note: 'This is only visible in development mode'
+        }
+      });
+    }
+
+    // TODO: In production, send email with reset link
+    // Example: await sendEmail(user.email, 'Password Reset', { resetLink })
+    // For now, log in production too (remove in final version)
+    console.log(`Password reset requested for: ${email}`);
+    console.log(`Reset link: ${resetLink}`);
   }
 
   res.json({

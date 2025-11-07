@@ -493,6 +493,7 @@ const HotelArtists: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
+                data-testid="filter-input"
               />
             </div>
           </div>
@@ -609,10 +610,11 @@ const HotelArtists: React.FC = () => {
       </div>
 
       {/* Artists Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="artists-list">
         {sortedArtists.map((artist, index) => (
           <motion.div
             key={artist.id}
+            data-testid="artist-card"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -731,7 +733,7 @@ const HotelArtists: React.FC = () => {
                 <a className="flex-1 btn-primary" href={`/artist/${artist.id}`}>
                   View Profile
                 </a>
-                <button className="btn-secondary" onClick={() => openBooking(artist.id)}>
+                <button className="btn-secondary" onClick={() => openBooking(artist.id)} data-testid="book-button">
                   Book Now
                 </button>
               </div>

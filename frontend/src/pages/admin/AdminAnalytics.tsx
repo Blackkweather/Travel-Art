@@ -299,7 +299,7 @@ const AdminAnalytics: React.FC = () => {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">Platform Analytics</h1>
-        <p className="text-gray-600">📊 CHARTS ENABLED - Comprehensive metrics and visualizations for the Travel Art platform.</p>
+        <p className="text-gray-600">CHARTS ENABLED - Comprehensive metrics and visualizations for the Travel Art platform.</p>
       </div>
 
       {/* Stats Grid */}
@@ -366,7 +366,6 @@ const AdminAnalytics: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip />
               <Bar dataKey="value" fill="#1f3c88" />
             </BarChart>
           </ResponsiveContainer>

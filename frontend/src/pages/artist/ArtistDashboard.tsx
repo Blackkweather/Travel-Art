@@ -106,7 +106,7 @@ const ArtistDashboard: React.FC = () => {
   ]
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="dashboard">
       <div className="fade-in-up">
         <h1 className="dashboard-title mb-3 gold-underline">
           Welcome back, {user?.name}!

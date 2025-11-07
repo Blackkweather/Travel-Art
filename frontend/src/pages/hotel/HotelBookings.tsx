@@ -248,6 +248,7 @@ const HotelBookings: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
+                data-testid="filter-input"
               />
             </div>
           </div>
@@ -257,6 +258,7 @@ const HotelBookings: React.FC = () => {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="filter-select"
+              data-testid="status-filter"
             >
               <option value="all">All Status</option>
               <option value="confirmed">Confirmed</option>
@@ -269,10 +271,11 @@ const HotelBookings: React.FC = () => {
       </div>
 
       {/* Bookings List */}
-      <div className="space-y-6">
+      <div className="space-y-6" data-testid="bookings-list">
         {filteredBookings.map((booking, index) => (
           <motion.div
             key={booking.id}
+            data-testid="booking-item"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -301,7 +304,7 @@ const HotelBookings: React.FC = () => {
               </div>
 
               {/* Booking Details */}
-              <div className="flex-1">
+              <div className="flex-1" data-testid="booking-details">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <h4 className="text-sm font-medium text-navy mb-2">Performance Details</h4>
