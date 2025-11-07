@@ -10,8 +10,8 @@ const Header: React.FC = () => {
   const { scrollY } = useScroll()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
-  // Scroll-based background opacity (subtle change)
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(255, 255, 255, 0.85)', 'rgba(255, 255, 255, 0.95)'])
+  // Dark navy header background (consistent across all pages)
+  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(15, 23, 42, 0.95)', 'rgba(15, 23, 42, 1)'])
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -38,22 +38,22 @@ const Header: React.FC = () => {
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4 lg:space-x-6 xl:space-x-8 flex-wrap justify-center" data-testid="desktop-menu">
-            <Link to="/how-it-works" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
+            <Link to="/how-it-works" className="text-white hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               How it Works
             </Link>
-            <Link to="/partners" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
+            <Link to="/partners" className="text-white hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Partners
             </Link>
-            <Link to="/pricing" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
+            <Link to="/pricing" className="text-white hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Pricing
             </Link>
-            <Link to="/top-artists" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
+            <Link to="/top-artists" className="text-white hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Top Artists
             </Link>
-            <Link to="/top-hotels" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
+            <Link to="/top-hotels" className="text-white hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Top Hotels
             </Link>
-            <Link to="/experiences" className="text-navy hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
+            <Link to="/experiences" className="text-white hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
               Experiences
             </Link>
           </div>
@@ -62,7 +62,7 @@ const Header: React.FC = () => {
           <div className="flex items-center space-x-3">
             {user ? (
               <>
-                <Link to="/dashboard" className="text-navy hover:text-gold transition-colors font-medium text-sm px-4 py-2">
+                <Link to="/dashboard" className="text-white hover:text-gold transition-colors font-medium text-sm px-4 py-2">
                   Dashboard
                 </Link>
                 <button
@@ -78,7 +78,7 @@ const Header: React.FC = () => {
               </>
             ) : (
               <>
-                <Link to="/login" className="text-navy hover:text-gold transition-colors font-medium text-sm px-4 py-2">
+                <Link to="/login" className="text-white hover:text-gold transition-colors font-medium text-sm px-4 py-2">
                   Sign In
                 </Link>
                 <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
@@ -91,7 +91,7 @@ const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden text-navy hover:text-gold transition-colors p-2"
+            className="md:hidden text-white hover:text-gold transition-colors p-2"
             aria-label="Toggle mobile menu"
             data-testid="mobile-menu-toggle"
           >
@@ -106,7 +106,7 @@ const Header: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="fixed top-[55px] left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-lg md:hidden"
+          className="fixed top-[55px] left-0 right-0 z-40 bg-navy/95 backdrop-blur-md border-b border-white/10 shadow-lg md:hidden"
           data-testid="mobile-menu"
         >
           <div className="px-6 py-4 space-y-4">
@@ -114,42 +114,42 @@ const Header: React.FC = () => {
             <div className="space-y-3">
               <Link 
                 to="/how-it-works" 
-                className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                className="block text-white hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 How it Works
               </Link>
               <Link 
                 to="/partners" 
-                className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                className="block text-white hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Partners
               </Link>
               <Link 
                 to="/pricing" 
-                className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                className="block text-white hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Pricing
               </Link>
               <Link 
                 to="/top-artists" 
-                className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                className="block text-white hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Top Artists
               </Link>
               <Link
                 to="/top-hotels"
-                className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                className="block text-white hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Top Hotels
               </Link>
               <Link
                 to="/experiences"
-                className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                className="block text-white hover:text-gold transition-colors font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Experiences
@@ -157,12 +157,12 @@ const Header: React.FC = () => {
             </div>
             
             {/* Mobile Action Buttons */}
-            <div className="pt-4 border-t border-gray-200 space-y-3">
+            <div className="pt-4 border-t border-white/10 space-y-3">
               {user ? (
                 <>
                   <Link 
                     to="/dashboard" 
-                    className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                    className="block text-white hover:text-gold transition-colors font-medium py-2"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Dashboard
@@ -182,7 +182,7 @@ const Header: React.FC = () => {
                 <>
                   <Link 
                     to="/login" 
-                    className="block text-navy hover:text-gold transition-colors font-medium py-2"
+                    className="block text-white hover:text-gold transition-colors font-medium py-2"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign In
