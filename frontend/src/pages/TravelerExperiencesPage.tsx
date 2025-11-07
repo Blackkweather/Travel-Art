@@ -57,7 +57,7 @@ const experiences: Experience[] = [
     artist: 'Isabella Garcia',
     hotel: 'Hotel Arts Barcelona',
     date: '2024-07-20',
-    image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800',
+    image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80',
     type: 'workshop',
     rating: 4.8,
     description: 'Learn flamenco with a master dancer, followed by an evening performance.'
