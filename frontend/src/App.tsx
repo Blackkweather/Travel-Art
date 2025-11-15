@@ -6,6 +6,10 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import RoleRoute from './components/RoleRoute'
 import RoleAwareRoute from './components/RoleAwareRoute'
+import PasswordPopup from './components/PasswordPopup'
+
+// Force import to ensure it loads
+console.log('🔒 PasswordPopup imported:', typeof PasswordPopup)
 
 // Public pages
 import LandingPage from '@/pages/LandingPage'
@@ -72,18 +76,19 @@ function App() {
     checkAuth()
   }, [checkAuth])
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    )
-  }
-
+  console.log('🔒 App.tsx rendering - PasswordPopup should be visible')
+  
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<LandingPage />} />
+    <>
+      <PasswordPopup />
+      {isLoading ? (
+        <div className="min-h-screen bg-cream flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      ) : (
+        <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/partners" element={<PartnersPage />} />
       <Route path="/top-artists" element={<TopArtistsPage />} />
@@ -201,7 +206,9 @@ function App() {
       
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        </Routes>
+      )}
+    </>
   )
 }
 

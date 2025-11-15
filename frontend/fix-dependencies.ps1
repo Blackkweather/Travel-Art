@@ -40,3 +40,8 @@ if ($tailwind -and $postcss -and $autoprefixer) {
 
 Write-Host "`n✨ Done! You can now run 'npm run dev'" -ForegroundColor Cyan
 
+
+
+
+
+
