@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Check, Star, CreditCard, Users, Calendar, Award } from 'lucide-react'
+import { Check, Star, CreditCard, Users, Calendar, Award, Sparkles } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import { ArtistRank, RANK_CONFIG, type RankTier } from '../components/ArtistRank'
@@ -98,22 +98,22 @@ const PricingPage: React.FC = () => {
 
   const benefits = [
     {
-      icon: <Star className="w-8 h-8 text-gold" />,
+      icon: <Star className="w-8 h-8 text-navy" />,
       title: 'Quality Guaranteed',
       description: 'All artists are verified professionals with proven track records'
     },
     {
-      icon: <Users className="w-8 h-8 text-gold" />,
+      icon: <Users className="w-8 h-8 text-navy" />,
       title: 'Curated Network',
       description: 'Access to exclusive luxury hotels and top-tier venues worldwide'
     },
     {
-      icon: <CreditCard className="w-8 h-8 text-gold" />,
+      icon: <CreditCard className="w-8 h-8 text-navy" />,
       title: 'Secure Payments',
       description: 'Safe and reliable payment processing with fraud protection'
     },
     {
-      icon: <Calendar className="w-8 h-8 text-gold" />,
+      icon: <Calendar className="w-8 h-8 text-navy" />,
       title: 'Flexible Booking',
       description: 'Easy cancellation policies and rescheduling options'
     }
@@ -164,51 +164,52 @@ const PricingPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-6 pb-4">
           {artistPlans.map((plan, index) => (
-            <motion.div
-              key={plan.name}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={`card-luxury relative ${plan.popular ? 'ring-2 ring-gold' : ''}`}
-            >
+            <div key={plan.name} className="relative">
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gold text-navy px-4 py-2 rounded-full text-sm font-medium shadow-lg">
-                    Most Popular
-                  </span>
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                  <div className="bg-gradient-to-r from-gold to-gold/90 text-navy px-6 py-2.5 rounded-full shadow-2xl border-2 border-white flex items-center gap-2">
+                    <Award className="w-5 h-5" />
+                    <span className="font-bold text-sm">Most Popular</span>
+                  </div>
                 </div>
               )}
-              
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-serif font-semibold text-navy mb-2">
-                  {plan.name}
-                </h3>
-                <p className="text-gray-600 mb-4">{plan.description}</p>
-                <div className="flex items-baseline justify-center">
-                  <span className="text-4xl font-bold text-navy">{plan.price}</span>
-                  <span className="text-gray-600 ml-2">{plan.period}</span>
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className={`card-luxury relative ${plan.popular ? 'ring-2 ring-gold mt-6' : ''}`}
+              >
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-serif font-semibold text-navy mb-2">
+                    {plan.name}
+                  </h3>
+                  <p className="text-gray-600 mb-4">{plan.description}</p>
+                  <div className="flex items-baseline justify-center">
+                    <span className="text-4xl font-bold text-navy">{plan.price}</span>
+                    <span className="text-gray-600 ml-2">{plan.period}</span>
+                  </div>
                 </div>
-              </div>
 
-              <ul className="space-y-4 mb-8">
-                {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start">
-                    <Check className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+                <ul className="space-y-4 mb-8">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-start">
+                      <Check className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-600">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
 
-              <button className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                plan.popular 
-                  ? 'bg-gold text-navy hover:bg-gold/90' 
-                  : 'bg-navy text-white hover:bg-navy/90'
-              }`}>
-                Choose Plan
-              </button>
-            </motion.div>
+                <button className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                  plan.popular 
+                    ? 'bg-white text-navy border-2 border-gold hover:bg-gray-50' 
+                    : 'bg-navy text-white hover:bg-navy/90'
+                }`}>
+                  Choose Plan
+                </button>
+              </motion.div>
+            </div>
           ))}
         </div>
 
@@ -255,20 +256,21 @@ const PricingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {hotelPlans.map((plan, index) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className={`card-luxury relative ${plan.popular ? 'ring-2 ring-gold' : ''}`}
-              >
+              <div key={plan.name} className="relative">
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gold text-navy px-4 py-2 rounded-full text-sm font-medium">
-                      Most Popular
-                    </span>
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                    <div className="bg-gradient-to-r from-gold to-gold/90 text-navy px-6 py-2.5 rounded-full shadow-2xl border-2 border-white flex items-center gap-2">
+                      <Award className="w-5 h-5" />
+                      <span className="font-bold text-sm">Most Popular</span>
+                    </div>
                   </div>
                 )}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className={`card-luxury relative ${plan.popular ? 'ring-2 ring-gold mt-6' : ''}`}
+                >
                 
                 <div className="text-center mb-8">
                   <h3 className="text-2xl font-serif font-semibold text-navy mb-2">
@@ -311,12 +313,13 @@ const PricingPage: React.FC = () => {
 
                 <button className={`w-full py-3 rounded-lg font-medium transition-colors ${
                   plan.popular 
-                    ? 'bg-gold text-navy hover:bg-gold/90' 
+                    ? 'bg-white text-navy border-2 border-gold hover:bg-gray-50' 
                     : 'bg-navy text-white hover:bg-navy/90'
                 }`}>
                   Purchase Credits
                 </button>
-              </motion.div>
+                </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -505,10 +508,10 @@ const PricingPage: React.FC = () => {
               Join Travel Art today and start creating magical moments at luxury hotels worldwide.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/register" className="btn-primary text-lg px-8 py-4">
+              <a href="/register" className="bg-transparent text-white border-2 border-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10">
                 Join as Artist
               </a>
-              <a href="/register" className="btn-secondary text-lg px-8 py-4">
+              <a href="/register" className="bg-transparent text-white border-2 border-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10">
                 Join as Hotel
               </a>
             </div>

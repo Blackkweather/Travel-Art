@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Star, MapPin, Building, Music, Users, Calendar } from 'lucide-react'
 import Header from '../components/Header'
@@ -256,9 +257,12 @@ const TopHotelsPage: React.FC = () => {
                   </span>
                 </div>
 
-                <button className="w-full btn-primary">
+                <Link 
+                  to={`/hotel/${hotel.id}`}
+                  className="w-full btn-primary text-center block"
+                >
                   View Venues
-                </button>
+                </Link>
               </div>
             </motion.div>
           ))}

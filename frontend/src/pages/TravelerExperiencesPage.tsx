@@ -266,13 +266,17 @@ const TravelerExperiencesPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredExperiences.map((exp, index) => (
-              <motion.div
+              <Link
                 key={exp.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="card-experience group"
+                to={`/experience/${exp.id}`}
+                className="block"
               >
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="card-experience group cursor-pointer"
+                >
                 <div className="relative h-64 overflow-hidden">
                   <img
                     src={exp.image}
@@ -315,15 +319,13 @@ const TravelerExperiencesPage: React.FC = () => {
                       <span>{exp.hotel}</span>
                     </div>
                   </div>
-                  <Link
-                    to={`/experience/${exp.id}`}
-                    className="inline-flex items-center text-gold font-semibold hover:text-navy transition-colors group"
-                  >
+                  <div className="inline-flex items-center text-gold font-semibold group-hover:text-navy transition-colors">
                     Learn More
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Link>
+                  </div>
                 </div>
               </motion.div>
+              </Link>
             ))}
           </div>
         </div>

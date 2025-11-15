@@ -17,6 +17,7 @@ import HowItWorksPage from '@/pages/HowItWorksPage'
 import PartnersPage from '@/pages/PartnersPage'
 import TopArtistsPage from '@/pages/TopArtistsPage'
 import TopHotelsPage from '@/pages/TopHotelsPage'
+import HotelDetailsPage from '@/pages/HotelDetailsPage'
 import PricingPage from '@/pages/PricingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
@@ -47,6 +48,7 @@ import AdminAnalytics from '@/pages/admin/AdminAnalytics'
 import AdminModeration from '@/pages/admin/AdminModeration'
 import AdminReferrals from '@/pages/admin/AdminReferrals'
 import TravelerExperiencesPage from '@/pages/TravelerExperiencesPage'
+import ExperienceDetailsPage from '@/pages/ExperienceDetailsPage'
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
@@ -93,8 +95,10 @@ function App() {
       <Route path="/partners" element={<PartnersPage />} />
       <Route path="/top-artists" element={<TopArtistsPage />} />
       <Route path="/top-hotels" element={<TopHotelsPage />} />
+      <Route path="/hotel/:id" element={<HotelDetailsPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/experiences" element={<TravelerExperiencesPage />} />
+      <Route path="/experience/:id" element={<ExperienceDetailsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

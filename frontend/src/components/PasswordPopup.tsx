@@ -16,18 +16,12 @@ const getStorage = () => {
 }
 
 const PasswordPopup: React.FC = () => {
-  console.log('🔒🔒🔒 PasswordPopup COMPONENT LOADED AND RENDERING')
-  const [isOpen, setIsOpen] = useState(true) // FORCE TRUE FOR TESTING
+  const [isOpen, setIsOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    console.log('🔒 PasswordPopup useEffect - FORCING TO SHOW')
-    console.log('🔒 isOpen state:', isOpen)
-    console.log('🔒 document.body exists:', !!document.body)
-    document.body.style.overflow = 'hidden'
-    
     // Check for reset flag in URL (for testing: ?reset-password=true)
     const urlParams = new URLSearchParams(window.location.search)
     if (urlParams.get('reset-password') === 'true') {
@@ -59,17 +53,20 @@ const PasswordPopup: React.FC = () => {
         }
       } catch (e) {
         // If sessionStorage is not available, show popup anyway
-        console.log('sessionStorage not available, showing popup:', e)
         shouldShowPopup = true
       }
     }
     
-    // FORCE SHOW FOR TESTING - REMOVE THIS LATER
-    setIsOpen(true)
-    document.body.style.overflow = 'hidden'
+    setIsOpen(shouldShowPopup)
+    
+    if (shouldShowPopup) {
+      document.body.style.overflow = 'hidden'
+    }
     
     return () => {
-      document.body.style.overflow = ''
+      if (!shouldShowPopup) {
+        document.body.style.overflow = ''
+      }
     }
   }, [])
 
@@ -101,24 +98,15 @@ const PasswordPopup: React.FC = () => {
     }, 800) // 800ms delay for loading animation
   }
 
-  console.log('🔒 About to render - isOpen:', isOpen, 'document:', typeof document !== 'undefined')
-  
-  // ALWAYS render - no early returns for debugging
   if (typeof document === 'undefined') {
-    console.log('🔒 Document undefined, returning null')
     return null
   }
   
   if (!isOpen) {
-    console.log('🔒 isOpen is false, returning null')
     return null
   }
-
-  console.log('🔒 Creating portal content!')
   
-  // TEST: Try rendering directly first to see if component works at all
   if (!document.body) {
-    console.log('🔒 document.body not ready yet')
     return null
   }
   
@@ -325,10 +313,7 @@ const PasswordPopup: React.FC = () => {
     </>
   )
 
-  console.log('🔒 About to call createPortal with document.body:', !!document.body)
-  const result = createPortal(portalContent, document.body)
-  console.log('🔒 createPortal returned:', result)
-  return result
+  return createPortal(portalContent, document.body)
 }
 
 export default PasswordPopup
