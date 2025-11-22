@@ -12,17 +12,18 @@ router.get(
 
     const where: any = { status: 'PUBLISHED' };
 
-    // SQLite doesn't support case-insensitive mode, so we'll filter in memory
-    let trips = await prisma.trip.findMany({
+    // PostgreSQL supports case-insensitive filtering
+    if (destination && typeof destination === 'string') {
+      where.location = {
+        contains: destination,
+        mode: 'insensitive'
+      };
+    }
+
+    const trips = await prisma.trip.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     });
-
-    // Apply destination filter in memory for SQLite compatibility
-    if (destination && typeof destination === 'string') {
-      const destinationLower = destination.toLowerCase();
-      trips = trips.filter(t => t.location.toLowerCase().includes(destinationLower));
-    }
 
     // Do not expose internal fields like createdAt/updatedAt
     const safeTrips = trips.map((t) => {
