@@ -1,15 +1,88 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Star, MapPin, Calendar, Music, Users, Globe, Clock, ArrowLeft, Award, Camera } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { tripsApi } from '@/utils/api'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 const ExperienceDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const [experience, setExperience] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Mock experience data - in real app, fetch from API
-  const experiences: Record<string, any> = {
+  // Fetch experience from API
+  useEffect(() => {
+    const fetchExperience = async () => {
+      if (!id) {
+        setError('Experience ID is required')
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        setError(null)
+        const res = await tripsApi.getById(id)
+        
+        if (res.data?.success && res.data.data) {
+          const trip = res.data.data
+          const location = trip.location 
+            ? (typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location)
+            : { city: 'Unknown', country: '', lat: 0, lng: 0 }
+          
+          const images = Array.isArray(trip.images) ? trip.images : 
+            (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
+          
+          setExperience({
+            id: trip.id,
+            title: trip.title || 'Experience',
+            location: {
+              city: location.city || 'Unknown',
+              country: location.country || '',
+              lat: location.lat || 0,
+              lng: location.lng || 0
+            },
+            artist: trip.artist?.user?.name || trip.artistName || 'Artist',
+            hotel: trip.hotel?.name || trip.hotelName || 'Hotel',
+            date: trip.startDate || trip.date || new Date().toISOString().split('T')[0],
+            image: images[0] || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop',
+            type: trip.type || 'intimate',
+            rating: trip.averageRating || trip.rating || 4.5,
+            description: trip.description || trip.summary || 'An amazing experience awaits.',
+            fullDescription: trip.fullDescription || trip.description || trip.summary || 'An amazing experience awaits.',
+            duration: trip.duration || '2 hours',
+            capacity: trip.capacity || '50 guests',
+            price: trip.price || '€150 per person',
+            includes: trip.includes || [
+              'Welcome reception',
+              'Performance',
+              'Refreshments',
+              'Venue access'
+            ],
+            schedule: trip.schedule || [],
+            artistBio: trip.artist?.bio || trip.artistBio || 'Talented artist with years of experience.',
+            venueDetails: trip.venueDetails || trip.hotel?.description || 'Beautiful venue setting.',
+            reviews: trip.reviews || []
+          })
+        } else {
+          setError('Experience not found')
+        }
+      } catch (err: any) {
+        console.error('Error fetching experience:', err)
+        setError('Failed to load experience. Please try again later.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchExperience()
+  }, [id])
+
+  // Fallback experience data (for reference, not used if API works)
+  const fallbackExperiences: Record<string, any> = {
     '1': {
       id: '1',
       title: 'Sunset Jazz on the Rooftop',
@@ -168,9 +241,20 @@ const ExperienceDetailsPage: React.FC = () => {
     }
   }
 
-  const experience = experiences[id || '1']
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-cream">
+        <Header />
+        <div className="container mx-auto px-6 py-20 text-center">
+          <LoadingSpinner />
+          <p className="mt-4 text-gray-600">Loading experience...</p>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
-  if (!experience) {
+  if (error || !experience) {
     return (
       <div className="min-h-screen bg-cream">
         <Header />

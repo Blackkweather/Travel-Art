@@ -40,7 +40,7 @@ Cypress.Commands.add('loginAsRole', (role: 'artist' | 'hotel' | 'admin') => {
   const users = {
     artist: { email: 'artist1@example.com', password: 'password123' },
     hotel: { email: 'hotel1@example.com', password: 'password123' },
-    admin: { email: 'admin@example.com', password: 'password123' }
+    admin: { email: 'admin@travelart.test', password: 'Password123!' }
   }
   const user = users[role]
   cy.login(user.email, user.password)

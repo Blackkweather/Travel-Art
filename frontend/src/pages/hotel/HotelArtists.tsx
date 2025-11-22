@@ -750,11 +750,15 @@ const HotelArtists: React.FC = () => {
             <div className="space-y-3">
               <div>
                 <label className="form-label">Start date</label>
-                <input type="date" className="form-input w-full" value={bookingModal.start || ''} onChange={(e)=>setBookingModal(m=>({...m,start:e.target.value}))} />
+                <input type="date" name="startDate" className="form-input w-full" value={bookingModal.start || ''} onChange={(e)=>setBookingModal(m=>({...m,start:e.target.value}))} />
               </div>
               <div>
                 <label className="form-label">End date</label>
-                <input type="date" className="form-input w-full" value={bookingModal.end || ''} onChange={(e)=>setBookingModal(m=>({...m,end:e.target.value}))} />
+                <input type="date" name="endDate" className="form-input w-full" value={bookingModal.end || ''} onChange={(e)=>setBookingModal(m=>({...m,end:e.target.value}))} />
+              </div>
+              <div>
+                <label className="form-label">Notes (optional)</label>
+                <input type="text" name="notes" className="form-input w-full" placeholder="Special requests or notes" onChange={(e)=>setBookingModal(m=>({...m,notes:e.target.value}))} />
               </div>
               {bookingError && <div className="text-sm text-red-600">{bookingError}</div>}
               <div className="flex justify-end space-x-2 pt-2">

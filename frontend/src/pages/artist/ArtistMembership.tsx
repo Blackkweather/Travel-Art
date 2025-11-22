@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Crown, Check, Star, Calendar, Gift, Users } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import { paymentsApi } from '@/utils/api'
+import { paymentsApi, artistsApi } from '@/utils/api'
 import { toast } from 'react-hot-toast'
 
 function showToast(message: string) {
@@ -14,26 +14,77 @@ function showToast(message: string) {
 }
 
 const ArtistMembership: React.FC = () => {
-  const [currentPlan] = useState('professional')
   const { user } = useAuthStore()
   const [processing, setProcessing] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [artist, setArtist] = useState<any>(null)
+  const [membershipStatus, setMembershipStatus] = useState<string>('INACTIVE')
+  const [referralCode, setReferralCode] = useState('')
+  const [totalBookings, setTotalBookings] = useState(0)
+  const [memberSince, setMemberSince] = useState('')
 
-  const handleUpgrade = async (membershipType: 'PROFESSIONAL' | 'ENTERPRISE') => {
-    if (!user?.artist?.id) {
-      showToast('Artist profile not found')
+  useEffect(() => {
+    fetchArtistProfile()
+  }, [user])
+
+  const fetchArtistProfile = async () => {
+    if (!user?.id) {
+      setLoading(false)
       return
     }
+
+    try {
+      setLoading(true)
+      const response = await artistsApi.getMyProfile()
+      const artistData = response.data?.data
+      
+      if (artistData) {
+        setArtist(artistData)
+        setMembershipStatus(artistData.membershipStatus || 'INACTIVE')
+        setReferralCode(artistData.referralCode || '')
+        setTotalBookings(artistData.bookings?.length || 0)
+        setMemberSince(artistData.user?.createdAt || artistData.createdAt || new Date().toISOString())
+      }
+    } catch (error: any) {
+      if (error.response?.status !== 404) {
+        console.error('Error fetching artist profile:', error)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUpgrade = async (membershipType: 'PROFESSIONAL' | 'ENTERPRISE') => {
+    if (!user?.artist?.id && !artist?.id) {
+      showToast('Artist profile not found. Please create your profile first.')
+      return
+    }
+    
+    const artistId = artist?.id || user?.artist?.id
+    
     try {
       setProcessing(true)
-      await paymentsApi.membership(user.artist.id, membershipType, 'CARD')
+      await paymentsApi.membership(artistId, membershipType, 'CARD')
       showToast('Membership purchased successfully')
+      await fetchArtistProfile() // Refresh profile after purchase
     } catch (e: any) {
-      // Allow demo success if backend route is not wired in this deploy
-      showToast('Membership purchase completed (demo)')
+      console.error('Membership purchase error:', e)
+      showToast('Membership purchase failed. Please try again.')
     } finally {
       setProcessing(false)
     }
   }
+
+  // Determine current plan based on membership status
+  const getCurrentPlan = () => {
+    if (membershipStatus === 'ACTIVE' && artist) {
+      // Check if they have a professional/enterprise membership
+      return 'professional' // Default to professional if active
+    }
+    return null // No active plan
+  }
+
+  const currentPlan = getCurrentPlan()
   
   const plans = [
     {
@@ -51,7 +102,7 @@ const ArtistMembership: React.FC = () => {
         'Free T-shirt included'
       ],
       popular: false,
-      current: currentPlan === 'basic'
+      current: currentPlan === 'basic' || membershipStatus === 'ACTIVE'
     },
     {
       name: 'Professional Artist',
@@ -74,9 +125,21 @@ const ArtistMembership: React.FC = () => {
   ]
 
   const membershipStats = [
-    { label: 'Member Since', value: 'Jan 15, 2023', icon: Calendar },
-    { label: 'Total Performances', value: '24', icon: Star },
-    { label: 'Referrals Sent', value: '8', icon: Users }
+    { 
+      label: 'Member Since', 
+      value: memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently', 
+      icon: Calendar 
+    },
+    { 
+      label: 'Total Performances', 
+      value: totalBookings.toString(), 
+      icon: Star 
+    },
+    { 
+      label: 'Membership Status', 
+      value: membershipStatus === 'ACTIVE' ? 'Active' : 'Inactive', 
+      icon: Users 
+    }
   ]
 
   const benefits = [
@@ -102,6 +165,17 @@ const ArtistMembership: React.FC = () => {
     }
   ]
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading membership information...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -122,13 +196,23 @@ const ArtistMembership: React.FC = () => {
               Current Membership
             </h2>
             <p className="text-gray-600">
-              Professional Artist Plan • Active since January 15, 2023
+              {membershipStatus === 'ACTIVE' 
+                ? `${currentPlan === 'professional' ? 'Professional' : 'Artist'} Plan • Active since ${memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Recently'}`
+                : 'No active membership • Choose a plan below to get started'}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-gold">€100/year</p>
-            <p className="text-sm text-gray-600">Next billing: Jan 15, 2025</p>
-          </div>
+          {membershipStatus === 'ACTIVE' && (
+            <div className="text-right">
+              <p className="text-2xl font-bold text-gold">
+                {currentPlan === 'professional' ? '€100' : '€50'}/year
+              </p>
+              {artist?.membershipRenewal && (
+                <p className="text-sm text-gray-600">
+                  Next billing: {new Date(artist.membershipRenewal).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Membership Stats */}
@@ -149,7 +233,7 @@ const ArtistMembership: React.FC = () => {
       {/* Membership Plans */}
       <div>
         <h2 className="text-2xl font-serif font-bold text-navy mb-6 gold-underline">
-          Upgrade Your Membership
+          {membershipStatus === 'ACTIVE' ? 'Upgrade Your Membership' : 'Choose Your Membership Plan'}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
           {plans.map((plan, index) => (
@@ -177,7 +261,6 @@ const ArtistMembership: React.FC = () => {
               )}
               
               <div className="text-center mb-8">
-                
                 <h3 className="text-2xl font-serif font-semibold text-navy mb-2">
                   {plan.name}
                 </h3>
@@ -206,9 +289,9 @@ const ArtistMembership: React.FC = () => {
                       : 'bg-navy text-white hover:bg-navy/90'
                 }`}
                 disabled={processing || plan.current}
-                onClick={() => handleUpgrade(plan.name === 'Professional Artist' ? 'PROFESSIONAL' : 'ENTERPRISE')}
+                onClick={() => handleUpgrade(plan.name === 'Professional Artist' ? 'PROFESSIONAL' : 'PROFESSIONAL')}
               >
-                {plan.current ? 'Current Plan' : (processing ? 'Processing…' : 'Upgrade Plan')}
+                {plan.current ? 'Current Plan' : (processing ? 'Processing…' : membershipStatus === 'ACTIVE' ? 'Upgrade Plan' : 'Choose Plan')}
               </button>
             </motion.div>
           ))}
@@ -251,74 +334,82 @@ const ArtistMembership: React.FC = () => {
           Billing History
         </h2>
         <div className="space-y-4">
-          {[
-            { date: '2024-01-15', amount: '€599', description: 'Professional Artist Plan - Annual', status: 'paid' },
-            { date: '2023-01-15', amount: '€299', description: 'Basic Artist Plan - Annual', status: 'paid' },
-            { date: '2022-01-15', amount: '€299', description: 'Basic Artist Plan - Annual', status: 'paid' }
-          ].map((payment, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-navy">{payment.description}</p>
-                <p className="text-sm text-gray-600">{new Date(payment.date).toLocaleDateString()}</p>
+          {artist?.transactions && artist.transactions.length > 0 ? (
+            artist.transactions.map((transaction: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-navy">{transaction.type || 'Membership'}</p>
+                  <p className="text-sm text-gray-600">
+                    {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString() : 'Unknown date'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-navy">€{transaction.amount || 0}</p>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                    paid
+                  </span>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="font-semibold text-navy">{payment.amount}</p>
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                  {payment.status}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-gray-600 text-center py-8">No billing history yet</p>
+          )}
         </div>
       </div>
 
       {/* Referral Program */}
-      <div className="card-luxury">
-        <h2 className="text-2xl font-serif font-bold text-navy mb-6 gold-underline">
-          Referral Program
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-              Invite Fellow Artists
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Share your referral code and earn €50 credits for each successful referral.
-            </p>
-            <div className="flex items-center space-x-2 mb-4">
-              <input
-                type="text"
-                value="TRAVELART-SOPHIE"
-                readOnly
-                className="form-input flex-1"
-              />
-              <button className="btn-secondary">Copy</button>
+      {referralCode && (
+        <div className="card-luxury">
+          <h2 className="text-2xl font-serif font-bold text-navy mb-6 gold-underline">
+            Referral Program
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+                Invite Fellow Artists
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Share your referral code and earn credits for each successful referral.
+              </p>
+              <div className="flex items-center space-x-2 mb-4">
+                <input
+                  type="text"
+                  value={referralCode}
+                  readOnly
+                  className="form-input flex-1"
+                />
+                <button 
+                  className="btn-secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(referralCode)
+                    toast.success('Referral code copied!')
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-sm text-gray-600">
+                Share this code with other artists. You'll both benefit when they join!
+              </p>
             </div>
-            <p className="text-sm text-gray-600">
-              Share this code with other artists. You'll both benefit when they join!
-            </p>
-          </div>
-          <div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-              Referral Stats
-            </h3>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Referrals</span>
-                <span className="font-semibold text-navy">8</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Successful Referrals</span>
-                <span className="font-semibold text-navy">5</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Credits Earned</span>
-                <span className="font-semibold text-gold">€250</span>
+            <div>
+              <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+                Referral Stats
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Loyalty Points</span>
+                  <span className="font-semibold text-navy">{artist?.loyaltyPoints || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Bookings</span>
+                  <span className="font-semibold text-navy">{totalBookings}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

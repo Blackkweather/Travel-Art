@@ -15,6 +15,7 @@ import { getLogoUrl } from '@/config/assets'
 import { ArtistRank, getQuickRank } from '@/components/ArtistRank'
 import Footer from '@/components/Footer'
 import NewsletterSignup from '@/components/NewsletterSignup'
+import { commonApi } from '@/utils/api'
 
 const LandingPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -144,8 +145,8 @@ const LandingPage: React.FC = () => {
     }
   ]
 
-  // Showcase data
-  const artists = [
+  // Showcase data - fetch from API with fallback
+  const [artists, setArtists] = useState([
     {
       id: 1,
       name: "Elena Rodriguez",
@@ -182,9 +183,9 @@ const LandingPage: React.FC = () => {
       bookings: 28,
       location: "Ibiza, Spain"
     }
-  ]
+  ])
 
-  const hotels = [
+  const [hotels, setHotels] = useState([
     {
       id: 1,
       name: "The Ritz Paris",
@@ -217,7 +218,75 @@ const LandingPage: React.FC = () => {
       rating: 4.7,
       features: ["Beach Club", "DJ Sets", "Sunset Views"]
     }
-  ]
+  ])
+
+  // Fetch artists and hotels from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [artistsRes, hotelsRes] = await Promise.all([
+          commonApi.getTopArtists({ limit: 4 }).catch(() => null),
+          commonApi.getTopHotels({ limit: 4 }).catch(() => null)
+        ])
+
+        if (artistsRes?.data?.success && artistsRes.data.data) {
+          const apiArtists = Array.isArray(artistsRes.data.data) 
+            ? artistsRes.data.data.slice(0, 4)
+            : []
+          
+          if (apiArtists.length > 0) {
+            const formattedArtists = apiArtists.map((artist: any) => ({
+              id: artist.id || artist.artistId || Math.random(),
+              name: artist.user?.name || artist.name || 'Unknown Artist',
+              specialty: artist.discipline || artist.specialty || 'Artist',
+              image: Array.isArray(artist.images) && artist.images[0] 
+                ? artist.images[0] 
+                : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+              rating: artist.averageRating || artist.rating || 4.5,
+              bookings: artist.bookingCount || artist.totalBookings || 0,
+              location: artist.user?.country || artist.location || 'Unknown'
+            }))
+            setArtists(formattedArtists)
+          }
+        }
+
+        if (hotelsRes?.data?.success && hotelsRes.data.data) {
+          const apiHotels = Array.isArray(hotelsRes.data.data)
+            ? hotelsRes.data.data.slice(0, 4)
+            : []
+          
+          if (apiHotels.length > 0) {
+            const formattedHotels = apiHotels.map((hotel: any) => {
+              const location = hotel.location 
+                ? (typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location)
+                : {}
+              
+              return {
+                id: hotel.id || Math.random(),
+                name: hotel.name || 'Hotel',
+                location: location.city 
+                  ? `${location.city}, ${location.country || ''}`.trim()
+                  : hotel.location || 'Unknown',
+                image: Array.isArray(hotel.images) && hotel.images[0]
+                  ? hotel.images[0]
+                  : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                rating: hotel.averageRating || hotel.rating || 4.5,
+                features: Array.isArray(hotel.performanceSpots) && hotel.performanceSpots.length > 0
+                  ? hotel.performanceSpots.slice(0, 3).map((spot: any) => spot.name || spot)
+                  : ['Premium Venue', 'Art Space', 'Live Events']
+              }
+            })
+            setHotels(formattedHotels)
+          }
+        }
+      } catch (error) {
+        // Silently fail and use fallback data
+        console.warn('Failed to fetch landing page data, using fallback:', error)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   // Journal stories data
   const stories = [
@@ -494,7 +563,7 @@ const LandingPage: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="experience-grid">
+            <div className="experience-grid" data-testid="feature-grid">
             {experiences.map((experience, index) => (
               <motion.div
                 key={experience.id}

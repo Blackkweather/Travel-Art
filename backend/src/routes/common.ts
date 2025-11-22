@@ -12,6 +12,93 @@ const referralSchema = z.object({
   inviteeName: z.string().min(2).max(100)
 });
 
+// Get current user's referrals
+router.get('/referrals', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+  const referrals = await prisma.referral.findMany({
+    where: {
+      inviterUserId: req.user!.id
+    },
+    include: {
+      invitee: {
+        include: {
+          artist: {
+            select: {
+              id: true,
+              discipline: true,
+              membershipStatus: true,
+              images: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+
+  // Get artist profile for referral code
+  const artist = await prisma.artist.findUnique({
+    where: {
+      userId: req.user!.id
+    },
+    select: {
+      referralCode: true,
+      loyaltyPoints: true
+    }
+  });
+
+  // Calculate stats
+  const totalReferrals = referrals.length;
+  const activeReferrals = referrals.filter(r => 
+    r.invitee.artist?.membershipStatus === 'ACTIVE'
+  ).length;
+  const totalCreditsEarned = referrals.reduce((sum, r) => sum + r.rewardPoints, 0);
+  const pendingReferrals = referrals.filter(r => 
+    !r.invitee.artist || r.invitee.artist.membershipStatus !== 'ACTIVE'
+  ).length;
+
+  // Format referrals data
+  const formattedReferrals = referrals.map(r => {
+    let images = [];
+    if (r.invitee.artist?.images) {
+      try {
+        images = typeof r.invitee.artist.images === 'string' 
+          ? JSON.parse(r.invitee.artist.images) 
+          : r.invitee.artist.images;
+      } catch (e) {
+        images = [];
+      }
+    }
+
+    return {
+      id: r.id,
+      name: r.invitee.name,
+      email: r.invitee.email,
+      discipline: r.invitee.artist?.discipline || 'Not set',
+      joinedDate: r.invitee.createdAt,
+      status: r.invitee.artist?.membershipStatus === 'ACTIVE' ? 'active' : 'pending',
+      creditsEarned: r.rewardPoints,
+      image: images[0] || null
+    };
+  });
+
+  res.json({
+    success: true,
+    data: {
+      referralCode: artist?.referralCode || null,
+      loyaltyPoints: artist?.loyaltyPoints || 0,
+      stats: {
+        totalReferrals,
+        activeReferrals,
+        totalCreditsEarned,
+        pendingReferrals
+      },
+      referrals: formattedReferrals
+    }
+  });
+}));
+
 // Create referral
 router.post('/referrals', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   const { inviteeEmail } = referralSchema.parse(req.body);

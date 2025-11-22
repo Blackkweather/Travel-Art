@@ -222,6 +222,19 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
 
   const bookingData = createBookingSchema.parse(req.body);
 
+  const start = new Date(bookingData.startDate);
+  const end = new Date(bookingData.endDate);
+  const now = new Date();
+
+  // Basic date validation for MVP
+  if (start < now) {
+    throw new CustomError('Start date must be in the future', 400);
+  }
+
+  if (end <= start) {
+    throw new CustomError('End date must be after start date', 400);
+  }
+
   // Verify hotel belongs to user
   const hotel = await prisma.hotel.findUnique({
     where: { userId: req.user!.id }
@@ -259,8 +272,8 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
     data: {
       hotelId: bookingData.hotelId,
       artistId: bookingData.artistId,
-      startDate: new Date(bookingData.startDate),
-      endDate: new Date(bookingData.endDate),
+      startDate: start,
+      endDate: end,
       status: 'PENDING',
       creditsUsed: bookingData.creditsUsed
     },

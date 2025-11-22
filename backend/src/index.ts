@@ -11,6 +11,7 @@ import { artistRoutes } from './routes/artists';
 import { hotelRoutes } from './routes/hotels';
 import { adminRoutes } from './routes/admin';
 import { commonRoutes } from './routes/common';
+import { tripRoutes } from './routes/trips';
 import { paymentRoutes } from './routes/payments';
 import { bookingRoutes } from './routes/bookings';
 import { initializeDatabase, prisma } from './db';
@@ -18,7 +19,12 @@ import { initializeDatabase, prisma } from './db';
 const app = express();
 
 // Trust proxy for rate limiting behind reverse proxy (Render, etc.)
-app.set('trust proxy', true);
+// Only enable in production when behind a proxy to avoid security warnings
+if (config.nodeEnv === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy only
+} else {
+  app.set('trust proxy', false);
+}
 
 // Initialize database connection (Prisma or fallback to pg) - non-blocking
 initializeDatabase()
@@ -136,6 +142,7 @@ app.use('/api/hotels', hotelRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/trips', tripRoutes);
 app.use('/api', commonRoutes);
 
 // Serve static files from the frontend build
@@ -184,10 +191,13 @@ process.on('SIGTERM', async () => {
 });
 
 const PORT = config.port;
-app.listen(PORT, () => {
-  console.log(`🚀 Travel Art API server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-});
+// Only start server if not in test mode
+if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Travel Art API server running on port ${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  });
+}
 
 export { app };
 

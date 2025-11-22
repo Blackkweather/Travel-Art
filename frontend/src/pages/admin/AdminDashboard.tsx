@@ -201,7 +201,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-testid="dashboard">
       <div>
         <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
           Admin Dashboard

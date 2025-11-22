@@ -268,6 +268,7 @@ const ArtistBookings: React.FC = () => {
               value={filter}
               onChange={(e) => setFilter(e.target.value as BookingStatus | 'all')}
               className="form-input w-44"
+              data-testid="status-filter"
             >
               <option value="all">All Bookings</option>
               <option value="confirmed">Confirmed</option>
@@ -300,7 +301,7 @@ const ArtistBookings: React.FC = () => {
       </div>
 
       {/* Bookings List */}
-      <div className="space-y-6">
+      <div className="space-y-6" data-testid="bookings-list">
         {filteredBookings.map((booking, index) => (
           <motion.div
             key={booking.id}
@@ -321,7 +322,7 @@ const ArtistBookings: React.FC = () => {
               </div>
 
               {/* Booking Details */}
-              <div className="flex-1">
+              <div className="flex-1" data-testid="booking-details">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-serif font-semibold text-navy mb-2">

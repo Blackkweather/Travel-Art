@@ -87,6 +87,7 @@ const LoginPage: React.FC = () => {
                     message: 'Invalid email address'
                   }
                 })}
+                name="email"
                 type="email"
                 className="form-input"
                 placeholder="Enter your email"
@@ -108,6 +109,7 @@ const LoginPage: React.FC = () => {
                     message: 'Password must be at least 8 characters'
                   }
                 })}
+                name="password"
                 type="password"
                 className="form-input"
                 placeholder="Enter your password"
@@ -158,16 +160,18 @@ const LoginPage: React.FC = () => {
           </div>
         </form>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">
-            Demo credentials:
-          </p>
-          <div className="mt-2 text-xs text-gray-400 space-y-1">
-            <p>Admin: admin@travelart.test / Password123!</p>
-            <p>Artist: artist1@example.com / password123</p>
-            <p>Hotel: hotel1@example.com / password123</p>
+        {import.meta.env.DEV && (
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500">
+              Demo credentials (Dev Only):
+            </p>
+            <div className="mt-2 text-xs text-gray-400 space-y-1">
+              <p>Admin: admin@travelart.test / Password123!</p>
+              <p>Artist: artist1@example.com / password123</p>
+              <p>Hotel: hotel1@example.com / password123</p>
+            </div>
           </div>
-        </div>
+        )}
       </motion.div>
       </div>
       

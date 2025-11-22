@@ -95,6 +95,9 @@ export const artistsApi = {
   getById: (id: string) =>
     apiClient.get(`/artists/${id}`),
   
+  getMyProfile: () =>
+    apiClient.get('/artists/me'),
+  
   createProfile: (data: any) =>
     apiClient.post('/artists', data),
   
@@ -169,6 +172,9 @@ export const adminApi = {
 
 // Common API
 export const commonApi = {
+  getReferrals: () =>
+    apiClient.get('/referrals'),
+  
   createReferral: (data: any) =>
     apiClient.post('/referrals', data),
   
@@ -180,6 +186,24 @@ export const commonApi = {
   
   getStats: () =>
     apiClient.get('/stats'),
+}
+
+// Trips API
+export const tripsApi = {
+  getAll: (params?: any) =>
+    apiClient.get('/trips', params),
+  
+  getById: (id: string) =>
+    apiClient.get(`/trips/${id}`),
+  
+  create: (data: any) =>
+    apiClient.post('/trips', data),
+  
+  update: (id: string, data: any) =>
+    apiClient.put(`/trips/${id}`, data),
+  
+  delete: (id: string) =>
+    apiClient.delete(`/trips/${id}`),
 }
 
 // Bookings API

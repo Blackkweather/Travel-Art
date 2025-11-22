@@ -6,6 +6,7 @@ import { config } from '../config';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { getUserByEmail, createUser, initializeDatabase } from '../simple-db';
+import { generateUniqueReferralCode } from '../utils/referralCode';
 
 const router = Router();
 
@@ -16,7 +17,8 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   phone: z.string().optional(),
-  locale: z.string().optional().default('en')
+  locale: z.string().optional().default('en'),
+  referralCode: z.string().optional() // Accept referral code during registration
 });
 
 const loginSchema = z.object({
@@ -65,10 +67,34 @@ router.post('/register', asyncHandler(async (req, res) => {
     }
 
     // Create Artist or Hotel profile based on role
+    let referralCodeToUse: string | undefined = undefined;
+    let inviterUserId: string | null = null;
+    
     try {
       const { prisma } = await import('../db');
+      
+      // Handle referral code if provided
+      const referralCode = req.body.referralCode as string | undefined;
+      if (referralCode) {
+        // Find artist with this referral code
+        const referrerArtist = await prisma.artist.findFirst({
+          where: { referralCode: referralCode.toUpperCase() },
+          include: { user: true }
+        });
+        
+        if (referrerArtist) {
+          inviterUserId = referrerArtist.userId;
+          console.log(`📝 Referral code found: ${referralCode} (inviter: ${referrerArtist.user.name})`);
+        } else {
+          console.warn(`⚠️  Invalid referral code provided: ${referralCode}`);
+        }
+      }
+      
       if (role === 'ARTIST') {
-        await prisma.artist.create({
+        // Generate unique referral code for new artist
+        referralCodeToUse = await generateUniqueReferralCode(name);
+        
+        const artist = await prisma.artist.create({
           data: {
             userId: user.id,
             bio: '',
@@ -76,10 +102,47 @@ router.post('/register', asyncHandler(async (req, res) => {
             priceRange: '',
             membershipStatus: 'INACTIVE',
             mediaUrls: JSON.stringify([]),
-            loyaltyPoints: 0
+            loyaltyPoints: 0,
+            referralCode: referralCodeToUse
           }
         });
-        console.log(`✅ Artist profile created for: ${user.email}`);
+        console.log(`✅ Artist profile created for: ${user.email} with referral code: ${referralCodeToUse}`);
+        
+        // Create referral record if referral code was used
+        if (inviterUserId) {
+          try {
+            await prisma.referral.create({
+              data: {
+                inviterUserId: inviterUserId,
+                inviteeUserId: user.id,
+                rewardPoints: 100 // Default reward points
+              }
+            });
+            
+            // Update inviter's loyalty points
+            await prisma.artist.update({
+              where: { userId: inviterUserId },
+              data: {
+                loyaltyPoints: {
+                  increment: 100
+                }
+              }
+            });
+            
+            // Set new user's loyalty points too
+            await prisma.artist.update({
+              where: { id: artist.id },
+              data: {
+                loyaltyPoints: 100
+              }
+            });
+            
+            console.log(`✅ Referral tracked: ${inviterUserId} referred ${user.id}`);
+          } catch (refError: any) {
+            console.error('Error creating referral record:', refError);
+            // Don't fail registration if referral tracking fails
+          }
+        }
       } else if (role === 'HOTEL') {
         await prisma.hotel.create({
           data: {

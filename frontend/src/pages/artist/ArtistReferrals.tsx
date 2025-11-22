@@ -1,80 +1,89 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Copy, Gift, Users, Star, Calendar, CheckCircle } from 'lucide-react'
+import { useAuthStore } from '@/store/authStore'
+import { commonApi, artistsApi } from '@/utils/api'
+import { createReferralLink } from '@/utils/referralCode'
+import toast from 'react-hot-toast'
 
 const ArtistReferrals: React.FC = () => {
+  const { user } = useAuthStore()
   const [copied, setCopied] = useState(false)
-  
-  const referralCode = 'TRAVELART-SOPHIE'
-  const referralLink = `https://travelart.com/register?ref=${referralCode}`
-  
-  const referrals = [
-    {
-      id: '1',
-      name: 'Isabella Garcia',
-      email: 'isabella@example.com',
-      discipline: 'Flamenco Dancer',
-      joinedDate: '2024-01-15',
-      status: 'active',
-      creditsEarned: 50,
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=100&h=100&fit=crop'
-    },
-    {
-      id: '2',
-      name: 'Marco Silva',
-      email: 'marco@example.com',
-      discipline: 'DJ',
-      joinedDate: '2024-01-20',
-      status: 'active',
-      creditsEarned: 50,
-      image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=100&h=100&fit=crop'
-    },
-    {
-      id: '3',
-      name: 'Jean-Michel Dubois',
-      email: 'jean@example.com',
-      discipline: 'Jazz Saxophonist',
-      joinedDate: '2024-02-01',
-      status: 'pending',
-      creditsEarned: 0,
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100&h=100&fit=crop'
-    },
-    {
-      id: '4',
-      name: 'Maria Santos',
-      email: 'maria@example.com',
-      discipline: 'Fado Singer',
-      joinedDate: '2024-02-10',
-      status: 'active',
-      creditsEarned: 50,
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop'
-    },
-    {
-      id: '5',
-      name: 'Yoga Master Ananda',
-      email: 'ananda@example.com',
-      discipline: 'Yoga Instructor',
-      joinedDate: '2024-02-15',
-      status: 'active',
-      creditsEarned: 50,
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=100&h=100&fit=crop'
-    }
-  ]
+  const [loading, setLoading] = useState(true)
+  const [referralCode, setReferralCode] = useState('')
+  const [referralLink, setReferralLink] = useState('')
+  const [referrals, setReferrals] = useState<any[]>([])
+  const [stats, setStats] = useState({
+    totalReferrals: 0,
+    activeReferrals: 0,
+    totalCreditsEarned: 0,
+    pendingReferrals: 0
+  })
 
-  const stats = [
-    { label: 'Total Referrals', value: '8', icon: Users },
-    { label: 'Active Artists', value: '5', icon: CheckCircle },
-    { label: 'Credits Earned', value: '€250', icon: Gift },
-    { label: 'Pending Approvals', value: '1', icon: Calendar }
-  ]
+  useEffect(() => {
+    fetchReferrals()
+  }, [user])
+
+  const fetchReferrals = async () => {
+    if (!user?.id) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      
+      // Get artist profile for referral code
+      try {
+        const artistRes = await artistsApi.getMyProfile()
+        const artist = artistRes.data?.data
+        if (artist?.referralCode) {
+          setReferralCode(artist.referralCode)
+          setReferralLink(createReferralLink(artist.referralCode))
+        }
+      } catch (error: any) {
+        // No artist profile yet
+        console.log('No artist profile found')
+      }
+
+      // Get referrals
+      const response = await commonApi.getReferrals()
+      const data = response.data?.data
+      
+      if (data) {
+        setReferrals(data.referrals || [])
+        setStats({
+          totalReferrals: data.stats?.totalReferrals || 0,
+          activeReferrals: data.stats?.activeReferrals || 0,
+          totalCreditsEarned: data.stats?.totalCreditsEarned || 0,
+          pendingReferrals: data.stats?.pendingReferrals || 0
+        })
+        
+        // If referral code not set from artist profile, try from referrals response
+        if (!referralCode && data.referralCode) {
+          setReferralCode(data.referralCode)
+          setReferralLink(createReferralLink(data.referralCode))
+        }
+      }
+    } catch (error: any) {
+      console.error('Error fetching referrals:', error)
+      if (error.response?.status !== 404) {
+        toast.error('Failed to load referrals')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
+      toast.success('Copied to clipboard!')
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error('Failed to copy: ', err)
+      toast.error('Failed to copy to clipboard')
     }
   }
 
@@ -91,6 +100,24 @@ const ArtistReferrals: React.FC = () => {
     }
   }
 
+  const statsDisplay = [
+    { label: 'Total Referrals', value: stats.totalReferrals.toString(), icon: Users },
+    { label: 'Active Artists', value: stats.activeReferrals.toString(), icon: CheckCircle },
+    { label: 'Credits Earned', value: `€${stats.totalCreditsEarned}`, icon: Gift },
+    { label: 'Pending Approvals', value: stats.pendingReferrals.toString(), icon: Calendar }
+  ]
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading referrals...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -105,7 +132,7 @@ const ArtistReferrals: React.FC = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
+        {statsDisplay.map((stat, index) => {
           const Icon = stat.icon
           return (
             <motion.div
@@ -137,48 +164,54 @@ const ArtistReferrals: React.FC = () => {
             </h3>
             <p className="text-gray-600 mb-6">
               Share your referral code with other artists. When they join and become active members, 
-              you'll both earn €50 credits!
+              you'll both earn credits!
             </p>
             
-            <div className="space-y-4">
-              <div>
-                <label className="form-label">Referral Code</label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={referralCode}
-                    readOnly
-                    className="form-input flex-1 font-mono"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(referralCode)}
-                    className="btn-secondary flex items-center space-x-2"
-                  >
-                    <Copy className="w-4 h-4" />
-                    <span>{copied ? 'Copied!' : 'Copy'}</span>
-                  </button>
+            {referralCode ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="form-label">Referral Code</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={referralCode}
+                      readOnly
+                      className="form-input flex-1 font-mono"
+                    />
+                    <button
+                      onClick={() => copyToClipboard(referralCode)}
+                      className="btn-secondary flex items-center space-x-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      <span>{copied ? 'Copied!' : 'Copy'}</span>
+                    </button>
+                  </div>
                 </div>
+                
+                {referralLink && (
+                  <div>
+                    <label className="form-label">Referral Link</label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={referralLink}
+                        readOnly
+                        className="form-input flex-1 text-sm"
+                      />
+                      <button
+                        onClick={() => copyToClipboard(referralLink)}
+                        className="btn-secondary flex items-center space-x-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                        <span>{copied ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              <div>
-                <label className="form-label">Referral Link</label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={referralLink}
-                    readOnly
-                    className="form-input flex-1 text-sm"
-                  />
-                  <button
-                    onClick={() => copyToClipboard(referralLink)}
-                    className="btn-secondary flex items-center space-x-2"
-                  >
-                    <Copy className="w-4 h-4" />
-                    <span>{copied ? 'Copied!' : 'Copy'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            ) : (
+              <p className="text-gray-600">Create your artist profile first to get a referral code.</p>
+            )}
           </div>
           
           <div>
@@ -212,7 +245,7 @@ const ArtistReferrals: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-medium text-navy">Earn Credits</p>
-                  <p className="text-sm text-gray-600">Both of you receive €50 credits when they become active</p>
+                  <p className="text-sm text-gray-600">Both of you receive credits when they become active</p>
                 </div>
               </div>
             </div>
@@ -225,43 +258,60 @@ const ArtistReferrals: React.FC = () => {
         <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
           Referred Artists
         </h2>
-        <div className="space-y-4">
-          {referrals.map((referral, index) => (
-            <motion.div
-              key={referral.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-            >
-              <div className="flex items-center space-x-4">
-                <img
-                  src={referral.image}
-                  alt={referral.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <h3 className="font-semibold text-navy">{referral.name}</h3>
-                  <p className="text-sm text-gray-600">{referral.discipline}</p>
-                  <p className="text-xs text-gray-500">Joined {new Date(referral.joinedDate).toLocaleDateString()}</p>
+        {referrals.length > 0 ? (
+          <div className="space-y-4">
+            {referrals.map((referral, index) => (
+              <motion.div
+                key={referral.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+              >
+                <div className="flex items-center space-x-4">
+                  {referral.image ? (
+                    <img
+                      src={referral.image}
+                      alt={referral.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder-artist.jpg'
+                      }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center">
+                      <Users className="w-6 h-6 text-gold" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-navy">{referral.name}</h3>
+                    <p className="text-sm text-gray-600">{referral.discipline}</p>
+                    <p className="text-xs text-gray-500">
+                      Joined {new Date(referral.joinedDate).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gold">€{referral.creditsEarned} earned</p>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(referral.status)}`}>
-                    {referral.status}
-                  </span>
+                
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gold">€{referral.creditsEarned} earned</p>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(referral.status)}`}>
+                      {referral.status}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <span className="text-gold font-bold">◆</span>
-                  <span className="text-sm text-gray-600">4.8</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600 mb-2">No referrals yet</p>
+            <p className="text-sm text-gray-500">
+              Share your referral code to invite other artists and start earning credits!
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Benefits */}
@@ -278,7 +328,7 @@ const ArtistReferrals: React.FC = () => {
               Earn Credits
             </h3>
             <p className="text-gray-600">
-              Get €50 credits for each successful referral that becomes an active member
+              Get credits for each successful referral that becomes an active member
             </p>
           </div>
           

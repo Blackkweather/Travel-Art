@@ -16,6 +16,10 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const role = searchParams.get('role') as 'ARTIST' | 'HOTEL' | null
+  
+  // Extract referral code from URL or sessionStorage
+  const referralCodeFromUrl = searchParams.get('ref') || sessionStorage.getItem('referralCode') || null
+  const [referralCode] = useState<string | null>(referralCodeFromUrl)
 
   const {
     register,
@@ -33,8 +37,25 @@ const RegisterPage: React.FC = () => {
   const onSubmit = async (data: RegisterData) => {
     setIsLoading(true)
     try {
-      await registerUser(data)
+      // Add referral code to registration data if present
+      const registrationData = referralCode 
+        ? { ...data, referralCode: referralCode.toUpperCase() }
+        : data
+      
+      await registerUser(registrationData)
+      
+      // Clear referral code from sessionStorage after successful registration
+      if (referralCode) {
+        sessionStorage.removeItem('referralCode')
+      }
+      
       toast.success('Account created successfully!')
+      
+      // Show message if referral code was used
+      if (referralCode) {
+        toast.success('Referral code applied! You earned bonus points!')
+      }
+      
       // Always redirect to dashboard - it will route to correct role dashboard
       navigate('/dashboard')
     } catch (error: any) {
@@ -43,6 +64,9 @@ const RegisterPage: React.FC = () => {
       setIsLoading(false)
     }
   }
+  
+  // Show referral code banner if present
+  const showReferralBanner = referralCode !== null
 
   return (
     <div className="min-h-screen bg-cream">
@@ -69,6 +93,17 @@ const RegisterPage: React.FC = () => {
           <p className="mt-2 text-gray-600">
             Create your account and start your journey
           </p>
+          
+          {showReferralBanner && (
+            <div className="mt-4 p-3 bg-gold/20 border border-gold rounded-lg">
+              <p className="text-sm text-navy font-medium">
+                🎉 Referral Code Applied: <span className="font-mono">{referralCode}</span>
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                You'll earn bonus credits when you complete registration!
+              </p>
+            </div>
+          )}
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
@@ -125,6 +160,7 @@ const RegisterPage: React.FC = () => {
                     message: 'Name must be at least 2 characters'
                   }
                 })}
+                name="name"
                 type="text"
                 className="form-input"
                 placeholder="Enter your full name"
@@ -146,6 +182,7 @@ const RegisterPage: React.FC = () => {
                     message: 'Invalid email address'
                   }
                 })}
+                name="email"
                 type="email"
                 className="form-input"
                 placeholder="Enter your email"

@@ -21,6 +21,7 @@ import HotelDetailsPage from '@/pages/HotelDetailsPage'
 import PricingPage from '@/pages/PricingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import ReferralRedirectPage from '@/pages/ReferralRedirectPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage'
@@ -31,6 +32,7 @@ import AboutPage from '@/pages/AboutPage'
 // Protected pages
 import ArtistDashboard from '@/pages/artist/ArtistDashboard'
 import ArtistProfile from '@/pages/artist/ArtistProfile'
+import PublicArtistProfile from '@/pages/PublicArtistProfile'
 // removed unused direct import: ArtistBookings (resolved inside RoleAwareRoute)
 import ArtistMembership from '@/pages/artist/ArtistMembership'
 import ArtistReferrals from '@/pages/artist/ArtistReferrals'
@@ -49,6 +51,7 @@ import AdminModeration from '@/pages/admin/AdminModeration'
 import AdminReferrals from '@/pages/admin/AdminReferrals'
 import TravelerExperiencesPage from '@/pages/TravelerExperiencesPage'
 import ExperienceDetailsPage from '@/pages/ExperienceDetailsPage'
+import PaymentPage from '@/pages/PaymentPage'
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
@@ -99,8 +102,10 @@ function App() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/experiences" element={<TravelerExperiencesPage />} />
       <Route path="/experience/:id" element={<ExperienceDetailsPage />} />
+      <Route path="/payment" element={<PaymentPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/ref/:code" element={<ReferralRedirectPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
@@ -203,7 +208,7 @@ function App() {
       </Route>
 
       {/* Artist Public Profile */}
-      <Route path="/artist/:id" element={<ArtistProfile />} />
+      <Route path="/artist/:id" element={<PublicArtistProfile />} />
       
       {/* Hotel Public Profile */}
       <Route path="/hotel/:id" element={<HotelProfile />} />

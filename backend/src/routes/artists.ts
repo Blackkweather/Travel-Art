@@ -178,6 +178,109 @@ router.get('/', asyncHandler(async (req, res) => {
   }
 }));
 
+// Get current user's artist profile (must come before /:id route)
+router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
+  const artist = await prisma.artist.findUnique({
+    where: { userId: req.user!.id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          country: true,
+          createdAt: true
+        }
+      },
+      availability: {
+        where: {
+          dateFrom: { gte: new Date() }
+        },
+        orderBy: { dateFrom: 'asc' }
+      },
+      bookings: {
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          hotel: {
+            include: {
+              user: {
+                select: { name: true }
+              }
+            }
+          }
+        }
+      },
+      ratings: {
+        take: 10,
+        orderBy: { createdAt: 'desc' }
+      }
+    }
+  });
+
+  if (!artist) {
+    // Return a response indicating no profile exists yet, instead of throwing an error
+    // This allows the frontend to handle it gracefully
+    return res.status(200).json({
+      success: true,
+      data: null,
+      message: 'Artist profile not found. Please create your profile first.'
+    });
+  }
+
+  // Calculate average rating
+  const ratings = await prisma.rating.findMany({
+    where: { artistId: artist.id },
+    select: { stars: true }
+  });
+
+  let avgRating = 0;
+  if (ratings.length > 0) {
+    avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
+  }
+
+  // Parse JSON strings
+  let images = [];
+  let videos = [];
+  let mediaUrls = [];
+  
+  if (artist.images) {
+    try {
+      images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
+    } catch (e) {
+      images = [];
+    }
+  }
+  
+  if (artist.videos) {
+    try {
+      videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
+    } catch (e) {
+      videos = [];
+    }
+  }
+  
+  if (artist.mediaUrls) {
+    try {
+      mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
+    } catch (e) {
+      mediaUrls = [];
+    }
+  }
+
+  res.json({
+    success: true,
+    data: {
+      ...artist,
+      avgRating,
+      totalRatings: ratings.length,
+      images,
+      videos,
+      mediaUrls
+    }
+  });
+}));
+
 // Get public artist profile
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;

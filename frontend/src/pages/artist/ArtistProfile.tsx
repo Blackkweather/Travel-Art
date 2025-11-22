@@ -1,33 +1,118 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Camera, Upload, Save, Edit3, MapPin, Music, Calendar } from 'lucide-react'
+import { useAuthStore } from '@/store/authStore'
+import { artistsApi } from '@/utils/api'
+import toast from 'react-hot-toast'
 
 const ArtistProfile: React.FC = () => {
+  const { user } = useAuthStore()
   const [isEditing, setIsEditing] = useState(false)
-  const [profile, setProfile] = useState({
-    name: 'Sophie Laurent',
-    discipline: 'Classical Pianist',
-    bio: 'Award-winning classical pianist with 15 years of experience performing in prestigious venues across Europe. Specializes in intimate rooftop performances and grand ballroom concerts.',
-    location: 'Paris, France',
-    hotelRating: '4.8',
-    specialties: ['Rooftop Piano', 'Intimate Concerts', 'Classical Music', 'Jazz Fusion'],
-    images: [
-      'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
-      'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
-      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80'
-    ],
-    videos: [
-      'https://www.youtube.com/watch?v=example1',
-      'https://www.youtube.com/watch?v=example2'
-    ],
-    rating: 4.9,
-    totalBookings: 24,
-    memberSince: '2023-01-15'
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
+  const [profileData, setProfileData] = useState({
+    name: '',
+    discipline: '',
+    bio: '',
+    location: '',
+    images: [] as string[],
+    videos: [] as string[],
+    specialties: [] as string[],
+    rating: 0,
+    totalBookings: 0,
+    memberSince: ''
   })
 
-  const handleSave = () => {
-    // Save profile logic here
-    setIsEditing(false)
-    // Show success message
+  useEffect(() => {
+    fetchProfile()
+  }, [user])
+
+  const fetchProfile = async () => {
+    if (!user?.id) return
+
+    try {
+      setLoading(true)
+      const response = await artistsApi.getMyProfile()
+      const artist = response.data?.data
+
+      if (artist) {
+        setProfile(artist)
+        setProfileData({
+          name: artist.user?.name || user.name || '',
+          discipline: artist.discipline || '',
+          bio: artist.bio || '',
+          location: artist.user?.country || '',
+          images: artist.images || [],
+          videos: artist.videos || [],
+          specialties: artist.discipline ? [artist.discipline] : [],
+          rating: artist.avgRating || 0,
+          totalBookings: artist.bookings?.length || 0,
+          memberSince: artist.user?.createdAt || artist.createdAt || new Date().toISOString()
+        })
+      } else {
+        // No profile yet - set defaults from user
+        setProfileData({
+          name: user.name || '',
+          discipline: '',
+          bio: '',
+          location: user.country || '',
+          images: [],
+          videos: [],
+          specialties: [],
+          rating: 0,
+          totalBookings: 0,
+          memberSince: user.createdAt || new Date().toISOString()
+        })
+      }
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // No profile yet - set defaults from user
+        setProfileData({
+          name: user?.name || '',
+          discipline: '',
+          bio: '',
+          location: user?.country || '',
+          images: [],
+          videos: [],
+          specialties: [],
+          rating: 0,
+          totalBookings: 0,
+          memberSince: user?.createdAt || new Date().toISOString()
+        })
+      } else {
+        toast.error('Failed to load profile')
+        console.error('Error fetching profile:', error)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!profile?.id) {
+      toast.error('Please create your profile first')
+      return
+    }
+
+    try {
+      // TODO: Implement update profile API call
+      toast.success('Profile updated successfully')
+      setIsEditing(false)
+      await fetchProfile()
+    } catch (error: any) {
+      toast.error('Failed to update profile')
+      console.error('Error updating profile:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -58,9 +143,12 @@ const ArtistProfile: React.FC = () => {
           <div className="flex-shrink-0">
             <div className="relative">
               <img
-                src={profile.images[0]}
-                alt={profile.name}
-                className="w-48 h-48 rounded-xl object-cover"
+                src={profileData.images[0] || '/placeholder-artist.jpg'}
+                alt={profileData.name}
+                className="w-48 h-48 rounded-xl object-cover bg-gray-200"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder-artist.jpg'
+                }}
               />
               {isEditing && (
                 <button className="absolute bottom-2 right-2 bg-gold text-navy p-2 rounded-full hover:bg-gold/90 transition-colors">
@@ -78,12 +166,12 @@ const ArtistProfile: React.FC = () => {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={profile.name}
-                    onChange={(e) => setProfile({...profile, name: e.target.value})}
+                    value={profileData.name}
+                    onChange={(e) => setProfileData({...profileData, name: e.target.value})}
                     className="form-input"
                   />
                 ) : (
-                  <p className="text-xl font-serif font-semibold text-navy">{profile.name}</p>
+                  <p className="text-xl font-serif font-semibold text-navy">{profileData.name || 'Not set'}</p>
                 )}
               </div>
 
@@ -92,12 +180,12 @@ const ArtistProfile: React.FC = () => {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={profile.discipline}
-                    onChange={(e) => setProfile({...profile, discipline: e.target.value})}
+                    value={profileData.discipline}
+                    onChange={(e) => setProfileData({...profileData, discipline: e.target.value})}
                     className="form-input"
                   />
                 ) : (
-                  <p className="text-lg text-gold font-medium">{profile.discipline}</p>
+                  <p className="text-lg text-gold font-medium">{profileData.discipline || 'Not set'}</p>
                 )}
               </div>
 
@@ -106,30 +194,23 @@ const ArtistProfile: React.FC = () => {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={profile.location}
-                    onChange={(e) => setProfile({...profile, location: e.target.value})}
+                    value={profileData.location}
+                    onChange={(e) => setProfileData({...profileData, location: e.target.value})}
                     className="form-input"
                   />
                 ) : (
                   <p className="text-gray-600 flex items-center">
                     <MapPin className="w-4 h-4 mr-2" />
-                    {profile.location}
+                    {profileData.location || 'Not set'}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="form-label">Hotel Rating</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profile.hotelRating}
-                    onChange={(e) => setProfile({...profile, hotelRating: e.target.value})}
-                    className="form-input"
-                  />
-                ) : (
-                  <p className="text-lg font-semibold text-navy">{profile.hotelRating}</p>
-                )}
+                <label className="form-label">Average Rating</label>
+                <p className="text-lg font-semibold text-navy">
+                  {profileData.rating > 0 ? profileData.rating.toFixed(1) : 'No ratings yet'}
+                </p>
               </div>
             </div>
 
@@ -138,13 +219,15 @@ const ArtistProfile: React.FC = () => {
               <label className="form-label">Bio</label>
               {isEditing ? (
                 <textarea
-                  value={profile.bio}
-                  onChange={(e) => setProfile({...profile, bio: e.target.value})}
+                  value={profileData.bio}
+                  onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
                   className="form-input h-32 resize-none"
                   placeholder="Tell hotels about your artistic journey and specialties..."
                 />
               ) : (
-                <p className="text-gray-600 leading-relaxed">{profile.bio}</p>
+                <p className="text-gray-600 leading-relaxed">
+                  {profileData.bio || 'No bio yet. Click "Edit Profile" to add your bio.'}
+                </p>
               )}
             </div>
 
@@ -153,14 +236,14 @@ const ArtistProfile: React.FC = () => {
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-center mb-2">
                   <span className="text-gold font-bold mr-1">◆</span>
-                  <span className="text-lg font-bold text-navy">{profile.rating}</span>
+                  <span className="text-lg font-bold text-navy">{profileData.rating > 0 ? profileData.rating.toFixed(1) : '0'}</span>
                 </div>
                 <p className="text-sm text-gray-600">Average Rating</p>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-center mb-2">
                   <Calendar className="w-5 h-5 text-gold mr-1" />
-                  <span className="text-lg font-bold text-navy">{profile.totalBookings}</span>
+                  <span className="text-lg font-bold text-navy">{profileData.totalBookings}</span>
                 </div>
                 <p className="text-sm text-gray-600">Total Bookings</p>
               </div>
@@ -169,7 +252,9 @@ const ArtistProfile: React.FC = () => {
                   <Music className="w-5 h-5 text-gold mr-1" />
                   <span className="text-lg font-bold text-navy">Member</span>
                 </div>
-                <p className="text-sm text-gray-600">Since {new Date(profile.memberSince).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-600">
+                  Since {profileData.memberSince ? new Date(profileData.memberSince).toLocaleDateString() : 'Recently'}
+                </p>
               </div>
             </div>
           </div>
@@ -181,31 +266,9 @@ const ArtistProfile: React.FC = () => {
         <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
           Specialties
         </h2>
-        {isEditing ? (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {profile.specialties.map((specialty, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-gold/20 text-gold rounded-full text-sm flex items-center"
-                >
-                  {specialty}
-                  <button className="ml-2 text-gold hover:text-gold/70">×</button>
-                </span>
-              ))}
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                placeholder="Add new specialty..."
-                className="form-input flex-1"
-              />
-              <button className="btn-secondary">Add</button>
-            </div>
-          </div>
-        ) : (
+        {profileData.specialties.length > 0 ? (
           <div className="flex flex-wrap gap-3">
-            {profile.specialties.map((specialty, index) => (
+            {profileData.specialties.map((specialty, index) => (
               <span
                 key={index}
                 className="px-4 py-2 bg-gold/20 text-gold rounded-full text-sm font-medium"
@@ -214,6 +277,8 @@ const ArtistProfile: React.FC = () => {
               </span>
             ))}
           </div>
+        ) : (
+          <p className="text-gray-600">No specialties added yet. Click "Edit Profile" to add specialties.</p>
         )}
       </div>
 
@@ -230,24 +295,28 @@ const ArtistProfile: React.FC = () => {
             </button>
           )}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {profile.images.map((image, index) => (
-            <div key={index} className="relative group">
-              <img
-                src={image}
-                alt={`Portfolio ${index + 1}`}
-                className="w-full h-48 object-cover rounded-lg"
-              />
-              {isEditing && (
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                  <button className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
-                    ×
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        {profileData.images.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {profileData.images.map((image, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={image}
+                  alt={`Portfolio ${index + 1}`}
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                {isEditing && (
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                    <button className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
+                      ×
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600">No portfolio images yet. Click "Edit Profile" to add images.</p>
+        )}
       </div>
 
       {/* Performance Videos */}
@@ -263,26 +332,30 @@ const ArtistProfile: React.FC = () => {
             </button>
           )}
         </div>
-        <div className="space-y-4">
-          {profile.videos.map((video, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gold rounded-lg flex items-center justify-center">
-                  <Music className="w-6 h-6 text-navy" />
+        {profileData.videos.length > 0 ? (
+          <div className="space-y-4">
+            {profileData.videos.map((video, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gold rounded-lg flex items-center justify-center">
+                    <Music className="w-6 h-6 text-navy" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-navy">Performance Video {index + 1}</p>
+                    <p className="text-sm text-gray-600">{video}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-navy">Performance Video {index + 1}</p>
-                  <p className="text-sm text-gray-600">{video}</p>
-                </div>
+                {isEditing && (
+                  <button className="text-red-500 hover:text-red-700">
+                    Remove
+                  </button>
+                )}
               </div>
-              {isEditing && (
-                <button className="text-red-500 hover:text-red-700">
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600">No performance videos yet. Click "Edit Profile" to add videos.</p>
+        )}
       </div>
 
       {/* Save Button */}

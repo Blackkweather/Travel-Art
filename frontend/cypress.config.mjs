@@ -2,17 +2,11 @@ import { defineConfig } from 'cypress'
 
 export default defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:5173',
+    baseUrl: 'http://localhost:3000',
     supportFile: 'cypress/support/e2e.ts',
-    // Temporarily allow tests to run without server verification
-    // Remove this in production
-    // @ts-ignore
-    setupNodeEvents(on, config) {
-      // Skip baseUrl check if server not available
-      return config;
-    },
     setupNodeEvents(on, config) {
       // implement node event listeners here
+      return config;
     },
     viewportWidth: 1280,
     viewportHeight: 720,

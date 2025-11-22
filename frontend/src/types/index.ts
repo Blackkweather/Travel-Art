@@ -168,6 +168,7 @@ export interface RegisterData {
   password: string
   phone: string
   locale?: string
+  referralCode?: string
 }
 
 export interface ArtistProfileData {

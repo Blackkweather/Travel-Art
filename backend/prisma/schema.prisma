@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -211,5 +211,22 @@ model AdminLog {
   @@map("admin_logs")
 }
 
-// Note: Using String fields for enums for compatibility
+// Travel Art MVP - Trip model (public experiences)
+model Trip {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  priceFrom   Decimal
+  priceTo     Decimal
+  location    String
+  images      String   // JSON string (SQLite doesn't support Json type)
+  status      String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED (SQLite doesn't support enums)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("trips")
+}
+
+// Note: Using String fields for some legacy enums for compatibility
 // Valid values are documented in the model field comments above

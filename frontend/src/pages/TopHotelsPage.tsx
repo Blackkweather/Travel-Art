@@ -1,85 +1,104 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Star, MapPin, Building, Music, Users, Calendar } from 'lucide-react'
+import { Star, MapPin, Building, Music, Users, Calendar, AlertCircle } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { commonApi } from '@/utils/api'
+import LoadingSpinner from '@/components/LoadingSpinner'
+import toast from 'react-hot-toast'
+
+interface TopHotel {
+  id: string
+  name: string
+  location?: { city?: string; country?: string } | string
+  bookingCount?: number
+  images?: string[]
+  description?: string
+  performanceSpots?: string
+  user?: {
+    name: string
+    country?: string
+  }
+}
 
 const TopHotelsPage: React.FC = () => {
-  const topHotels = [
-    {
-      id: '1',
-      name: 'Hotel Plaza Athénée',
-      location: 'Paris, France',
-      rating: 4.9,
-      bookings: 45,
-      performanceSpots: ['Rooftop Terrace', 'Grand Ballroom'],
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop',
-      description: 'Luxury hotel in the heart of Paris with stunning views of the Eiffel Tower. Perfect for intimate acoustic sets and grand performances.',
-      specialties: ['Eiffel Tower Views', 'Intimate Concerts', 'Classical Music'],
-      recentArtists: ['Sophie Laurent', 'Jean-Michel Dubois', 'Maria Santos']
-    },
-    {
-      id: '2',
-      name: 'Hotel Negresco',
-      location: 'Nice, France',
-      rating: 4.8,
-      bookings: 38,
-      performanceSpots: ['Rooftop Jazz Lounge', 'Garden Terrace'],
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop',
-      description: 'Historic luxury hotel on the French Riviera with Mediterranean views and legendary rooftop performances.',
-      specialties: ['Mediterranean Views', 'Jazz Performances', 'Sunset Sets'],
-      recentArtists: ['Marco Silva', 'Jean-Michel Dubois', 'Isabella Garcia']
-    },
-    {
-      id: '3',
-      name: 'La Mamounia',
-      location: 'Marrakech, Morocco',
-      rating: 4.9,
-      bookings: 32,
-      performanceSpots: ['Atlas Rooftop Bar', 'Pool Deck Stage'],
-      image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=400&fit=crop',
-      description: 'Iconic palace hotel with traditional Moroccan architecture and magical rooftop performances under the stars.',
-      specialties: ['Atlas Mountain Views', 'Traditional Music', 'Cultural Performances'],
-      recentArtists: ['Yoga Master Ananda', 'Isabella Garcia', 'Sophie Laurent']
-    },
-    {
-      id: '4',
-      name: 'Palácio Belmonte',
-      location: 'Lisbon, Portugal',
-      rating: 4.7,
-      bookings: 28,
-      performanceSpots: ['Terrace Bar', 'Wine Cellar'],
-      image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=400&fit=crop',
-      description: 'Boutique palace hotel with panoramic views of Lisbon and intimate rooftop concerts.',
-      specialties: ['Lisbon Views', 'Fado Music', 'Intimate Venues'],
-      recentArtists: ['Maria Santos', 'Marco Silva', 'Sophie Laurent']
-    },
-    {
-      id: '5',
-      name: 'Nobu Hotel Ibiza',
-      location: 'Ibiza, Spain',
-      rating: 4.8,
-      bookings: 25,
-      performanceSpots: ['Rooftop Beach Club', 'Sunset Lounge'],
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&h=400&fit=crop',
-      description: 'Luxury beachfront hotel with world-class dining and legendary rooftop DJ performances.',
-      specialties: ['Beach Views', 'Electronic Music', 'DJ Sets'],
-      recentArtists: ['Marco Silva', 'Isabella Garcia', 'Jean-Michel Dubois']
-    },
-    {
-      id: '6',
-      name: 'The Ritz-Carlton',
-      location: 'Barcelona, Spain',
-      rating: 4.6,
-      bookings: 22,
-      performanceSpots: ['Sky Terrace', 'Elegant Lounge'],
-      image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&h=400&fit=crop',
-      description: 'Elegant hotel in Barcelona with stunning city views and sophisticated performance spaces.',
-      specialties: ['City Views', 'Sophisticated Venues', 'Cultural Events'],
-      recentArtists: ['Sophie Laurent', 'Yoga Master Ananda', 'Maria Santos']
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [topHotels, setTopHotels] = useState<TopHotel[]>([])
+  const [stats, setStats] = useState({
+    totalHotels: 0,
+    totalVenues: 0,
+    averageRating: 4.8,
+    totalEvents: 0
+  })
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const [hotelsResponse, statsResponse] = await Promise.all([
+          commonApi.getTopHotels(),
+          commonApi.getStats()
+        ])
+
+        if (hotelsResponse.data.success) {
+          setTopHotels(hotelsResponse.data.data || [])
+        }
+
+        if (statsResponse.data.success) {
+          const statsData = statsResponse.data.data
+          setStats({
+            totalHotels: statsData.totalHotels || 0,
+            totalVenues: (statsData.totalHotels || 0) * 3, // Estimate
+            averageRating: 4.8,
+            totalEvents: statsData.totalBookings || 0
+          })
+        }
+      } catch (err: any) {
+        console.error('Error fetching top hotels:', err)
+        setError(err.response?.data?.error?.message || 'Failed to load hotels')
+        toast.error('Failed to load top hotels. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    fetchData()
+  }, [])
+
+  const formatLocation = (location?: { city?: string; country?: string } | string): string => {
+    if (!location) return 'Location TBA'
+    if (typeof location === 'string') {
+      try {
+        const parsed = JSON.parse(location)
+        const parts = [parsed.city, parsed.country].filter(Boolean)
+        return parts.length ? parts.join(', ') : 'Location TBA'
+      } catch {
+        return location
+      }
+    }
+    const parts = [location.city, location.country].filter(Boolean)
+    return parts.length ? parts.join(', ') : 'Location TBA'
+  }
+
+  const getImageUrl = (images?: string[]): string => {
+    if (images && images.length > 0 && images[0]) {
+      return images[0]
+    }
+    return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop'
+  }
+
+  const parsePerformanceSpots = (spots?: string): string[] => {
+    if (!spots) return []
+    try {
+      const parsed = typeof spots === 'string' ? JSON.parse(spots) : spots
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
 
   return (
     <div className="min-h-screen bg-cream">
@@ -127,7 +146,7 @@ const TopHotelsPage: React.FC = () => {
               <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Building className="w-8 h-8 text-navy" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">23</h3>
+              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalHotels || 0}</h3>
               <p className="text-gray-600">Luxury Hotels</p>
             </motion.div>
 
@@ -139,7 +158,7 @@ const TopHotelsPage: React.FC = () => {
               <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Music className="w-8 h-8 text-navy" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">67</h3>
+              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalVenues || 0}</h3>
               <p className="text-gray-600">Performance Venues</p>
             </motion.div>
 
@@ -151,7 +170,7 @@ const TopHotelsPage: React.FC = () => {
               <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Star className="w-8 h-8 text-navy" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">4.8</h3>
+              <h3 className="text-3xl font-bold text-navy mb-2">{stats.averageRating.toFixed(1)}</h3>
               <p className="text-gray-600">Average Rating</p>
             </motion.div>
 
@@ -163,7 +182,7 @@ const TopHotelsPage: React.FC = () => {
               <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-8 h-8 text-navy" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">342</h3>
+              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalEvents || 0}</h3>
               <p className="text-gray-600">Successful Events</p>
             </motion.div>
           </div>
@@ -181,92 +200,113 @@ const TopHotelsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {topHotels.map((hotel, index) => (
-            <motion.div
-              key={hotel.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="card-luxury overflow-hidden"
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <LoadingSpinner />
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold text-navy mb-2">Failed to Load Hotels</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-primary"
             >
-              <div className="relative">
-                <img
-                  src={hotel.image}
-                  alt={hotel.name}
-                  className="w-full h-64 object-cover"
-                />
-              </div>
+              Try Again
+            </button>
+          </div>
+        ) : topHotels.length === 0 ? (
+          <div className="text-center py-20">
+            <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold text-navy mb-2">No Hotels Found</h3>
+            <p className="text-gray-600 mb-6">
+              Check back soon to discover our luxury hotel partners.
+            </p>
+            <Link to="/register" className="btn-primary">
+              Become a Hotel Partner
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {topHotels.map((hotel, index) => {
+              const performanceSpots = parsePerformanceSpots(hotel.performanceSpots)
+              const bookings = hotel.bookingCount || 0
+              const location = formatLocation(hotel.location)
               
-              <div className="p-6">
-                <h3 className="text-xl font-serif font-semibold text-navy mb-2">
-                  {hotel.name}
-                </h3>
-                <p className="text-gray-600 text-sm mb-4 flex items-center">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {hotel.location}
-                </p>
-                
-                <p className="text-gray-600 text-sm mb-4">
-                  {hotel.description}
-                </p>
-
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Performance Spots:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {hotel.performanceSpots.map((spot, spotIndex) => (
-                      <span
-                        key={spotIndex}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                      >
-                        {spot}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Specialties:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {hotel.specialties.map((specialty, specIndex) => (
-                      <span
-                        key={specIndex}
-                        className="px-2 py-1 bg-gold/20 text-gold text-xs rounded-full"
-                      >
-                        {specialty}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Recent Artists:</h4>
-                  <div className="text-sm text-gray-600">
-                    {hotel.recentArtists.join(' • ')}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <span className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {hotel.bookings} bookings
-                  </span>
-                  <span className="flex items-center">
-                    <Star className="w-4 h-4 mr-1" />
-                    {hotel.rating} rating
-                  </span>
-                </div>
-
-                <Link 
-                  to={`/hotel/${hotel.id}`}
-                  className="w-full btn-primary text-center block"
+              return (
+                <motion.div
+                  key={hotel.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="card-luxury overflow-hidden"
                 >
-                  View Venues
-                </Link>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                  <div className="relative">
+                    <img
+                      src={getImageUrl(hotel.images)}
+                      alt={hotel.name}
+                      className="w-full h-64 object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/600x400/0B1F3F/C9A63C?text=' + encodeURIComponent(hotel.name.substring(0, 2).toUpperCase())
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="p-6">
+                    <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+                      {hotel.name}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-4 flex items-center">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {location}
+                    </p>
+                    
+                    {hotel.description && (
+                      <p className="text-gray-600 text-sm mb-4">
+                        {hotel.description}
+                      </p>
+                    )}
+
+                    {performanceSpots.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-navy mb-2">Performance Spots:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {performanceSpots.slice(0, 3).map((spot, spotIndex) => (
+                            <span
+                              key={spotIndex}
+                              className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                            >
+                              {spot}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <span className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {bookings} {bookings === 1 ? 'booking' : 'bookings'}
+                      </span>
+                      <span className="flex items-center">
+                        <Star className="w-4 h-4 mr-1" />
+                        {stats.averageRating.toFixed(1)} rating
+                      </span>
+                    </div>
+
+                    <Link 
+                      to={`/hotel/${hotel.id}`}
+                      className="w-full btn-primary text-center block"
+                    >
+                      View Venues
+                    </Link>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Venue Types Section */}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Calendar, Star, Music, ArrowRight, Globe } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -8,6 +8,7 @@ import { useInView } from 'framer-motion'
 import { useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L, { LatLngTuple } from 'leaflet'
+import { tripsApi } from '@/utils/api'
 
 // Fix for default marker icons in Leaflet with Vite
 import icon from 'leaflet/dist/images/marker-icon.png'
@@ -37,7 +38,8 @@ interface Experience {
   description: string
 }
 
-const experiences: Experience[] = [
+// Fallback experiences data
+const fallbackExperiences: Experience[] = [
   {
     id: '1',
     title: 'Sunset Jazz on the Rooftop',
@@ -89,10 +91,57 @@ const experiences: Experience[] = [
 ]
 
 const TravelerExperiencesPage: React.FC = () => {
+  const [experiences, setExperiences] = useState<Experience[]>(fallbackExperiences)
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
   const storiesRef = useRef<HTMLDivElement>(null)
   const storiesInView = useInView(storiesRef, { once: true, margin: '-100px' })
+
+  // Fetch experiences from API
+  useEffect(() => {
+    const fetchExperiences = async () => {
+      try {
+        const res = await tripsApi.getAll({ status: 'PUBLISHED', limit: 20 })
+        if (res.data?.success && res.data.data) {
+          const trips = Array.isArray(res.data.data) ? res.data.data : []
+          const formattedExperiences = trips.map((trip: any) => {
+            const location = trip.location 
+              ? (typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location)
+              : { city: 'Unknown', country: '', lat: 0, lng: 0 }
+            
+            return {
+              id: trip.id || String(Math.random()),
+              title: trip.title || 'Experience',
+              location: {
+                city: location.city || 'Unknown',
+                country: location.country || '',
+                lat: location.lat || 0,
+                lng: location.lng || 0
+              },
+              artist: trip.artist?.user?.name || trip.artistName || 'Artist',
+              hotel: trip.hotel?.name || trip.hotelName || 'Hotel',
+              date: trip.startDate || trip.date || new Date().toISOString().split('T')[0],
+              image: Array.isArray(trip.images) && trip.images[0]
+                ? trip.images[0]
+                : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
+              type: (trip.type || 'intimate') as Experience['type'],
+              rating: trip.averageRating || trip.rating || 4.5,
+              description: trip.description || trip.summary || 'An amazing experience awaits.'
+            }
+          })
+          
+          if (formattedExperiences.length > 0) {
+            setExperiences(formattedExperiences)
+          }
+        }
+      } catch (error) {
+        // Silently fail and use fallback data
+        console.warn('Failed to fetch experiences, using fallback:', error)
+      }
+    }
+
+    fetchExperiences()
+  }, [])
 
   const filteredExperiences = useMemo(() => {
     return experiences.filter(exp => {

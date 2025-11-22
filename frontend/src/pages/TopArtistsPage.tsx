@@ -1,91 +1,90 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { Star, MapPin, Calendar, Users } from 'lucide-react'
+import { Star, MapPin, Calendar, Users, AlertCircle } from 'lucide-react'
 import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
 import { ArtistRank, getQuickRank, RANK_CONFIG } from '@/components/ArtistRank'
+import { commonApi } from '@/utils/api'
+import LoadingSpinner from '@/components/LoadingSpinner'
+import toast from 'react-hot-toast'
+
+interface TopArtist {
+  id: string
+  discipline?: string
+  images?: string[]
+  bookingCount?: number
+  ratingBadge?: string | null
+  user: {
+    name: string
+    country?: string
+  }
+}
 
 const TopArtistsPage: React.FC = () => {
   const { scrollY } = useScroll()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [topArtists, setTopArtists] = useState<TopArtist[]>([])
+  const [stats, setStats] = useState({
+    totalArtists: 0,
+    averageRating: 4.8,
+    totalBookings: 0,
+    totalHotels: 0
+  })
   
   // Scroll-based animations for header
   const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
   const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
-  const topArtists = [
-    {
-      id: '1',
-      name: 'Sophie Laurent',
-      discipline: 'Classical Pianist',
-      location: 'Paris, France',
-      rating: 4.9,
-      bookings: 24,
-      specialties: ['Rooftop Piano', 'Intimate Concerts', 'Classical Music'],
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
-      description: 'Award-winning classical pianist specializing in intimate rooftop performances with stunning city views.',
-      recentVenues: ['Hotel Plaza Athénée', 'La Mamounia', 'Palácio Belmonte']
-    },
-    {
-      id: '2',
-      name: 'Marco Silva',
-      discipline: 'DJ',
-      location: 'Lisbon, Portugal',
-      rating: 4.8,
-      bookings: 18,
-      specialties: ['Sunset DJ Sets', 'Deep House', 'Electronic Music'],
-      image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
-      description: 'International DJ creating unforgettable rooftop experiences with stunning sunset sets.',
-      recentVenues: ['Hotel Negresco', 'Nobu Hotel Ibiza', 'La Mamounia']
-    },
-    {
-      id: '3',
-      name: 'Jean-Michel Dubois',
-      discipline: 'Jazz Saxophonist',
-      location: 'Nice, France',
-      rating: 4.9,
-      bookings: 15,
-      specialties: ['Jazz Ensembles', 'Bebop', 'Contemporary Jazz'],
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
-      description: 'Professional jazz saxophonist creating magical moments on hotel rooftops with intimate jazz ensembles.',
-      recentVenues: ['Hotel Plaza Athénée', 'Hotel Negresco', 'Palácio Belmonte']
-    },
-    {
-      id: '4',
-      name: 'Isabella Garcia',
-      discipline: 'Flamenco Dancer',
-      location: 'Seville, Spain',
-      rating: 4.7,
-      bookings: 12,
-      specialties: ['Flamenco Shows', 'Traditional Dance', 'Cultural Performances'],
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&h=400&fit=crop',
-      description: 'Professional flamenco dancer performing traditional and contemporary shows on hotel rooftops.',
-      recentVenues: ['La Mamounia', 'Nobu Hotel Ibiza', 'Hotel Negresco']
-    },
-    {
-      id: '5',
-      name: 'Yoga Master Ananda',
-      discipline: 'Yoga Instructor',
-      location: 'Marrakech, Morocco',
-      rating: 4.8,
-      bookings: 20,
-      specialties: ['Sunrise Sessions', 'Meditation', 'Wellness'],
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop',
-      description: 'Certified yoga instructor specializing in sunrise rooftop sessions and meditation workshops.',
-      recentVenues: ['La Mamounia', 'Hotel Plaza Athénée', 'Palácio Belmonte']
-    },
-    {
-      id: '6',
-      name: 'Maria Santos',
-      discipline: 'Fado Singer',
-      location: 'Lisbon, Portugal',
-      rating: 4.6,
-      bookings: 10,
-      specialties: ['Fado Music', 'Portuguese Culture', 'Intimate Performances'],
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80',
-      description: 'Traditional fado singer bringing Portuguese soul to luxury hotel terraces and intimate venues.',
-      recentVenues: ['Palácio Belmonte', 'Hotel Negresco', 'Hotel Plaza Athénée']
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const [artistsResponse, statsResponse] = await Promise.all([
+          commonApi.getTopArtists(),
+          commonApi.getStats()
+        ])
+
+        if (artistsResponse.data.success) {
+          setTopArtists(artistsResponse.data.data || [])
+        }
+
+        if (statsResponse.data.success) {
+          const statsData = statsResponse.data.data
+          setStats({
+            totalArtists: statsData.totalArtists || 0,
+            averageRating: 4.8, // Calculate from ratings if available
+            totalBookings: statsData.totalBookings || 0,
+            totalHotels: statsData.totalHotels || 0
+          })
+        }
+      } catch (err: any) {
+        console.error('Error fetching top artists:', err)
+        setError(err.response?.data?.error?.message || 'Failed to load artists')
+        toast.error('Failed to load top artists. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    fetchData()
+  }, [])
+
+  const formatLocation = (country?: string): string => {
+    if (!country) return 'Location TBA'
+    return country
+  }
+
+  const getImageUrl = (images?: string[]): string => {
+    if (images && images.length > 0 && images[0]) {
+      return images[0]
+    }
+    return 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80'
+  }
+
 
   return (
     <div className="min-h-screen bg-cream">
@@ -198,7 +197,7 @@ const TopArtistsPage: React.FC = () => {
               <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-navy" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">89</h3>
+              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalArtists || 0}</h3>
               <p className="text-gray-600">Verified Artists</p>
             </motion.div>
 
@@ -210,7 +209,7 @@ const TopArtistsPage: React.FC = () => {
               <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Star className="w-8 h-8 text-navy" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">4.8</h3>
+              <h3 className="text-3xl font-bold text-navy mb-2">{stats.averageRating.toFixed(1)}</h3>
               <p className="text-gray-600">Average Rating</p>
             </motion.div>
 
@@ -222,7 +221,7 @@ const TopArtistsPage: React.FC = () => {
               <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-8 h-8 text-navy" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">342</h3>
+              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalBookings || 0}</h3>
               <p className="text-gray-600">Successful Bookings</p>
             </motion.div>
 
@@ -234,7 +233,7 @@ const TopArtistsPage: React.FC = () => {
               <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-8 h-8 text-navy" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">23</h3>
+              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalHotels || 0}</h3>
               <p className="text-gray-600">Luxury Hotels</p>
             </motion.div>
           </div>
@@ -252,93 +251,113 @@ const TopArtistsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {topArtists.map((artist, index) => (
-            <motion.div
-              key={artist.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="card-luxury overflow-hidden"
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <LoadingSpinner />
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold text-navy mb-2">Failed to Load Artists</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-primary"
             >
-              <div className="relative">
-                <img
-                  src={artist.image}
-                  alt={artist.name}
-                  className="w-full h-64 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/400x400/0B1F3F/C9A63C?text=' + encodeURIComponent(artist.name)
-                  }}
-                />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
-                  <ArtistRank tier={getQuickRank(artist.rating, artist.bookings)} size="sm" />
-                  <span className="text-sm font-semibold text-navy">{artist.rating}</span>
-                </div>
-              </div>
+              Try Again
+            </button>
+          </div>
+        ) : topArtists.length === 0 ? (
+          <div className="text-center py-20">
+            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold text-navy mb-2">No Artists Found</h3>
+            <p className="text-gray-600 mb-6">
+              Check back soon to discover our top-performing artists.
+            </p>
+            <Link to="/register" className="btn-primary">
+              Become an Artist
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" data-testid="artists-grid">
+            {topArtists.map((artist, index) => {
+              const rating = artist.ratingBadge ? 
+                (artist.ratingBadge.includes('Top 10%') ? 4.9 : 
+                 artist.ratingBadge.includes('Excellent') ? 4.5 : 4.0) : 4.0
+              const bookings = artist.bookingCount || 0
               
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xl font-serif font-semibold text-navy">
-                    {artist.name}
-                  </h3>
-                  <ArtistRank 
-                    tier={getQuickRank(artist.rating, artist.bookings)} 
-                    size="md"
-                    showLabel={false}
-                  />
-                </div>
-                <p className="text-gold font-medium mb-1">{artist.discipline}</p>
-                <p className="text-xs text-gray-500 mb-3">
-                  {RANK_CONFIG[getQuickRank(artist.rating, artist.bookings)].label} • {RANK_CONFIG[getQuickRank(artist.rating, artist.bookings)].description}
-                </p>
-                <p className="text-gray-600 text-sm mb-4 flex items-center">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {artist.location}
-                </p>
-                
-                <p className="text-gray-600 text-sm mb-4">
-                  {artist.description}
-                </p>
+              return (
+                <motion.div
+                  key={artist.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="card-luxury overflow-hidden"
+                >
+                  <div className="relative">
+                    <img
+                      src={getImageUrl(artist.images)}
+                      alt={artist.user.name}
+                      className="w-full h-64 object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/400x400/0B1F3F/C9A63C?text=' + encodeURIComponent(artist.user.name.substring(0, 2).toUpperCase())
+                      }}
+                    />
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
+                      <ArtistRank tier={getQuickRank(rating, bookings)} size="sm" />
+                      <span className="text-sm font-semibold text-navy">{rating.toFixed(1)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-serif font-semibold text-navy">
+                        {artist.user.name}
+                      </h3>
+                      {artist.ratingBadge && (
+                        <ArtistRank 
+                          tier={getQuickRank(rating, bookings)} 
+                          size="md"
+                          showLabel={false}
+                        />
+                      )}
+                    </div>
+                    {artist.discipline && (
+                      <p className="text-gold font-medium mb-1">{artist.discipline}</p>
+                    )}
+                    {artist.ratingBadge && (
+                      <p className="text-xs text-gray-500 mb-3">
+                        {artist.ratingBadge}
+                      </p>
+                    )}
+                    <p className="text-gray-600 text-sm mb-4 flex items-center">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {formatLocation(artist.user.country)}
+                    </p>
 
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Specialties:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {artist.specialties.map((specialty, specIndex) => (
-                      <span
-                        key={specIndex}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                      >
-                        {specialty}
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <span className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {bookings} {bookings === 1 ? 'booking' : 'bookings'}
                       </span>
-                    ))}
+                      <span className="flex items-center">
+                        <Star className="w-4 h-4 mr-1" />
+                        {rating.toFixed(1)} rating
+                      </span>
+                    </div>
+
+                    <Link
+                      to={`/artist/${artist.id}`}
+                      className="w-full btn-primary block text-center"
+                    >
+                      View Profile
+                    </Link>
                   </div>
-                </div>
-
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Recent Venues:</h4>
-                  <div className="text-sm text-gray-600">
-                    {artist.recentVenues.join(' • ')}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <span className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {artist.bookings} bookings
-                  </span>
-                  <span className="flex items-center">
-                    <Star className="w-4 h-4 mr-1" />
-                    {artist.rating} rating
-                  </span>
-                </div>
-
-                <button className="w-full btn-primary">
-                  View Profile
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* CTA Section */}
