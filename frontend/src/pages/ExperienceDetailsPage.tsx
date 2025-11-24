@@ -27,49 +27,84 @@ const ExperienceDetailsPage: React.FC = () => {
         setError(null)
         const res = await tripsApi.getById(id)
         
-        if (res.data?.success && res.data.data) {
-          const trip = res.data.data
-          const location = trip.location 
-            ? (typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location)
-            : { city: 'Unknown', country: '', lat: 0, lng: 0 }
-          
-          const images = Array.isArray(trip.images) ? trip.images : 
-            (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-          
-          setExperience({
-            id: trip.id,
-            title: trip.title || 'Experience',
-            location: {
-              city: location.city || 'Unknown',
-              country: location.country || '',
-              lat: location.lat || 0,
-              lng: location.lng || 0
-            },
-            artist: trip.artist?.user?.name || trip.artistName || 'Artist',
-            hotel: trip.hotel?.name || trip.hotelName || 'Hotel',
-            date: trip.startDate || trip.date || new Date().toISOString().split('T')[0],
-            image: images[0] || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop',
-            type: trip.type || 'intimate',
-            rating: trip.averageRating || trip.rating || 4.5,
-            description: trip.description || trip.summary || 'An amazing experience awaits.',
-            fullDescription: trip.fullDescription || trip.description || trip.summary || 'An amazing experience awaits.',
-            duration: trip.duration || '2 hours',
-            capacity: trip.capacity || '50 guests',
-            price: trip.price || '€150 per person',
-            includes: trip.includes || [
-              'Welcome reception',
-              'Performance',
-              'Refreshments',
-              'Venue access'
-            ],
-            schedule: trip.schedule || [],
-            artistBio: trip.artist?.bio || trip.artistBio || 'Talented artist with years of experience.',
-            venueDetails: trip.venueDetails || trip.hotel?.description || 'Beautiful venue setting.',
-            reviews: trip.reviews || []
-          })
-        } else {
+        // The trips API returns data directly (not wrapped in success/data)
+        // Check both possible response structures
+        const trip = res.data?.data || res.data
+        
+        if (!trip || !trip.id) {
           setError('Experience not found')
+          return
         }
+        
+        // Parse location (can be string or object)
+        let location: any = { city: 'Unknown', country: '', lat: 0, lng: 0 }
+        if (trip.location) {
+          try {
+            location = typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location
+          } catch (e) {
+            // If location is a plain string, try to extract city/country
+            if (typeof trip.location === 'string') {
+              const parts = trip.location.split(',').map(s => s.trim())
+              location = {
+                city: parts[0] || 'Unknown',
+                country: parts[1] || '',
+                lat: 0,
+                lng: 0
+              }
+            }
+          }
+        }
+        
+        // Parse images
+        let images: string[] = []
+        try {
+          images = Array.isArray(trip.images) ? trip.images : 
+            (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
+        } catch (e) {
+          images = []
+        }
+        
+        // Format price from priceFrom/priceTo
+        let priceDisplay = '€150 per person'
+        if (trip.priceFrom && trip.priceTo) {
+          priceDisplay = `€${Number(trip.priceFrom)} - €${Number(trip.priceTo)} per person`
+        } else if (trip.priceFrom) {
+          priceDisplay = `From €${Number(trip.priceFrom)} per person`
+        }
+        
+        setExperience({
+          id: trip.id,
+          title: trip.title || 'Experience',
+          location: {
+            city: location.city || 'Unknown',
+            country: location.country || '',
+            lat: location.lat || 0,
+            lng: location.lng || 0
+          },
+          artist: trip.artist?.user?.name || trip.artistName || 'Featured Artist',
+          hotel: trip.hotel?.name || trip.hotelName || 'Luxury Hotel',
+          date: trip.startDate || trip.date || new Date().toISOString().split('T')[0],
+          image: images && images.length > 0 
+            ? images[0] 
+            : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop',
+          type: trip.type || 'intimate',
+          rating: trip.averageRating || trip.rating || 4.5,
+          description: trip.description || 'An amazing experience awaits.',
+          fullDescription: trip.description || 'An amazing experience awaits.',
+          duration: trip.duration || '2 hours',
+          capacity: trip.capacity || '50 guests',
+          price: priceDisplay,
+          includes: trip.includes || [
+            'Welcome reception',
+            'Performance',
+            'Refreshments',
+            'Venue access'
+          ],
+          schedule: trip.schedule || [],
+          artistBio: trip.artist?.bio || trip.artistBio || 'Talented artist with years of experience.',
+          venueDetails: trip.venueDetails || trip.hotel?.description || 'Beautiful venue setting.',
+          reviews: trip.reviews || []
+        })
       } catch (err: any) {
         console.error('Error fetching experience:', err)
         setError('Failed to load experience. Please try again later.')

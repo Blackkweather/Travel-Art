@@ -15,7 +15,7 @@ import { getLogoUrl } from '@/config/assets'
 import { ArtistRank, getQuickRank } from '@/components/ArtistRank'
 import Footer from '@/components/Footer'
 import NewsletterSignup from '@/components/NewsletterSignup'
-import { commonApi } from '@/utils/api'
+import { commonApi, tripsApi } from '@/utils/api'
 
 const LandingPage: React.FC = () => {
   const { scrollY } = useScroll()
@@ -77,8 +77,35 @@ const LandingPage: React.FC = () => {
   const topArtistsInView = useInView(topArtistsRef, { once: true, margin: "-100px" })
   const topHotelsInView = useInView(topHotelsRef, { once: true, margin: "-100px" })
 
-  // Experience grid data
-  const experiences = [
+  // Helper function to infer category from trip title/description
+  const inferCategory = (title: string, description: string): string => {
+    const text = `${title} ${description}`.toLowerCase()
+    
+    if (text.match(/\b(jazz|music|saxophone|piano|guitar|dj|concert|performance|live music|rooftop jazz|musical|song|singer)\b/)) {
+      return "Music"
+    }
+    if (text.match(/\b(art|gallery|visual|painting|sculpture|exhibition|artwork|canvas|artist)\b/)) {
+      return "Visual Arts"
+    }
+    if (text.match(/\b(photography|photo|camera|sunset|capture|photographer|shoot|portrait)\b/)) {
+      return "Photography"
+    }
+    if (text.match(/\b(theater|dance|performance|show|theatre|ballet|acting|drama)\b/)) {
+      return "Performance"
+    }
+    if (text.match(/\b(culinary|cooking|chef|food|cuisine|kitchen|dining|gastronomy)\b/)) {
+      return "Culinary"
+    }
+    if (text.match(/\b(wellness|spa|yoga|meditation|relaxation|mindfulness|massage|therapy)\b/)) {
+      return "Wellness"
+    }
+    
+    // Default to Music if no match
+    return "Music"
+  }
+
+  // Fallback experiences (used if API fails)
+  const fallbackExperiences = [
     {
       id: 1,
       title: "Rooftop Jazz Sessions",
@@ -122,6 +149,9 @@ const LandingPage: React.FC = () => {
       category: "Wellness"
     }
   ]
+
+  // Experience grid data - fetched from database
+  const [experiences, setExperiences] = useState(fallbackExperiences)
 
   // Steps data
   const steps = [
@@ -286,6 +316,70 @@ const LandingPage: React.FC = () => {
     }
 
     fetchData()
+  }, [])
+
+  // Fetch experiences from trips API
+  useEffect(() => {
+    const fetchExperiences = async () => {
+      try {
+        const res = await tripsApi.getAll({ status: 'PUBLISHED' })
+        
+        // The trips API returns an array directly (not wrapped in success/data)
+        const trips = Array.isArray(res.data) ? res.data : []
+        
+        if (trips.length > 0) {
+          // Map trips to experiences format
+          const formattedExperiences = trips.slice(0, 6).map((trip: any) => {
+            // Parse images array
+            let images: string[] = []
+            try {
+              images = Array.isArray(trip.images) 
+                ? trip.images 
+                : (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
+            } catch (e) {
+              images = []
+            }
+            
+            // Get first image or use fallback based on category
+            const category = inferCategory(trip.title || '', trip.description || '')
+            const fallbackImageMap: Record<string, string> = {
+              'Music': 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+              'Visual Arts': 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+              'Photography': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+              'Performance': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+              'Culinary': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+              'Wellness': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80'
+            }
+            
+            const image = images && images.length > 0 
+              ? images[0] 
+              : fallbackImageMap[category] || fallbackImageMap['Music']
+            
+            // Create short description from full description (first 50 chars)
+            const shortDescription = trip.description 
+              ? (trip.description.length > 50 ? trip.description.substring(0, 50) + '...' : trip.description)
+              : 'An amazing artistic experience'
+            
+            return {
+              id: trip.id || String(Math.random()),
+              title: trip.title || 'Experience',
+              description: shortDescription,
+              image: image,
+              category: category
+            }
+          })
+          
+          if (formattedExperiences.length > 0) {
+            setExperiences(formattedExperiences)
+          }
+        }
+      } catch (error) {
+        // Silently fail and use fallback data
+        console.warn('Failed to fetch experiences from trips API, using fallback:', error)
+      }
+    }
+
+    fetchExperiences()
   }, [])
 
   // Journal stories data
@@ -567,7 +661,7 @@ const LandingPage: React.FC = () => {
             {experiences.map((experience, index) => (
               <Link
                 key={experience.id}
-                to="/experiences"
+                to={`/experience/${experience.id}`}
                 className="block"
               >
                 <motion.div
