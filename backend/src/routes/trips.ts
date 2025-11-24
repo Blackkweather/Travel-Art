@@ -23,6 +23,23 @@ router.get(
     const trips = await prisma.trip.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      include: {
+        artist: {
+          include: {
+            user: {
+              select: {
+                name: true
+              }
+            }
+          }
+        },
+        hotel: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
     });
 
     // Do not expose internal fields like createdAt/updatedAt
@@ -35,6 +52,14 @@ router.get(
         images = [];
       }
 
+      // Parse location
+      let location = null;
+      try {
+        location = typeof t.location === 'string' ? JSON.parse(t.location) : t.location;
+      } catch (e) {
+        location = { city: 'Unknown', country: '' };
+      }
+
       return {
         id: t.id,
         title: t.title,
@@ -42,9 +67,13 @@ router.get(
         description: t.description,
         priceFrom: Number(t.priceFrom),
         priceTo: Number(t.priceTo),
-        location: t.location,
+        location: location,
         images: images,
         status: t.status,
+        type: t.type || null,
+        rating: t.rating ? Number(t.rating) : null,
+        artist: t.artist?.user?.name || null,
+        hotel: t.hotel?.name || null,
       };
     });
 
@@ -60,6 +89,29 @@ router.get(
 
     const trip = await prisma.trip.findUnique({
       where: { id },
+      include: {
+        artist: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        hotel: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!trip || trip.status !== 'PUBLISHED') {
@@ -67,12 +119,40 @@ router.get(
       throw new CustomError('Trip not found', 404);
     }
 
-    // Parse images JSON string to array
+    // Parse JSON strings
     let images = [];
     try {
       images = typeof trip.images === 'string' ? JSON.parse(trip.images) : (trip.images || []);
     } catch (e) {
       images = [];
+    }
+
+    let location = null;
+    try {
+      location = typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location;
+    } catch (e) {
+      location = { city: 'Unknown', country: '' };
+    }
+
+    let schedule = [];
+    try {
+      schedule = trip.schedule ? (typeof trip.schedule === 'string' ? JSON.parse(trip.schedule) : trip.schedule) : [];
+    } catch (e) {
+      schedule = [];
+    }
+
+    let includes = [];
+    try {
+      includes = trip.includes ? (typeof trip.includes === 'string' ? JSON.parse(trip.includes) : trip.includes) : [];
+    } catch (e) {
+      includes = [];
+    }
+
+    let reviews = [];
+    try {
+      reviews = trip.reviews ? (typeof trip.reviews === 'string' ? JSON.parse(trip.reviews) : trip.reviews) : [];
+    } catch (e) {
+      reviews = [];
     }
 
     res.json({
@@ -82,9 +162,31 @@ router.get(
       description: trip.description,
       priceFrom: Number(trip.priceFrom),
       priceTo: Number(trip.priceTo),
-      location: trip.location,
+      location: location,
       images: images,
       status: trip.status,
+      // Additional fields from database
+      type: trip.type || null,
+      rating: trip.rating ? Number(trip.rating) : null,
+      date: trip.date ? trip.date.toISOString() : null,
+      duration: trip.duration || null,
+      capacity: trip.capacity || null,
+      schedule: schedule,
+      includes: includes,
+      artistBio: trip.artistBio || null,
+      venueDetails: trip.venueDetails || null,
+      reviews: reviews,
+      // Related data
+      artist: trip.artist ? {
+        id: trip.artist.id,
+        name: trip.artist.user?.name || 'Artist',
+        bio: trip.artist.bio || null
+      } : null,
+      hotel: trip.hotel ? {
+        id: trip.hotel.id,
+        name: trip.hotel.name || 'Hotel',
+        description: trip.hotel.description || null
+      } : null,
     });
   }),
 );
