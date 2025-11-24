@@ -83,8 +83,7 @@ const TravelerExperiencesPage: React.FC = () => {
           }
         }
       } catch (error) {
-        // Silently fail and use fallback data
-        console.warn('Failed to fetch experiences, using fallback:', error)
+        console.error('Failed to fetch experiences from API:', error)
       }
     }
 
