@@ -38,60 +38,8 @@ interface Experience {
   description: string
 }
 
-// Fallback experiences data
-const fallbackExperiences: Experience[] = [
-  {
-    id: '1',
-    title: 'Sunset Jazz on the Rooftop',
-    location: { city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
-    artist: 'Sophie Laurent',
-    hotel: 'Hotel Plaza Athénée',
-    date: '2024-06-15',
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
-    type: 'rooftop',
-    rating: 4.9,
-    description: 'An intimate jazz performance overlooking the Eiffel Tower at sunset.'
-  },
-  {
-    id: '2',
-    title: 'Flamenco Workshop & Performance',
-    location: { city: 'Barcelona', country: 'Spain', lat: 41.3851, lng: 2.1734 },
-    artist: 'Isabella Garcia',
-    hotel: 'Hotel Arts Barcelona',
-    date: '2024-07-20',
-    image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80',
-    type: 'workshop',
-    rating: 4.8,
-    description: 'Learn flamenco with a master dancer, followed by an evening performance.'
-  },
-  {
-    id: '3',
-    title: 'Mediterranean Piano Serenade',
-    location: { city: 'Nice', country: 'France', lat: 43.7102, lng: 7.2620 },
-    artist: 'Marco Silva',
-    hotel: 'Hotel Negresco',
-    date: '2024-08-10',
-    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80',
-    type: 'intimate',
-    rating: 4.9,
-    description: 'Classical piano in an intimate setting with Mediterranean views.'
-  },
-  {
-    id: '4',
-    title: 'Artist Residency: Marrakech',
-    location: { city: 'Marrakech', country: 'Morocco', lat: 31.6295, lng: -7.9811 },
-    artist: 'Jean-Michel Dubois',
-    hotel: 'La Mamounia',
-    date: '2024-09-05',
-    image: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800&q=80',
-    type: 'residency',
-    rating: 5.0,
-    description: 'A week-long residency featuring daily performances and cultural immersion.'
-  }
-]
-
 const TravelerExperiencesPage: React.FC = () => {
-  const [experiences, setExperiences] = useState<Experience[]>(fallbackExperiences)
+  const [experiences, setExperiences] = useState<Experience[]>([])
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
   const storiesRef = useRef<HTMLDivElement>(null)
