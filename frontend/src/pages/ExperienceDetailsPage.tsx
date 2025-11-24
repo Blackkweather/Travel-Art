@@ -28,11 +28,24 @@ const ExperienceDetailsPage: React.FC = () => {
         const res = await tripsApi.getById(id)
         
         // The trips API returns data directly (not wrapped in success/data)
-        // Check both possible response structures
-        const trip = res.data?.data || res.data
+        // axios response structure: res.data is the actual response body
+        // Backend returns: { id, title, slug, description, priceFrom, priceTo, location, images, status }
+        let trip = res.data
+        
+        // Handle case where backend might wrap it (though trips API doesn't)
+        if (trip && typeof trip === 'object' && 'data' in trip && trip.data) {
+          trip = trip.data
+        }
+        
+        // Also handle ApiResponse structure (though trips doesn't use it)
+        if (trip && typeof trip === 'object' && 'success' in trip && trip.success && trip.data) {
+          trip = trip.data
+        }
         
         if (!trip || !trip.id) {
+          console.error('ExperienceDetailsPage - Invalid trip data:', trip)
           setError('Experience not found')
+          setLoading(false)
           return
         }
         
