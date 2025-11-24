@@ -565,32 +565,39 @@ const LandingPage: React.FC = () => {
 
             <div className="experience-grid" data-testid="feature-grid">
             {experiences.map((experience, index) => (
-              <motion.div
+              <Link
                 key={experience.id}
-                className="card-experience group"
-                initial={{ opacity: 0, y: 30 }}
-                animate={experienceInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                to="/experiences"
+                className="block"
               >
-                <div className="relative h-64 overflow-hidden">
-                  <img 
-                    src={experience.image} 
-                    alt={experience.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="absolute top-4 left-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-bold">
-                    {experience.category}
+                <motion.div
+                  className="card-experience group"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={experienceInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                >
+                  <div className="relative h-64 overflow-hidden">
+                    <img 
+                      src={experience.image} 
+                      alt={experience.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute top-4 left-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-bold">
+                      {experience.category}
+                    </div>
+                    <div className="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <h3 className="text-xl font-serif font-bold mb-2">{experience.title}</h3>
+                      <p className="text-sm opacity-90">{experience.description}</p>
+                      <button 
+                        className="mt-3 bg-gold text-navy px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gold/90 transition-colors"
+                      >
+                        Discover More
+                      </button>
+                    </div>
                   </div>
-                  <div className="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <h3 className="text-xl font-serif font-bold mb-2">{experience.title}</h3>
-                    <p className="text-sm opacity-90">{experience.description}</p>
-                    <button className="mt-3 bg-gold text-navy px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gold/90 transition-colors">
-                      Discover More
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </Link>
             ))}
           </div>
         </div>
