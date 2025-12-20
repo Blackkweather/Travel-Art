@@ -1,0 +1,424 @@
+/* Artist Registration Form Styles */
+
+/* Custom Beige Color Palette */
+:root {
+  --color-beige-50: #faf8f5;
+  --color-beige-100: #f5f0e8;
+  --color-beige-200: #ede5d8;
+  --color-beige-300: #e5dac9;
+  --color-beige-400: #d9ccb8;
+  --color-beige-500: #cdbda7;
+  --color-gold: #f0b429;
+  --color-navy-900: #1a1f3a;
+  --color-navy-800: #2a3050;
+}
+
+/* Registration Form Container */
+.registration-form-container {
+  @apply bg-gradient-to-br from-cream via-white to-cream/50;
+}
+
+.registration-form-wrapper {
+  @apply bg-white rounded-3xl shadow-luxury p-8 lg:p-12 border border-gray-100;
+}
+
+/* Form Grid Layouts */
+.form-grid-2col {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+}
+
+.form-grid-1col {
+  @apply grid grid-cols-1 gap-6;
+}
+
+/* Input Styles */
+.registration-input {
+  @apply w-full h-12 px-4 rounded-xl border-2 border-gray-200 transition-all;
+  @apply bg-white text-navy-900 font-medium;
+  @apply focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold focus:ring-opacity-50;
+  @apply placeholder:text-gray-400;
+}
+
+.registration-input:hover:not(:disabled) {
+  @apply border-gold/30;
+}
+
+.registration-input:disabled {
+  @apply bg-gray-50 opacity-60 cursor-not-allowed;
+}
+
+.registration-input.error {
+  @apply border-red-400 focus:ring-red-500 focus:border-red-500;
+}
+
+.registration-input.success {
+  @apply border-green-400 focus:ring-green-500 focus:border-green-500;
+}
+
+/* Select Dropdown */
+.registration-select {
+  @apply registration-input cursor-pointer;
+}
+
+.registration-select:hover:not(:disabled) {
+  @apply border-gold/30;
+}
+
+/* Label Styles */
+.registration-label {
+  @apply block text-sm font-semibold text-navy-900 mb-2;
+  @apply flex items-center gap-2;
+}
+
+.registration-label-required::after {
+  content: '*';
+  @apply text-gold ml-1;
+}
+
+/* Error Message */
+.registration-error {
+  @apply text-sm text-red-500 font-medium;
+  @apply flex items-center gap-2 mt-2;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Success Message */
+.registration-success {
+  @apply text-sm text-green-600 font-medium;
+  @apply flex items-center gap-2 mt-2;
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Radio and Checkbox Container */
+.registration-checkbox-group,
+.registration-radio-group {
+  @apply bg-beige-50 rounded-2xl p-6 border-2 border-beige-100;
+}
+
+.registration-checkbox-group-label,
+.registration-radio-group-label {
+  @apply text-lg font-semibold text-navy-900 mb-4;
+  @apply flex items-center gap-2;
+}
+
+/* Radio and Checkbox Items */
+.registration-radio-item,
+.registration-checkbox-item {
+  @apply flex items-center gap-3 cursor-pointer mb-4 last:mb-0;
+  @apply group transition-all;
+}
+
+.registration-radio-item:hover,
+.registration-checkbox-item:hover {
+  @apply scale-105;
+}
+
+.registration-radio-item label,
+.registration-checkbox-item label {
+  @apply flex items-center gap-3 cursor-pointer w-full;
+}
+
+.registration-radio-input,
+.registration-checkbox-input {
+  @apply sr-only;
+}
+
+.registration-radio-control,
+.registration-checkbox-control {
+  @apply relative flex-shrink-0;
+  @apply w-6 h-6 rounded-full border-2 border-gray-300;
+  @apply transition-all duration-200;
+  @apply group-hover:border-gold group-hover:shadow-md;
+}
+
+.registration-checkbox-control {
+  @apply rounded-lg;
+}
+
+.registration-radio-input:checked ~ .registration-radio-control,
+.registration-checkbox-input:checked ~ .registration-checkbox-control {
+  @apply bg-gold border-gold shadow-lg;
+}
+
+.registration-radio-control::after {
+  content: '';
+  @apply absolute inset-0 rounded-full flex items-center justify-center;
+}
+
+.registration-radio-input:checked ~ .registration-radio-control::after {
+  content: '';
+  @apply w-2.5 h-2.5 bg-white rounded-full;
+}
+
+.registration-checkbox-control::after {
+  content: '';
+  @apply absolute inset-1 rounded flex items-center justify-center;
+}
+
+.registration-checkbox-input:checked ~ .registration-checkbox-control::after {
+  content: '✓';
+  @apply text-white font-bold text-sm flex items-center justify-center;
+}
+
+.registration-label-text {
+  @apply text-base font-medium text-gray-700 transition-colors;
+}
+
+.registration-radio-input:checked ~ .registration-label-text,
+.registration-checkbox-input:checked ~ .registration-label-text {
+  @apply text-navy-900 font-semibold;
+}
+
+/* Step Indicator */
+.step-indicator {
+  @apply w-full mb-8;
+}
+
+.step-progress-bar {
+  @apply flex items-center gap-2 mb-6;
+}
+
+.step-progress-item {
+  @apply flex-1 h-2 rounded-full transition-colors duration-300;
+  @apply bg-gray-200;
+}
+
+.step-progress-item.active {
+  @apply bg-gold shadow-lg;
+}
+
+.step-labels {
+  @apply flex justify-between;
+}
+
+.step-label {
+  @apply text-sm font-medium flex flex-col items-center gap-1;
+  @apply transition-colors duration-300;
+}
+
+.step-label-number {
+  @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold;
+  @apply transition-colors duration-300;
+  @apply bg-gray-200 text-gray-500;
+}
+
+.step-label.active .step-label-number,
+.step-label.completed .step-label-number {
+  @apply bg-gold text-white;
+}
+
+.step-label.completed .step-label-number::after {
+  content: '✓';
+}
+
+.step-counter {
+  @apply text-center mt-6;
+  @apply text-sm text-gray-600 font-medium;
+}
+
+/* Buttons */
+.registration-button-primary {
+  @apply w-full h-14 rounded-xl font-bold text-lg transition-all;
+  @apply bg-gold hover:bg-gold/90 text-navy-900;
+  @apply shadow-lg hover:shadow-xl hover:scale-105;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+}
+
+.registration-button-secondary {
+  @apply w-full h-14 rounded-xl font-bold text-lg transition-all;
+  @apply bg-gray-200 hover:bg-gray-300 text-navy-900;
+  @apply shadow-lg hover:shadow-xl hover:scale-105;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+}
+
+.registration-button-group {
+  @apply flex gap-4 pt-6;
+}
+
+/* Form Section */
+.registration-section {
+  @apply space-y-6 mb-8;
+}
+
+.registration-section-title {
+  @apply text-lg font-semibold text-navy-900 mb-4;
+  @apply flex items-center gap-2;
+}
+
+/* Password Strength Indicator */
+.password-strength-meter {
+  @apply h-2 rounded-full bg-gray-200 overflow-hidden mt-2;
+}
+
+.password-strength-meter-fill {
+  @apply h-full transition-all duration-300 rounded-full;
+}
+
+.password-strength-meter-fill.weak {
+  @apply w-1/4 bg-red-500;
+}
+
+.password-strength-meter-fill.fair {
+  @apply w-1/2 bg-yellow-500;
+}
+
+.password-strength-meter-fill.good {
+  @apply w-3/4 bg-lime-500;
+}
+
+.password-strength-meter-fill.strong {
+  @apply w-full bg-green-500;
+}
+
+.password-strength-text {
+  @apply text-xs font-semibold mt-1;
+}
+
+/* Summary Section */
+.registration-summary {
+  @apply bg-beige-50 rounded-2xl p-6 border-2 border-beige-100;
+}
+
+.registration-summary-title {
+  @apply text-lg font-bold text-navy-900 mb-4;
+}
+
+.registration-summary-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.registration-summary-item {
+  @apply space-y-1;
+}
+
+.registration-summary-label {
+  @apply text-sm text-gray-600 font-medium;
+}
+
+.registration-summary-value {
+  @apply font-semibold text-navy-900;
+}
+
+/* Terms Checkbox */
+.terms-checkbox {
+  @apply flex items-start gap-3 cursor-pointer group;
+}
+
+.terms-checkbox-input {
+  @apply w-6 h-6 mt-1 rounded-lg border-2 border-gray-300 cursor-pointer;
+}
+
+.terms-checkbox-input:checked {
+  @apply accent-gold bg-gold border-gold;
+}
+
+.terms-checkbox-label {
+  @apply text-sm text-gray-700;
+}
+
+.terms-checkbox-link {
+  @apply text-gold font-semibold hover:underline;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.registration-form-step-enter {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.registration-form-step-exit {
+  animation: fadeOutDown 0.5s ease-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .registration-form-wrapper {
+    @apply p-6;
+  }
+
+  .registration-input,
+  .registration-select {
+    @apply h-11;
+  }
+
+  .registration-button-primary,
+  .registration-button-secondary {
+    @apply h-12 text-base;
+  }
+
+  .registration-checkbox-group,
+  .registration-radio-group {
+    @apply p-4;
+  }
+
+  .registration-label {
+    @apply text-xs;
+  }
+
+  .registration-label-text {
+    @apply text-sm;
+  }
+}
+
+/* Accessibility */
+.registration-input:focus,
+.registration-select:focus {
+  @apply outline-none ring-2 ring-offset-2 ring-gold;
+}
+
+.registration-radio-control:focus,
+.registration-checkbox-control:focus {
+  @apply ring-2 ring-offset-2 ring-gold;
+}
+
+/* Dark Mode Support (optional) */
+@media (prefers-color-scheme: dark) {
+  .registration-form-wrapper {
+    @apply bg-gray-900 border-gray-800;
+  }
+
+  .registration-input {
+    @apply bg-gray-800 text-white border-gray-700;
+  }
+
+  .registration-input:hover:not(:disabled) {
+    @apply border-gold/50;
+  }
+
+  .registration-checkbox-group,
+  .registration-radio-group {
+    @apply bg-gray-800 border-gray-700;
+  }
+}

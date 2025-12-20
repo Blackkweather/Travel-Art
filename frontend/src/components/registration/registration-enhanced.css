@@ -1,0 +1,453 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Registration Form Styles */
+
+/* Step Indicator */
+.step-indicator {
+  @apply w-full mb-8;
+}
+
+.step-indicator-progress {
+  @apply flex items-center gap-2 mb-6;
+}
+
+.step-indicator-step {
+  @apply flex-1 h-2 rounded-full transition-colors;
+}
+
+.step-indicator-step.active {
+  @apply bg-gold;
+}
+
+.step-indicator-step.inactive {
+  @apply bg-gray-200;
+}
+
+.step-indicator-labels {
+  @apply flex justify-between;
+}
+
+.step-indicator-label {
+  @apply text-sm font-medium flex flex-col items-center gap-1 transition-colors;
+}
+
+.step-indicator-label.active {
+  @apply text-gold;
+}
+
+.step-indicator-label.inactive {
+  @apply text-gray-500;
+}
+
+.step-indicator-circle {
+  @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors;
+}
+
+.step-indicator-circle.active {
+  @apply bg-gold text-white;
+}
+
+.step-indicator-circle.inactive {
+  @apply bg-gray-200 text-gray-500;
+}
+
+/* Form Container */
+.registration-form-container {
+  @apply max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10;
+}
+
+.registration-form-header {
+  @apply mb-8;
+}
+
+.registration-form-title {
+  @apply text-3xl font-bold text-navy-900 mb-2;
+}
+
+.registration-form-subtitle {
+  @apply text-gray-600;
+}
+
+/* Input Fields */
+.form-input-wrapper {
+  @apply space-y-2;
+}
+
+.form-input-label {
+  @apply block text-sm font-medium text-navy-900;
+}
+
+.form-input-required {
+  @apply text-gold ml-1;
+}
+
+.form-input {
+  @apply w-full h-12 px-4 rounded-xl border-2 transition-all;
+  @apply focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold;
+}
+
+.form-input.active {
+  @apply border-gold bg-white;
+}
+
+.form-input.error {
+  @apply border-red-400;
+}
+
+.form-input.success {
+  @apply border-green-400;
+}
+
+.form-input:disabled {
+  @apply bg-gray-50 opacity-60 cursor-not-allowed;
+}
+
+/* Select Components */
+.select-wrapper {
+  @apply relative;
+}
+
+.select-button {
+  @apply w-full h-12 px-4 rounded-xl border-2 transition-all;
+  @apply flex items-center justify-between text-left;
+  @apply bg-white hover:border-gold cursor-pointer;
+  @apply focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold;
+}
+
+.select-button.open {
+  @apply border-gold;
+}
+
+.select-button.error {
+  @apply border-red-400;
+}
+
+.select-button:disabled {
+  @apply bg-gray-50 opacity-60 cursor-not-allowed;
+}
+
+.select-dropdown {
+  @apply absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gold rounded-xl shadow-lg z-50;
+}
+
+.select-dropdown-search {
+  @apply p-3 border-b border-gray-200;
+}
+
+.select-dropdown-items {
+  @apply max-h-60 overflow-y-auto;
+}
+
+.select-dropdown-item {
+  @apply w-full text-left px-4 py-3 transition-colors cursor-pointer;
+}
+
+.select-dropdown-item.selected {
+  @apply bg-gold/10 border-l-4 border-gold font-medium text-navy-900;
+}
+
+.select-dropdown-item:hover:not(.selected) {
+  @apply bg-gray-50;
+}
+
+/* Checkbox and Radio Groups */
+.checkbox-group {
+  @apply w-full;
+}
+
+.checkbox-group-container {
+  @apply bg-gray-50 rounded-2xl p-6 border-2 border-gray-100;
+}
+
+.checkbox-group-label {
+  @apply block text-lg font-semibold text-navy-900 mb-4;
+}
+
+.checkbox-group-required {
+  @apply text-gold ml-2;
+}
+
+.checkbox-group-options {
+  @apply space-y-3;
+}
+
+.checkbox-group-options.grid {
+  display: grid;
+  @apply grid-cols-2 gap-4 space-y-0;
+}
+
+.checkbox-label {
+  @apply flex items-center gap-3 cursor-pointer mb-4 last:mb-0;
+  transition: transform 0.2s ease;
+}
+
+.checkbox-label:hover {
+  transform: scale(1.02);
+}
+
+.checkbox-input {
+  @apply sr-only;
+}
+
+.checkbox-label:hover .checkbox-custom {
+  border-color: #F0B429;
+}
+
+.checkbox-custom {
+  @apply relative w-6 h-6 rounded-lg border-2 flex items-center justify-center;
+  @apply transition-all border-gray-300;
+}
+
+.checkbox-custom.checked {
+  @apply bg-gold border-gold;
+}
+
+.checkbox-text {
+  @apply text-base font-medium text-gray-700;
+}
+
+.checkbox-text.checked {
+  @apply text-navy-900;
+}
+
+.radio-group {
+  @apply w-full;
+}
+
+.radio-group-container {
+  @apply bg-gray-50 rounded-2xl p-6 border-2 border-gray-100;
+}
+
+.radio-group-label {
+  @apply block text-lg font-semibold text-navy-900 mb-4;
+}
+
+.radio-group-required {
+  @apply text-gold ml-2;
+}
+
+.radio-group-options {
+  @apply space-y-3;
+}
+
+.radio-label {
+  @apply flex items-center gap-3 cursor-pointer mb-4 last:mb-0;
+  transition: transform 0.2s ease;
+}
+
+.radio-label:hover {
+  transform: scale(1.02);
+}
+
+.radio-input {
+  @apply sr-only;
+}
+
+.radio-label:hover .radio-custom {
+  border-color: #F0B429;
+}
+
+.radio-custom {
+  @apply relative w-6 h-6 rounded-full border-2 flex items-center justify-center;
+  @apply transition-all border-gray-300;
+}
+
+.radio-custom.checked {
+  @apply bg-gold border-gold;
+}
+
+.radio-inner {
+  @apply w-2.5 h-2.5 bg-white rounded-full;
+}
+
+.radio-text {
+  @apply text-base font-medium text-gray-700;
+}
+
+.radio-text.checked {
+  @apply text-navy-900;
+}
+
+/* Password Input */
+.password-input-wrapper {
+  @apply space-y-2;
+}
+
+.password-input-container {
+  @apply relative;
+}
+
+.password-toggle-button {
+  @apply absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400;
+  @apply hover:text-gold transition-colors cursor-pointer;
+}
+
+.password-strength-indicator {
+  @apply flex items-center gap-2 text-green-600 text-sm mt-2;
+}
+
+.password-strength-icon {
+  @apply w-4 h-4;
+}
+
+/* Buttons */
+.btn-next {
+  @apply w-full h-14 rounded-xl font-bold text-lg transition-all;
+  @apply bg-gold hover:bg-gold/90 text-navy-900;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply shadow-lg hover:shadow-xl;
+}
+
+.btn-next:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+.btn-back {
+  @apply flex-1 h-14 rounded-xl font-bold text-lg transition-all;
+  @apply bg-gray-200 hover:bg-gray-300 text-navy-900;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply shadow-lg hover:shadow-xl;
+}
+
+.btn-back:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+.btn-group {
+  @apply pt-6 flex gap-4;
+}
+
+/* Error Messages */
+.error-message {
+  @apply text-sm text-red-500 mt-2;
+}
+
+.error-icon {
+  @apply w-4 h-4;
+}
+
+/* Success Messages */
+.success-message {
+  @apply flex items-center gap-2 text-green-600 text-sm;
+}
+
+.success-icon {
+  @apply w-4 h-4;
+}
+
+/* Terms Checkbox */
+.terms-checkbox-wrapper {
+  @apply pt-4;
+}
+
+.terms-label {
+  @apply flex items-start gap-3 cursor-pointer;
+}
+
+.terms-input {
+  @apply w-6 h-6 mt-1 rounded-lg border-2 border-gray-300 cursor-pointer accent-gold;
+}
+
+.terms-text {
+  @apply text-sm text-gray-700;
+}
+
+.terms-link {
+  @apply text-gold font-semibold hover:underline;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .registration-form-container {
+    @apply p-4;
+  }
+
+  .registration-form-title {
+    @apply text-2xl;
+  }
+
+  .form-input {
+    @apply h-10 px-3;
+  }
+
+  .select-button {
+    @apply h-10 px-3 text-sm;
+  }
+
+  .checkbox-group-options.grid {
+    @apply grid-cols-1;
+  }
+
+  .btn-next,
+  .btn-back {
+    @apply h-12;
+  }
+
+  .btn-group {
+    @apply flex-col gap-3;
+  }
+
+  .btn-back {
+    @apply flex-1;
+  }
+}
+
+/* Focus States */
+.form-input:focus,
+.select-button:focus,
+.radio-label:focus-within,
+.checkbox-label:focus-within {
+  @apply outline-none;
+}
+
+/* Loading States */
+.is-loading {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.is-loading input,
+.is-loading button,
+.is-loading select {
+  @apply cursor-not-allowed;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
