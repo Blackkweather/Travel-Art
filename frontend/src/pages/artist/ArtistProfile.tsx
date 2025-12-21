@@ -104,6 +104,22 @@ const ArtistProfile: React.FC = () => {
     }
   }
 
+  const handleDelete = async () => {
+    if (!profile?.id) {
+      toast.error('No profile to delete')
+      return
+    }
+    const confirmed = window.confirm('Supprimer votre profil artiste ?')
+    if (!confirmed) return
+    try {
+      await artistsApi.deleteProfile(profile.id)
+      toast.success('Profil artiste supprimé')
+      setProfile(null)
+      await fetchProfile()
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error?.message || 'Échec de la suppression')
+    }
+  }
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -127,13 +143,23 @@ const ArtistProfile: React.FC = () => {
             Manage your profile and showcase your talent to luxury hotels
           </p>
         </div>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="btn-secondary flex items-center space-x-2"
-        >
-          <Edit3 className="w-4 h-4" />
-          <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Edit3 className="w-4 h-4" />
+            <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
+          </button>
+          {profile?.id && (
+            <button
+              onClick={handleDelete}
+              className="btn-primary"
+            >
+              Supprimer le profil
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Profile Overview */}
@@ -278,7 +304,7 @@ const ArtistProfile: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p className="text-gray-600">No specialties added yet. Click "Edit Profile" to add specialties.</p>
+          <p className="text-gray-600">No specialties added yet. Click &quot;Edit Profile&quot; to add specialties.</p>
         )}
       </div>
 
@@ -315,7 +341,7 @@ const ArtistProfile: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p className="text-gray-600">No portfolio images yet. Click "Edit Profile" to add images.</p>
+          <p className="text-gray-600">No portfolio images yet. Click &quot;Edit Profile&quot; to add images.</p>
         )}
       </div>
 
@@ -354,7 +380,7 @@ const ArtistProfile: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p className="text-gray-600">No performance videos yet. Click "Edit Profile" to add videos.</p>
+          <p className="text-gray-600">No performance videos yet. Click &quot;Edit Profile&quot; to add videos.</p>
         )}
       </div>
 

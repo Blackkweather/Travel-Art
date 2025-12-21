@@ -35,8 +35,8 @@ const Step1RoleSelection: React.FC<Step1Props> = ({ role, onChange, onNext, isLo
       className="space-y-8"
     >
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-navy mb-2">Choose Your Role</h2>
-        <p className="text-gray-600">Are you an artist or a venue?</p>
+        <h2 className="text-3xl font-bold text-navy mb-2">Choisissez votre rôle</h2>
+        <p className="text-gray-600">Êtes-vous un artiste ou un hôtel&nbsp;?</p>
       </div>
 
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -69,9 +69,9 @@ const Step1RoleSelection: React.FC<Step1Props> = ({ role, onChange, onNext, isLo
             </motion.div>
             <div>
               <h3 className={`text-xl font-semibold ${role === 'ARTIST' ? 'text-gold' : 'text-navy'}`}>
-                Artist
+                Artiste
               </h3>
-              <p className="text-sm text-gray-600 mt-1">Perform & Create</p>
+              <p className="text-sm text-gray-600 mt-1">Interpréter & créer</p>
             </div>
           </div>
           {role === 'ARTIST' && (
@@ -114,9 +114,9 @@ const Step1RoleSelection: React.FC<Step1Props> = ({ role, onChange, onNext, isLo
             </motion.div>
             <div>
               <h3 className={`text-xl font-semibold ${role === 'HOTEL' ? 'text-gold' : 'text-navy'}`}>
-                Hotel
+                Hôtel
               </h3>
-              <p className="text-sm text-gray-600 mt-1">Host & Entertain</p>
+              <p className="text-sm text-gray-600 mt-1">Accueillir & divertir</p>
             </div>
           </div>
           {role === 'HOTEL' && (
@@ -143,7 +143,7 @@ const Step1RoleSelection: React.FC<Step1Props> = ({ role, onChange, onNext, isLo
             shadow-lg hover:shadow-xl hover:scale-[1.02]
           `}
         >
-          {isLoading ? 'Loading...' : 'Next'}
+          {isLoading ? 'Chargement...' : 'Suivant'}
         </button>
       </motion.div>
     </motion.div>

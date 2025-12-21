@@ -83,12 +83,12 @@ const Step3SubcategorySelection: React.FC<Step3Props> = ({
   const validateStep = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!data.categoryType) newErrors.categoryType = 'Category type is required';
-    if (!data.domain) newErrors.domain = 'Domain is required';
+    if (!data.categoryType) newErrors.categoryType = 'Le type de catégorie est obligatoire';
+    if (!data.domain) newErrors.domain = 'Le domaine est obligatoire';
 
     // Only require specific category if options are available
     if (specificCategoryOptions.length > 0 && !data.specificCategory) {
-      newErrors.specificCategory = 'Specific category is required';
+      newErrors.specificCategory = 'La sous-catégorie est obligatoire';
     }
 
     setErrors(newErrors);

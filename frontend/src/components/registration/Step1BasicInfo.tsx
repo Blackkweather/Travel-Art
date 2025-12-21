@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
 import FormField from '../FormField';
+import DatePicker from './DatePicker';
 import SelectWithSearch from './SelectWithSearch';
 import { BasicInfo, COUNTRIES, VALIDATION } from '@/types/artistRegistration';
 
@@ -37,30 +38,30 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
     const newErrors: Record<string, string> = {};
 
     // Check required fields
-    if (!data.stageName.trim()) newErrors.stageName = 'Stage name is required';
-    if (!data.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!data.lastName.trim()) newErrors.lastName = 'Last name is required';
-    if (!data.birthDate.trim()) newErrors.birthDate = 'Birth date is required';
-    else if (!validateDate(data.birthDate)) newErrors.birthDate = 'Format: DD/MM/YYYY';
+    if (!data.stageName.trim()) newErrors.stageName = 'Le nom de scène est obligatoire';
+    if (!data.firstName.trim()) newErrors.firstName = 'Le prénom est obligatoire';
+    if (!data.lastName.trim()) newErrors.lastName = 'Le nom est obligatoire';
+    if (!data.birthDate.trim()) newErrors.birthDate = 'La date de naissance est obligatoire';
+    else if (!validateDate(data.birthDate)) newErrors.birthDate = 'Format requis : JJ/MM/AAAA';
 
-    if (!data.phone.trim()) newErrors.phone = 'Phone number is required';
-    else if (!validatePhone(data.phone)) newErrors.phone = 'Invalid phone number';
+    if (!data.phone.trim()) newErrors.phone = 'Le numéro de téléphone est obligatoire';
+    else if (!validatePhone(data.phone)) newErrors.phone = 'Numéro de téléphone invalide';
 
-    if (!data.email.trim()) newErrors.email = 'Email is required';
-    else if (!validateEmail(data.email)) newErrors.email = 'Invalid email address';
+    if (!data.email.trim()) newErrors.email = 'L’adresse e-mail est obligatoire';
+    else if (!validateEmail(data.email)) newErrors.email = 'Adresse e-mail invalide';
 
-    if (!data.password) newErrors.password = 'Password is required';
+    if (!data.password) newErrors.password = 'Le mot de passe est obligatoire';
     else if (!validatePassword(data.password)) {
-      newErrors.password = 'Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special';
+      newErrors.password = 'Le mot de passe doit respecter les exigences';
     }
 
-    if (!data.confirmPassword) newErrors.confirmPassword = 'Confirm your password';
+    if (!data.confirmPassword) newErrors.confirmPassword = 'Confirmez votre mot de passe';
     else if (data.password !== data.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
     }
 
-    if (!data.country) newErrors.country = 'Country is required';
-    if (!data.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms';
+    if (!data.country) newErrors.country = 'Le pays est obligatoire';
+    if (!data.agreeToTerms) newErrors.agreeToTerms = 'Vous devez accepter les conditions';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -109,7 +110,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             label="Nom de scène"
-            placeholder="Your stage name"
+            placeholder="Votre nom de scène"
             value={data.stageName}
             onChange={(e) => onChange({ ...data, stageName: e.target.value })}
             error={errors.stageName}
@@ -119,11 +120,11 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
 
         {/* Birth Date */}
         <motion.div variants={itemVariants}>
-          <FormField
+          <DatePicker
             label="Date de naissance"
             placeholder="JJ/MM/AAAA"
             value={data.birthDate}
-            onChange={(e) => onChange({ ...data, birthDate: e.target.value })}
+            onChange={(val) => onChange({ ...data, birthDate: val })}
             error={errors.birthDate}
             disabled={isLoading}
           />
@@ -133,7 +134,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             label="Nom"
-            placeholder="Your last name"
+            placeholder="Votre nom"
             value={data.lastName}
             onChange={(e) => onChange({ ...data, lastName: e.target.value })}
             error={errors.lastName}
@@ -145,7 +146,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             label="Prénom"
-            placeholder="Your first name"
+            placeholder="Votre prénom"
             value={data.firstName}
             onChange={(e) => onChange({ ...data, firstName: e.target.value })}
             error={errors.firstName}
@@ -171,7 +172,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
           <FormField
             type="email"
             label="Adresse email"
-            placeholder="your@email.com"
+            placeholder="votre@email.com"
             value={data.email}
             onChange={(e) => onChange({ ...data, email: e.target.value })}
             error={errors.email}
@@ -182,7 +183,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Country */}
         <motion.div variants={itemVariants} className="md:col-span-2">
           <SelectWithSearch
-            label="Choisir un pays"
+            label="Choisir un pays *"
             placeholder="Sélectionner votre pays"
             options={COUNTRIES.map(country => ({ value: country, label: country }))}
             value={data.country}
@@ -204,7 +205,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
                 type={showPassword ? 'text' : 'password'}
                 value={data.password}
                 onChange={(e) => onChange({ ...data, password: e.target.value })}
-                placeholder="Min 8 chars, uppercase, number, special"
+                placeholder="Min 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre, 1 spécial"
                 disabled={isLoading}
                 className={`
                   w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
@@ -223,7 +224,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
             </div>
             {isPasswordStrong && (
               <div className="flex items-center gap-2 text-green-600 text-sm">
-                <CheckCircle2 size={16} /> Strong password
+                <CheckCircle2 size={16} /> Mot de passe robuste
               </div>
             )}
             {errors.password && (
@@ -245,7 +246,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={data.confirmPassword}
                 onChange={(e) => onChange({ ...data, confirmPassword: e.target.value })}
-                placeholder="Confirm your password"
+                placeholder="Confirmez votre mot de passe"
                 disabled={isLoading}
                 className={`
                   w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
@@ -264,7 +265,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
             </div>
             {data.confirmPassword && data.password === data.confirmPassword && !errors.confirmPassword && (
               <div className="flex items-center gap-2 text-green-600 text-sm">
-                <CheckCircle2 size={16} /> Passwords match
+                <CheckCircle2 size={16} /> Les mots de passe correspondent
               </div>
             )}
             {errors.confirmPassword && (

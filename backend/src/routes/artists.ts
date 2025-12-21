@@ -172,7 +172,7 @@ router.get('/', asyncHandler(async (req, res) => {
         }
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching artists:', error);
     throw new CustomError('Failed to fetch artists', 500);
   }
@@ -396,6 +396,25 @@ router.post('/', authenticate, authorize('ARTIST'), asyncHandler(async (req: Aut
   });
 }));
 
+// Delete artist profile
+router.delete('/:id', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id } = req.params;
+
+  const artist = await prisma.artist.findFirst({
+    where: { id, userId: req.user!.id }
+  });
+
+  if (!artist) {
+    throw new CustomError('Artist not found or access denied.', 404);
+  }
+
+  await prisma.artist.delete({ where: { id } });
+
+  res.json({
+    success: true,
+    data: { id }
+  });
+}));
 // Set artist availability
 router.post('/:id/availability', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
   const { id } = req.params;
@@ -426,6 +445,4 @@ router.post('/:id/availability', authenticate, authorize('ARTIST'), asyncHandler
 
 
 export { router as artistRoutes };
-
-
 

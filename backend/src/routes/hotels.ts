@@ -83,8 +83,8 @@ const hotelProfileSchema = z.object({
 
 const roomAvailabilitySchema = z.object({
   roomId: z.string(),
-  dateFrom: z.string().datetime(),
-  dateTo: z.string().datetime(),
+  dateFrom: z.string(),
+  dateTo: z.string(),
   price: z.number().optional()
 });
 
@@ -95,8 +95,8 @@ const creditPurchaseSchema = z.object({
 
 const bookingSchema = z.object({
   artistId: z.string(),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
+  startDate: z.string(),
+  endDate: z.string(),
   specialRequests: z.string().optional()
 });
 
@@ -369,6 +369,25 @@ router.post('/', authenticate, authorize('HOTEL'), asyncHandler(async (req: Auth
   });
 }));
 
+// Delete hotel profile
+router.delete('/:id', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id } = req.params;
+
+  const hotel = await prisma.hotel.findFirst({
+    where: { id, userId: req.user!.id }
+  });
+
+  if (!hotel) {
+    throw new CustomError('Hotel not found or access denied.', 404);
+  }
+
+  await prisma.hotel.delete({ where: { id } });
+
+  res.json({
+    success: true,
+    data: { id }
+  });
+}));
 // Add room availability
 router.post('/:id/rooms', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
   const { id } = req.params;
@@ -485,13 +504,7 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
   const where: any = {};
 
   if (discipline) {
-    where.discipline = { contains: discipline as string, mode: 'insensitive' };
-  }
-
-  if (location) {
-    where.user = {
-      country: { contains: location as string, mode: 'insensitive' }
-    };
+    where.discipline = { contains: discipline as string };
   }
 
   if (dateFrom && dateTo) {
@@ -529,9 +542,15 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
     prisma.artist.count({ where })
   ]);
 
+  let filteredArtists = artists;
+  if (location) {
+    const loc = String(location).toLowerCase();
+    filteredArtists = artists.filter(a => a.user?.country?.toLowerCase().includes(loc));
+  }
+
   // Add rating badges for each artist
   const artistsWithBadges = await Promise.all(
-    artists.map(async (artist) => {
+    filteredArtists.map(async (artist) => {
       const ratings = await prisma.rating.findMany({
         where: { artistId: artist.id },
         select: { stars: true }
@@ -775,6 +794,4 @@ router.post('/:id/bookings/:bookingId/rate', authenticate, authorize('HOTEL'), a
 }));
 
 export { router as hotelRoutes };
-
-
 

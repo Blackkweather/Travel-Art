@@ -13,27 +13,27 @@ export const validatePassword = (password: string): {
   requirements: {
     minLength: boolean;
     hasUppercase: boolean;
-    hasLowercase: boolean;
     hasNumber: boolean;
+    hasLowercase: boolean;
     hasSpecial: boolean;
   };
 } => {
   const requirements = {
-    minLength: password.length >= 8,
+    minLength: password.length >= 2,
     hasUppercase: /[A-Z]/.test(password),
-    hasLowercase: /[a-z]/.test(password),
     hasNumber: /\d/.test(password),
+    hasLowercase: /[a-z]/.test(password),
     hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
   };
 
   const requirementsMet = Object.values(requirements).filter(Boolean).length;
   let strength: 'weak' | 'medium' | 'strong' = 'weak';
 
-  if (requirementsMet >= 4) strength = 'strong';
-  else if (requirementsMet >= 3) strength = 'medium';
+  if (requirementsMet >= 3) strength = 'strong';
+  else if (requirementsMet >= 2) strength = 'medium';
 
   return {
-    isValid: requirements.minLength && requirements.hasUppercase && requirements.hasLowercase && requirements.hasNumber,
+    isValid: requirements.minLength && requirements.hasUppercase && requirements.hasNumber,
     strength,
     requirements
   };
@@ -137,7 +137,7 @@ export const validateRegistrationForm = (data: Partial<RegistrationFormData>): V
     if (!passwordValidation.isValid) {
       errors.push({
         field: 'password',
-        message: 'Password must be at least 8 characters with uppercase, lowercase, and number'
+        message: 'Password must include uppercase and number (min 2 chars)'
       });
     }
   }

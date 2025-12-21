@@ -26,11 +26,21 @@ export interface SubcategoryInfo {
   domain: string;
 }
 
+export interface MediaRequirements {
+  profileImageUrl: string;
+  travelInstruments: string[];
+  performanceLinks: string[];
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+}
+
 export interface ArtistRegistrationData {
   step: number;
   basicInfo: BasicInfo;
   artisticCategory: ArtisticCategory;
   subcategory: SubcategoryInfo;
+  media: MediaRequirements;
 }
 
 // Category Options
@@ -130,14 +140,14 @@ export const COUNTRIES = [
 export const VALIDATION = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   phone: /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
-  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+  password: /^(?=.*[A-Z])(?=.*\d)[A-Z\d]{2,}$/,
   date: /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/\d{4}$/
 };
 
 export const PASSWORD_REQUIREMENTS = {
-  minLength: 8,
+  minLength: 2,
   uppercase: true,
-  lowercase: true,
+  lowercase: false,
   numbers: true,
-  special: true
+  special: false
 };

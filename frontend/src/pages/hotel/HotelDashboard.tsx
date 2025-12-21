@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Calendar, Users, CreditCard, MapPin, Music, Heart } from 'lucide-react'
 import { hotelsApi, bookingsApi, artistsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import toast from 'react-hot-toast'
 
 interface Booking {
   id: string
@@ -37,6 +38,7 @@ interface UpcomingPerformance {
 
 const HotelDashboard: React.FC = () => {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     activeBookings: 0,
@@ -159,6 +161,22 @@ const HotelDashboard: React.FC = () => {
     )
   }
 
+  const handleDeleteProfile = async () => {
+    if (!hotelId) {
+      toast.error('No hotel profile to delete')
+      return
+    }
+    const confirmed = window.confirm('Supprimer votre profil hôtel ?')
+    if (!confirmed) return
+    try {
+      await hotelsApi.deleteProfile(hotelId)
+      toast.success('Profil hôtel supprimé')
+      navigate('/')
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error?.message || 'Échec de la suppression')
+    }
+  }
+
   const statsData = [
     { label: 'Active Bookings', value: stats.activeBookings.toString(), icon: Calendar, color: 'text-blue-600' },
     { label: 'Available Credits', value: stats.availableCredits.toString(), icon: CreditCard, color: 'text-green-600' },
@@ -169,12 +187,21 @@ const HotelDashboard: React.FC = () => {
   return (
     <div className="space-y-8" data-testid="dashboard">
       <div className="fade-in-up">
-        <h1 className="dashboard-title mb-3 gold-underline">
-          Welcome back, {user?.name}!
-        </h1>
-        <p className="dashboard-subtitle">
-          Manage your hotel's artist bookings and rooftop performances.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="dashboard-title mb-3 gold-underline">
+              Welcome back, {user?.name}!
+            </h1>
+            <p className="dashboard-subtitle">
+              Manage your hotel&apos;s artist bookings and rooftop performances.
+            </p>
+          </div>
+          {hotelId && (
+            <button className="btn-primary" onClick={handleDeleteProfile}>
+              Supprimer le profil
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats Grid */}

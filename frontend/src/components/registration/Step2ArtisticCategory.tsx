@@ -18,9 +18,9 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({ data, onChange, onNext, o
   const validateStep = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!data.mainCategory) newErrors.mainCategory = 'Main category is required';
-    if (data.audienceType.length === 0) newErrors.audienceType = 'Select at least one audience type';
-    if (data.languages.length === 0) newErrors.languages = 'Select at least one language';
+    if (!data.mainCategory) newErrors.mainCategory = 'La catégorie principale est obligatoire';
+    if (data.audienceType.length === 0) newErrors.audienceType = 'Sélectionnez au moins un type de public';
+    if (data.languages.length === 0) newErrors.languages = 'Sélectionnez au moins une langue';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

@@ -169,6 +169,26 @@ export interface RegisterData {
   phone: string
   locale?: string
   referralCode?: string
+  stageName?: string
+  country?: string
+  birthDate?: string
+  artisticProfile?: {
+    mainCategory: string
+    secondaryCategory?: string
+    audienceType: string[]
+    languages: string[]
+    categoryType: string
+    specificCategory: string
+    domain: string
+  }
+  profileImage?: string
+  travelInstruments?: string[]
+  performanceLinks?: string[]
+  socialLinks?: {
+    instagram?: string
+    facebook?: string
+    youtube?: string
+  }
 }
 
 export interface ArtistProfileData {

@@ -105,8 +105,12 @@ const LoginPage: React.FC = () => {
                 {...register('password', {
                   required: 'Password is required',
                   minLength: {
-                    value: 8,
-                    message: 'Password must be at least 8 characters'
+                    value: 2,
+                    message: 'Password must be at least 2 characters'
+                  },
+                  pattern: {
+                    value: /^(?=.*[A-Z])(?=.*\d)[A-Z\d]+$/,
+                    message: 'Use uppercase letters and numbers only'
                   }
                 })}
                 name="password"

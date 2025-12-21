@@ -104,6 +104,9 @@ export const artistsApi = {
   updateProfile: (id: string, data: any) =>
     apiClient.put(`/artists/${id}`, data),
   
+  deleteProfile: (id: string) =>
+    apiClient.delete(`/artists/${id}`),
+  
   setAvailability: (id: string, data: any) =>
     apiClient.post(`/artists/${id}/availability`, data),
 }
@@ -124,6 +127,9 @@ export const hotelsApi = {
   
   updateProfile: (id: string, data: any) =>
     apiClient.put(`/hotels/${id}`, data),
+  
+  deleteProfile: (id: string) =>
+    apiClient.delete(`/hotels/${id}`),
   
   addRoomAvailability: (id: string, data: any) =>
     apiClient.post(`/hotels/${id}/rooms`, data),
