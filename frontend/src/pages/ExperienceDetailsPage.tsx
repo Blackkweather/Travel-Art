@@ -30,7 +30,7 @@ const ExperienceDetailsPage: React.FC = () => {
         // The trips API returns data directly (not wrapped in success/data)
         // axios response structure: res.data is the actual response body
         // Backend returns: { id, title, slug, description, priceFrom, priceTo, location, images, status }
-        let trip = res.data
+        let trip: any = res.data
         
         // Handle case where backend might wrap it (though trips API doesn't)
         if (trip && typeof trip === 'object' && 'data' in trip && trip.data) {
