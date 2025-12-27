@@ -101,6 +101,8 @@ router.post('/register', asyncHandler(async (req, res) => {
             discipline: '',
             priceRange: '',
             membershipStatus: 'INACTIVE',
+            images: JSON.stringify([]),
+            videos: JSON.stringify([]),
             mediaUrls: JSON.stringify([]),
             loyaltyPoints: 0,
             referralCode: referralCodeToUse

@@ -140,14 +140,14 @@ export const COUNTRIES = [
 export const VALIDATION = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   phone: /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
-  password: /^(?=.*[A-Z])(?=.*\d)[A-Z\d]{2,}$/,
+  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/,
   date: /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/\d{4}$/
 };
 
 export const PASSWORD_REQUIREMENTS = {
-  minLength: 2,
+  minLength: 8,
   uppercase: true,
-  lowercase: false,
+  lowercase: true,
   numbers: true,
-  special: false
+  special: true
 };

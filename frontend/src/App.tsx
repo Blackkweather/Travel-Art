@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
+import { setClerkTokenGetter } from '@/utils/clerkToken'
 import Layout from '@/components/Layout'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -75,11 +77,31 @@ const DashboardRedirect = () => {
 }
 
 function App() {
-  const { isLoading, checkAuth } = useAuthStore()
+  const { isLoading, checkAuth, syncClerkUser } = useAuthStore()
+  const { isLoaded, isSignedIn, user: clerkUser, getToken } = useAuth()
+
+  // Set up Clerk token getter for API client
+  useEffect(() => {
+    if (isLoaded && getToken) {
+      setClerkTokenGetter(async () => {
+        try {
+          return await getToken()
+        } catch (error) {
+          return null
+        }
+      })
+    }
+  }, [isLoaded, getToken])
 
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    // Sync Clerk user with our backend when Clerk user is available
+    if (isLoaded && isSignedIn && clerkUser) {
+      syncClerkUser(clerkUser)
+    } else if (!isSignedIn) {
+      // Fallback to existing auth check if not using Clerk
+      checkAuth()
+    }
+  }, [isLoaded, isSignedIn, clerkUser, syncClerkUser, checkAuth])
 
   console.log('🔒 App.tsx rendering - PasswordPopup should be visible')
   

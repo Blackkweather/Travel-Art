@@ -17,6 +17,19 @@ const getDatabaseUrl = () => {
   // Check environment variable first (required for production)
   const envUrl = process.env.DATABASE_URL;
   if (envUrl) {
+    // If using Supabase direct connection (IPv6-only), try to use pooler instead
+    if (envUrl.includes('db.rtvtzyjlbtgnvzzqxzxv.supabase.co')) {
+      // Extract password from original URL
+      const urlMatch = envUrl.match(/postgres(ql)?:\/\/postgres:([^@]+)@/);
+      const password = urlMatch ? encodeURIComponent(decodeURIComponent(urlMatch[2])) : 'Trvael69120Arts%3B';
+      const projectRef = 'rtvtzyjlbtgnvzzqxzxv';
+      
+      // Try Session Pooler (port 5432) - supports prepared statements
+      // Try different regions - user can override with POOLER_REGION env var
+      const region = process.env.POOLER_REGION || 'us-east-1';
+      // Session mode pooler (port 5432) - IPv4 compatible
+      return `postgres://postgres.${projectRef}:${password}@aws-0-${region}.pooler.supabase.com:5432/postgres?sslmode=require`;
+    }
     return envUrl;
   }
   // Fallback to config (for local development)
@@ -70,6 +83,18 @@ async function initializeDatabase() {
   } catch (error: any) {
     console.error('❌ Database connection failed:', error.message);
     const dbUrl = getDatabaseUrl();
+    
+    // Check if it's a pooler authentication error
+    if (error.message.includes('Tenant or user not found') || error.message.includes('FATAL')) {
+      if (dbUrl?.includes('pooler.supabase.com')) {
+        console.error('\n⚠️  Pooler connection failed. Possible issues:');
+        console.error('1. Wrong region - Try setting POOLER_REGION env var (e.g., eu-west-1, ap-southeast-1)');
+        console.error('2. Pooler not enabled - Enable Session Pooler in Supabase Dashboard');
+        console.error('3. Get exact connection string from: https://supabase.com/dashboard/project/rtvtzyjlbtgnvzzqxzxv/settings/database');
+        console.error('\nCurrent connection string:', dbUrl.replace(/:[^:@]+@/, ':****@'));
+      }
+    }
+    
     if (error.message.includes('protocol') || error.message.includes('file:')) {
       if (dbUrl?.startsWith('file:')) {
         console.error('⚠️  For SQLite, DATABASE_URL must start with file:');
@@ -127,6 +152,7 @@ export async function createUser(data: {
   role: string;
   language?: string;
   phone?: string | null;
+  clerkId?: string | null;
 }) {
   await initializeDatabase();
   
@@ -138,6 +164,7 @@ export async function createUser(data: {
       role: data.role,
       language: data.language || 'en',
       phone: data.phone || null,
+      clerkId: data.clerkId || null,
       isActive: true,
     },
     include: {

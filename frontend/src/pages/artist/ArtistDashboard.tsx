@@ -37,11 +37,16 @@ const ArtistDashboard: React.FC = () => {
         setLoading(true)
 
         // Get artist profile
-        const artistRes = await artistsApi.getById(user.id)
+        const artistRes = await artistsApi.getMyProfile()
         const artist = artistRes.data?.data
 
-        // Get bookings for this artist
-        const bookingsRes = await bookingsApi.list({ artistId: user.id })
+        if (!artist) {
+          setLoading(false)
+          return
+        }
+
+        // Get bookings for this artist (use artist ID, not user ID!)
+        const bookingsRes = await bookingsApi.list({ artistId: artist.id })
         const bookings = bookingsRes.data?.data || []
 
         // Calculate stats

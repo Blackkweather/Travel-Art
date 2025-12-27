@@ -13,6 +13,7 @@ interface AuthState {
   logout: () => void
   checkAuth: () => Promise<void>
   updateUser: (user: User) => void
+  syncClerkUser: (clerkUser: any) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -24,6 +25,8 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (credentials: LoginCredentials) => {
+        // This method is kept for backward compatibility
+        // But actual login now happens via Clerk in LoginPage component
         set({ isLoading: true })
         try {
           const response = await authApi.login(credentials)
@@ -44,8 +47,12 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: RegisterData) => {
         set({ isLoading: true })
         try {
+          console.log('🔄 Registering user...', { email: data.email, role: data.role })
           const response = await authApi.register(data)
+          console.log('📥 Registration response:', response.data)
+          
           const { user, token } = response.data.data
+          console.log('✅ User registered successfully:', { userId: user.id, email: user.email, token: token ? '✓' : '✗' })
           
           set({
             user,
@@ -53,13 +60,77 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false
           })
-        } catch (error) {
+          
+          console.log('💾 Auth state updated - user is now authenticated')
+        } catch (error: any) {
+          console.error('❌ Registration failed:', error.response?.data || error.message)
           set({ isLoading: false })
           throw error
         }
       },
+      
+      syncClerkUser: async (clerkUser: any) => {
+        try {
+          // Get Clerk session token
+          const { useAuth } = await import('@clerk/clerk-react')
+          // We need to get the token from Clerk's getToken method
+          // For now, we'll store a placeholder and get the actual token when making requests
+          
+          // Sync Clerk user data with our backend
+          const response = await fetch('/api/auth/clerk/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clerkId: clerkUser.id,
+              email: clerkUser.emailAddresses[0]?.emailAddress,
+              firstName: clerkUser.firstName,
+              lastName: clerkUser.lastName,
+            })
+          })
+          
+          if (response.ok) {
+            const result = await response.json()
+            const user = result.data?.user || result.user
+            
+            // Store Clerk user ID as token placeholder - actual token will be retrieved per request
+            set({
+              user,
+              token: clerkUser.id, // Store Clerk ID temporarily
+              isAuthenticated: true
+            })
+          } else {
+            // Fallback to existing API
+            const apiResponse = await authApi.getCurrentUser()
+            set({
+              user: apiResponse.data.data.user,
+              isAuthenticated: true
+            })
+          }
+        } catch (error) {
+          console.error('Failed to sync Clerk user:', error)
+          // Try to get user from existing API as fallback
+          try {
+            const response = await authApi.getCurrentUser()
+            set({
+              user: response.data.data.user,
+              isAuthenticated: true
+            })
+          } catch (fallbackError) {
+            console.error('Fallback sync also failed:', fallbackError)
+          }
+        }
+      },
 
-      logout: () => {
+      logout: async () => {
+        // Sign out from Clerk if available
+        try {
+          const { useClerk } = await import('@clerk/clerk-react')
+          // Note: We can't use hooks here, so we'll handle it in components
+          // The logout will be handled by Clerk's signOut in the component
+        } catch (error) {
+          // Clerk not available, just clear local state
+        }
+        
         set({
           user: null,
           token: null,

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
+import { useSignIn, useAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
 import { LoginCredentials } from '@/types'
 import toast from 'react-hot-toast'
@@ -11,7 +12,9 @@ import { getLogoUrl } from '@/config/assets'
 
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const { isLoaded, signIn, setActive } = useSignIn()
+  const { user: clerkUser } = useAuth()
+  const { syncClerkUser } = useAuthStore()
   const navigate = useNavigate()
 
   const {
@@ -21,14 +24,34 @@ const LoginPage: React.FC = () => {
   } = useForm<LoginCredentials>()
 
   const onSubmit = async (data: LoginCredentials) => {
+    if (!isLoaded) return
+    
     setIsLoading(true)
     try {
-      await login(data)
-      toast.success('Welcome back!')
-      // Always redirect to dashboard - it will route to correct role dashboard
-      navigate('/dashboard')
+      // Use Clerk to sign in
+      const result = await signIn.create({
+        identifier: data.email,
+        password: data.password,
+      })
+
+      if (result.status === 'complete') {
+        // Set the active session
+        await setActive({ session: result.createdSessionId })
+        
+        // Sync with our backend to get user data
+        if (clerkUser) {
+          await syncClerkUser(clerkUser)
+        }
+        
+        toast.success('Welcome back!')
+        // Always redirect to dashboard - it will route to correct role dashboard
+        navigate('/dashboard')
+      } else {
+        toast.error('Login incomplete. Please try again.')
+      }
     } catch (error: any) {
-      toast.error(error.response?.data?.error?.message || 'Login failed')
+      const errorMessage = error.errors?.[0]?.message || error.message || 'Login failed'
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -105,12 +128,8 @@ const LoginPage: React.FC = () => {
                 {...register('password', {
                   required: 'Password is required',
                   minLength: {
-                    value: 2,
-                    message: 'Password must be at least 2 characters'
-                  },
-                  pattern: {
-                    value: /^(?=.*[A-Z])(?=.*\d)[A-Z\d]+$/,
-                    message: 'Use uppercase letters and numbers only'
+                    value: 8,
+                    message: 'Password must be at least 8 characters'
                   }
                 })}
                 name="password"

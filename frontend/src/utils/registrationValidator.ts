@@ -40,8 +40,8 @@ export class RegistrationValidator {
       errors.push('At least one number required');
     }
 
-    if (PASSWORD_REQUIREMENTS.special && !/[@$!%*?&]/.test(password)) {
-      errors.push('At least one special character (@$!%*?&) required');
+    if (PASSWORD_REQUIREMENTS.special && !/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      errors.push('At least one special character required');
     }
 
     return {

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
 import { useAuthStore } from '@/store/authStore'
 import { ApiResponse, LoginCredentials, RegisterData, User } from '@/types'
+import { getClerkToken } from './clerkToken'
 
 class ApiClient {
   private client: AxiosInstance
@@ -21,10 +22,17 @@ class ApiClient {
 
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
-      (config) => {
-        const token = useAuthStore.getState().token
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`
+      async (config) => {
+        // Try to get Clerk session token first
+        const clerkToken = await getClerkToken()
+        if (clerkToken) {
+          config.headers.Authorization = `Bearer ${clerkToken}`
+        } else {
+          // Fallback to auth store token (for backward compatibility)
+          const token = useAuthStore.getState().token
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+          }
         }
         return config
       },
@@ -104,9 +112,6 @@ export const artistsApi = {
   updateProfile: (id: string, data: any) =>
     apiClient.put(`/artists/${id}`, data),
   
-  deleteProfile: (id: string) =>
-    apiClient.delete(`/artists/${id}`),
-  
   setAvailability: (id: string, data: any) =>
     apiClient.post(`/artists/${id}/availability`, data),
 }
@@ -127,9 +132,6 @@ export const hotelsApi = {
   
   updateProfile: (id: string, data: any) =>
     apiClient.put(`/hotels/${id}`, data),
-  
-  deleteProfile: (id: string) =>
-    apiClient.delete(`/hotels/${id}`),
   
   addRoomAvailability: (id: string, data: any) =>
     apiClient.post(`/hotels/${id}/rooms`, data),

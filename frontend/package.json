@@ -16,6 +16,7 @@
         "lint:fix": "eslint . --ext ts,tsx --fix"
     },
     "dependencies": {
+        "@clerk/clerk-react": "^5.59.2",
         "@iconify/react": "^6.0.2",
         "@radix-ui/react-avatar": "^1.0.4",
         "@radix-ui/react-dialog": "^1.0.5",

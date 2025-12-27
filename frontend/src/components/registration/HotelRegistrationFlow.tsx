@@ -300,7 +300,7 @@ const HotelRegistrationFlow: React.FC = () => {
       });
 
       toast.success('Inscription hôtel réussie');
-      navigate('/dashboard/hotel');
+      navigate('/dashboard');
     } catch (error: unknown) {
       const apiError = error as { response?: { data?: { error?: { message?: string } } } };
       toast.error(apiError.response?.data?.error?.message || 'Échec de l’inscription');
@@ -310,16 +310,32 @@ const HotelRegistrationFlow: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-beige-50 via-white to-beige-50">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
-        <div className="max-w-3xl mx-auto mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-3xl mx-auto mb-12"
+        >
           <StepIndicator currentStep={state.step} totalSteps={7} steps={stepTitles} />
-        </div>
-        <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10">
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 md:p-10 border border-gray-100"
+        >
           <AnimatePresence mode="wait">
             {state.step === 1 && (
-              <motion.div key="hotel-step1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+              <motion.div 
+                key="hotel-step1" 
+                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
+                animate={{ opacity: 1, x: 0, scale: 1 }} 
+                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              >
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Informations générales sur l’hôtel</h2>
@@ -392,7 +408,13 @@ const HotelRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
             {state.step === 2 && (
-              <motion.div key="hotel-step2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+              <motion.div 
+                key="hotel-step2" 
+                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
+                animate={{ opacity: 1, x: 0, scale: 1 }} 
+                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              >
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Ambiance & identité artistique</h2>
@@ -440,7 +462,13 @@ const HotelRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
             {state.step === 3 && (
-              <motion.div key="hotel-step3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+              <motion.div 
+                key="hotel-step3" 
+                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
+                animate={{ opacity: 1, x: 0, scale: 1 }} 
+                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              >
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Espace d’expression & équipement technique</h2>
@@ -504,7 +532,13 @@ const HotelRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
             {state.step === 4 && (
-              <motion.div key="hotel-step5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+              <motion.div 
+                key="hotel-step4" 
+                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
+                animate={{ opacity: 1, x: 0, scale: 1 }} 
+                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              >
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Conditions de collaboration</h2>
@@ -532,7 +566,13 @@ const HotelRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
             {state.step === 5 && (
-              <motion.div key="hotel-step6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+              <motion.div 
+                key="hotel-step5" 
+                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
+                animate={{ opacity: 1, x: 0, scale: 1 }} 
+                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              >
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Logistique pour l’artiste</h2>
@@ -550,7 +590,13 @@ const HotelRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
             {state.step === 6 && (
-              <motion.div key="hotel-step7" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+              <motion.div 
+                key="hotel-step6" 
+                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
+                animate={{ opacity: 1, x: 0, scale: 1 }} 
+                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              >
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Liberté artistique & attentes</h2>
@@ -579,7 +625,13 @@ const HotelRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
             {state.step === 7 && (
-              <motion.div key="hotel-step8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+              <motion.div 
+                key="hotel-step7" 
+                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
+                animate={{ opacity: 1, x: 0, scale: 1 }} 
+                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              >
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Validation & process</h2>
@@ -596,7 +648,7 @@ const HotelRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="max-w-3xl mx-auto mt-8 text-center">
           <p className="text-sm text-gray-600">
             Vos informations sont sécurisées et ne seront jamais partagées.

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { verifyToken } from '@clerk/backend';
 import { config } from '../config';
 import { CustomError } from './errorHandler';
 
@@ -25,31 +26,70 @@ export const authenticate = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const authHeader = req.header('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {
       throw new CustomError('Access denied. No token provided.', 401);
     }
 
-    const decoded = jwt.verify(token, config.jwtSecret) as any;
-    
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, role: true, email: true, isActive: true }
-    });
+    // Try Clerk authentication first if configured
+    if (config.clerkSecretKey) {
+      try {
+        // Verify Clerk session token using verifyToken function
+        // verifyToken expects the token and secretKey option
+        const sessionClaims = await verifyToken(token, {
+          secretKey: config.clerkSecretKey
+        });
+        
+        if (sessionClaims && typeof sessionClaims === 'object' && 'sub' in sessionClaims) {
+          // Find user by Clerk ID (sub is the user ID in Clerk)
+          const user = await prisma.user.findFirst({
+            where: { 
+              clerkId: sessionClaims.sub as string,
+              isActive: true
+            },
+            select: { id: true, role: true, email: true, isActive: true }
+          });
 
-    if (!user || !user.isActive) {
-      throw new CustomError('Invalid token or user not found.', 401);
+          if (user) {
+            req.user = user;
+            return next();
+          }
+        }
+      } catch (clerkError: any) {
+        // If Clerk verification fails, try JWT (backward compatibility)
+        // Only log if it's not a token format error (expected for JWT tokens)
+        if (!clerkError?.message?.includes('Invalid') && !clerkError?.message?.includes('token')) {
+          console.log('Clerk verification failed, trying JWT:', clerkError.message);
+        }
+      }
     }
 
-    req.user = user;
-    next();
+    // Fallback to JWT authentication
+    try {
+      const decoded = jwt.verify(token, config.jwtSecret) as any;
+      
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: { id: true, role: true, email: true, isActive: true }
+      });
+
+      if (!user || !user.isActive) {
+        throw new CustomError('Invalid token or user not found.', 401);
+      }
+
+      req.user = user;
+      next();
+    } catch (jwtError) {
+      if (jwtError instanceof jwt.JsonWebTokenError) {
+        next(new CustomError('Invalid token.', 401));
+      } else {
+        next(jwtError);
+      }
+    }
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      next(new CustomError('Invalid token.', 401));
-    } else {
-      next(error);
-    }
+    next(error);
   }
 };
 

@@ -2,13 +2,29 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
+import { useClerk } from '@clerk/clerk-react'
 import { getLogoUrl } from '@/config/assets'
 import { useAuthStore } from '@/store/authStore'
 
 const Header: React.FC = () => {
   const { user, logout } = useAuthStore()
+  const { signOut } = useClerk()
   const { scrollY } = useScroll()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  
+  const handleLogout = async () => {
+    try {
+      // Sign out from Clerk if available
+      if (signOut) {
+        await signOut()
+      }
+    } catch (error) {
+      console.error('Clerk sign out error:', error)
+    }
+    // Clear local auth state
+    logout()
+    window.location.href = '/'
+  }
   
   // Fully transparent header - no background
 
@@ -65,10 +81,7 @@ const Header: React.FC = () => {
                   Dashboard
                 </Link>
                 <button
-                  onClick={() => {
-                    logout()
-                    window.location.href = '/'
-                  }}
+                  onClick={handleLogout}
                   className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg"
                   data-testid="user-menu"
                 >
@@ -168,7 +181,7 @@ const Header: React.FC = () => {
                   </Link>
                   <button
                     onClick={() => {
-                      logout()
+                      handleLogout()
                       setIsMobileMenuOpen(false)
                       window.location.href = '/'
                     }}

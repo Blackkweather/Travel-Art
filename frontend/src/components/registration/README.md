@@ -2,7 +2,7 @@
 
 ## 📋 What Was Created
 
-A complete, production-ready multi-step artist registration form for Club Med Live platform with:
+A complete, production-ready multi-step artist registration form for Travel Arts platform with:
 
 ### ✅ 3 Main Steps
 1. **Step 1: Basic Information** - Personal details, credentials, country, terms

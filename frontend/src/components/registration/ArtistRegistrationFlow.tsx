@@ -9,15 +9,11 @@ import StepIndicator from './StepIndicator';
 import Step1BasicInfo from './Step1BasicInfo';
 import Step2ArtisticCategory from './Step2ArtisticCategory';
 import Step3SubcategorySelection from './Step3SubcategorySelection';
-import Step4MediaRequirements from './Step4MediaRequirements';
-import Step1RoleSelection from './Step1RoleSelection';
-import { artistsApi } from '@/utils/api';
 import {
   ArtistRegistrationData,
   BasicInfo,
   ArtisticCategory,
-  SubcategoryInfo,
-  MediaRequirements
+  SubcategoryInfo
 } from '@/types/artistRegistration';
 
 const INITIAL_STATE: ArtistRegistrationData = {
@@ -44,14 +40,6 @@ const INITIAL_STATE: ArtistRegistrationData = {
     categoryType: '',
     specificCategory: '',
     domain: ''
-  },
-  media: {
-    profileImageUrl: '',
-    travelInstruments: [],
-    performanceLinks: [],
-    instagram: '',
-    facebook: '',
-    youtube: ''
   }
 };
 
@@ -60,14 +48,11 @@ const ArtistRegistrationFlow: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { register: registerUser } = useAuthStore();
-  const [role, setRole] = useState<'ARTIST' | 'HOTEL'>('ARTIST');
 
   const stepTitles = [
-    'Choisir un rôle',
     'Informations de base',
     'Catégorie artistique',
-    'Sous-catégories',
-    'Instruments & Liens'
+    'Sous-catégories'
   ];
 
   // Update basic info
@@ -85,20 +70,9 @@ const ArtistRegistrationFlow: React.FC = () => {
     setState(prev => ({ ...prev, subcategory: data }));
   }, []);
 
-  // Update media and requirements
-  const handleMediaChange = useCallback((data: MediaRequirements) => {
-    setState(prev => ({ ...prev, media: data }));
-  }, []);
-
   // Move to next step
   const handleNextStep = () => {
-    if (state.step === 1) {
-      if (role === 'HOTEL') {
-        navigate('/register?role=hotel');
-        return;
-      }
-    }
-    if (state.step < 5) {
+    if (state.step < 3) {
       setState(prev => ({ ...prev, step: prev.step + 1 }));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -112,23 +86,21 @@ const ArtistRegistrationFlow: React.FC = () => {
     }
   };
 
+  // Get auth store
+  const { register: registerAuth } = useAuthStore();
+
   // Submit the complete form
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
       // Validate all data before submission
       if (!state.basicInfo.stageName || !state.basicInfo.email || !state.basicInfo.password) {
-        toast.error('Veuillez compléter tous les champs obligatoires');
-        setIsLoading(false);
-        return;
-      }
-      if (!state.media.profileImageUrl) {
-        toast.error('La photo de profil est obligatoire');
+        toast.error('Please complete all required fields');
         setIsLoading(false);
         return;
       }
 
-      await registerUser({
+      const registrationData = {
         name: state.basicInfo.firstName + ' ' + state.basicInfo.lastName,
         stageName: state.basicInfo.stageName,
         email: state.basicInfo.email,
@@ -145,103 +117,89 @@ const ArtistRegistrationFlow: React.FC = () => {
           categoryType: state.subcategory.categoryType,
           specificCategory: state.subcategory.specificCategory,
           domain: state.subcategory.domain
-        },
-        profileImage: state.media.profileImageUrl,
-        travelInstruments: state.media.travelInstruments,
-        performanceLinks: state.media.performanceLinks,
-        socialLinks: {
-          instagram: state.media.instagram,
-          facebook: state.media.facebook,
-          youtube: state.media.youtube
         }
+      };
+
+      // Register user and automatically log them in
+      console.log('🚀 Starting registration...', { email: registrationData.email });
+      await registerAuth(registrationData);
+      console.log('✅ Registration completed!');
+
+      // Check auth state
+      const authState = useAuthStore.getState();
+      console.log('🔍 Auth state after registration:', {
+        isAuthenticated: authState.isAuthenticated,
+        hasToken: !!authState.token,
+        hasUser: !!authState.user
       });
 
-      const profilePayload = {
-        bio: `Artiste ${state.artisticCategory.mainCategory} (${state.subcategory.domain}). Instruments: ${state.media.travelInstruments.join(', ') || '—'}.`,
-        discipline: state.subcategory.domain || state.artisticCategory.mainCategory || 'Art',
-        priceRange: '$$', // Placeholder; can be refined later
-        images: JSON.stringify([]),
-        videos: JSON.stringify([]),
-        mediaUrls: JSON.stringify({
-          profileImageUrl: state.media.profileImageUrl,
-          travelInstruments: state.media.travelInstruments,
-          performanceLinks: state.media.performanceLinks,
-          socialLinks: {
-            instagram: state.media.instagram,
-            facebook: state.media.facebook,
-            youtube: state.media.youtube
-          },
-          categories: {
-            mainCategory: state.artisticCategory.mainCategory,
-            secondaryCategory: state.artisticCategory.secondaryCategory,
-            audienceType: state.artisticCategory.audienceType,
-            languages: state.artisticCategory.languages,
-            categoryType: state.subcategory.categoryType,
-            specificCategory: state.subcategory.specificCategory,
-            domain: state.subcategory.domain
-          }
-        })
-      };
-      await artistsApi.createProfile(profilePayload);
+      toast.success('Inscription réussie! Bienvenue sur Travel Arts');
 
-      toast.success('Inscription réussie! Bienvenue sur Club Med Live');
-
-      // Redirect to artist dashboard
-      navigate('/dashboard/artist');
-    } catch (error: unknown) {
-      const apiError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        console.log('🔄 Redirecting to dashboard...');
+        // Redirect to dashboard (DashboardRedirect will route to correct role-based dashboard)
+        navigate('/dashboard');
+      }, 500);
+    } catch (error: any) {
       const errorMessage =
-        apiError.response?.data?.error?.message ||
-        apiError.message ||
+        error.response?.data?.error?.message ||
+        error.message ||
         'Inscription échouée. Veuillez réessayer.';
       toast.error(errorMessage);
-      console.error('Registration error:', apiError);
+      console.error('Registration error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Progress checks can be derived inline per step when needed
+  // Check if user can proceed from step 1
+  const canProceedFromStep1 = state.basicInfo.stageName &&
+    state.basicInfo.firstName &&
+    state.basicInfo.lastName &&
+    state.basicInfo.email &&
+    state.basicInfo.password &&
+    state.basicInfo.country;
+
+  // Check if user can proceed from step 2
+  const canProceedFromStep2 = state.artisticCategory.mainCategory &&
+    state.artisticCategory.audienceType.length > 0 &&
+    state.artisticCategory.languages.length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-beige-50 via-white to-beige-50">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
       <Header />
 
       <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
         {/* Step Indicator */}
-        <div className="max-w-3xl mx-auto mb-12">
-          <StepIndicator currentStep={state.step} totalSteps={5} steps={stepTitles} />
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-3xl mx-auto mb-12"
+        >
+          <StepIndicator currentStep={state.step} totalSteps={3} steps={stepTitles} />
+        </motion.div>
 
         {/* Form Container */}
-        <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 md:p-10 border border-gray-100"
+        >
           <AnimatePresence mode="wait">
-            {/* Step 1: Role Selection */}
+            {/* Step 1: Basic Information */}
             {state.step === 1 && (
               <motion.div
-                key="step0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Step1RoleSelection
-                  role={role}
-                  onChange={setRole}
-                  onNext={handleNextStep}
-                  isLoading={isLoading}
-                />
-              </motion.div>
-            )}
-
-            {/* Step 2: Basic Information */}
-            {state.step === 2 && (
-              <motion.div
                 key="step1"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, x: -30, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 30, scale: 0.95 }}
+                transition={{ 
+                  duration: 0.4,
+                  ease: [0.4, 0, 0.2, 1]
+                }}
               >
                 <Step1BasicInfo
                   data={state.basicInfo}
@@ -252,14 +210,17 @@ const ArtistRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
 
-            {/* Step 3: Artistic Category */}
-            {state.step === 3 && (
+            {/* Step 2: Artistic Category */}
+            {state.step === 2 && (
               <motion.div
                 key="step2"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, x: -30, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 30, scale: 0.95 }}
+                transition={{ 
+                  duration: 0.4,
+                  ease: [0.4, 0, 0.2, 1]
+                }}
               >
                 <Step2ArtisticCategory
                   data={state.artisticCategory}
@@ -271,38 +232,22 @@ const ArtistRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
 
-            {/* Step 4: Subcategory Selection */}
-            {state.step === 4 && (
+            {/* Step 3: Subcategory Selection */}
+            {state.step === 3 && (
               <motion.div
                 key="step3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, x: -30, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 30, scale: 0.95 }}
+                transition={{ 
+                  duration: 0.4,
+                  ease: [0.4, 0, 0.2, 1]
+                }}
               >
                 <Step3SubcategorySelection
                   mainCategory={state.artisticCategory.mainCategory}
                   data={state.subcategory}
                   onChange={handleSubcategoryChange}
-                  onNext={handleNextStep}
-                  onBack={handlePreviousStep}
-                  isLoading={isLoading}
-                />
-              </motion.div>
-            )}
-
-            {/* Step 5: Media & Requirements */}
-            {state.step === 5 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Step4MediaRequirements
-                  data={state.media}
-                  onChange={handleMediaChange}
                   onNext={handleSubmit}
                   onBack={handlePreviousStep}
                   isLoading={isLoading}
@@ -310,7 +255,7 @@ const ArtistRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
 
         {/* Form Info */}
         <motion.div
@@ -322,7 +267,7 @@ const ArtistRegistrationFlow: React.FC = () => {
           <p className="text-sm text-gray-600">
             Vos informations sont sécurisées et ne seront jamais partagées.
             <br />
-            Besoin d&apos;aide&nbsp;? <a href="/contact" className="text-gold font-semibold hover:underline">Contactez-nous</a>
+            Avez besoin d'aide? <a href="/contact" className="text-gold font-semibold hover:underline">Contactez-nous</a>
           </p>
         </motion.div>
       </main>

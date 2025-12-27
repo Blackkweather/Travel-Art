@@ -168,14 +168,24 @@ const ArtistProfile: React.FC = () => {
           {/* Profile Image */}
           <div className="flex-shrink-0">
             <div className="relative">
-              <img
-                src={profileData.images[0] || '/placeholder-artist.jpg'}
-                alt={profileData.name}
-                className="w-48 h-48 rounded-xl object-cover bg-gray-200"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder-artist.jpg'
-                }}
-              />
+              <div className="w-48 h-48 rounded-xl overflow-hidden bg-gradient-to-br from-navy/10 to-gold/10 flex items-center justify-center">
+                {profileData.images && profileData.images.length > 0 ? (
+                  <img
+                    src={profileData.images[0]}
+                    alt={profileData.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <div className="w-24 h-24 mx-auto mb-2 rounded-full bg-gold/20 flex items-center justify-center">
+                      <span className="text-4xl font-serif font-bold text-gold">
+                        {profileData.name ? profileData.name.charAt(0).toUpperCase() : '?'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500">No photo</p>
+                  </div>
+                )}
+              </div>
               {isEditing && (
                 <button className="absolute bottom-2 right-2 bg-gold text-navy p-2 rounded-full hover:bg-gold/90 transition-colors">
                   <Camera className="w-4 h-4" />

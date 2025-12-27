@@ -6,6 +6,8 @@ import path from 'path';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
+import { clerkRoutes } from './routes/clerk';
+import { clerkWebhookRoutes } from './routes/clerk-webhook';
 import { quickAuthRoutes } from './routes/quick-auth';
 import { artistRoutes } from './routes/artists';
 import { hotelRoutes } from './routes/hotels';
@@ -89,6 +91,8 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Body parsing middleware
+// Note: Clerk webhook needs raw body for signature verification
+app.use('/api/webhooks/clerk', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -136,6 +140,8 @@ app.get('/api/health', async (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/clerk', clerkRoutes);
+app.use('/api/webhooks/clerk', clerkWebhookRoutes);
 app.use('/api/quick-auth', quickAuthRoutes);
 app.use('/api/artists', artistRoutes);
 app.use('/api/hotels', hotelRoutes);

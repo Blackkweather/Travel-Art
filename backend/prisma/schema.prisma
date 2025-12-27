@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -21,6 +22,7 @@ model User {
   country      String?
   language     String   @default("en")
   isActive     Boolean  @default(true)
+  clerkId      String?  @unique // Clerk user ID for authentication
 
   // Relations
   artist       Artist?
