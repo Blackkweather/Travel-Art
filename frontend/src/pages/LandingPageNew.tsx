@@ -101,7 +101,7 @@ const LandingPageNew: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       {/* HEADER - Club Med Style */}
       <motion.header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -323,7 +323,7 @@ const LandingPageNew: React.FC = () => {
 
       {/* HORIZONTAL CAROUSEL - Artists */}
       <section className="py-24 bg-cream overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6 overflow-hidden">
           <div className="flex justify-between items-center mb-12">
             <h2 className="text-5xl font-serif font-bold text-navy">
               Featured Artists
@@ -349,7 +349,7 @@ const LandingPageNew: React.FC = () => {
           {/* Scrollable Container */}
           <div 
             ref={carouselRef}
-            className="flex gap-6 overflow-x-scroll scrollbar-hide pb-4"
+            className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 -mx-6 px-6"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {artists.map((artist, index) => (
