@@ -267,41 +267,41 @@ const LandingPageNew: React.FC = () => {
       </section>
 
       {/* SPLIT-SCREEN SECTION - "Residence Live" Style with Scroll Animations */}
-      <section ref={splitScreenRef} className="relative bg-navy overflow-hidden py-20">
+      <section ref={splitScreenRef} className="relative bg-cream overflow-hidden py-8">
         {/* Scroll Container - Creates scroll space */}
-        <div ref={sectionContainerRef} className="relative bg-navy" style={{ height: '300vh' }}>
+        <div ref={sectionContainerRef} className="relative bg-cream" style={{ height: '300vh' }}>
           {/* Sticky Container - Stays in place while scrolling */}
-          <div className="sticky top-0 grid lg:grid-cols-2 min-h-screen overflow-hidden">
+          <div className="sticky top-8 grid lg:grid-cols-2 min-h-[calc(100vh-4rem)] rounded-3xl overflow-hidden max-w-7xl mx-auto shadow-2xl bg-cream">
             {/* Left Side - Text Content */}
-            <div className="flex flex-col justify-center p-8 lg:p-16 xl:p-24 bg-navy relative">
+            <div className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative">
               {/* Yellow Label */}
               <motion.div
-                className="mb-8"
+                className="inline-block mb-12"
                 initial={{ opacity: 0, y: 20 }}
                 animate={splitScreenInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                <div className="bg-gold text-navy px-5 py-2 font-bold text-sm inline-block rounded">
-                  TRAVEL ART EXPERIENCE
+                <div className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block rounded-lg">
+                  Travel Art Experience
                 </div>
               </motion.div>
               
               {/* Large Keywords - Yellow box moves to each */}
-              <div className="space-y-4 relative mb-12">
+              <div className="space-y-8 relative">
                 {/* Moving Yellow Highlight Box - Very slow and smooth */}
                 <motion.div
-                  className="absolute bg-gold/20 rounded -z-10"
+                  className="absolute bg-gold rounded-lg -z-10"
                   animate={{
                     top: activeKeyword === 0 ? '0%' : activeKeyword === 1 ? '33.33%' : '66.66%',
                     height: '33.33%',
                   }}
                   transition={{ 
-                    duration: 2.5,
-                    ease: [0.4, 0, 0.2, 1],
+                    duration: 2.5, // Very slow - 2.5 seconds
+                    ease: [0.4, 0, 0.2, 1], // Custom cubic-bezier for smooth motion
                   }}
                   style={{
-                    left: '-1rem',
-                    right: '-1rem',
+                    left: '-1.5rem',
+                    right: '-1.5rem',
                   }}
                 />
                 
@@ -309,15 +309,14 @@ const LandingPageNew: React.FC = () => {
                   <div
                     key={item.word}
                     ref={keywordRefs[i]}
-                    className="relative py-4"
+                    className="relative py-6"
                   >
                     <motion.h2 
-                      className={`text-5xl lg:text-6xl xl:text-7xl font-serif font-bold leading-tight ${
-                        activeKeyword === i ? 'text-gold' : 'text-white/30'
+                      className={`text-6xl lg:text-7xl font-serif font-bold leading-none ${
+                        activeKeyword === i ? 'text-navy' : 'text-navy/30'
                       }`}
                       animate={{
                         opacity: activeKeyword === i ? 1 : 0.3,
-                        x: activeKeyword === i ? 0 : -10,
                       }}
                       transition={{ 
                         duration: 1.2,
@@ -329,57 +328,27 @@ const LandingPageNew: React.FC = () => {
                   </div>
                 ))}
               </div>
-
-              {/* Description Text */}
-              <motion.p 
-                className="text-white/80 text-lg lg:text-xl leading-relaxed max-w-xl mb-8"
-                animate={{
-                  opacity: 1,
-                }}
-              >
-                {activeKeyword === 0 && "Access private performances and intimate artistic encounters reserved for discerning guests in the world's finest luxury hotels."}
-                {activeKeyword === 1 && "Every experience is handpicked by our team of cultural experts, ensuring authenticity and excellence in every moment."}
-                {activeKeyword === 2 && "Create memories that last a lifetime with performances and interactions you won't find anywhere else."}
-              </motion.p>
-
-              {/* CTA Button */}
-              <motion.div
-                animate={{ opacity: 1 }}
-              >
-                <Link 
-                  to="/experiences"
-                  className="inline-flex items-center bg-gold text-navy px-8 py-4 rounded-full font-semibold text-lg hover:bg-gold/90 transition-all shadow-xl group"
-                >
-                  Explore Experiences
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </motion.div>
             </div>
             
             {/* Right Side - Image with Very Smooth Transitions */}
-            <div className="relative overflow-hidden min-h-screen bg-navy">
+            <div className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl min-h-[calc(100vh-4rem)] bg-navy">
               {/* Multiple images that fade between each other - SLOW transitions */}
               {keywords.map((item, i) => (
-                <motion.div
+                <motion.img
                   key={i}
-                  className="absolute inset-0"
+                  src={item.image}
+                  alt={item.word}
+                  className="absolute inset-0 w-full h-full object-cover"
                   initial={{ opacity: i === 0 ? 1 : 0 }}
                   animate={{
                     opacity: activeKeyword === i ? 1 : 0,
-                    scale: activeKeyword === i ? 1 : 1.05,
+                    scale: activeKeyword === i ? 1 : 1.08,
                   }}
                   transition={{ 
-                    duration: 3,
-                    ease: [0.4, 0, 0.2, 1]
+                    duration: 3, // Very slow - 3 seconds for elegant crossfade
+                    ease: [0.4, 0, 0.2, 1] // Smooth cubic-bezier
                   }}
-                >
-                  <img
-                    src={item.image}
-                    alt={item.word}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-navy/20"></div>
-                </motion.div>
+                />
               ))}
             </div>
           </div>
