@@ -80,7 +80,9 @@ const DashboardRedirect = () => {
 
 function App() {
   const { isLoading, checkAuth, syncClerkUser } = useAuthStore()
-  const { isLoaded, isSignedIn, user: clerkUser, getToken } = useAuth()
+  const auth = useAuth()
+  const { isLoaded, isSignedIn, getToken } = auth
+  const clerkUser = isSignedIn ? (auth as any).user : null
   const location = useLocation()
 
   // Set up Clerk token getter for API client

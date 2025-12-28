@@ -543,7 +543,7 @@ const LandingPage: React.FC = () => {
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-navy/20 to-gold/10 flex items-center justify-center">
                     <img 
-                      src="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E"
+                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23f3f4f6' width='400' height='400'/%3E%3Cg transform='translate(200 200)'%3E%3Ccircle fill='%239ca3af' opacity='0.2' r='80'/%3E%3Cpath fill='%239ca3af' d='M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z'/%3E%3C/g%3E%3C/svg%3E"
                       alt="Artist Placeholder"
                       className="w-full h-full object-cover"
                     />

@@ -38,7 +38,8 @@ const ArtistRegistrationForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { isLoaded, signUp, setActive } = useSignUp();
-  const { user: clerkUser } = useAuth();
+  const auth = useAuth();
+  const clerkUser = auth.isSignedIn ? (auth as any).user : null;
   const { syncClerkUser } = useAuthStore();
 
   const stepTitles = ['Choose Role', 'Basic Info', 'Details'];
@@ -130,7 +131,7 @@ const ArtistRegistrationForm: React.FC = () => {
         }
       } else {
         // Handle incomplete sign-up (e.g., email verification required)
-        toast.info('Please check your email to verify your account');
+        toast('Please check your email to verify your account', { icon: 'ℹ️' });
       }
     } catch (error: any) {
       const errorMessage = error.errors?.[0]?.message || error.message || 'Registration failed';

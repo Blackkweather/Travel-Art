@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, X, Loader } from 'lucide-react';
-import { apiClient } from '@/utils/api';
+import axios from 'axios';
+import { getClerkToken } from '@/utils/clerkToken';
 import toast from 'react-hot-toast';
 
 interface ProfilePictureUploadProps {
@@ -51,9 +52,11 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
       const formData = new FormData();
       formData.append('profilePicture', file);
 
-      const response = await apiClient.post('/upload/profile-picture', formData, {
+      const token = await getClerkToken()
+      const response = await axios.post('/api/upload/profile-picture', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
 

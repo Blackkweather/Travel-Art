@@ -13,7 +13,8 @@ import { getLogoUrl } from '@/config/assets'
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const { isLoaded, signIn, setActive } = useSignIn()
-  const { user: clerkUser } = useAuth()
+  const auth = useAuth()
+  const clerkUser = auth.isSignedIn ? (auth as any).user : null
   const { syncClerkUser } = useAuthStore()
   const navigate = useNavigate()
 

@@ -189,7 +189,7 @@ const ArtistProfile: React.FC = () => {
     const confirmed = window.confirm('Supprimer votre profil artiste ?')
     if (!confirmed) return
     try {
-      await artistsApi.deleteProfile(profile.id)
+      await apiClient.delete(`/artists/${profile.id}`)
       toast.success('Profil artiste supprimé')
       setProfile(null)
       await fetchProfile()

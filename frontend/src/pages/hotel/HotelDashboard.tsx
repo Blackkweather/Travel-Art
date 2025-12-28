@@ -169,7 +169,7 @@ const HotelDashboard: React.FC = () => {
     const confirmed = window.confirm('Supprimer votre profil hôtel ?')
     if (!confirmed) return
     try {
-      await hotelsApi.deleteProfile(hotelId)
+      await apiClient.delete(`/hotels/${hotelId}`)
       toast.success('Profil hôtel supprimé')
       navigate('/')
     } catch (error: any) {

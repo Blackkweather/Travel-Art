@@ -36,6 +36,11 @@ const INITIAL_STATE: ArtistRegistrationData = {
     audienceType: [],
     languages: []
   },
+  media: {
+    profileImageUrl: '',
+    travelInstruments: [],
+    performanceLinks: []
+  },
   subcategory: {
     categoryType: '',
     specificCategory: '',
