@@ -239,13 +239,6 @@ const ExperienceDetailsPage: React.FC = () => {
                   <p className="text-sm text-gray-500">Capacity</p>
                   <p className="text-sm font-bold text-navy">{experience.capacity}</p>
                 </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Award className="w-6 h-6 text-gold" />
-                  </div>
-                  <p className="text-sm text-gray-500">Price</p>
-                  <p className="text-sm font-bold text-navy">{experience.price}</p>
-                </div>
               </div>
             </motion.div>
 
@@ -394,10 +387,6 @@ const ExperienceDetailsPage: React.FC = () => {
                 <div className="p-4 bg-gold/10 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Capacity</p>
                   <p className="font-semibold text-navy">{experience.capacity}</p>
-                </div>
-                <div className="p-4 bg-gold/10 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Price</p>
-                  <p className="font-semibold text-navy text-lg">{experience.price}</p>
                 </div>
               </div>
 
