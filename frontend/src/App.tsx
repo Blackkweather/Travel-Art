@@ -1,16 +1,21 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useAuth as useClerkAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
 import { setClerkTokenGetter } from '@/utils/clerkToken'
 
-// Conditionally import useAuth
-let useAuth: any
-try {
-  const clerkReact = await import('@clerk/clerk-react')
-  useAuth = clerkReact.useAuth
-} catch {
-  // Clerk not available, create a dummy hook
-  useAuth = () => ({ isLoaded: true, isSignedIn: false, getToken: null })
+// Safe wrapper for useAuth that won't crash if Clerk is not properly initialized
+const useSafeAuth = () => {
+  // Check if we're inside ClerkProvider by checking if VITE_CLERK_PUBLISHABLE_KEY exists
+  const hasClerkKey = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+  
+  if (!hasClerkKey) {
+    // Return dummy auth state if no Clerk key
+    return { isLoaded: true, isSignedIn: false, getToken: null, user: null }
+  }
+  
+  // Use actual Clerk auth if key exists
+  return useClerkAuth()
 }
 import { AnimatePresence } from 'framer-motion'
 import Layout from '@/components/Layout'
@@ -89,7 +94,7 @@ const DashboardRedirect = () => {
 
 function App() {
   const { isLoading, checkAuth, syncClerkUser } = useAuthStore()
-  const auth = useAuth()
+  const auth = useSafeAuth()
   const { isLoaded, isSignedIn, getToken } = auth
   const clerkUser = isSignedIn ? (auth as any).user : null
   const location = useLocation()
