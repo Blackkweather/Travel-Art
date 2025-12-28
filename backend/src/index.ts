@@ -98,8 +98,17 @@ app.use('/api/webhooks/clerk', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check endpoints
-app.get('/health', async (req, res) => {
+// Fast health check endpoint (no DB check - for keep-alive pings)
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Detailed health check with database
+app.get('/health/detailed', async (req, res) => {
   try {
     // Test database connection using Prisma
     const { prisma } = await import('./db');
@@ -108,7 +117,8 @@ app.get('/health', async (req, res) => {
       status: 'OK', 
       timestamp: new Date().toISOString(),
       database: 'connected',
-      method: 'prisma'
+      method: 'prisma',
+      uptime: process.uptime()
     });
   } catch (error: any) {
     res.status(503).json({ 
@@ -128,7 +138,8 @@ app.get('/api/health', async (req, res) => {
     res.json({ 
       status: 'ok',
       timestamp: new Date().toISOString(),
-      database: 'connected'
+      database: 'connected',
+      uptime: process.uptime()
     });
   } catch (error: any) {
     res.status(503).json({ 
@@ -232,9 +243,13 @@ process.on('SIGTERM', async () => {
 const PORT = config.port;
 // Only start server if not in test mode
 if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
+  const startTime = Date.now();
   app.listen(PORT, () => {
+    const startupTime = Date.now() - startTime;
     console.log(`🚀 Travel Art API server running on port ${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
+    console.log(`⚡ Startup time: ${startupTime}ms`);
+    console.log(`🌍 Environment: ${config.nodeEnv}`);
   });
 }
 
