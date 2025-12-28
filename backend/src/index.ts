@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import fs from 'fs';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
@@ -157,7 +158,28 @@ app.use('/api', commonRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Serve static files from the frontend build
-app.use(express.static(path.join(__dirname, '../../frontend/dist'), {
+// Try multiple path resolutions to handle different deployment scenarios
+const getFrontendDistPath = () => {
+  // Try relative to compiled backend (development/build)
+  const relativePath = path.join(__dirname, '../../frontend/dist');
+  // Try relative to project root (Render deployment)
+  const rootPath = path.join(process.cwd(), 'frontend/dist');
+  // Try absolute from project root if cwd is backend
+  const backendRootPath = path.join(process.cwd(), '../frontend/dist');
+  
+  // Check which path exists
+  if (fs.existsSync(relativePath)) return relativePath;
+  if (fs.existsSync(rootPath)) return rootPath;
+  if (fs.existsSync(backendRootPath)) return backendRootPath;
+  
+  // Default to relative path (will fail gracefully if doesn't exist)
+  return relativePath;
+};
+
+const frontendDistPath = getFrontendDistPath();
+console.log(`📁 Serving frontend from: ${frontendDistPath}`);
+
+app.use(express.static(frontendDistPath, {
   setHeaders: (res, filePath) => {
     // Set correct Content-Type for webmanifest files
     if (filePath.endsWith('.webmanifest')) {
@@ -172,7 +194,13 @@ app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
-  res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(500).json({ error: 'Frontend not found. Please ensure frontend is built.' });
+    }
+  });
 });
 
 // Error handling middleware (must be last)
