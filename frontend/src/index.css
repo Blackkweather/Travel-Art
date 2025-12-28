@@ -48,6 +48,16 @@
     @apply relative overflow-hidden rounded-xl shadow-medium transition-all duration-500 cursor-pointer;
   }
   
+  /* Scrollbar Hide - for horizontal carousels */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+  
   .card-experience:hover {
     @apply shadow-luxury transform scale-105;
   }

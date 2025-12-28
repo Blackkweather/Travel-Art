@@ -30,7 +30,7 @@ import PageTransition from './components/PageTransition'
 console.log('🔒 PasswordPopup imported:', typeof PasswordPopup)
 
 // Public pages
-import LandingPage from '@/pages/LandingPage'
+import LandingPage from '@/pages/LandingPageNew'
 import HowItWorksPage from '@/pages/HowItWorksPage'
 import PartnersPage from '@/pages/PartnersPage'
 import TopArtistsPage from '@/pages/TopArtistsPage'
