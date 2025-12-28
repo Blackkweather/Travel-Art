@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Calendar, Users, CreditCard, MapPin, Music, Heart } from 'lucide-react'
-import { hotelsApi, bookingsApi, artistsApi } from '@/utils/api'
+import { hotelsApi, bookingsApi, artistsApi, apiClient } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
