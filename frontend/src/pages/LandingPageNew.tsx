@@ -45,31 +45,38 @@ const LandingPageNew: React.FC = () => {
   useEffect(() => {
     const observers: IntersectionObserver[] = []
 
-    keywordRefs.forEach((ref, index) => {
-      if (!ref.current) return
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-              setActiveKeyword(index)
-            }
-          })
-        },
-        {
-          threshold: [0, 0.3, 0.5, 0.7, 1],
-          rootMargin: '-20% 0px -20% 0px'
+    // Wait a bit for refs to be ready
+    const timeout = setTimeout(() => {
+      keywordRefs.forEach((ref, index) => {
+        if (!ref.current) {
+          console.warn(`Keyword ref ${index} not found`)
+          return
         }
-      )
 
-      observer.observe(ref.current)
-      observers.push(observer)
-    })
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+                setActiveKeyword(index)
+              }
+            })
+          },
+          {
+            threshold: [0, 0.2, 0.3, 0.5, 0.7, 1],
+            rootMargin: '-10% 0px -10% 0px'
+          }
+        )
+
+        observer.observe(ref.current)
+        observers.push(observer)
+      })
+    }, 100)
 
     return () => {
+      clearTimeout(timeout)
       observers.forEach(observer => observer.disconnect())
     }
-  }, [])
+  }, [splitScreenInView])
 
   // Data state
   const [experiences, setExperiences] = useState<any[]>([])
@@ -261,33 +268,23 @@ const LandingPageNew: React.FC = () => {
       </section>
 
       {/* SPLIT-SCREEN SECTION - "Residence Live" Style with Scroll Animations */}
-      <section ref={splitScreenRef} className="relative min-h-[300vh] py-20">
-        {/* Sticky Container */}
-        <div className="sticky top-0 grid lg:grid-cols-2 min-h-screen rounded-3xl overflow-hidden">
+      <section ref={splitScreenRef} className="relative py-20 bg-white">
+        {/* Container with proper height */}
+        <div className="grid lg:grid-cols-2 min-h-[85vh] rounded-3xl overflow-hidden max-w-7xl mx-auto">
           {/* Left Side - Text Content */}
-          <motion.div 
-            className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative"
-            initial={{ opacity: 0, x: -50 }}
-            animate={splitScreenInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.8 }}
-          >
-            {/* Yellow Label - Static at top */}
-            <motion.div
-              className="inline-block mb-12"
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              animate={splitScreenInView ? { opacity: 1, scale: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
+          <div className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative">
+            {/* Yellow Label */}
+            <div className="inline-block mb-12">
               <div className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block rounded-lg">
                 Travel Art Experience
               </div>
-            </motion.div>
+            </div>
             
             {/* Large Keywords - Yellow box moves to each */}
             <div className="space-y-6 relative">
               {/* Moving Yellow Highlight Box */}
               <motion.div
-                className="absolute bg-gold rounded-lg -z-10"
+                className="absolute bg-gold/30 rounded-lg -z-10"
                 animate={{
                   top: activeKeyword === 0 ? '0%' : activeKeyword === 1 ? '33.33%' : '66.66%',
                   height: '33.33%',
@@ -309,30 +306,22 @@ const LandingPageNew: React.FC = () => {
                 <div
                   key={item.word}
                   ref={keywordRefs[i]}
-                  className="relative"
+                  className="relative py-4"
                 >
-                  <motion.h2 
+                  <h2 
                     className={`text-6xl lg:text-7xl font-serif font-bold leading-none transition-colors duration-500 ${
                       activeKeyword === i ? 'text-navy' : 'text-navy/30'
                     }`}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={splitScreenInView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.6, delay: 0.3 + (i * 0.1) }}
                   >
                     {item.word}
-                  </motion.h2>
+                  </h2>
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
           
           {/* Right Side - Image with Smooth Transitions */}
-          <motion.div 
-            className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl"
-            initial={{ opacity: 0, x: 50 }}
-            animate={splitScreenInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
+          <div className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl min-h-[85vh]">
             {/* Multiple images that fade between each other */}
             {keywords.map((item, i) => (
               <motion.img
@@ -351,13 +340,8 @@ const LandingPageNew: React.FC = () => {
                 }}
               />
             ))}
-          </motion.div>
+          </div>
         </div>
-        
-        {/* Spacer divs to create scroll space for each keyword */}
-        {keywords.map((_, i) => (
-          <div key={i} className="h-screen" />
-        ))}
       </section>
 
       {/* EXPERIENCES GRID */}
