@@ -80,8 +80,17 @@ const DashboardRedirect = () => {
 
 function App() {
   const { isLoading, checkAuth, syncClerkUser } = useAuthStore()
-  const auth = useAuth()
-  const { isLoaded, isSignedIn, getToken } = auth
+  
+  // Safely use Clerk hooks - will return null if not available
+  let auth: any = { isLoaded: true, isSignedIn: false, getToken: null }
+  try {
+    auth = useAuth()
+  } catch (error) {
+    // Clerk not available, use defaults
+    console.log('Clerk not available, auth features disabled')
+  }
+  
+  const { isLoaded = true, isSignedIn = false, getToken = null } = auth || {}
   const clerkUser = isSignedIn ? (auth as any).user : null
   const location = useLocation()
 
