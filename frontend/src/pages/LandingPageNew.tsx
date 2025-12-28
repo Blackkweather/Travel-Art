@@ -269,9 +269,9 @@ const LandingPageNew: React.FC = () => {
       {/* SPLIT-SCREEN SECTION - "Residence Live" Style with Scroll Animations */}
       <section ref={splitScreenRef} className="relative bg-cream overflow-hidden py-8">
         {/* Scroll Container - Creates scroll space */}
-        <div ref={sectionContainerRef} className="relative" style={{ height: '300vh' }}>
+        <div ref={sectionContainerRef} className="relative bg-cream" style={{ height: '300vh' }}>
           {/* Sticky Container - Stays in place while scrolling */}
-          <div className="sticky top-8 grid lg:grid-cols-2 min-h-[calc(100vh-4rem)] rounded-3xl overflow-hidden max-w-7xl mx-auto shadow-2xl">
+          <div className="sticky top-8 grid lg:grid-cols-2 min-h-[calc(100vh-4rem)] rounded-3xl overflow-hidden max-w-7xl mx-auto shadow-2xl bg-cream">
             {/* Left Side - Text Content */}
             <div className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative">
               {/* Yellow Label */}
