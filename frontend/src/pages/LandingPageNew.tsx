@@ -157,7 +157,7 @@ const LandingPageNew: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-cream overflow-x-hidden">
       {/* HEADER - Club Med Style */}
       <motion.header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -267,11 +267,11 @@ const LandingPageNew: React.FC = () => {
       </section>
 
       {/* SPLIT-SCREEN SECTION - "Residence Live" Style with Scroll Animations */}
-      <section ref={splitScreenRef} className="relative bg-white overflow-hidden">
+      <section ref={splitScreenRef} className="relative bg-cream overflow-hidden py-8">
         {/* Scroll Container - Creates scroll space */}
         <div ref={sectionContainerRef} className="relative" style={{ height: '300vh' }}>
           {/* Sticky Container - Stays in place while scrolling */}
-          <div className="sticky top-0 grid lg:grid-cols-2 min-h-screen rounded-3xl overflow-hidden max-w-7xl mx-auto">
+          <div className="sticky top-8 grid lg:grid-cols-2 min-h-[calc(100vh-4rem)] rounded-3xl overflow-hidden max-w-7xl mx-auto shadow-2xl">
             {/* Left Side - Text Content */}
             <div className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative">
               {/* Yellow Label */}
@@ -288,7 +288,7 @@ const LandingPageNew: React.FC = () => {
               
               {/* Large Keywords - Yellow box moves to each */}
               <div className="space-y-8 relative">
-                {/* Moving Yellow Highlight Box - Smooth and slow */}
+                {/* Moving Yellow Highlight Box - Very slow and smooth */}
                 <motion.div
                   className="absolute bg-gold rounded-lg -z-10"
                   animate={{
@@ -296,7 +296,7 @@ const LandingPageNew: React.FC = () => {
                     height: '33.33%',
                   }}
                   transition={{ 
-                    duration: 1.5, 
+                    duration: 2.5, // Very slow - 2.5 seconds
                     ease: [0.4, 0, 0.2, 1], // Custom cubic-bezier for smooth motion
                   }}
                   style={{
@@ -331,7 +331,7 @@ const LandingPageNew: React.FC = () => {
             </div>
             
             {/* Right Side - Image with Very Smooth Transitions */}
-            <div className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl min-h-screen">
+            <div className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl min-h-[calc(100vh-4rem)] bg-navy">
               {/* Multiple images that fade between each other - SLOW transitions */}
               {keywords.map((item, i) => (
                 <motion.img
@@ -345,7 +345,7 @@ const LandingPageNew: React.FC = () => {
                     scale: activeKeyword === i ? 1 : 1.08,
                   }}
                   transition={{ 
-                    duration: 2, // Much slower - 2 seconds
+                    duration: 3, // Very slow - 3 seconds for elegant crossfade
                     ease: [0.4, 0, 0.2, 1] // Smooth cubic-bezier
                   }}
                 />
@@ -356,7 +356,7 @@ const LandingPageNew: React.FC = () => {
       </section>
 
       {/* EXPERIENCES GRID */}
-      <section ref={experiencesRef} className="py-24 bg-white">
+      <section ref={experiencesRef} className="py-24 bg-gradient-to-b from-cream via-white to-cream">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
             className="text-center mb-16"
