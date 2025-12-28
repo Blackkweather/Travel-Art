@@ -40,43 +40,42 @@ const LandingPageNew: React.FC = () => {
 
   // Refs for each keyword to detect scroll position
   const keywordRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
+  const sectionContainerRef = useRef<HTMLDivElement>(null)
 
-  // Scroll-based keyword detection using Intersection Observer
+  // Scroll-based keyword detection using scroll progress
   useEffect(() => {
-    const observers: IntersectionObserver[] = []
+    const handleScroll = () => {
+      const section = sectionContainerRef.current
+      if (!section) return
 
-    // Wait a bit for refs to be ready
-    const timeout = setTimeout(() => {
-      keywordRefs.forEach((ref, index) => {
-        if (!ref.current) {
-          console.warn(`Keyword ref ${index} not found`)
-          return
-        }
-
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
-                setActiveKeyword(index)
-              }
-            })
-          },
-          {
-            threshold: [0, 0.2, 0.3, 0.5, 0.7, 1],
-            rootMargin: '-10% 0px -10% 0px'
-          }
-        )
-
-        observer.observe(ref.current)
-        observers.push(observer)
-      })
-    }, 100)
-
-    return () => {
-      clearTimeout(timeout)
-      observers.forEach(observer => observer.disconnect())
+      const rect = section.getBoundingClientRect()
+      const sectionTop = rect.top
+      const sectionHeight = rect.height
+      const viewportHeight = window.innerHeight
+      
+      // Calculate scroll progress through the section
+      // When section is at top of viewport, progress = 0
+      // When section has scrolled past, progress = 1
+      const scrollProgress = Math.max(0, Math.min(1, 
+        (viewportHeight - sectionTop) / (sectionHeight + viewportHeight)
+      ))
+      
+      // Determine active keyword based on scroll progress
+      // Divide into 3 equal parts for 3 keywords
+      if (scrollProgress < 0.33) {
+        setActiveKeyword(0) // Exclusive
+      } else if (scrollProgress < 0.66) {
+        setActiveKeyword(1) // Curated
+      } else {
+        setActiveKeyword(2) // Unforgettable
+      }
     }
-  }, [splitScreenInView])
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Initial call
+    
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Data state
   const [experiences, setExperiences] = useState<any[]>([])
@@ -268,78 +267,90 @@ const LandingPageNew: React.FC = () => {
       </section>
 
       {/* SPLIT-SCREEN SECTION - "Residence Live" Style with Scroll Animations */}
-      <section ref={splitScreenRef} className="relative py-20 bg-white">
-        {/* Container with proper height */}
-        <div className="grid lg:grid-cols-2 min-h-[85vh] rounded-3xl overflow-hidden max-w-7xl mx-auto">
-          {/* Left Side - Text Content */}
-          <div className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative">
-            {/* Yellow Label */}
-            <div className="inline-block mb-12">
-              <div className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block rounded-lg">
-                Travel Art Experience
+      <section ref={splitScreenRef} className="relative bg-white overflow-hidden">
+        {/* Scroll Container - Creates scroll space */}
+        <div ref={sectionContainerRef} className="relative" style={{ height: '300vh' }}>
+          {/* Sticky Container - Stays in place while scrolling */}
+          <div className="sticky top-0 grid lg:grid-cols-2 min-h-screen rounded-3xl overflow-hidden max-w-7xl mx-auto">
+            {/* Left Side - Text Content */}
+            <div className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative">
+              {/* Yellow Label */}
+              <motion.div
+                className="inline-block mb-12"
+                initial={{ opacity: 0, y: 20 }}
+                animate={splitScreenInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <div className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block rounded-lg">
+                  Travel Art Experience
+                </div>
+              </motion.div>
+              
+              {/* Large Keywords - Yellow box moves to each */}
+              <div className="space-y-8 relative">
+                {/* Moving Yellow Highlight Box - Smooth and slow */}
+                <motion.div
+                  className="absolute bg-gold rounded-lg -z-10"
+                  animate={{
+                    top: activeKeyword === 0 ? '0%' : activeKeyword === 1 ? '33.33%' : '66.66%',
+                    height: '33.33%',
+                  }}
+                  transition={{ 
+                    duration: 1.5, 
+                    ease: [0.4, 0, 0.2, 1], // Custom cubic-bezier for smooth motion
+                  }}
+                  style={{
+                    left: '-1.5rem',
+                    right: '-1.5rem',
+                  }}
+                />
+                
+                {keywords.map((item, i) => (
+                  <div
+                    key={item.word}
+                    ref={keywordRefs[i]}
+                    className="relative py-6"
+                  >
+                    <motion.h2 
+                      className={`text-6xl lg:text-7xl font-serif font-bold leading-none ${
+                        activeKeyword === i ? 'text-navy' : 'text-navy/30'
+                      }`}
+                      animate={{
+                        opacity: activeKeyword === i ? 1 : 0.3,
+                      }}
+                      transition={{ 
+                        duration: 1.2,
+                        ease: [0.4, 0, 0.2, 1]
+                      }}
+                    >
+                      {item.word}
+                    </motion.h2>
+                  </div>
+                ))}
               </div>
             </div>
             
-            {/* Large Keywords - Yellow box moves to each */}
-            <div className="space-y-6 relative">
-              {/* Moving Yellow Highlight Box */}
-              <motion.div
-                className="absolute bg-gold/30 rounded-lg -z-10"
-                animate={{
-                  top: activeKeyword === 0 ? '0%' : activeKeyword === 1 ? '33.33%' : '66.66%',
-                  height: '33.33%',
-                }}
-                transition={{ 
-                  duration: 0.8, 
-                  ease: [0.25, 0.1, 0.25, 1],
-                  type: "spring",
-                  stiffness: 100,
-                  damping: 20
-                }}
-                style={{
-                  left: '-1rem',
-                  right: '-1rem',
-                }}
-              />
-              
+            {/* Right Side - Image with Very Smooth Transitions */}
+            <div className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl min-h-screen">
+              {/* Multiple images that fade between each other - SLOW transitions */}
               {keywords.map((item, i) => (
-                <div
-                  key={item.word}
-                  ref={keywordRefs[i]}
-                  className="relative py-4"
-                >
-                  <h2 
-                    className={`text-6xl lg:text-7xl font-serif font-bold leading-none transition-colors duration-500 ${
-                      activeKeyword === i ? 'text-navy' : 'text-navy/30'
-                    }`}
-                  >
-                    {item.word}
-                  </h2>
-                </div>
+                <motion.img
+                  key={i}
+                  src={item.image}
+                  alt={item.word}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  initial={{ opacity: i === 0 ? 1 : 0 }}
+                  animate={{
+                    opacity: activeKeyword === i ? 1 : 0,
+                    scale: activeKeyword === i ? 1 : 1.08,
+                  }}
+                  transition={{ 
+                    duration: 2, // Much slower - 2 seconds
+                    ease: [0.4, 0, 0.2, 1] // Smooth cubic-bezier
+                  }}
+                />
               ))}
             </div>
-          </div>
-          
-          {/* Right Side - Image with Smooth Transitions */}
-          <div className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl min-h-[85vh]">
-            {/* Multiple images that fade between each other */}
-            {keywords.map((item, i) => (
-              <motion.img
-                key={i}
-                src={item.image}
-                alt={item.word}
-                className="absolute inset-0 w-full h-full object-cover"
-                initial={{ opacity: i === 0 ? 1 : 0 }}
-                animate={{
-                  opacity: activeKeyword === i ? 1 : 0,
-                  scale: activeKeyword === i ? 1 : 1.05,
-                }}
-                transition={{ 
-                  duration: 1, 
-                  ease: [0.25, 0.1, 0.25, 1]
-                }}
-              />
-            ))}
           </div>
         </div>
       </section>
