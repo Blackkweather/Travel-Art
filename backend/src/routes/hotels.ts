@@ -71,14 +71,15 @@ router.get('/', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthR
 
 // Validation schemas
 const hotelProfileSchema = z.object({
-  name: z.string().min(2).max(100),
-  description: z.string().min(10).max(1000),
-  location: z.string(), // JSON string
+  name: z.string().min(2).max(100).optional(),
+  description: z.string().min(10).max(1000).optional(),
+  location: z.string().optional(), // JSON string
   contactPhone: z.string().optional(),
   images: z.string().optional(), // JSON string
   performanceSpots: z.string().optional(), // JSON string
   rooms: z.string().optional(), // JSON string
-  repName: z.string().optional()
+  repName: z.string().optional(),
+  profilePicture: z.string().optional()
 });
 
 const roomAvailabilitySchema = z.object({
@@ -340,7 +341,117 @@ router.get('/:id', asyncHandler(async (req, res) => {
   });
 }));
 
-// Create or update hotel profile
+// Get current user's hotel profile
+router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const hotel = await prisma.hotel.findUnique({
+    where: { userId: req.user!.id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          country: true,
+          createdAt: true
+        }
+      },
+      availabilities: {
+        where: {
+          dateFrom: { gte: new Date() }
+        },
+        orderBy: { dateFrom: 'asc' }
+      }
+    }
+  });
+
+  if (!hotel) {
+    throw new CustomError('Hotel profile not found', 404);
+  }
+
+  // Parse JSON fields
+  let location = null;
+  let images = [];
+  let performanceSpots = [];
+  let rooms = [];
+  
+  if (hotel.location) {
+    try {
+      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
+    } catch (e) {
+      location = null;
+    }
+  }
+  
+  if (hotel.images) {
+    try {
+      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
+    } catch (e) {
+      images = [];
+    }
+  }
+  
+  if (hotel.performanceSpots) {
+    try {
+      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
+    } catch (e) {
+      performanceSpots = [];
+    }
+  }
+  
+  if (hotel.rooms) {
+    try {
+      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
+    } catch (e) {
+      rooms = [];
+    }
+  }
+
+  res.json({
+    success: true,
+    data: {
+      ...hotel,
+      location,
+      images,
+      performanceSpots,
+      rooms
+    }
+  });
+}));
+
+// Update hotel profile (own profile)
+router.put('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const profileData = hotelProfileSchema.parse(req.body);
+
+  const hotel = await prisma.hotel.findUnique({
+    where: { userId: req.user!.id }
+  });
+
+  if (!hotel) {
+    throw new CustomError('Hotel profile not found', 404);
+  }
+
+  const updatedHotel = await prisma.hotel.update({
+    where: { id: hotel.id },
+    data: profileData,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          country: true
+        }
+      }
+    }
+  });
+
+  res.json({
+    success: true,
+    data: updatedHotel
+  });
+}));
+
+// Create or update hotel profile (legacy endpoint for backward compatibility)
 router.post('/', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
   const profileData = hotelProfileSchema.parse(req.body);
 

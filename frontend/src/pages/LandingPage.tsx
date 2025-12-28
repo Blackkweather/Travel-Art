@@ -104,54 +104,8 @@ const LandingPage: React.FC = () => {
     return "Music"
   }
 
-  // Fallback experiences (used if API fails)
-  const fallbackExperiences = [
-    {
-      id: 1,
-      title: "Rooftop Jazz Sessions",
-      description: "Intimate performances under the stars",
-      image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-      category: "Music"
-    },
-    {
-      id: 2,
-      title: "Art Gallery Exhibitions",
-      description: "Curated visual experiences",
-      image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-      category: "Visual Arts"
-    },
-    {
-      id: 3,
-      title: "Sunset Photography",
-      description: "Capture magical moments",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-      category: "Photography"
-    },
-    {
-      id: 4,
-      title: "Live Performances",
-      description: "Theater and dance shows",
-      image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-      category: "Performance"
-    },
-    {
-      id: 5,
-      title: "Culinary Arts",
-      description: "Interactive cooking experiences",
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-      category: "Culinary"
-    },
-    {
-      id: 6,
-      title: "Wellness Sessions",
-      description: "Mindfulness and relaxation",
-      image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-      category: "Wellness"
-    }
-  ]
-
-  // Experience grid data - fetched from database
-  const [experiences, setExperiences] = useState(fallbackExperiences)
+  // Experience grid data - fetched from database only (no fallback)
+  const [experiences, setExperiences] = useState<any[]>([])
 
   // Steps data
   const steps = [
@@ -175,80 +129,14 @@ const LandingPage: React.FC = () => {
     }
   ]
 
-  // Showcase data - fetch from API with fallback
-  const [artists, setArtists] = useState([
-    {
-      id: 1,
-      name: "Elena Rodriguez",
-      specialty: "Jazz Saxophonist",
-      image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      rating: 4.9,
-      bookings: 52,
-      location: "Paris, France"
-    },
-    {
-      id: 2,
-      name: "Marcus Chen",
-      specialty: "Visual Artist",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      rating: 4.8,
-      bookings: 35,
-      location: "Tokyo, Japan"
-    },
-    {
-      id: 3,
-      name: "Sophie Laurent",
-      specialty: "Photographer",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      rating: 4.9,
-      bookings: 48,
-      location: "New York, USA"
-    },
-    {
-      id: 4,
-      name: "David Kim",
-      specialty: "DJ & Producer",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      rating: 4.7,
-      bookings: 28,
-      location: "Ibiza, Spain"
-    }
-  ])
+  // Showcase data - fetch from API only (no fallback)
+  const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
+  
+  const [artists, setArtists] = useState<any[]>([])
 
-  const [hotels, setHotels] = useState([
-    {
-      id: 1,
-      name: "The Ritz Paris",
-      location: "Paris, France",
-      image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      rating: 5.0,
-      features: ["Rooftop Terrace", "Art Gallery", "Live Music"]
-    },
-    {
-      id: 2,
-      name: "Aman Tokyo",
-      location: "Tokyo, Japan",
-      image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      rating: 4.9,
-      features: ["Sky Lounge", "Cultural Events", "Wellness Center"]
-    },
-    {
-      id: 3,
-      name: "The Plaza New York",
-      location: "New York, USA",
-      image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      rating: 4.8,
-      features: ["Grand Ballroom", "Art Collection", "Live Performances"]
-    },
-    {
-      id: 4,
-      name: "Ushuaïa Ibiza",
-      location: "Ibiza, Spain",
-      image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      rating: 4.7,
-      features: ["Beach Club", "DJ Sets", "Sunset Views"]
-    }
-  ])
+  const hotelPlaceholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3Crect x="170" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="170" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="175" y="190" width="50" height="30" rx="3"/%3E%3C/g%3E%3C/svg%3E'
+  
+  const [hotels, setHotels] = useState<any[]>([])
 
   // Fetch artists and hotels from API
   useEffect(() => {
@@ -265,17 +153,31 @@ const LandingPage: React.FC = () => {
             : []
           
           if (apiArtists.length > 0) {
-            const formattedArtists = apiArtists.map((artist: any) => ({
-              id: artist.id || artist.artistId || Math.random(),
-              name: artist.user?.name || artist.name || 'Unknown Artist',
-              specialty: artist.discipline || artist.specialty || 'Artist',
-              image: Array.isArray(artist.images) && artist.images[0] 
-                ? artist.images[0] 
-                : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-              rating: artist.averageRating || artist.rating || 4.5,
-              bookings: artist.bookingCount || artist.totalBookings || 0,
-              location: artist.user?.country || artist.location || 'Unknown'
-            }))
+            const formattedArtists = apiArtists.map((artist: any) => {
+              // Parse images if they're a string, otherwise use array directly
+              let images: string[] = []
+              if (artist.images) {
+                try {
+                  images = Array.isArray(artist.images) 
+                    ? artist.images 
+                    : (typeof artist.images === 'string' ? JSON.parse(artist.images) : [])
+                } catch (e) {
+                  images = []
+                }
+              }
+              
+              return {
+                id: artist.id || artist.artistId || Math.random(),
+                name: artist.user?.name || artist.name || 'Unknown Artist',
+                specialty: artist.discipline || artist.specialty || 'Artist',
+                image: images && images.length > 0 
+                  ? images[0] 
+                  : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E',
+                rating: artist.averageRating || artist.rating || 4.5,
+                bookings: artist.bookingCount || artist.totalBookings || 0,
+                location: artist.user?.country || artist.location || 'Unknown'
+              }
+            })
             setArtists(formattedArtists)
           }
         }
@@ -287,31 +189,51 @@ const LandingPage: React.FC = () => {
           
           if (apiHotels.length > 0) {
             const formattedHotels = apiHotels.map((hotel: any) => {
-              const location = hotel.location 
-                ? (typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location)
-                : {}
+              // Parse location safely
+              let location: any = {}
+              if (hotel.location) {
+                try {
+                  location = typeof hotel.location === 'string' 
+                    ? JSON.parse(hotel.location) 
+                    : hotel.location
+                } catch (e) {
+                  location = {}
+                }
+              }
+              
+              // Parse images if they're a string, otherwise use array directly
+              let images: string[] = []
+              if (hotel.images) {
+                try {
+                  images = Array.isArray(hotel.images) 
+                    ? hotel.images 
+                    : (typeof hotel.images === 'string' ? JSON.parse(hotel.images) : [])
+                } catch (e) {
+                  images = []
+                }
+              }
               
               return {
                 id: hotel.id || Math.random(),
                 name: hotel.name || 'Hotel',
                 location: location.city 
                   ? `${location.city}, ${location.country || ''}`.trim()
-                  : hotel.location || 'Unknown',
-                image: Array.isArray(hotel.images) && hotel.images[0]
-                  ? hotel.images[0]
-                  : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                  : (location.country || hotel.user?.country || 'Unknown'),
+                image: images && images.length > 0
+                  ? images[0]
+                  : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3Crect x="170" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="170" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="175" y="190" width="50" height="30" rx="3"/%3E%3C/g%3E%3C/svg%3E',
                 rating: hotel.averageRating || hotel.rating || 4.5,
                 features: Array.isArray(hotel.performanceSpots) && hotel.performanceSpots.length > 0
                   ? hotel.performanceSpots.slice(0, 3).map((spot: any) => spot.name || spot)
-                  : ['Premium Venue', 'Art Space', 'Live Events']
+                  : []
               }
             })
             setHotels(formattedHotels)
           }
         }
-      } catch (error) {
-        // Silently fail and use fallback data
-        console.warn('Failed to fetch landing page data, using fallback:', error)
+        } catch (error) {
+        // Silently fail - no fallback data
+        console.warn('Failed to fetch landing page data:', error)
       }
     }
 
@@ -340,20 +262,12 @@ const LandingPage: React.FC = () => {
               images = []
             }
             
-            // Get first image or use fallback based on category
             const category = inferCategory(trip.title || '', trip.description || '')
-            const fallbackImageMap: Record<string, string> = {
-              'Music': 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
-              'Visual Arts': 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
-              'Photography': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
-              'Performance': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
-              'Culinary': 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
-              'Wellness': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80'
-            }
             
+            // Only use image if it exists in database
             const image = images && images.length > 0 
               ? images[0] 
-              : fallbackImageMap[category] || fallbackImageMap['Music']
+              : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3C/g%3E%3C/svg%3E'
             
             // Create short description from full description (first 50 chars)
             const shortDescription = trip.description 
@@ -373,42 +287,17 @@ const LandingPage: React.FC = () => {
             setExperiences(formattedExperiences)
           }
         }
-      } catch (error) {
-        // Silently fail and use fallback data
-        console.warn('Failed to fetch experiences from trips API, using fallback:', error)
+        } catch (error) {
+        // Silently fail - no fallback data
+        console.warn('Failed to fetch experiences from trips API:', error)
       }
     }
 
     fetchExperiences()
   }, [])
 
-  // Journal stories data
-  const stories = [
-    {
-      id: 1,
-      title: "Behind the Scenes: Jazz at The Ritz",
-      excerpt: "Discover how Elena Rodriguez created an unforgettable rooftop jazz experience...",
-      image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      category: "Music",
-      date: "Dec 15, 2024"
-    },
-    {
-      id: 2,
-      title: "Art Meets Hospitality in Tokyo",
-      excerpt: "Marcus Chen's visual art exhibition transformed Aman Tokyo's lobby...",
-      image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      category: "Visual Arts",
-      date: "Dec 12, 2024"
-    },
-    {
-      id: 3,
-      title: "Sunset Photography Masterclass",
-      excerpt: "Sophie Laurent's photography workshop captured magical moments...",
-      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      category: "Photography",
-      date: "Dec 10, 2024"
-    }
-  ]
+  // Journal stories data - no static fallback (will be fetched from DB in future)
+  const stories: any[] = []
 
   return (
     <div className="min-h-screen bg-cream">
@@ -486,15 +375,31 @@ const LandingPage: React.FC = () => {
           className="absolute inset-0 z-0"
           style={{ y: heroY }}
         >
+          {/* Background Image - Optimized size and preloaded */}
           <img 
-            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
-            alt="Luxury hotel rooftop with city view" 
+            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=75"
+            alt="Luxury hotel rooftop"
             className="w-full h-full object-cover"
             style={{ minHeight: '100vh' }}
-            loading="eager"
             fetchPriority="high"
+            onError={(e) => {
+              // Fallback to gradient if image fails
+              const target = e.target as HTMLImageElement
+              target.style.display = 'none'
+              const gradientDiv = target.nextElementSibling as HTMLElement
+              if (gradientDiv) gradientDiv.style.display = 'block'
+            }}
           />
-          {/* Gradient Overlay - Transparent to match header */}
+          <div 
+            className="w-full h-full bg-gradient-to-br from-navy via-navy/90 to-gold/20"
+            style={{ 
+              minHeight: '100vh',
+              display: 'none'
+            }}
+          />
+          {/* Gradient Overlay - Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-br from-navy/70 via-navy/60 to-gold/20"></div>
+          {/* Additional subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-navy/20 via-transparent to-gold/10"></div>
         </motion.div>
 
@@ -624,18 +529,26 @@ const LandingPage: React.FC = () => {
               animate={aboutInView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <div className="relative">
-                <img 
-                  src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                  alt="Artist performing at luxury hotel" 
-                  className="w-full h-64 sm:h-80 md:h-96 object-cover rounded-xl shadow-luxury"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy/20 to-transparent rounded-xl"></div>
-                <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 text-white">
-                  <p className="text-xs sm:text-sm font-medium">Live Performance</p>
-                  <p className="text-xs opacity-80">The Ritz Paris</p>
-                </div>
+              <div className="relative w-full h-64 sm:h-80 md:h-96 rounded-xl shadow-luxury overflow-hidden">
+                {artists.length > 0 && artists[0]?.image ? (
+                  <img 
+                    src={artists[0].image} 
+                    alt="Featured Artist"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-navy/20 to-gold/10 flex items-center justify-center">
+                    <img 
+                      src="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E"
+                      alt="Artist Placeholder"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -657,8 +570,9 @@ const LandingPage: React.FC = () => {
             </p>
           </motion.div>
 
+          {experiences.length > 0 ? (
             <div className="experience-grid" data-testid="feature-grid">
-            {experiences.map((experience, index) => (
+              {experiences.map((experience, index) => (
               <Link
                 key={experience.id}
                 to={`/experience/${experience.id}`}
@@ -675,6 +589,7 @@ const LandingPage: React.FC = () => {
                       src={experience.image} 
                       alt={experience.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="absolute top-4 left-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-bold">
@@ -692,8 +607,13 @@ const LandingPage: React.FC = () => {
                   </div>
                 </motion.div>
               </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Check back soon to discover our immersive experiences.</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -762,9 +682,10 @@ const LandingPage: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="carousel-container">
-            <div className="carousel-track carousel-auto-scroll">
-              {[...artists, ...artists].map((artist, index) => (
+          {artists.length > 0 ? (
+            <div className="carousel-container">
+              <div className="carousel-track carousel-auto-scroll">
+                {[...artists, ...artists].map((artist, index) => (
                 <div key={`${artist.id}-${index}`} className="carousel-item w-80">
                   <div className="card-showcase">
                     <div className="relative mb-4">
@@ -772,6 +693,10 @@ const LandingPage: React.FC = () => {
                         src={artist.image} 
                         alt={artist.name}
                         className="w-full h-48 object-cover rounded-lg"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
+                        }}
                       />
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
                         <ArtistRank tier={getQuickRank(artist.rating, artist.bookings)} size="sm" />
@@ -783,17 +708,22 @@ const LandingPage: React.FC = () => {
                     <p className="text-gray-600 text-sm">{artist.location}</p>
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Check back soon to discover our featured artists.</p>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Showcase Carousel - Hotels */}
       <section className="py-24 bg-cream relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
             animate={showcaseInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
@@ -804,9 +734,10 @@ const LandingPage: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="carousel-container">
-            <div className="carousel-track carousel-auto-scroll" style={{ animationDirection: 'reverse' }}>
-              {[...hotels, ...hotels].map((hotel, index) => (
+          {hotels.length > 0 ? (
+            <div className="carousel-container">
+              <div className="carousel-track carousel-auto-scroll" style={{ animationDirection: 'reverse' }}>
+                {[...hotels, ...hotels].map((hotel, index) => (
                 <div key={`${hotel.id}-${index}`} className="carousel-item w-64 flex-shrink-0">
                   <div className="card-showcase h-full flex flex-col">
                     <div className="relative mb-4">
@@ -814,6 +745,10 @@ const LandingPage: React.FC = () => {
                         src={hotel.image} 
                         alt={hotel.name}
                         className="w-full h-48 object-cover rounded-lg"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3Crect x="170" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="170" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="175" y="190" width="50" height="30" rx="3"/%3E%3C/g%3E%3C/svg%3E'
+                        }}
                       />
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
                         <span className="text-gold font-bold">◆</span>
@@ -835,15 +770,20 @@ const LandingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Check back soon to discover our partner hotels.</p>
+            </div>
+          )}
         </div>
       </section>
-        
 
       {/* Journal/Stories Section */}
-      <section ref={journalRef} className="py-24 bg-white relative overflow-hidden">
+      {stories.length > 0 && (
+        <section ref={journalRef} className="py-24 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -871,6 +811,7 @@ const LandingPage: React.FC = () => {
                     src={story.image} 
                     alt={story.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent"></div>
                   <div className="absolute top-4 left-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-bold">
@@ -885,10 +826,11 @@ const LandingPage: React.FC = () => {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Top Artists Section */}
       <section ref={topArtistsRef} className="py-24 bg-cream relative overflow-hidden">
@@ -905,9 +847,10 @@ const LandingPage: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="carousel-container">
-            <div className="carousel-track carousel-auto-scroll">
-              {[...artists, ...artists].map((artist, index) => (
+          {artists.length > 0 ? (
+            <div className="carousel-container">
+              <div className="carousel-track carousel-auto-scroll">
+                {[...artists, ...artists].map((artist, index) => (
                 <div key={`top-${artist.id}-${index}`} className="carousel-item w-80">
                   <div className="card-showcase relative">
                     <div className="relative mb-4">
@@ -915,6 +858,7 @@ const LandingPage: React.FC = () => {
                         src={artist.image} 
                         alt={artist.name}
                         className="w-full h-48 object-cover rounded-lg"
+                        loading="lazy"
                       />
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
                         <ArtistRank tier={getQuickRank(artist.rating, artist.bookings)} size="sm" />
@@ -926,12 +870,17 @@ const LandingPage: React.FC = () => {
                     <p className="text-gray-600 text-sm">{artist.location}</p>
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Check back soon to discover our top artists.</p>
+            </div>
+          )}
         </div>
       </section>
-        
+
       {/* Top Hotels Section */}
       <section ref={topHotelsRef} className="py-24 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
@@ -947,9 +896,10 @@ const LandingPage: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="carousel-container">
-            <div className="carousel-track carousel-auto-scroll" style={{ animationDirection: 'reverse' }}>
-              {[...hotels, ...hotels].map((hotel, index) => (
+          {hotels.length > 0 ? (
+            <div className="carousel-container">
+              <div className="carousel-track carousel-auto-scroll" style={{ animationDirection: 'reverse' }}>
+                {[...hotels, ...hotels].map((hotel, index) => (
                 <div key={`top-hotel-${hotel.id}-${index}`} className="carousel-item w-80">
                   <div className="card-showcase relative">
                     <div className="relative mb-4">
@@ -957,6 +907,7 @@ const LandingPage: React.FC = () => {
                         src={hotel.image} 
                         alt={hotel.name}
                         className="w-full h-48 object-cover rounded-lg"
+                        loading="lazy"
                       />
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
                         <span className="text-gold font-bold">◆</span>
@@ -974,9 +925,14 @@ const LandingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Check back soon to discover our top hotels.</p>
+            </div>
+          )}
         </div>
       </section>
 

@@ -1,0 +1,8 @@
+# Dependencies to add to package.json
+npm install multer @types/multer uuid @types/uuid
+
+# These are needed for file upload functionality
+
+
+
+

@@ -275,7 +275,8 @@ const ArtistReferrals: React.FC = () => {
                       alt={referral.name}
                       className="w-12 h-12 rounded-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder-artist.jpg'
+                        const target = e.target as HTMLImageElement
+                        target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"%3E%3Ccircle fill="%23e5e7eb" cx="24" cy="24" r="24"/%3E%3Cpath fill="%239ca3af" d="M24 14c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 18c-4.4 0-8 1.8-8 4v2h16v-2c0-2.2-3.6-4-8-4z"/%3E%3C/svg%3E'
                       }}
                     />
                   ) : (

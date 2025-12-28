@@ -43,28 +43,30 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
     return (
       <div className={`bg-gradient-to-r from-navy to-navy/90 text-white py-8 ${className}`}>
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h3 className="text-2xl font-serif font-bold mb-3">
-            Stay Inspired with Travel Art
-          </h3>
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Mail className="w-6 h-6 text-gold" />
+            <h3 className="text-2xl font-serif font-bold">
+              Stay Inspired with Travel Art
+            </h3>
+          </div>
           <p className="text-white/90 mb-6 max-w-2xl mx-auto">
             Get weekly updates on new artist residencies, exclusive experiences, and insider stories from luxury hotels.
           </p>
           <form onSubmit={handleSubmit} className="max-w-md mx-auto flex gap-3">
-            <div className="flex-1 relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <div className="flex-1">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="w-full pl-10 pr-4 py-3 rounded-lg text-navy focus:outline-none focus:ring-2 focus:ring-gold"
+                placeholder="Enter your email address"
+                className="w-full px-4 py-3 rounded-lg text-navy focus:outline-none focus:ring-2 focus:ring-gold"
                 required
               />
             </div>
             <button
               type="submit"
               disabled={submitting || success}
-              className="bg-gold text-navy px-6 py-3 rounded-lg font-semibold hover:bg-gold/90 transition-colors disabled:opacity-60 flex items-center space-x-2"
+              className="bg-gold text-navy px-6 py-3 rounded-lg font-semibold hover:bg-gold/90 transition-colors disabled:opacity-60 flex items-center space-x-2 whitespace-nowrap"
             >
               {success ? (
                 <>
@@ -87,30 +89,44 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   if (variant === 'modal') {
     return (
       <div className={`bg-white rounded-xl shadow-luxury p-8 max-w-md ${className}`}>
-        <h3 className="text-2xl font-serif font-bold text-navy mb-3">
-          Join Our Newsletter
-        </h3>
+        <div className="flex items-center gap-2 mb-3">
+          <Mail className="w-6 h-6 text-gold" />
+          <h3 className="text-2xl font-serif font-bold text-navy">
+            Join Our Newsletter
+          </h3>
+        </div>
         <p className="text-gray-600 mb-6">
           Get exclusive access to new artist residencies and luxury hotel experiences.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="form-input pl-10"
+              placeholder="Enter your email address"
+              className="form-input w-full"
               required
             />
           </div>
           <button
             type="submit"
             disabled={submitting || success}
-            className="w-full btn-primary disabled:opacity-60"
+            className="w-full btn-primary disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {success ? 'Subscribed!' : submitting ? 'Subscribing...' : 'Subscribe'}
+            {success ? (
+              <>
+                <CheckCircle className="w-5 h-5" />
+                <span>Subscribed!</span>
+              </>
+            ) : submitting ? (
+              'Subscribing...'
+            ) : (
+              <>
+                <Send className="w-5 h-5" />
+                <span>Subscribe</span>
+              </>
+            )}
           </button>
         </form>
       </div>
@@ -121,23 +137,22 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   return (
     <div className={`${className}`}>
       <form onSubmit={handleSubmit} className="flex gap-3">
-        <div className="flex-1 relative">
-          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="flex-1">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Your email"
-            className="form-input pl-10"
+            placeholder="Enter your email address"
+            className="form-input w-full"
             required
           />
         </div>
         <button
           type="submit"
           disabled={submitting || success}
-          className="btn-primary disabled:opacity-60"
+          className="btn-primary disabled:opacity-60 px-6 whitespace-nowrap"
         >
-          {success ? '✓' : submitting ? '...' : 'Subscribe'}
+          {success ? '✓ Subscribed' : submitting ? '...' : 'Subscribe'}
         </button>
       </form>
     </div>

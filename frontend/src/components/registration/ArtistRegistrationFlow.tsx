@@ -137,9 +137,9 @@ const ArtistRegistrationFlow: React.FC = () => {
 
       // Small delay to ensure state is updated
       setTimeout(() => {
-        console.log('🔄 Redirecting to dashboard...');
-        // Redirect to dashboard (DashboardRedirect will route to correct role-based dashboard)
-        navigate('/dashboard');
+        console.log('🔄 Redirecting to profile...');
+        // Redirect to profile page for artists to complete their setup
+        navigate('/dashboard/profile');
       }, 500);
     } catch (error: any) {
       const errorMessage =

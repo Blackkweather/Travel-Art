@@ -1,14 +1,16 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
 import { setClerkTokenGetter } from '@/utils/clerkToken'
+import { AnimatePresence } from 'framer-motion'
 import Layout from '@/components/Layout'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ProtectedRoute from './components/ProtectedRoute'
 import RoleRoute from './components/RoleRoute'
 import RoleAwareRoute from './components/RoleAwareRoute'
 import PasswordPopup from './components/PasswordPopup'
+import PageTransition from './components/PageTransition'
 
 // Force import to ensure it loads
 console.log('🔒 PasswordPopup imported:', typeof PasswordPopup)
@@ -79,6 +81,7 @@ const DashboardRedirect = () => {
 function App() {
   const { isLoading, checkAuth, syncClerkUser } = useAuthStore()
   const { isLoaded, isSignedIn, user: clerkUser, getToken } = useAuth()
+  const location = useLocation()
 
   // Set up Clerk token getter for API client
   useEffect(() => {
@@ -113,27 +116,28 @@ function App() {
           <LoadingSpinner />
         </div>
       ) : (
-        <Routes>
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-      <Route path="/how-it-works" element={<HowItWorksPage />} />
-      <Route path="/partners" element={<PartnersPage />} />
-      <Route path="/top-artists" element={<TopArtistsPage />} />
-      <Route path="/top-hotels" element={<TopHotelsPage />} />
-      <Route path="/hotel/:id" element={<HotelDetailsPage />} />
-      <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/experiences" element={<TravelerExperiencesPage />} />
-      <Route path="/experience/:id" element={<ExperienceDetailsPage />} />
-      <Route path="/payment" element={<PaymentPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/ref/:code" element={<ReferralRedirectPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/privacy" element={<PrivacyPolicyPage />} />
-      <Route path="/terms" element={<TermsPage />} />
-      <Route path="/cookies" element={<CookiePolicyPage />} />
-      <Route path="/about" element={<AboutPage />} />
+        <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
+      <Route path="/how-it-works" element={<PageTransition><HowItWorksPage /></PageTransition>} />
+      <Route path="/partners" element={<PageTransition><PartnersPage /></PageTransition>} />
+      <Route path="/top-artists" element={<PageTransition><TopArtistsPage /></PageTransition>} />
+      <Route path="/top-hotels" element={<PageTransition><TopHotelsPage /></PageTransition>} />
+      <Route path="/hotel/:id" element={<PageTransition><HotelDetailsPage /></PageTransition>} />
+      <Route path="/pricing" element={<PageTransition><PricingPage /></PageTransition>} />
+      <Route path="/experiences" element={<PageTransition><TravelerExperiencesPage /></PageTransition>} />
+      <Route path="/experience/:id" element={<PageTransition><ExperienceDetailsPage /></PageTransition>} />
+      <Route path="/payment" element={<PageTransition><PaymentPage /></PageTransition>} />
+      <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
+      <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+      <Route path="/ref/:code" element={<PageTransition><ReferralRedirectPage /></PageTransition>} />
+      <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
+      <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
+      <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
+      <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
+      <Route path="/cookies" element={<PageTransition><CookiePolicyPage /></PageTransition>} />
+      <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
 
       {/* Protected Routes */}
       <Route 
@@ -230,14 +234,15 @@ function App() {
       </Route>
 
       {/* Artist Public Profile */}
-      <Route path="/artist/:id" element={<PublicArtistProfile />} />
+      <Route path="/artist/:id" element={<PageTransition><PublicArtistProfile /></PageTransition>} />
       
       {/* Hotel Public Profile */}
-      <Route path="/hotel/:id" element={<HotelProfile />} />
+      <Route path="/hotel/:id" element={<PageTransition><HotelProfile /></PageTransition>} />
       
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </AnimatePresence>
       )}
     </>
   )

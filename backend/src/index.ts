@@ -16,6 +16,7 @@ import { commonRoutes } from './routes/common';
 import { tripRoutes } from './routes/trips';
 import { paymentRoutes } from './routes/payments';
 import { bookingRoutes } from './routes/bookings';
+import { uploadRoutes } from './routes/upload';
 import { initializeDatabase, prisma } from './db';
 
 const app = express();
@@ -149,7 +150,11 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/trips', tripRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api', commonRoutes);
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Serve static files from the frontend build
 app.use(express.static(path.join(__dirname, '../../frontend/dist'), {

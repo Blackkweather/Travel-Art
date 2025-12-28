@@ -299,8 +299,9 @@ const HotelRegistrationFlow: React.FC = () => {
         repName: state.general.contactName || ''
       });
 
-      toast.success('Inscription hôtel réussie');
-      navigate('/dashboard');
+      toast.success('Inscription hôtel réussie! Welcome to Travel Art.');
+      // Redirect to profile page for hotels to view/edit their profile
+      navigate('/dashboard/profile');
     } catch (error: unknown) {
       const apiError = error as { response?: { data?: { error?: { message?: string } } } };
       toast.error(apiError.response?.data?.error?.message || 'Échec de l’inscription');

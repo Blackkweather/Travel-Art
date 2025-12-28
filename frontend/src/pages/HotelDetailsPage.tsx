@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Star, MapPin, Calendar, Music, Users, Building, Clock, Phone, Mail, Globe, ArrowLeft } from 'lucide-react'
+import { motion, useInView } from 'framer-motion'
+import { Star, MapPin, Calendar, Music, Users, Building, Clock, Phone, Mail, Globe, ArrowLeft, MessageCircle, Heart } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
 import { hotelsApi } from '@/utils/api'
+import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 
 const HotelDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [hotel, setHotel] = useState<any>(null)
+  const [isFavorite, setIsFavorite] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -66,10 +70,40 @@ const HotelDetailsPage: React.FC = () => {
     )
   }
 
-  // Parse location, images, performance spots
-  const location = hotel.location || {}
-  const images = hotel.images || []
-  const performanceSpots = hotel.performanceSpots || []
+  // Parse location, images, performance spots (handle both array/object and JSON string)
+  let location: any = {}
+  let images: string[] = []
+  let performanceSpots: any[] = []
+  
+  if (hotel.location) {
+    try {
+      location = typeof hotel.location === 'string' 
+        ? JSON.parse(hotel.location) 
+        : hotel.location
+    } catch (e) {
+      location = {}
+    }
+  }
+  
+  if (hotel.images) {
+    try {
+      images = Array.isArray(hotel.images) 
+        ? hotel.images 
+        : (typeof hotel.images === 'string' ? JSON.parse(hotel.images) : [])
+    } catch (e) {
+      images = []
+    }
+  }
+  
+  if (hotel.performanceSpots) {
+    try {
+      performanceSpots = Array.isArray(hotel.performanceSpots) 
+        ? hotel.performanceSpots 
+        : (typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : [])
+    } catch (e) {
+      performanceSpots = []
+    }
+  }
   const locationString = location.city && location.country 
     ? `${location.city}, ${location.country}`
     : location.country || hotel.user?.country || 'Location not specified'
@@ -121,12 +155,8 @@ const HotelDetailsPage: React.FC = () => {
         {/* Overview Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-2">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="card-luxury mb-8"
-            >
+            <ScrollAnimationWrapper animation="fade-up">
+              <div className="card-luxury mb-8">
               <h2 className="text-3xl font-serif font-bold text-navy mb-4 gold-underline">
                 About {hotel.name}
               </h2>
@@ -173,16 +203,13 @@ const HotelDetailsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-            </motion.div>
+            </div>
+            </ScrollAnimationWrapper>
 
             {/* Performance Activities Section */}
             {performanceSpots.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="card-luxury"
-              >
+              <ScrollAnimationWrapper animation="fade-up" delay={0.1}>
+                <div className="card-luxury">
                 <h2 className="text-3xl font-serif font-bold text-navy mb-6 gold-underline">
                   Performance Venues
                 </h2>
@@ -220,18 +247,15 @@ const HotelDetailsPage: React.FC = () => {
                     )
                   })}
                 </div>
-              </motion.div>
+              </div>
+              </ScrollAnimationWrapper>
             )}
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="card-luxury sticky top-6"
-            >
+            <ScrollAnimationWrapper animation="slide-left" delay={0.2}>
+              <div className="card-luxury sticky top-6">
               <h3 className="text-2xl font-serif font-bold text-navy mb-6">Contact Information</h3>
               
               <div className="space-y-4 mb-6">
@@ -275,7 +299,35 @@ const HotelDetailsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-            </motion.div>
+              
+              {/* Action Buttons for Artists */}
+              {user && user.role === 'ARTIST' && (
+                <div className="border-t border-gray-200 pt-6 mt-6 space-y-3">
+                  <button
+                    onClick={() => {
+                      toast.success('Contact request sent to hotel!')
+                    }}
+                    className="w-full btn-primary flex items-center justify-center gap-2"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Contact Hotel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsFavorite(!isFavorite)
+                      toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites!')
+                    }}
+                    className={`w-full btn-secondary flex items-center justify-center gap-2 ${
+                      isFavorite ? 'bg-red-50 border-red-500 text-red-600 hover:bg-red-100' : ''
+                    }`}
+                  >
+                    <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                    {isFavorite ? 'Saved' : 'Save to Favorites'}
+                  </button>
+                </div>
+              )}
+            </div>
+            </ScrollAnimationWrapper>
           </div>
         </div>
       </div>

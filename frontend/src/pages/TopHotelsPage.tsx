@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { Link, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Star, MapPin, Building, Music, Users, Calendar, AlertCircle } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
@@ -23,9 +23,12 @@ interface TopHotel {
 }
 
 const TopHotelsPage: React.FC = () => {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [topHotels, setTopHotels] = useState<TopHotel[]>([])
+  const [clickedHotelId, setClickedHotelId] = useState<string | null>(null)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const [stats, setStats] = useState({
     totalHotels: 0,
     totalVenues: 0,
@@ -87,7 +90,8 @@ const TopHotelsPage: React.FC = () => {
     if (images && images.length > 0 && images[0]) {
       return images[0]
     }
-    return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop'
+    // Return SVG placeholder
+    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3Crect x="170" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="170" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="175" y="190" width="50" height="30" rx="3"/%3E%3C/g%3E%3C/svg%3E'
   }
 
   const parsePerformanceSpots = (spots?: string): string[] => {
@@ -100,8 +104,41 @@ const TopHotelsPage: React.FC = () => {
     }
   }
 
+  const handleHotelClick = (hotelId: string) => {
+    // Trigger zoom animation
+    setClickedHotelId(hotelId)
+    setIsTransitioning(true)
+    
+    // Wait for animation, then navigate
+    setTimeout(() => {
+      navigate(`/hotel/${hotelId}`)
+    }, 600)
+  }
+
   return (
     <div className="min-h-screen bg-cream">
+      {/* Loading Transition Overlay */}
+      <AnimatePresence>
+        {isTransitioning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-navy/95 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
+              className="text-center"
+            >
+              <div className="w-24 h-24 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+              <p className="text-gold text-xl font-serif">Loading Hotel Experience...</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       <Header />
       
       {/* Hero Section */}
@@ -109,9 +146,10 @@ const TopHotelsPage: React.FC = () => {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=75" 
             alt="Luxury hotel rooftop" 
             className="w-full h-full object-cover"
+            fetchPriority="high"
           />
           {/* Dark overlay for text readability */}
           <div className="absolute inset-0 bg-navy/70"></div>
@@ -238,15 +276,29 @@ const TopHotelsPage: React.FC = () => {
                 <motion.div
                   key={hotel.id}
                   initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="card-luxury overflow-hidden"
+                  animate={{ 
+                    opacity: clickedHotelId === hotel.id ? 0 : 1, 
+                    y: 0,
+                    scale: clickedHotelId === hotel.id ? 1.1 : 1
+                  }}
+                  transition={{ 
+                    duration: 0.6, 
+                    delay: clickedHotelId === hotel.id ? 0 : index * 0.1 
+                  }}
+                  whileHover={{ 
+                    y: -8, 
+                    scale: 1.03,
+                    transition: { duration: 0.3 }
+                  }}
+                  className="card-luxury overflow-hidden cursor-pointer"
+                  onClick={() => handleHotelClick(hotel.id)}
                 >
                   <div className="relative">
                     <img
                       src={getImageUrl(hotel.images)}
                       alt={hotel.name}
                       className="w-full h-64 object-cover"
+                      loading="lazy"
                       onError={(e) => {
                         e.currentTarget.src = 'https://via.placeholder.com/600x400/0B1F3F/C9A63C?text=' + encodeURIComponent(hotel.name.substring(0, 2).toUpperCase())
                       }}
@@ -295,12 +347,15 @@ const TopHotelsPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <Link 
-                      to={`/hotel/${hotel.id}`}
-                      className="w-full btn-primary text-center block"
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleHotelClick(hotel.id)
+                      }}
+                      className="w-full btn-primary text-center hover:scale-105 transition-transform"
                     >
                       View Venues
-                    </Link>
+                    </button>
                   </div>
                 </motion.div>
               )

@@ -82,7 +82,8 @@ const TopArtistsPage: React.FC = () => {
     if (images && images.length > 0 && images[0]) {
       return images[0]
     }
-    return 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400&q=80'
+    // Return SVG placeholder
+    return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
   }
 
 
@@ -157,14 +158,8 @@ const TopArtistsPage: React.FC = () => {
 
       {/* Hero Section */}
       <div className="relative py-20 pt-32 overflow-hidden">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
-            alt="Artist performance" 
-            className="w-full h-full object-cover"
-          />
-          {/* Dark overlay for text readability */}
+        {/* Background Gradient */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-br from-navy via-navy/90 to-gold/20">
           <div className="absolute inset-0 bg-navy/70"></div>
         </div>
         
@@ -299,8 +294,9 @@ const TopArtistsPage: React.FC = () => {
                       src={getImageUrl(artist.images)}
                       alt={artist.user.name}
                       className="w-full h-64 object-cover"
+                      loading="lazy"
                       onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/400x400/0B1F3F/C9A63C?text=' + encodeURIComponent(artist.user.name.substring(0, 2).toUpperCase())
+                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
                       }}
                     />
                     <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">

@@ -38,6 +38,9 @@ model User {
 model Artist {
   id                String   @id @default(cuid())
   userId            String   @unique
+  stageName         String?  // Artist's stage/professional name
+  birthDate         String?  // Artist's birth date (DD/MM/YYYY format)
+  phone             String?  // Artist's phone number
   bio               String?
   discipline        String
   priceRange        String
@@ -46,6 +49,8 @@ model Artist {
   images            String?  // JSON string of image URLs
   videos            String?  // JSON string of video URLs
   mediaUrls         String?  // JSON string of media URLs
+  profilePicture    String?  // Main profile picture URL
+  artisticProfile   String?  // JSON string: {mainCategory, secondaryCategory, audienceType, languages, categoryType, specificCategory, domain}
   referralCode      String   @unique @default(cuid())
   loyaltyPoints     Int      @default(0)
 
@@ -68,6 +73,7 @@ model Hotel {
   location        String   // JSON string: {city, country, coords}
   contactPhone    String?
   images          String?  // JSON string of image URLs
+  profilePicture  String?  // Main profile picture URL
   performanceSpots String? // JSON string of performance spots
   rooms           String?  // JSON string of room data
   repName         String?

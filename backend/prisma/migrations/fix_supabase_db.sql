@@ -108,3 +108,7 @@ CREATE POLICY IF NOT EXISTS "Public trips are viewable" ON "trips"
 -- Since you're using Clerk, you may need to use service_role key for backend access
 -- or create custom policies that work with your Clerk authentication
 
+
+
+
+

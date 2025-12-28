@@ -1,31 +1,49 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import path from 'path';
 
 // Load .env files (same as config.ts)
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Try multiple paths to find .env file
+const envPaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '../.env'),
+  path.resolve(__dirname, '../../.env'),
+  path.resolve(process.cwd(), 'backend/.env')
+];
 
-// Get database URL from environment
-const getDatabaseUrl = () => {
-  const envUrl = process.env.DATABASE_URL;
-  if (envUrl && envUrl.startsWith('file:')) {
-    return envUrl;
+for (const envPath of envPaths) {
+  const result = dotenv.config({ path: envPath });
+  if (!result.error) {
+    console.log(`✅ Loaded .env from: ${envPath}`);
+    break;
   }
-  return 'file:./prisma/dev.db';
-};
+}
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: getDatabaseUrl(),
-    },
-  },
-});
+// Verify DATABASE_URL is set
+if (!process.env.DATABASE_URL) {
+  console.error('❌ ERROR: DATABASE_URL is not set in .env file!');
+  console.error('Please set DATABASE_URL in your .env file with a PostgreSQL connection string.');
+  console.error('Example: DATABASE_URL="postgresql://user:password@host:port/database"');
+  process.exit(1);
+}
+
+if (!process.env.DATABASE_URL.startsWith('postgresql://') && !process.env.DATABASE_URL.startsWith('postgres://')) {
+  console.error('❌ ERROR: DATABASE_URL must start with postgresql:// or postgres://');
+  console.error(`Current value starts with: ${process.env.DATABASE_URL.substring(0, 20)}...`);
+  process.exit(1);
+}
+
+// Prisma Client - uses DATABASE_URL from environment
+const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seeding...');
+  
+  // Log database connection info (mask password)
+  const dbUrl = process.env.DATABASE_URL || '';
+  const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':***@');
+  console.log(`📊 Database: ${maskedUrl.substring(0, 50)}...`);
 
   // Create admin user
   const adminPasswordHash = await bcrypt.hash('Password123!', 12);
@@ -513,11 +531,406 @@ async function main() {
 
   console.log('✅ Transactions created');
 
+  // Add featured artists from static data
+  const featuredArtists = [
+    {
+      email: 'elena.rodriguez@example.com',
+      name: 'Elena Rodriguez',
+      country: 'France',
+      city: 'Paris',
+      discipline: 'Jazz Saxophonist',
+      bio: 'Renowned jazz saxophonist creating unforgettable rooftop experiences in Paris. Specializes in intimate jazz sessions under the stars.',
+      priceRange: '€500-1000',
+      stageName: 'Elena Rodriguez',
+      artisticProfile: JSON.stringify({
+        mainCategory: 'Music',
+        secondaryCategory: 'Jazz',
+        audienceType: ['Adults', 'Couples'],
+        languages: ['French', 'English', 'Spanish'],
+        categoryType: 'Instrumental',
+        specificCategory: 'Saxophone',
+        domain: 'Concert'
+      })
+    },
+    {
+      email: 'marcus.chen@example.com',
+      name: 'Marcus Chen',
+      country: 'Japan',
+      city: 'Tokyo',
+      discipline: 'Visual Artist',
+      bio: 'Contemporary visual artist transforming hotel spaces with stunning exhibitions. Creates immersive art experiences in luxury venues.',
+      priceRange: '€600-1200',
+      stageName: 'Marcus Chen',
+      artisticProfile: JSON.stringify({
+        mainCategory: 'Visual Arts',
+        secondaryCategory: 'Contemporary',
+        audienceType: ['Adults', 'Families'],
+        languages: ['Japanese', 'English', 'Mandarin'],
+        categoryType: 'Visual',
+        specificCategory: 'Painting',
+        domain: 'Exhibition'
+      })
+    },
+    {
+      email: 'sophie.laurent@example.com',
+      name: 'Sophie Laurent',
+      country: 'United States',
+      city: 'New York',
+      discipline: 'Photographer',
+      bio: 'Award-winning photographer specializing in sunset photography workshops. Captures magical moments in luxury hotel settings.',
+      priceRange: '€400-800',
+      stageName: 'Sophie Laurent',
+      artisticProfile: JSON.stringify({
+        mainCategory: 'Photography',
+        secondaryCategory: 'Portrait',
+        audienceType: ['Adults', 'Couples'],
+        languages: ['English', 'French'],
+        categoryType: 'Photography',
+        specificCategory: 'Portrait Photography',
+        domain: 'Workshop'
+      })
+    },
+    {
+      email: 'david.kim@example.com',
+      name: 'David Kim',
+      country: 'Spain',
+      city: 'Ibiza',
+      discipline: 'DJ & Producer',
+      bio: 'International DJ and producer creating epic rooftop experiences. Resident DJ at top clubs, specializing in deep house and electronic music.',
+      priceRange: '€800-1500',
+      stageName: 'David Kim',
+      artisticProfile: JSON.stringify({
+        mainCategory: 'Music',
+        secondaryCategory: 'Electronic',
+        audienceType: ['Adults', 'Young Adults'],
+        languages: ['English', 'Spanish', 'Korean'],
+        categoryType: 'DJ',
+        specificCategory: 'Electronic Music',
+        domain: 'Concert'
+      })
+    }
+  ];
+
+  for (const artistData of featuredArtists) {
+    const passwordHash = await bcrypt.hash('password123', 12);
+
+    const user = await prisma.user.upsert({
+      where: { email: artistData.email },
+      update: {},
+      create: {
+        role: 'ARTIST',
+        email: artistData.email,
+        passwordHash,
+        name: artistData.name,
+        country: artistData.country,
+        language: 'en'
+      }
+    });
+
+    const artist = await prisma.artist.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        stageName: artistData.stageName,
+        bio: artistData.bio,
+        discipline: artistData.discipline,
+        priceRange: artistData.priceRange,
+        membershipStatus: 'ACTIVE',
+        membershipRenewal: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        images: JSON.stringify([
+          'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop',
+          'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&h=600&fit=crop'
+        ]),
+        videos: JSON.stringify([
+          'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        ]),
+        mediaUrls: JSON.stringify([]),
+        artisticProfile: artistData.artisticProfile,
+        loyaltyPoints: Math.floor(Math.random() * 500) + 100
+      }
+    });
+
+    // Create availability if it doesn't exist
+    const existingAvailability = await prisma.artistAvailability.findFirst({
+      where: { artistId: artist.id }
+    });
+
+    if (!existingAvailability) {
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 6);
+
+      await prisma.artistAvailability.create({
+        data: {
+          artistId: artist.id,
+          dateFrom: startDate,
+          dateTo: endDate
+        }
+      });
+    }
+  }
+
+  console.log('✅ Featured artists created');
+
+  // Add partner hotels from static data
+  const partnerHotels = [
+    {
+      email: 'ritz.paris@example.com',
+      name: 'The Ritz Paris',
+      country: 'France',
+      city: 'Paris',
+      description: 'Iconic luxury hotel in the heart of Paris. Features stunning rooftop terraces perfect for intimate performances with Eiffel Tower views.',
+      contactPhone: '+33 1 43 16 30 30',
+      repName: 'Claire Dubois',
+      performanceSpots: JSON.stringify([
+        { name: 'Rooftop Terrace', type: 'lounge', capacity: 50, description: 'Stunning rooftop with Eiffel Tower views - ideal for intimate acoustic sets' },
+        { name: 'Grand Ballroom', type: 'ballroom', capacity: 200, description: 'Elegant ballroom perfect for classical concerts and formal performances' },
+        { name: 'Live Music', type: 'lounge', capacity: 80, description: 'Premium venue for live performances' }
+      ])
+    },
+    {
+      email: 'aman.tokyo@example.com',
+      name: 'Aman Tokyo',
+      country: 'Japan',
+      city: 'Tokyo',
+      description: 'Luxury hotel with sky lounge and cultural events. Features wellness center and exclusive art exhibitions.',
+      contactPhone: '+81 3 5224 3333',
+      repName: 'Yuki Tanaka',
+      performanceSpots: JSON.stringify([
+        { name: 'Sky Lounge', type: 'lounge', capacity: 60, description: 'Elevated sky lounge with panoramic city views' },
+        { name: 'Cultural Events', type: 'ballroom', capacity: 150, description: 'Space for cultural performances and exhibitions' },
+        { name: 'Wellness Center', type: 'wellness', capacity: 30, description: 'Wellness and meditation space' }
+      ])
+    },
+    {
+      email: 'plaza.newyork@example.com',
+      name: 'The Plaza New York',
+      country: 'United States',
+      city: 'New York',
+      description: 'Historic luxury hotel featuring grand ballroom, extensive art collection, and live performances in iconic settings.',
+      contactPhone: '+1 212 759 3000',
+      repName: 'Sarah Mitchell',
+      performanceSpots: JSON.stringify([
+        { name: 'Grand Ballroom', type: 'ballroom', capacity: 300, description: 'Historic grand ballroom for formal performances' },
+        { name: 'Art Collection', type: 'gallery', capacity: 100, description: 'Curated art space for exhibitions' },
+        { name: 'Live Performances', type: 'lounge', capacity: 120, description: 'Premium venue for live shows' }
+      ])
+    },
+    {
+      email: 'ushuaia.ibiza@example.com',
+      name: 'Ushuaïa Ibiza',
+      country: 'Spain',
+      city: 'Ibiza',
+      description: 'Legendary beach club hotel with epic rooftop DJ sets, sunset views, and world-class electronic music experiences.',
+      contactPhone: '+34 971 19 22 22',
+      repName: 'Carlos Martinez',
+      performanceSpots: JSON.stringify([
+        { name: 'Beach Club', type: 'pool', capacity: 200, description: 'Epic beachfront venue for DJ sets and live music' },
+        { name: 'DJ Sets', type: 'lounge', capacity: 150, description: 'Rooftop DJ venue with state-of-the-art sound' },
+        { name: 'Sunset Views', type: 'lounge', capacity: 80, description: 'Intimate sunset setting for acoustic performances' }
+      ])
+    }
+  ];
+
+  for (const hotelData of partnerHotels) {
+    const passwordHash = await bcrypt.hash('password123', 12);
+    const location = JSON.stringify({
+      city: hotelData.city,
+      country: hotelData.country,
+      coords: { lat: 0, lng: 0 }
+    });
+
+    const user = await prisma.user.upsert({
+      where: { email: hotelData.email },
+      update: {},
+      create: {
+        role: 'HOTEL',
+        email: hotelData.email,
+        passwordHash,
+        name: hotelData.name,
+        country: hotelData.country,
+        language: 'en'
+      }
+    });
+
+    const hotel = await prisma.hotel.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        name: hotelData.name,
+        description: hotelData.description,
+        location,
+        contactPhone: hotelData.contactPhone,
+        images: JSON.stringify([
+          'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
+          'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
+          'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80'
+        ]),
+        performanceSpots: hotelData.performanceSpots,
+        rooms: JSON.stringify([]),
+        repName: hotelData.repName
+      }
+    });
+
+    await prisma.credit.upsert({
+      where: { hotelId: hotel.id },
+      update: {},
+      create: {
+        hotelId: hotel.id,
+        totalCredits: Math.floor(Math.random() * 10) + 5,
+        usedCredits: 0
+      }
+    });
+  }
+
+  console.log('✅ Partner hotels created');
+
+  // Add immersive experiences (Trips)
+  const experiences = [
+    {
+      title: 'Rooftop Jazz Sessions',
+      slug: 'rooftop-jazz-sessions',
+      description: 'Intimate performances under the stars. Experience world-class jazz musicians in stunning rooftop settings with panoramic city views.',
+      priceFrom: 150,
+      priceTo: 300,
+      location: JSON.stringify({ city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 }),
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1200&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&h=600&fit=crop'
+      ]),
+      status: 'PUBLISHED',
+      type: 'rooftop',
+      rating: 4.9,
+      duration: '2 hours',
+      capacity: '50 guests'
+    },
+    {
+      title: 'Art Gallery Exhibitions',
+      slug: 'art-gallery-exhibitions',
+      description: 'Curated visual experiences. Discover contemporary art exhibitions in luxury hotel galleries featuring emerging and established artists.',
+      priceFrom: 80,
+      priceTo: 150,
+      location: JSON.stringify({ city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 }),
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop'
+      ]),
+      status: 'PUBLISHED',
+      type: 'workshop',
+      rating: 4.8,
+      duration: '3 hours',
+      capacity: '100 guests'
+    },
+    {
+      title: 'Sunset Photography',
+      slug: 'sunset-photography',
+      description: 'Capture magical moments. Learn professional photography techniques during golden hour on hotel rooftops with expert guidance.',
+      priceFrom: 120,
+      priceTo: 250,
+      location: JSON.stringify({ city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 }),
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1200&h=600&fit=crop'
+      ]),
+      status: 'PUBLISHED',
+      type: 'workshop',
+      rating: 4.9,
+      duration: '2.5 hours',
+      capacity: '25 participants'
+    },
+    {
+      title: 'Live Performances',
+      slug: 'live-performances',
+      description: 'Theater and dance shows. Experience world-class performances including theater, ballet, and contemporary dance in intimate hotel venues.',
+      priceFrom: 100,
+      priceTo: 200,
+      location: JSON.stringify({ city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 }),
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1200&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop'
+      ]),
+      status: 'PUBLISHED',
+      type: 'intimate',
+      rating: 4.7,
+      duration: '1.5 hours',
+      capacity: '80 guests'
+    },
+    {
+      title: 'Culinary Arts',
+      slug: 'culinary-arts',
+      description: 'Interactive cooking experiences. Join master chefs for hands-on culinary workshops featuring local and international cuisine.',
+      priceFrom: 180,
+      priceTo: 350,
+      location: JSON.stringify({ city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 }),
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&h=600&fit=crop'
+      ]),
+      status: 'PUBLISHED',
+      type: 'workshop',
+      rating: 4.8,
+      duration: '3 hours',
+      capacity: '20 participants'
+    },
+    {
+      title: 'Wellness Sessions',
+      slug: 'wellness-sessions',
+      description: 'Mindfulness and relaxation. Join expert instructors for yoga, meditation, and wellness sessions in serene hotel settings.',
+      priceFrom: 90,
+      priceTo: 180,
+      location: JSON.stringify({ city: 'Ibiza', country: 'Spain', lat: 38.9067, lng: 1.4206 }),
+      images: JSON.stringify([
+        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1200&h=600&fit=crop'
+      ]),
+      status: 'PUBLISHED',
+      type: 'workshop',
+      rating: 4.9,
+      duration: '1.5 hours',
+      capacity: '30 participants'
+    }
+  ];
+
+  for (const experienceData of experiences) {
+    await prisma.trip.upsert({
+      where: { slug: experienceData.slug },
+      update: {},
+      create: {
+        title: experienceData.title,
+        slug: experienceData.slug,
+        description: experienceData.description,
+        priceFrom: experienceData.priceFrom,
+        priceTo: experienceData.priceTo,
+        location: experienceData.location,
+        images: experienceData.images,
+        status: experienceData.status,
+        type: experienceData.type,
+        rating: experienceData.rating,
+        duration: experienceData.duration,
+        capacity: experienceData.capacity
+      }
+    });
+  }
+
+  console.log('✅ Immersive experiences created');
+
   console.log('🎉 Database seeding completed successfully!');
   console.log('\n📋 Sample login credentials:');
   console.log('Admin: admin@travelart.test / Password123!');
   console.log('Hotel: hotel1@example.com / password123');
   console.log('Artist: artist1@example.com / password123');
+  console.log('\n✨ Featured Artists:');
+  console.log('Elena Rodriguez: elena.rodriguez@example.com / password123');
+  console.log('Marcus Chen: marcus.chen@example.com / password123');
+  console.log('Sophie Laurent: sophie.laurent@example.com / password123');
+  console.log('David Kim: david.kim@example.com / password123');
+  console.log('\n🏨 Partner Hotels:');
+  console.log('The Ritz Paris: ritz.paris@example.com / password123');
+  console.log('Aman Tokyo: aman.tokyo@example.com / password123');
+  console.log('The Plaza New York: plaza.newyork@example.com / password123');
+  console.log('Ushuaïa Ibiza: ushuaia.ibiza@example.com / password123');
 }
 
 main()

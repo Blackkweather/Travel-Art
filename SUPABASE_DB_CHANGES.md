@@ -107,3 +107,7 @@ Since you're using Clerk for authentication, you'll likely want to use the `serv
 - Do you want me to create custom RLS policies for your Clerk setup?
 - Need help configuring your backend to use Supabase connection string?
 
+
+
+
+

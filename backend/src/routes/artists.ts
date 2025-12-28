@@ -8,12 +8,17 @@ const router = Router();
 
 // Validation schemas
 const artistProfileSchema = z.object({
-  bio: z.string().min(10).max(1000),
-  discipline: z.string().min(2).max(50),
-  priceRange: z.string().min(1).max(20),
+  bio: z.string().min(10).max(1000).optional(),
+  discipline: z.string().min(2).max(50).optional(),
+  priceRange: z.string().min(1).max(20).optional(),
   images: z.string().optional(), // JSON string
   videos: z.string().optional(), // JSON string
-  mediaUrls: z.string().optional() // JSON string
+  mediaUrls: z.string().optional(), // JSON string
+  stageName: z.string().optional(),
+  birthDate: z.string().optional(),
+  phone: z.string().optional(),
+  profilePicture: z.string().optional(),
+  artisticProfile: z.string().optional() // JSON string
 });
 
 const availabilitySchema = z.object({
@@ -367,7 +372,40 @@ router.get('/:id', asyncHandler(async (req, res) => {
   });
 }));
 
-// Create or update artist profile
+// Update artist profile (own profile)
+router.put('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
+  const profileData = artistProfileSchema.parse(req.body);
+
+  const artist = await prisma.artist.findUnique({
+    where: { userId: req.user!.id }
+  });
+
+  if (!artist) {
+    throw new CustomError('Artist profile not found', 404);
+  }
+
+  const updatedArtist = await prisma.artist.update({
+    where: { id: artist.id },
+    data: profileData,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          country: true
+        }
+      }
+    }
+  });
+
+  res.json({
+    success: true,
+    data: updatedArtist
+  });
+}));
+
+// Create or update artist profile (legacy endpoint for backward compatibility)
 router.post('/', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
   const profileData = artistProfileSchema.parse(req.body);
 

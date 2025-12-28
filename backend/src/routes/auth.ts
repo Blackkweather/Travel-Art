@@ -18,7 +18,20 @@ const registerSchema = z.object({
   password: z.string().min(8),
   phone: z.string().optional(),
   locale: z.string().optional().default('en'),
-  referralCode: z.string().optional() // Accept referral code during registration
+  referralCode: z.string().optional(), // Accept referral code during registration
+  // Artist-specific fields
+  stageName: z.string().optional(),
+  birthDate: z.string().optional(),
+  country: z.string().optional(),
+  artisticProfile: z.object({
+    mainCategory: z.string().optional(),
+    secondaryCategory: z.string().optional(),
+    audienceType: z.array(z.string()).optional(),
+    languages: z.array(z.string()).optional(),
+    categoryType: z.string().optional(),
+    specificCategory: z.string().optional(),
+    domain: z.string().optional()
+  }).optional()
 });
 
 const loginSchema = z.object({
@@ -94,16 +107,36 @@ router.post('/register', asyncHandler(async (req, res) => {
         // Generate unique referral code for new artist
         referralCodeToUse = await generateUniqueReferralCode(name);
         
+        // Extract artisticProfile data if provided
+        const artisticProfile = req.body.artisticProfile;
+        const stageName = req.body.stageName || name;
+        const birthDate = req.body.birthDate;
+        const country = req.body.country;
+        
+        // Build discipline from artisticProfile if available
+        let discipline = '';
+        if (artisticProfile?.mainCategory) {
+          discipline = artisticProfile.mainCategory;
+          if (artisticProfile.specificCategory) {
+            discipline += ` - ${artisticProfile.specificCategory}`;
+          }
+        }
+        
         const artist = await prisma.artist.create({
           data: {
             userId: user.id,
+            stageName: stageName,
+            birthDate: birthDate || null,
+            phone: phone || null,
             bio: '',
-            discipline: '',
+            discipline: discipline || '',
             priceRange: '',
             membershipStatus: 'INACTIVE',
             images: JSON.stringify([]),
             videos: JSON.stringify([]),
             mediaUrls: JSON.stringify([]),
+            profilePicture: null,
+            artisticProfile: artisticProfile ? JSON.stringify(artisticProfile) : null,
             loyaltyPoints: 0,
             referralCode: referralCodeToUse
           }

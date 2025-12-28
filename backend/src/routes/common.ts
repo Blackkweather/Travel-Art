@@ -148,9 +148,8 @@ router.get('/top', asyncHandler(async (req, res) => {
   const { type } = req.query;
 
   if (type === 'artists') {
-    // Get top artists by booking count and ratings
-    const topArtists = await prisma.artist.findMany({
-      take: 10,
+    // Get top artists - prioritize those with bookings, but also include artists with images
+    const allArtists = await prisma.artist.findMany({
       include: {
         user: {
           select: {
@@ -165,13 +164,41 @@ router.get('/top', asyncHandler(async (req, res) => {
             }
           }
         }
-      },
-      orderBy: {
-        bookings: {
-          _count: 'desc'
-        }
       }
     });
+
+    // Sort: artists with bookings first, then artists with images, then others
+    const sortedArtists = allArtists.sort((a, b) => {
+      const aHasBookings = a.bookings && a.bookings.length > 0;
+      const bHasBookings = b.bookings && b.bookings.length > 0;
+      
+      // Check if artist has images (handle both string and array formats)
+      let aHasImages = false;
+      if (a.images) {
+        if (typeof a.images === 'string') {
+          aHasImages = a.images.trim() !== '' && a.images !== '[]' && a.images !== 'null';
+        } else if (Array.isArray(a.images)) {
+          aHasImages = a.images.length > 0;
+        }
+      }
+      
+      let bHasImages = false;
+      if (b.images) {
+        if (typeof b.images === 'string') {
+          bHasImages = b.images.trim() !== '' && b.images !== '[]' && b.images !== 'null';
+        } else if (Array.isArray(b.images)) {
+          bHasImages = b.images.length > 0;
+        }
+      }
+      
+      if (aHasBookings && !bHasBookings) return -1;
+      if (!aHasBookings && bHasBookings) return 1;
+      if (aHasImages && !bHasImages) return -1;
+      if (!aHasImages && bHasImages) return 1;
+      return (b.bookings?.length || 0) - (a.bookings?.length || 0);
+    });
+
+    const topArtists = sortedArtists.slice(0, 10);
 
     // Add rating badges
     const artistsWithBadges = await Promise.all(
@@ -205,7 +232,7 @@ router.get('/top', asyncHandler(async (req, res) => {
         return {
           ...artist,
           ratingBadge,
-          bookingCount: artist.bookings.length,
+          bookingCount: artist.bookings?.length || 0,
           images: images
         };
       })

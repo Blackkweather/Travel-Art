@@ -188,11 +188,6 @@ const LoginPage: React.FC = () => {
             <p className="text-sm text-gray-500">
               Demo credentials (Dev Only):
             </p>
-            <div className="mt-2 text-xs text-gray-400 space-y-1">
-              <p>Admin: admin@travelart.test / Password123!</p>
-              <p>Artist: artist1@example.com / password123</p>
-              <p>Hotel: hotel1@example.com / password123</p>
-            </div>
           </div>
         )}
       </motion.div>

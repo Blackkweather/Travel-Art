@@ -121,16 +121,9 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: async () => {
-        // Sign out from Clerk if available
-        try {
-          const { useClerk } = await import('@clerk/clerk-react')
-          // Note: We can't use hooks here, so we'll handle it in components
-          // The logout will be handled by Clerk's signOut in the component
-        } catch (error) {
-          // Clerk not available, just clear local state
-        }
-        
+      logout: () => {
+        // Only clear local state - never auto-logout
+        // Logout must be explicitly triggered by user action in components
         set({
           user: null,
           token: null,
@@ -139,7 +132,15 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
-        const { token } = get()
+        const { token, user } = get()
+        
+        // If we have a user in state, keep them logged in
+        // Only check auth if we have a token but no user
+        if (user && token) {
+          set({ isLoading: false, isAuthenticated: true })
+          return
+        }
+        
         if (!token) {
           set({ isLoading: false, isAuthenticated: false })
           return
@@ -154,13 +155,20 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false
           })
         } catch (error) {
-          // Token invalid or expired - clear auth state
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            isLoading: false
-          })
+          // Only clear auth on explicit 401/403 errors
+          // Keep user logged in for network errors
+          const status = (error as any)?.response?.status
+          if (status === 401 || status === 403) {
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              isLoading: false
+            })
+          } else {
+            // Network error - keep user logged in
+            set({ isLoading: false })
+          }
         }
       },
 
