@@ -1,23 +1,8 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useAuth as useClerkAuth } from '@clerk/clerk-react'
+import { useAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
 import { setClerkTokenGetter } from '@/utils/clerkToken'
-
-// Check if Clerk is available
-const CLERK_AVAILABLE = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-
-// Safe hook wrapper for useAuth
-const useSafeAuth = () => {
-  if (CLERK_AVAILABLE) {
-    try {
-      return useClerkAuth()
-    } catch {
-      return { isLoaded: true, isSignedIn: false, getToken: null }
-    }
-  }
-  return { isLoaded: true, isSignedIn: false, getToken: null }
-}
 import { AnimatePresence } from 'framer-motion'
 import Layout from '@/components/Layout'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -95,7 +80,7 @@ const DashboardRedirect = () => {
 
 function App() {
   const { isLoading, checkAuth, syncClerkUser } = useAuthStore()
-  const auth = useSafeAuth()
+  const auth = useAuth()
   const { isLoaded, isSignedIn, getToken } = auth
   const clerkUser = isSignedIn ? (auth as any).user : null
   const location = useLocation()

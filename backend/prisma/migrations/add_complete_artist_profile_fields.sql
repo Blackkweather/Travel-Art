@@ -15,3 +15,4 @@ CREATE INDEX IF NOT EXISTS "artists_discipline_idx" ON "artists"("discipline");
 
 
 
+
