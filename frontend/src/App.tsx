@@ -1,8 +1,17 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
 import { useEffect } from 'react'
 import { setClerkTokenGetter } from '@/utils/clerkToken'
+
+// Conditionally import useAuth
+let useAuth: any
+try {
+  const clerkReact = await import('@clerk/clerk-react')
+  useAuth = clerkReact.useAuth
+} catch {
+  // Clerk not available, create a dummy hook
+  useAuth = () => ({ isLoaded: true, isSignedIn: false, getToken: null })
+}
 import { AnimatePresence } from 'framer-motion'
 import Layout from '@/components/Layout'
 import LoadingSpinner from '@/components/LoadingSpinner'

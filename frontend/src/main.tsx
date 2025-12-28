@@ -9,11 +9,11 @@ import './index.css'
 import 'leaflet/dist/leaflet.css'
 
 // Get Clerk publishable key from environment
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_dummy_key_for_development'
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
-// Warn if using dummy key
-if (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY) {
-  console.warn("⚠️ Clerk Publishable Key is missing. Using dummy key - authentication will not work.")
+// Warn if Clerk key is missing
+if (!PUBLISHABLE_KEY) {
+  console.warn("⚠️ Clerk Publishable Key is missing. Authentication features will be disabled.")
 }
 
 const queryClient = new QueryClient({
@@ -25,37 +25,46 @@ const queryClient = new QueryClient({
   },
 })
 
+// App content without Clerk wrapper
+const AppContent = (
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <App />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#0B1F3F',
+            color: '#F9F8F3',
+          },
+          success: {
+            iconTheme: {
+              primary: '#C9A63C',
+              secondary: '#F9F8F3',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#F9F8F3',
+            },
+          },
+        }}
+      />
+    </BrowserRouter>
+  </QueryClientProvider>
+)
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#0B1F3F',
-                color: '#F9F8F3',
-              },
-              success: {
-                iconTheme: {
-                  primary: '#C9A63C',
-                  secondary: '#F9F8F3',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#F9F8F3',
-                },
-              },
-            }}
-          />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ClerkProvider>
+    {PUBLISHABLE_KEY ? (
+      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+        {AppContent}
+      </ClerkProvider>
+    ) : (
+      AppContent
+    )}
   </React.StrictMode>,
 )
 
