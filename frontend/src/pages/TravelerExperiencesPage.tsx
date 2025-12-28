@@ -40,22 +40,70 @@ interface Experience {
 
 const TravelerExperiencesPage: React.FC = () => {
   const [experiences, setExperiences] = useState<Experience[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
-  const storiesRef = useRef<HTMLDivElement>(null)
-  const storiesInView = useInView(storiesRef, { once: true, margin: '-100px' })
 
   // Fetch experiences from API
   useEffect(() => {
     const fetchExperiences = async () => {
+      setLoading(true)
       try {
-        const res = await tripsApi.getAll({ status: 'PUBLISHED', limit: 20 })
-        if (res.data?.success && res.data.data) {
-          const trips = Array.isArray(res.data.data) ? res.data.data : []
+        // The trips API always returns PUBLISHED trips, no need for status param
+        const res = await tripsApi.getAll()
+        
+        console.log('🔍 Trips API Response:', res)
+        console.log('🔍 Response data:', res.data)
+        console.log('🔍 Response data type:', typeof res.data)
+        console.log('🔍 Is array?', Array.isArray(res.data))
+        
+        // The trips API returns an array directly (not wrapped in success/data)
+        // Axios wraps the response, so res.data is the actual array
+        let trips: any[] = []
+        
+        if (Array.isArray(res.data)) {
+          trips = res.data
+          console.log('✅ Using direct array format')
+        } else if (res.data && Array.isArray(res.data.data)) {
+          trips = res.data.data
+          console.log('✅ Using wrapped data format')
+        } else if (res.data && res.data.success && Array.isArray(res.data.data)) {
+          trips = res.data.data
+          console.log('✅ Using success.data format')
+        } else {
+          console.error('❌ Unknown response format:', res.data)
+        }
+        
+        console.log('📊 Parsed trips count:', trips.length)
+        console.log('📊 Parsed trips:', trips)
+        
+        if (trips.length > 0) {
           const formattedExperiences = trips.map((trip: any) => {
-            const location = trip.location 
-              ? (typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location)
-              : { city: 'Unknown', country: '', lat: 0, lng: 0 }
+            // Parse location if it's a string
+            let location = { city: 'Unknown', country: '', lat: 0, lng: 0 }
+            if (trip.location) {
+              try {
+                location = typeof trip.location === 'string' 
+                  ? JSON.parse(trip.location) 
+                  : trip.location
+              } catch (e) {
+                console.warn('Failed to parse location:', e)
+                location = { city: 'Unknown', country: '', lat: 0, lng: 0 }
+              }
+            }
+            
+            // Parse images if they're a string
+            let images: string[] = []
+            if (trip.images) {
+              try {
+                images = Array.isArray(trip.images) 
+                  ? trip.images 
+                  : (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
+              } catch (e) {
+                console.warn('Failed to parse images:', e)
+                images = []
+              }
+            }
             
             return {
               id: trip.id || String(Math.random()),
@@ -66,24 +114,33 @@ const TravelerExperiencesPage: React.FC = () => {
                 lat: location.lat || 0,
                 lng: location.lng || 0
               },
-              artist: trip.artist?.user?.name || trip.artistName || 'Artist',
-              hotel: trip.hotel?.name || trip.hotelName || 'Hotel',
-              date: trip.startDate || trip.date || new Date().toISOString().split('T')[0],
-              image: Array.isArray(trip.images) && trip.images[0]
-                ? trip.images[0]
+              artist: trip.artist || 'Featured Artist',
+              hotel: trip.hotel || 'Luxury Venues',
+              date: trip.date || new Date().toISOString().split('T')[0],
+              image: images && images.length > 0
+                ? images[0]
                 : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
-              type: (trip.type || 'intimate') as Experience['type'],
-              rating: trip.averageRating || trip.rating || 4.5,
-              description: trip.description || trip.summary || 'An amazing experience awaits.'
+              type: (trip.type === 'rooftop' || trip.type === 'intimate' || trip.type === 'workshop' || trip.type === 'residency' 
+                ? trip.type 
+                : 'intimate') as Experience['type'],
+              rating: trip.rating || 4.5,
+              description: trip.description || 'An amazing experience awaits.'
             }
           })
           
-          if (formattedExperiences.length > 0) {
-            setExperiences(formattedExperiences)
-          }
+          console.log('Formatted experiences:', formattedExperiences)
+          console.log('✅ Formatted experiences:', formattedExperiences)
+          console.log('✅ Setting experiences state with', formattedExperiences.length, 'items')
+          setExperiences(formattedExperiences)
+        } else {
+          console.warn('⚠️ No trips found in API response')
+          console.warn('⚠️ Response was:', res.data)
         }
-      } catch (error) {
-        console.error('Failed to fetch experiences from API:', error)
+      } catch (error: any) {
+        console.error('❌ Failed to fetch experiences from API:', error)
+        console.error('❌ Error details:', error.response?.data || error.message)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -91,12 +148,38 @@ const TravelerExperiencesPage: React.FC = () => {
   }, [])
 
   const filteredExperiences = useMemo(() => {
-    return experiences.filter(exp => {
-      const matchesLocation = !selectedLocation || exp.location.city === selectedLocation
+    console.log('🔍 Filtering experiences:', {
+      total: experiences.length,
+      filterType,
+      selectedLocation,
+      experiences: experiences.map(e => ({ id: e.id, title: e.title, type: e.type, city: e.location?.city }))
+    })
+    
+    if (experiences.length === 0) {
+      console.log('⚠️ No experiences to filter')
+      return []
+    }
+    
+    const filtered = experiences.filter(exp => {
+      const matchesLocation = !selectedLocation || (exp.location?.city === selectedLocation)
       const matchesType = filterType === 'all' || exp.type === filterType
+      
+      console.log(`🔍 Experience "${exp.title}":`, {
+        type: exp.type,
+        filterType,
+        matchesType,
+        city: exp.location?.city,
+        selectedLocation,
+        matchesLocation,
+        passes: matchesLocation && matchesType
+      })
+      
       return matchesLocation && matchesType
     })
-  }, [selectedLocation, filterType])
+    
+    console.log('🔍 Filtered result:', filtered.length, 'experiences')
+    return filtered
+  }, [experiences, selectedLocation, filterType])
 
   const locations = useMemo(() => {
     const unique = new Set(experiences.map(e => e.location.city))
@@ -260,8 +343,21 @@ const TravelerExperiencesPage: React.FC = () => {
       {/* Experiences Grid */}
       <section className="py-16 bg-cream">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredExperiences.map((exp, index) => (
+          {loading ? (
+            <div className="text-center py-20">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gold mb-4"></div>
+              <p className="text-gray-600 text-lg">Loading experiences...</p>
+            </div>
+          ) : filteredExperiences.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-gray-600 text-lg mb-4">No experiences found.</p>
+              <p className="text-gray-500 mb-2">Total experiences in state: {experiences.length}</p>
+              <p className="text-gray-500 mb-2">Filtered experiences: {filteredExperiences.length}</p>
+              <p className="text-gray-500">Check back soon to discover our immersive experiences.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredExperiences.map((exp, index) => (
               <Link
                 key={exp.id}
                 to={`/experience/${exp.id}`}
@@ -322,86 +418,9 @@ const TravelerExperiencesPage: React.FC = () => {
                 </div>
               </motion.div>
               </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Editorial Stories Section */}
-      <section ref={storiesRef} className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={storiesInView ? { opacity: 1, y: 0 } : {}}
-            className="text-center mb-12"
-          >
-            <h2 className="text-4xl font-serif font-bold text-navy mb-4">
-              Stories from the Road
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Discover how artists and hotels create unforgettable experiences together
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[
-              {
-                title: 'The Rooftop Revolution: How Artists Are Redefining Hotel Experiences',
-                excerpt: 'Explore how luxury hotels are partnering with world-class artists to create unique cultural experiences that guests will never forget.',
-                image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80',
-                date: '2024-05-15'
-              },
-              {
-                title: 'From Studio to Rooftop: A Pianist\'s Journey',
-                excerpt: 'Follow Sophie Laurent as she performs at iconic hotels across Europe, bringing classical music to unexpected places.',
-                image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
-                date: '2024-04-22'
-              },
-              {
-                title: 'Cultural Immersion: Artist Residencies That Transform Travel',
-                excerpt: 'Learn how week-long artist residencies create deeper connections between travelers and local culture.',
-                image: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800&q=80',
-                date: '2024-03-10'
-              },
-              {
-                title: 'The Art of Intimate Performance: Creating Magic in Small Spaces',
-                excerpt: 'Discover how intimate performances create more meaningful connections between artists and audiences.',
-                image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80',
-                date: '2024-02-28'
-              }
-            ].map((story, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                animate={storiesInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="card-showcase group cursor-pointer"
-              >
-                <div className="relative h-48 overflow-hidden rounded-lg mb-4">
-                  <img
-                    src={story.image}
-                    alt={story.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-                <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  {new Date(story.date).toLocaleDateString()}
-                </div>
-                <h3 className="text-xl font-serif font-semibold text-navy mb-3 group-hover:text-gold transition-colors">
-                  {story.title}
-                </h3>
-                <p className="text-gray-600 mb-4 line-clamp-3">{story.excerpt}</p>
-                <Link
-                  to={`/stories/${index + 1}`}
-                  className="inline-flex items-center text-gold font-semibold hover:text-navy transition-colors group"
-                >
-                  Read More
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

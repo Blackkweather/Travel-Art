@@ -1,17 +1,91 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Building, Star, MapPin, Users, Calendar, Award } from 'lucide-react'
 import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
+import { commonApi } from '@/utils/api'
 
 const PartnersPage: React.FC = () => {
   const { scrollY } = useScroll()
+  const navigate = useNavigate()
+  const [partners, setPartners] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   
   // Scroll-based animations for header
   const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
   const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
-  const partners = [
+
+  // Fetch hotels from database
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        setLoading(true)
+        const res = await commonApi.getTopHotels()
+        
+        console.log('Hotels API Response:', res.data)
+        
+        // The API returns { success: true, data: [...] }
+        let hotels: any[] = []
+        if (res.data?.success && res.data.data) {
+          hotels = Array.isArray(res.data.data) ? res.data.data : []
+        } else if (Array.isArray(res.data)) {
+          hotels = res.data
+        } else if (Array.isArray(res.data?.data)) {
+          hotels = res.data.data
+        }
+        
+        console.log('Parsed hotels:', hotels.length)
+        
+        if (hotels.length > 0) {
+          const formattedPartners = hotels.map((hotel: any) => {
+            // Location is already parsed by backend
+            const location = hotel.location || {}
+            const images = hotel.images || []
+            
+            // Parse performance spots
+            let performanceSpots: any[] = []
+            if (hotel.performanceSpots) {
+              try {
+                performanceSpots = Array.isArray(hotel.performanceSpots) 
+                  ? hotel.performanceSpots 
+                  : (typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : [])
+              } catch (e) {
+                performanceSpots = []
+              }
+            }
+            
+            const locationStr = location.city 
+              ? `${location.city}, ${location.country || ''}`.trim()
+              : (location.country || hotel.user?.country || 'Unknown')
+            
+            return {
+              id: hotel.id,
+              name: hotel.name,
+              location: locationStr,
+              category: 'Luxury Hotel',
+              rating: hotel.averageRating || 4.5,
+              bookings: hotel.bookingCount || 0,
+              image: images && images.length > 0 ? images[0] : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
+              description: hotel.description || 'Luxury hotel offering exceptional artistic experiences.',
+              specialties: performanceSpots.slice(0, 3).map((spot: any) => spot.name || spot),
+              performanceSpots: performanceSpots.map((spot: any) => spot.name || spot)
+            }
+          })
+          
+          setPartners(formattedPartners)
+        }
+      } catch (error) {
+        console.error('Failed to fetch hotels:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchHotels()
+  }, [])
+
+  const staticPartners = [
     {
       name: 'Hotel Plaza Athénée',
       location: 'Paris, France',
@@ -245,10 +319,21 @@ const PartnersPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {partners.map((partner, index) => (
-            <motion.div
-              key={partner.name}
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gold mb-4"></div>
+            <p className="text-gray-600 text-lg">Loading partners...</p>
+          </div>
+        ) : partners.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-gray-600 text-lg mb-4">No partner hotels found.</p>
+            <p className="text-gray-500">Check back soon to discover our luxury hotel partners.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {partners.map((partner, index) => (
+              <motion.div
+                key={partner.id || partner.name}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -324,13 +409,17 @@ const PartnersPage: React.FC = () => {
                   </span>
                 </div>
 
-                <button className="w-full btn-primary">
+                <button 
+                  onClick={() => navigate(`/hotel/${partner.id}`)}
+                  className="w-full btn-primary"
+                >
                   View Venues
                 </button>
               </div>
             </motion.div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Benefits Section */}
