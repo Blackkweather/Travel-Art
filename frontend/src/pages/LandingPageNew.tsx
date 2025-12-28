@@ -14,12 +14,52 @@ const LandingPageNew: React.FC = () => {
 
   // Scroll effects
   const [headerScrolled, setHeaderScrolled] = useState(false)
+  const [activeKeyword, setActiveKeyword] = useState(0) // Track which keyword is active
   const heroY = useTransform(scrollY, [0, 500], [0, -150])
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0])
 
   // In-view animations
   const splitScreenInView = useInView(splitScreenRef, { once: true, amount: 0.3 })
   const experiencesInView = useInView(experiencesRef, { once: true, amount: 0.2 })
+
+  // Keywords with their images
+  const keywords = [
+    { 
+      word: 'Exclusive', 
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80' 
+    },
+    { 
+      word: 'Curated', 
+      image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&q=80' 
+    },
+    { 
+      word: 'Unforgettable', 
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&q=80' 
+    }
+  ]
+
+  // Scroll-based keyword detection
+  useEffect(() => {
+    const handleScroll = () => {
+      const section = splitScreenRef.current
+      if (!section) return
+
+      const rect = section.getBoundingClientRect()
+      const scrollProgress = 1 - (rect.top / window.innerHeight)
+      
+      // Calculate which keyword should be active based on scroll
+      if (scrollProgress < 0.3) {
+        setActiveKeyword(0) // Exclusive
+      } else if (scrollProgress < 0.6) {
+        setActiveKeyword(1) // Curated
+      } else {
+        setActiveKeyword(2) // Unforgettable
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Data state
   const [experiences, setExperiences] = useState<any[]>([])
@@ -210,55 +250,89 @@ const LandingPageNew: React.FC = () => {
         </motion.div>
       </section>
 
-      {/* SPLIT-SCREEN SECTION - "Residence Live" Style */}
-      <section ref={splitScreenRef} className="grid lg:grid-cols-2 min-h-[85vh]">
+      {/* SPLIT-SCREEN SECTION - "Residence Live" Style with Scroll Animations */}
+      <section ref={splitScreenRef} className="grid lg:grid-cols-2 min-h-[85vh] rounded-3xl overflow-hidden">
         {/* Left Side - Text Content */}
         <motion.div 
-          className="flex flex-col justify-center p-12 lg:p-20 bg-cream"
+          className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl"
           initial={{ opacity: 0, x: -50 }}
           animate={splitScreenInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.8 }}
         >
-          {/* Yellow Label */}
+          {/* Yellow Label - Animates with scroll */}
           <motion.div
             className="inline-block mb-8"
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={splitScreenInView ? { opacity: 1, scale: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block">
+            <motion.div 
+              className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block rounded-lg"
+              animate={{
+                scale: [1, 1.05, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
               Travel Art Experience
-            </div>
+            </motion.div>
           </motion.div>
           
-          {/* Large Keywords */}
-          <div className="space-y-2">
-            {['Exclusive', 'Curated', 'Unforgettable'].map((word, i) => (
-              <motion.h2
-                key={word}
-                className="text-6xl lg:text-7xl font-serif font-bold text-navy leading-none"
+          {/* Large Keywords with Highlight Effect */}
+          <div className="space-y-4">
+            {keywords.map((item, i) => (
+              <motion.div
+                key={item.word}
+                className="relative"
                 initial={{ opacity: 0, y: 30 }}
                 animate={splitScreenInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.3 + (i * 0.1) }}
               >
-                {word}
-              </motion.h2>
+                {/* Animated highlight box */}
+                <motion.div
+                  className="absolute -inset-2 bg-gold rounded-lg -z-10"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{
+                    opacity: activeKeyword === i ? 0.3 : 0,
+                    scale: activeKeyword === i ? 1 : 0.9,
+                  }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+                <h2 className={`text-6xl lg:text-7xl font-serif font-bold leading-none transition-colors duration-500 ${
+                  activeKeyword === i ? 'text-navy' : 'text-navy/40'
+                }`}>
+                  {item.word}
+                </h2>
+              </motion.div>
             ))}
           </div>
         </motion.div>
         
-        {/* Right Side - Image */}
+        {/* Right Side - Image with Transitions */}
         <motion.div 
-          className="relative overflow-hidden"
+          className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl"
           initial={{ opacity: 0, x: 50 }}
           animate={splitScreenInView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <img 
-            src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&q=80"
-            alt="Artist performing"
-            className="w-full h-full object-cover"
-          />
+          {/* Multiple images that fade between each other */}
+          {keywords.map((item, i) => (
+            <motion.img
+              key={i}
+              src={item.image}
+              alt={item.word}
+              className="absolute inset-0 w-full h-full object-cover"
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: activeKeyword === i ? 1 : 0,
+                scale: activeKeyword === i ? 1 : 1.1,
+              }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+            />
+          ))}
         </motion.div>
       </section>
 
