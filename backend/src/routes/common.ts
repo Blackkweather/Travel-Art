@@ -178,7 +178,7 @@ router.get('/top', asyncHandler(async (req, res) => {
         if (typeof a.images === 'string') {
           aHasImages = a.images.trim() !== '' && a.images !== '[]' && a.images !== 'null';
         } else if (Array.isArray(a.images)) {
-          aHasImages = a.images.length > 0;
+          aHasImages = (a.images as any[]).length > 0;
         }
       }
       
@@ -187,7 +187,7 @@ router.get('/top', asyncHandler(async (req, res) => {
         if (typeof b.images === 'string') {
           bHasImages = b.images.trim() !== '' && b.images !== '[]' && b.images !== 'null';
         } else if (Array.isArray(b.images)) {
-          bHasImages = b.images.length > 0;
+          bHasImages = (b.images as any[]).length > 0;
         }
       }
       
