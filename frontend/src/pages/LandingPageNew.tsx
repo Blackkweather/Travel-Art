@@ -38,27 +38,37 @@ const LandingPageNew: React.FC = () => {
     }
   ]
 
-  // Scroll-based keyword detection
+  // Refs for each keyword to detect scroll position
+  const keywordRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
+
+  // Scroll-based keyword detection using Intersection Observer
   useEffect(() => {
-    const handleScroll = () => {
-      const section = splitScreenRef.current
-      if (!section) return
+    const observers: IntersectionObserver[] = []
 
-      const rect = section.getBoundingClientRect()
-      const scrollProgress = 1 - (rect.top / window.innerHeight)
-      
-      // Calculate which keyword should be active based on scroll
-      if (scrollProgress < 0.3) {
-        setActiveKeyword(0) // Exclusive
-      } else if (scrollProgress < 0.6) {
-        setActiveKeyword(1) // Curated
-      } else {
-        setActiveKeyword(2) // Unforgettable
-      }
+    keywordRefs.forEach((ref, index) => {
+      if (!ref.current) return
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+              setActiveKeyword(index)
+            }
+          })
+        },
+        {
+          threshold: [0, 0.3, 0.5, 0.7, 1],
+          rootMargin: '-20% 0px -20% 0px'
+        }
+      )
+
+      observer.observe(ref.current)
+      observers.push(observer)
+    })
+
+    return () => {
+      observers.forEach(observer => observer.disconnect())
     }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   // Data state
@@ -251,89 +261,103 @@ const LandingPageNew: React.FC = () => {
       </section>
 
       {/* SPLIT-SCREEN SECTION - "Residence Live" Style with Scroll Animations */}
-      <section ref={splitScreenRef} className="grid lg:grid-cols-2 min-h-[85vh] rounded-3xl overflow-hidden">
-        {/* Left Side - Text Content */}
-        <motion.div 
-          className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl"
-          initial={{ opacity: 0, x: -50 }}
-          animate={splitScreenInView ? { opacity: 1, x: 0 } : {}}
-          transition={{ duration: 0.8 }}
-        >
-          {/* Yellow Label - Animates with scroll */}
-          <motion.div
-            className="inline-block mb-8"
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={splitScreenInView ? { opacity: 1, scale: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
+      <section ref={splitScreenRef} className="relative min-h-[300vh] py-20">
+        {/* Sticky Container */}
+        <div className="sticky top-0 grid lg:grid-cols-2 min-h-screen rounded-3xl overflow-hidden">
+          {/* Left Side - Text Content */}
+          <motion.div 
+            className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative"
+            initial={{ opacity: 0, x: -50 }}
+            animate={splitScreenInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.8 }}
           >
-            <motion.div 
-              className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block rounded-lg"
-              animate={{
-                scale: [1, 1.05, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
+            {/* Yellow Label - Static at top */}
+            <motion.div
+              className="inline-block mb-12"
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={splitScreenInView ? { opacity: 1, scale: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              Travel Art Experience
+              <div className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block rounded-lg">
+                Travel Art Experience
+              </div>
             </motion.div>
+            
+            {/* Large Keywords - Yellow box moves to each */}
+            <div className="space-y-6 relative">
+              {/* Moving Yellow Highlight Box */}
+              <motion.div
+                className="absolute bg-gold rounded-lg -z-10"
+                animate={{
+                  top: activeKeyword === 0 ? '0%' : activeKeyword === 1 ? '33.33%' : '66.66%',
+                  height: '33.33%',
+                }}
+                transition={{ 
+                  duration: 0.8, 
+                  ease: [0.25, 0.1, 0.25, 1],
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 20
+                }}
+                style={{
+                  left: '-1rem',
+                  right: '-1rem',
+                }}
+              />
+              
+              {keywords.map((item, i) => (
+                <div
+                  key={item.word}
+                  ref={keywordRefs[i]}
+                  className="relative"
+                >
+                  <motion.h2 
+                    className={`text-6xl lg:text-7xl font-serif font-bold leading-none transition-colors duration-500 ${
+                      activeKeyword === i ? 'text-navy' : 'text-navy/30'
+                    }`}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={splitScreenInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.6, delay: 0.3 + (i * 0.1) }}
+                  >
+                    {item.word}
+                  </motion.h2>
+                </div>
+              ))}
+            </div>
           </motion.div>
           
-          {/* Large Keywords with Highlight Effect */}
-          <div className="space-y-4">
+          {/* Right Side - Image with Smooth Transitions */}
+          <motion.div 
+            className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl"
+            initial={{ opacity: 0, x: 50 }}
+            animate={splitScreenInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            {/* Multiple images that fade between each other */}
             {keywords.map((item, i) => (
-              <motion.div
-                key={item.word}
-                className="relative"
-                initial={{ opacity: 0, y: 30 }}
-                animate={splitScreenInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: 0.3 + (i * 0.1) }}
-              >
-                {/* Animated highlight box */}
-                <motion.div
-                  className="absolute -inset-2 bg-gold rounded-lg -z-10"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{
-                    opacity: activeKeyword === i ? 0.3 : 0,
-                    scale: activeKeyword === i ? 1 : 0.9,
-                  }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                />
-                <h2 className={`text-6xl lg:text-7xl font-serif font-bold leading-none transition-colors duration-500 ${
-                  activeKeyword === i ? 'text-navy' : 'text-navy/40'
-                }`}>
-                  {item.word}
-                </h2>
-              </motion.div>
+              <motion.img
+                key={i}
+                src={item.image}
+                alt={item.word}
+                className="absolute inset-0 w-full h-full object-cover"
+                initial={{ opacity: i === 0 ? 1 : 0 }}
+                animate={{
+                  opacity: activeKeyword === i ? 1 : 0,
+                  scale: activeKeyword === i ? 1 : 1.05,
+                }}
+                transition={{ 
+                  duration: 1, 
+                  ease: [0.25, 0.1, 0.25, 1]
+                }}
+              />
             ))}
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
         
-        {/* Right Side - Image with Transitions */}
-        <motion.div 
-          className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl"
-          initial={{ opacity: 0, x: 50 }}
-          animate={splitScreenInView ? { opacity: 1, x: 0 } : {}}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          {/* Multiple images that fade between each other */}
-          {keywords.map((item, i) => (
-            <motion.img
-              key={i}
-              src={item.image}
-              alt={item.word}
-              className="absolute inset-0 w-full h-full object-cover"
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: activeKeyword === i ? 1 : 0,
-                scale: activeKeyword === i ? 1 : 1.1,
-              }}
-              transition={{ duration: 0.8, ease: "easeInOut" }}
-            />
-          ))}
-        </motion.div>
+        {/* Spacer divs to create scroll space for each keyword */}
+        {keywords.map((_, i) => (
+          <div key={i} className="h-screen" />
+        ))}
       </section>
 
       {/* EXPERIENCES GRID */}
