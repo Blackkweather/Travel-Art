@@ -538,7 +538,6 @@ export function createInitialArtisticCategory(): ArtisticCategory {
     secondaryCategory: undefined,
     audienceType: [],
     languages: [],
-    otherLanguages: undefined
   };
 }
 
@@ -642,3 +641,4 @@ export function formatDateString(date: Date): string {
   
   return `${day}/${month}/${year}`;
 }
+
