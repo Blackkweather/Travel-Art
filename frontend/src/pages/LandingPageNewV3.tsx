@@ -608,8 +608,8 @@ export default function LandingPageNewV3() {
 
       {/* Ambient Audio */}
       <AmbientAudio 
-        src="/ocean-waves.mp3" 
-        initialVolume={1.0}
+        src="https://www.youtube.com/watch?v=LCQSGDqWIEY" 
+        initialVolume={0.5}
         maxScrollForFade={1000}
       />
 
