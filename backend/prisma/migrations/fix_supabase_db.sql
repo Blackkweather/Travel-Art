@@ -113,3 +113,11 @@ CREATE POLICY IF NOT EXISTS "Public trips are viewable" ON "trips"
 
 
 
+
+
+
+
+
+
+
+

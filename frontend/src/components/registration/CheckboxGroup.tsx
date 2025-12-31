@@ -40,8 +40,8 @@ const Checkbox: React.FC<CheckboxProps> = ({
         <motion.div
           initial={false}
           animate={{
-            backgroundColor: checked ? '#F0B429' : '#FFF',
-            borderColor: checked ? '#F0B429' : '#E5E7EB',
+            backgroundColor: checked ? '#14b8a6' : '#FFF',
+            borderColor: checked ? '#14b8a6' : '#E5E7EB',
             scale: checked ? 1 : 1
           }}
           transition={{ duration: 0.2 }}

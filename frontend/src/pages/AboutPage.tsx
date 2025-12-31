@@ -1,11 +1,11 @@
 import React from 'react'
-import Header from '@/components/Header'
+import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 
 const AboutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+      <SimpleNavbar />
 
       <main className="container mx-auto px-6 pt-28 pb-20 max-w-4xl">
         <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-6">About Travel Art</h1>
@@ -40,7 +40,7 @@ const AboutPage: React.FC = () => {
             <li>Browse a curated selection of verified performing artists</li>
             <li>Filter by discipline, location, and availability</li>
             <li>Book performances with a simple credit-based system</li>
-            <li>Enhance your guest experience with world-class entertainment</li>
+            <li>Enhance your guest experience with talented hearts entertainment</li>
           </ul>
 
           <h2 className="text-2xl font-serif font-semibold text-navy mt-8">Our Values</h2>

@@ -7,7 +7,7 @@ const HotelProfile: React.FC = () => {
   const [profile, setProfile] = useState({
     name: 'Hotel Plaza Athénée',
     category: 'Luxury Palace',
-    bio: 'Iconic luxury hotel in the heart of Paris with stunning Eiffel Tower views and world-class rooftop venues. We specialize in intimate concerts and grand performances.',
+    bio: 'Iconic luxury hotel in the heart of Paris with stunning Eiffel Tower views and talented hearts rooftop venues. We specialize in intimate concerts and grand performances.',
     location: 'Paris, France',
     address: '25 Avenue Montaigne, 75008 Paris, France',
     specialties: ['Eiffel Tower Views', 'Intimate Concerts', 'Classical Music', 'Rooftop Performances'],

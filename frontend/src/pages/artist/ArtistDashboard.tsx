@@ -106,7 +106,7 @@ const ArtistDashboard: React.FC = () => {
   const statsData = [
     { label: 'Total Bookings', value: stats.totalBookings.toString(), icon: Calendar, color: 'text-blue-600' },
     { label: 'Hotels Worked With', value: stats.hotelsWorkedWith.toString(), icon: Users, color: 'text-green-600' },
-    { label: 'Hotel Rating', value: stats.hotelRating > 0 ? stats.hotelRating.toFixed(1) : 'N/A', icon: Star, color: 'text-yellow-600' },
+    { label: 'Hotel Rating', value: stats.hotelRating > 0 ? stats.hotelRating.toFixed(1) : 'N/A', icon: Star, color: 'text-amber-600' },
     { label: 'Active Bookings', value: stats.activeBookings.toString(), icon: CreditCard, color: 'text-purple-600' }
   ]
 
@@ -164,7 +164,7 @@ const ArtistDashboard: React.FC = () => {
               </div>
               <span className={`px-4 py-2 rounded-full text-sm font-semibold shadow-sm ${
                 booking.status === 'confirmed' ? 'bg-green-100 text-green-800 border border-green-200' :
-                booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                booking.status === 'pending' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
                 'bg-blue-100 text-blue-800 border border-blue-200'
               }`}>
                 {booking.status}

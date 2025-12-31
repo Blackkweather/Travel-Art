@@ -1,11 +1,11 @@
 import React from 'react'
-import Header from '@/components/Header'
+import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 
 const TermsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+      <SimpleNavbar />
 
       <main className="container mx-auto px-6 pt-28 pb-20 max-w-4xl">
         <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-6">Terms of Service</h1>

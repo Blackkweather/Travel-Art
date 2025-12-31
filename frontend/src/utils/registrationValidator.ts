@@ -359,7 +359,7 @@ export function getPasswordStrengthLabel(strength: number): string {
 export function getPasswordStrengthColor(strength: number): string {
   if (strength < 20) return 'text-red-600';
   if (strength < 40) return 'text-orange-600';
-  if (strength < 60) return 'text-yellow-600';
+  if (strength < 60) return 'text-amber-600';
   if (strength < 80) return 'text-lime-600';
   if (strength < 100) return 'text-green-600';
   return 'text-green-700';

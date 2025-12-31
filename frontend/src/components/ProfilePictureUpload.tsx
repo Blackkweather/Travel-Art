@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, X, Loader } from 'lucide-react';
-import axios from 'axios';
-import { getClerkToken } from '@/utils/clerkToken';
+import { apiClient } from '@/utils/api';
+import { normalizeImageUrl } from '@/utils/imageUrl';
 import toast from 'react-hot-toast';
 
 interface ProfilePictureUploadProps {
@@ -20,6 +20,8 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -49,23 +51,53 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
+      console.log('📤 Starting upload...', { 
+        fileName: file.name, 
+        fileSize: file.size, 
+        fileType: file.type 
+      });
+      
       const formData = new FormData();
       formData.append('profilePicture', file);
+      
+      // Verify FormData contents
+      console.log('📦 FormData entries:');
+      for (const [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value instanceof File ? {
+          name: value.name,
+          size: value.size,
+          type: value.type
+        } : value);
+      }
 
-      const token = await getClerkToken()
-      const response = await axios.post('/api/upload/profile-picture', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
-      });
-
+      // Use apiClient which automatically handles authentication
+      // The interceptor will handle FormData correctly (no Content-Type header)
+      const response = await apiClient.post('/upload/profile-picture', formData);
+      
+      console.log('✅ Upload successful:', response.data);
       const imageUrl = response.data.data.url;
+      
+      // Call the success callback FIRST - this updates the parent's state
       onUploadSuccess(imageUrl);
-      toast.success('Profile picture uploaded successfully!');
+      
+      // Then clear preview after a short delay to allow parent to update
+      // The parent will pass the new imageUrl as currentImage prop
+      setTimeout(() => {
+        setPreview(null);
+      }, 100);
+      
+      toast.success('Profile picture saved to database!');
+      
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error: any) {
-      console.error('Upload error:', error);
-      toast.error(error.response?.data?.message || 'Failed to upload image');
+      console.error('❌ Upload error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      toast.error(error.response?.data?.message || error.message || 'Failed to upload image');
       setPreview(null);
     } finally {
       setUploading(false);
@@ -79,7 +111,9 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
     }
   };
 
-  const displayImage = preview || currentImage;
+  // Use preview during upload, then fall back to currentImage
+  // If we just uploaded, use the currentImage (which should be updated by parent)
+  const displayImage = preview || (currentImage ? normalizeImageUrl(currentImage) : null);
 
   return (
     <div className="relative inline-block">
@@ -114,7 +148,12 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
       <div className="absolute bottom-2 right-2 flex gap-2">
         <button
-          onClick={() => fileInputRef.current?.click()}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          }}
           disabled={uploading}
           className="bg-gold text-navy p-2 rounded-full hover:bg-gold/90 transition-colors shadow-lg disabled:opacity-50"
           title="Upload new photo"
@@ -124,7 +163,12 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
         {preview && !uploading && (
           <button
-            onClick={handleRemove}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleRemove();
+            }}
             className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
             title="Remove"
           >

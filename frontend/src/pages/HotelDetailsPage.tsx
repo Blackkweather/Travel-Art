@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, useInView } from 'framer-motion'
 import { Star, MapPin, Calendar, Music, Users, Building, Clock, Phone, Mail, Globe, ArrowLeft, MessageCircle, Heart } from 'lucide-react'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
 import { hotelsApi } from '@/utils/api'
@@ -42,7 +42,7 @@ const HotelDetailsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-cream">
-        <Header />
+        <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
@@ -57,7 +57,7 @@ const HotelDetailsPage: React.FC = () => {
   if (!hotel) {
     return (
       <div className="min-h-screen bg-cream">
-        <Header />
+        <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
           <h1 className="text-4xl font-serif font-bold text-navy mb-4">Hotel Not Found</h1>
           <p className="text-gray-600 mb-8">The hotel you're looking for doesn't exist.</p>
@@ -113,7 +113,7 @@ const HotelDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+      <SimpleNavbar />
       
       {/* Hero Section */}
       <div className="relative h-96 overflow-hidden">

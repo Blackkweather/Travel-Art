@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSignUp, useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
-import Header from '../Header';
+import SimpleNavbar from '../SimpleNavbar';
 import Footer from '../Footer';
 import StepIndicator from './StepIndicator';
 import Step1RoleSelection from './Step1RoleSelection';
@@ -144,7 +144,7 @@ const ArtistRegistrationForm: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <Header />
+      <SimpleNavbar />
 
       <main className="flex-1 container mx-auto px-4 py-12">
         {/* Step Indicator */}

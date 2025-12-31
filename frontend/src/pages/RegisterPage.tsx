@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { User, Building, ArrowRight } from 'lucide-react'
 import { ArtistRegistrationFlow, HotelRegistrationFlow } from '@/components/registration'
 import { getLogoUrl } from '@/config/assets'
-import Header from '@/components/Header'
+import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 
 const RegisterPage: React.FC = () => {
@@ -40,7 +40,7 @@ const RegisterPage: React.FC = () => {
   // Show role selection screen with enhanced UI
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
-      <Header />
+      <SimpleNavbar />
       <main className="flex-1 container mx-auto px-4 py-12 md:py-16">
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}

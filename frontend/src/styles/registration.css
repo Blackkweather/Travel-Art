@@ -270,7 +270,7 @@
 }
 
 .password-strength-meter-fill.fair {
-  @apply w-1/2 bg-yellow-500;
+  @apply w-1/2 bg-amber-500;
 }
 
 .password-strength-meter-fill.good {

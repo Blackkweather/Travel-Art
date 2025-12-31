@@ -18,6 +18,7 @@ export interface ArtisticCategory {
   secondaryCategory?: string;
   audienceType: string[];
   languages: string[];
+  otherLanguages?: string;
 }
 
 export interface SubcategoryInfo {

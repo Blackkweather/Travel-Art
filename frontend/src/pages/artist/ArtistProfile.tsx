@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Save, Edit3, MapPin, Music, Calendar, X, Upload, User } from 'lucide-react'
+import { Save, Edit3, MapPin, Music, Calendar, X, Upload, User, Plus, Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { artistsApi, apiClient } from '@/utils/api'
+import { normalizeImageUrl } from '@/utils/imageUrl'
 import toast from 'react-hot-toast'
 import ProfilePictureUpload from '@/components/ProfilePictureUpload'
+import DateRangePicker from '@/components/DateRangePicker'
 
 const ArtistProfile: React.FC = () => {
   const { user } = useAuthStore()
@@ -23,9 +25,13 @@ const ArtistProfile: React.FC = () => {
     memberSince: ''
   })
   const [newVideoUrl, setNewVideoUrl] = useState('')
+  const [availabilities, setAvailabilities] = useState<any[]>([])
+  const [newAvailability, setNewAvailability] = useState({ dateFrom: '', dateTo: '' })
+  const [loadingAvailability, setLoadingAvailability] = useState(false)
 
   useEffect(() => {
     fetchProfile()
+    fetchAvailability()
   }, [user])
 
   const fetchProfile = async () => {
@@ -51,18 +57,30 @@ const ArtistProfile: React.FC = () => {
           }
         }
         
+        // Include profilePicture in images array if it exists
+        const images = artist.images || [];
+        const profilePicture = artist.profilePicture;
+        const allImages = profilePicture && !images.includes(profilePicture) 
+          ? [profilePicture, ...images] 
+          : images;
+        
         setProfileData({
           name: artist.stageName || artist.user?.name || user.name || '',
           discipline: artist.discipline || artisticProfile.mainCategory || '',
           bio: artist.bio || '',
           location: artist.user?.country || '',
-          images: artist.images || [],
+          images: allImages,
           videos: artist.videos || [],
           specialties: artist.discipline ? [artist.discipline] : [],
           rating: artist.avgRating || 0,
           totalBookings: artist.bookings?.length || 0,
           memberSince: artist.user?.createdAt || artist.createdAt || new Date().toISOString()
         })
+        
+        // Load availability
+        if (artist.availability) {
+          setAvailabilities(Array.isArray(artist.availability) ? artist.availability : [])
+        }
       } else {
         // No profile yet - set defaults from user
         setProfileData({
@@ -109,17 +127,39 @@ const ArtistProfile: React.FC = () => {
     }
 
     try {
-      // Update artist profile
-      await apiClient.put('/artists/me', {
-        bio: profileData.bio,
-        discipline: profileData.discipline,
+      // Update artist profile - only send fields that have values
+      const updateData: any = {
         stageName: profileData.name,
-        phone: user?.phone,
-        videos: JSON.stringify(profileData.videos),
-        // Keep existing fields
-        priceRange: profile.priceRange || '',
-        profilePicture: profileData.images[0] || null
-      });
+        phone: user?.phone || undefined,
+        videos: profileData.videos && profileData.videos.length > 0 ? JSON.stringify(profileData.videos) : undefined
+      };
+
+      // Only include bio if it has at least 10 characters
+      if (profileData.bio && profileData.bio.trim().length >= 10) {
+        updateData.bio = profileData.bio;
+      }
+
+      // Only include discipline if it has a value
+      if (profileData.discipline && profileData.discipline.trim().length >= 2) {
+        updateData.discipline = profileData.discipline;
+      }
+
+      // Only include priceRange if it has a value
+      if (profile.priceRange && profile.priceRange.trim().length > 0) {
+        updateData.priceRange = profile.priceRange;
+      }
+
+      // Only include profilePicture if it exists
+      if (profileData.images && profileData.images.length > 0 && profileData.images[0]) {
+        updateData.profilePicture = profileData.images[0];
+      }
+
+      // Include location (country) to update user's country
+      if (profileData.location && profileData.location.trim().length > 0) {
+        updateData.country = profileData.location.trim();
+      }
+
+      await apiClient.put('/artists/me', updateData);
       
       toast.success('Profile updated successfully!')
       setIsEditing(false)
@@ -162,23 +202,91 @@ const ArtistProfile: React.FC = () => {
     toast.success('Video removed! Click "Save Changes" to update your profile')
   }
 
-  const handleProfilePictureUpload = async (imageUrl: string) => {
-    // Update profile data with new image
-    setProfileData(prev => ({
-      ...prev,
-      images: [imageUrl, ...prev.images.slice(1)]
-    }));
-
-    // Save immediately
+  const fetchAvailability = async () => {
+    if (!profile?.id) return
+    
     try {
-      await apiClient.put('/artists/me', {
+      // Availability is already included in profile.availability from fetchProfile
+      // This function is kept for manual refresh if needed
+      const response = await artistsApi.getMyProfile()
+      const artist = response.data?.data
+      if (artist?.availability) {
+        setAvailabilities(Array.isArray(artist.availability) ? artist.availability : [])
+      }
+    } catch (error: any) {
+      console.error('Error fetching availability:', error)
+    }
+  }
+
+  const handleAddAvailability = async () => {
+    if (!profile?.id) {
+      toast.error('Please create your profile first')
+      return
+    }
+
+    if (!newAvailability.dateFrom || !newAvailability.dateTo) {
+      toast.error('Please select both start and end dates')
+      return
+    }
+
+    if (new Date(newAvailability.dateFrom) >= new Date(newAvailability.dateTo)) {
+      toast.error('End date must be after start date')
+      return
+    }
+
+    try {
+      setLoadingAvailability(true)
+      await artistsApi.setAvailability(profile.id, {
+        dateFrom: new Date(newAvailability.dateFrom).toISOString(),
+        dateTo: new Date(newAvailability.dateTo).toISOString()
+      })
+      toast.success('Availability added successfully!')
+      setNewAvailability({ dateFrom: '', dateTo: '' })
+      await fetchAvailability()
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to add availability')
+      console.error('Error adding availability:', error)
+    } finally {
+      setLoadingAvailability(false)
+    }
+  }
+
+  const handleRemoveAvailability = async (availabilityId: string) => {
+    if (!confirm('Are you sure you want to remove this availability period?')) return
+
+    try {
+      // Note: You may need to add a DELETE endpoint for availability
+      // For now, we'll just remove it from the local state
+      setAvailabilities(prev => prev.filter(a => a.id !== availabilityId))
+      toast.success('Availability removed')
+    } catch (error: any) {
+      toast.error('Failed to remove availability')
+      console.error('Error removing availability:', error)
+    }
+  }
+
+  const handleProfilePictureUpload = async (imageUrl: string) => {
+    // The upload route already saved to database, just update local state
+    // Update profile data with new image - put it first in the images array
+    setProfileData(prev => {
+      const existingImages = prev.images || [];
+      // Remove the old profile picture if it exists, add new one at the start
+      const filteredImages = existingImages.filter(img => img !== prev.images[0]);
+      return {
+        ...prev,
+        images: [imageUrl, ...filteredImages]
+      };
+    });
+    
+    // Also update the profile state if it exists
+    if (profile) {
+      setProfile({
+        ...profile,
         profilePicture: imageUrl
       });
-      toast.success('Profile picture updated!');
-      await fetchProfile();
-    } catch (error: any) {
-      toast.error('Failed to save profile picture');
     }
+    
+    toast.success('Profile picture saved to database!');
   }
 
   const handleDelete = async () => {
@@ -254,7 +362,7 @@ const ArtistProfile: React.FC = () => {
               <div className="relative w-48 h-48">
                 {profileData.images[0] ? (
                   <img
-                    src={profileData.images[0]}
+                    src={normalizeImageUrl(profileData.images[0])}
                     alt={profileData.name}
                     className="w-full h-full rounded-xl object-cover bg-gray-200 ring-2 ring-gold/20"
                     onError={(e) => {
@@ -524,7 +632,7 @@ const ArtistProfile: React.FC = () => {
             {profileData.images.map((image, index) => (
               <div key={index} className="relative group">
                 <img
-                  src={image}
+                  src={normalizeImageUrl(image)}
                   alt={`Portfolio ${index + 1}`}
                   className="w-full h-48 object-cover rounded-lg"
                 />
@@ -540,6 +648,84 @@ const ArtistProfile: React.FC = () => {
           </div>
         ) : (
           <p className="text-gray-600">No portfolio images yet. Click &quot;Edit Profile&quot; to add images.</p>
+        )}
+      </div>
+
+      {/* Availability Management */}
+      <div className="card-luxury">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
+              Availability Calendar
+            </h2>
+            <p className="text-sm text-gray-600 mt-2">Set your available dates for hotel bookings</p>
+          </div>
+        </div>
+
+        {/* Add Availability Form */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="form-label mb-4">Add Available Period</h3>
+          <div className="space-y-4">
+            <DateRangePicker
+              startDate={newAvailability.dateFrom}
+              endDate={newAvailability.dateTo}
+              onStartDateChange={(date) => setNewAvailability({ ...newAvailability, dateFrom: date })}
+              onEndDateChange={(date) => setNewAvailability({ ...newAvailability, dateTo: date })}
+              minDate={new Date().toISOString().split('T')[0]}
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={handleAddAvailability}
+                disabled={loadingAvailability || !newAvailability.dateFrom || !newAvailability.dateTo}
+                className="btn-primary flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {loadingAvailability ? 'Adding...' : 'Add Availability'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Availability List */}
+        {availabilities.length > 0 ? (
+          <div className="space-y-3">
+            {availabilities
+              .filter((avail: any) => new Date(avail.dateTo) >= new Date())
+              .sort((a: any, b: any) => new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime())
+              .map((avail: any) => (
+                <div
+                  key={avail.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <div className="flex items-center gap-4">
+                    <Calendar className="w-5 h-5 text-gold" />
+                    <div>
+                      <p className="font-medium text-navy">
+                        {new Date(avail.dateFrom).toLocaleDateString()} - {new Date(avail.dateTo).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {Math.ceil((new Date(avail.dateTo).getTime() - new Date(avail.dateFrom).getTime()) / (1000 * 60 * 60 * 24))} days
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveAvailability(avail.id)}
+                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Remove
+                  </button>
+                </div>
+              ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 px-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-navy mb-2">No availability set</h3>
+            <p className="text-gray-600 mb-4">
+              Add your available dates above so hotels can book you for performances
+            </p>
+          </div>
         )}
       </div>
 

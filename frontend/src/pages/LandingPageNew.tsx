@@ -1,16 +1,17 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform, useInView } from 'framer-motion'
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ArrowRight, ChevronDown } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
 import Footer from '@/components/Footer'
 import { commonApi, tripsApi } from '@/utils/api'
 
 const LandingPageNew: React.FC = () => {
   const { scrollY } = useScroll()
-  const splitScreenRef = useRef<HTMLDivElement>(null)
   const experiencesRef = useRef<HTMLDivElement>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const stickyContainerRef = useRef<HTMLDivElement>(null)
 
   // Scroll effects
   const [headerScrolled, setHeaderScrolled] = useState(false)
@@ -19,7 +20,6 @@ const LandingPageNew: React.FC = () => {
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0])
 
   // In-view animations
-  const splitScreenInView = useInView(splitScreenRef, { once: true, amount: 0.3 })
   const experiencesInView = useInView(experiencesRef, { once: true, amount: 0.2 })
 
   // Keywords with their images
@@ -38,41 +38,37 @@ const LandingPageNew: React.FC = () => {
     }
   ]
 
-  // Refs for each keyword to detect scroll position
-  const keywordRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
-  const sectionContainerRef = useRef<HTMLDivElement>(null)
+  // We Love tags for infinite scroll
+  const weLovetags = ['MUSIC', 'ART', 'TRAVEL', 'LUXURY', 'CULTURE', 'EXPERIENCE', 'CREATIVITY', 'PERFORMANCE']
 
-  // Scroll-based keyword detection using scroll progress
+  // Scroll detection for sticky section
   useEffect(() => {
     const handleScroll = () => {
-      const section = sectionContainerRef.current
-      if (!section) return
+      const scrollContainer = scrollContainerRef.current
+      if (!scrollContainer) return
 
-      const rect = section.getBoundingClientRect()
+      const rect = scrollContainer.getBoundingClientRect()
       const sectionTop = rect.top
       const sectionHeight = rect.height
       const viewportHeight = window.innerHeight
-      
+
       // Calculate scroll progress through the section
-      // When section is at top of viewport, progress = 0
-      // When section has scrolled past, progress = 1
-      const scrollProgress = Math.max(0, Math.min(1, 
+      const progress = Math.max(0, Math.min(1, 
         (viewportHeight - sectionTop) / (sectionHeight + viewportHeight)
       ))
-      
-      // Determine active keyword based on scroll progress
-      // Divide into 3 equal parts for 3 keywords
-      if (scrollProgress < 0.33) {
-        setActiveKeyword(0) // Exclusive
-      } else if (scrollProgress < 0.66) {
-        setActiveKeyword(1) // Curated
+
+      // Determine active section based on progress
+      if (progress < 0.33) {
+        setActiveKeyword(0)
+      } else if (progress < 0.66) {
+        setActiveKeyword(1)
       } else {
-        setActiveKeyword(2) // Unforgettable
+        setActiveKeyword(2)
       }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initial call
+    handleScroll()
     
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -240,7 +236,7 @@ const LandingPageNew: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            A platform connecting world-class artists with luxury hotels 
+            A platform connecting talented hearts with luxury hotels 
             to create unforgettable experiences.
           </motion.p>
           
@@ -264,93 +260,93 @@ const LandingPageNew: React.FC = () => {
             </motion.div>
           </motion.div>
         </motion.div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+          <ChevronDown className="w-8 h-8 text-white" />
+        </div>
       </section>
 
-      {/* SPLIT-SCREEN SECTION - "Residence Live" Style with Scroll Animations */}
-      <section ref={splitScreenRef} className="relative bg-cream overflow-hidden py-8">
-        {/* Scroll Container - Creates scroll space */}
-        <div ref={sectionContainerRef} className="relative bg-cream" style={{ height: '300vh' }}>
-          {/* Sticky Container - Stays in place while scrolling */}
-          <div className="sticky top-8 grid lg:grid-cols-2 min-h-[calc(100vh-4rem)] rounded-3xl overflow-hidden max-w-7xl mx-auto shadow-2xl bg-cream">
-            {/* Left Side - Text Content */}
-            <div className="flex flex-col justify-center p-12 lg:p-20 bg-cream rounded-tl-3xl rounded-bl-3xl relative">
-              {/* Yellow Label */}
-              <motion.div
-                className="inline-block mb-12"
-                initial={{ opacity: 0, y: 20 }}
-                animate={splitScreenInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
-              >
-                <div className="bg-gold text-navy px-6 py-4 font-bold text-2xl inline-block rounded-lg">
-                  Travel Art Experience
-                </div>
-              </motion.div>
-              
-              {/* Large Keywords - Yellow box moves to each */}
-              <div className="space-y-8 relative">
-                {/* Moving Yellow Highlight Box - Very slow and smooth */}
-                <motion.div
-                  className="absolute bg-gold rounded-lg -z-10"
-                  animate={{
-                    top: activeKeyword === 0 ? '0%' : activeKeyword === 1 ? '33.33%' : '66.66%',
-                    height: '33.33%',
-                  }}
-                  transition={{ 
-                    duration: 2.5, // Very slow - 2.5 seconds
-                    ease: [0.4, 0, 0.2, 1], // Custom cubic-bezier for smooth motion
-                  }}
-                  style={{
-                    left: '-1.5rem',
-                    right: '-1.5rem',
-                  }}
-                />
-                
-                {keywords.map((item, i) => (
-                  <div
-                    key={item.word}
-                    ref={keywordRefs[i]}
-                    className="relative py-6"
-                  >
-                    <motion.h2 
-                      className={`text-6xl lg:text-7xl font-serif font-bold leading-none ${
-                        activeKeyword === i ? 'text-navy' : 'text-navy/30'
-                      }`}
-                      animate={{
-                        opacity: activeKeyword === i ? 1 : 0.3,
-                      }}
-                      transition={{ 
-                        duration: 1.2,
-                        ease: [0.4, 0, 0.2, 1]
-                      }}
-                    >
-                      {item.word}
-                    </motion.h2>
-                  </div>
-                ))}
+      {/* WE LOVE SECTION - Infinite Scroll */}
+      <section className="py-20 bg-cream overflow-hidden">
+        <h2 className="text-5xl md:text-6xl font-serif font-bold text-center mb-12 text-navy">We love</h2>
+        
+        {/* Two rows of infinite scrolling tags */}
+        <div className="space-y-6">
+          {/* Row 1 - Scroll Right */}
+          <div className="flex animate-scroll-right">
+            {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
+              <div key={i} className="flex-shrink-0 text-4xl md:text-5xl font-bold text-navy mx-8">
+                {tag}
               </div>
-            </div>
-            
-            {/* Right Side - Image with Very Smooth Transitions */}
-            <div className="relative overflow-hidden rounded-tr-3xl rounded-br-3xl min-h-[calc(100vh-4rem)] bg-navy">
-              {/* Multiple images that fade between each other - SLOW transitions */}
-              {keywords.map((item, i) => (
-                <motion.img
-                  key={i}
-                  src={item.image}
-                  alt={item.word}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ opacity: i === 0 ? 1 : 0 }}
-                  animate={{
-                    opacity: activeKeyword === i ? 1 : 0,
-                    scale: activeKeyword === i ? 1 : 1.08,
-                  }}
-                  transition={{ 
-                    duration: 3, // Very slow - 3 seconds for elegant crossfade
-                    ease: [0.4, 0, 0.2, 1] // Smooth cubic-bezier
-                  }}
-                />
+            ))}
+          </div>
+
+          {/* Row 2 - Scroll Left */}
+          <div className="flex animate-scroll-left">
+            {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
+              <div key={i} className="flex-shrink-0 text-4xl md:text-5xl font-bold text-navy mx-8">
+                {tag}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* DESCRIPTION SECTION */}
+      <section className="py-20 px-6 max-w-5xl mx-auto bg-white">
+        <p className="text-xl md:text-2xl leading-relaxed text-gray-800 text-center">
+          Travel Art is founded on the idea that travel and cultural immersion are at the origin of inspiration. 
+          We connect talented hearts with luxury hotels to create unforgettable experiences. Our platform 
+          brings together a community of artists and creatives across multiple disciplines (Music, Visual Arts, 
+          Performance) to develop their artistic projects in over 30 destinations worldwide, combining travel 
+          and creation in the most beautiful places on earth.
+        </p>
+      </section>
+
+      {/* STICKY SPLIT-SCREEN SECTION - The Key Section */}
+      <section ref={scrollContainerRef} className="relative bg-white" style={{ height: '300vh', minHeight: '300vh' }}>
+        <div 
+          ref={stickyContainerRef}
+          className="sticky top-0 left-0 right-0 h-screen grid md:grid-cols-2"
+        >
+          {/* LEFT SIDE - Text */}
+          <div className="flex flex-col justify-center px-12 md:px-20 bg-white">
+            <div className="space-y-12">
+              {keywords.map((section, index) => (
+                <div key={index} className="relative">
+                  <h3 
+                    className={`text-5xl md:text-6xl lg:text-7xl font-bold transition-all duration-700 ${
+                      activeKeyword === index 
+                        ? 'text-gray-900 opacity-100' 
+                        : 'text-gray-900 opacity-20'
+                    }`}
+                  >
+                    {section.word}
+                  </h3>
+                </div>
               ))}
             </div>
+          </div>
+
+          {/* RIGHT SIDE - Images */}
+          <div className="relative overflow-hidden bg-gray-900">
+            {keywords.map((section, index) => (
+              <div
+                key={index}
+                className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+                style={{
+                  opacity: activeKeyword === index ? 1 : 0,
+                  zIndex: activeKeyword === index ? 1 : 0
+                }}
+              >
+                <img
+                  src={section.image}
+                  alt={section.word}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -466,7 +462,7 @@ const LandingPageNew: React.FC = () => {
                   </h3>
                   <p className="text-gold font-semibold mb-2">{artist.specialty}</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-yellow-500">★</span>
+                    <span className="text-amber-500">★</span>
                     <span className="text-navy font-semibold">{artist.rating}</span>
                   </div>
                 </div>
@@ -506,6 +502,27 @@ const LandingPageNew: React.FC = () => {
           </div>
         </div>
       </motion.footer>
+
+      {/* Infinite Scroll Animations */}
+      <style>{`
+        @keyframes scroll-right {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-33.333%); }
+        }
+        
+        @keyframes scroll-left {
+          0% { transform: translateX(-33.333%); }
+          100% { transform: translateX(0); }
+        }
+        
+        .animate-scroll-right {
+          animation: scroll-right 30s linear infinite;
+        }
+        
+        .animate-scroll-left {
+          animation: scroll-left 30s linear infinite;
+        }
+      `}</style>
     </div>
   )
 }

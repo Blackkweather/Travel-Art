@@ -1,13 +1,13 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Users, Building, Calendar, Star, CreditCard, Music } from 'lucide-react'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 
 const HowItWorksPage: React.FC = () => {
   const steps = [
     {
-      icon: <Users className="w-8 h-8 text-gold" />,
+      icon: <Users className="w-8 h-8 text-white" />,
       title: 'Join as Artist or Hotel',
       description: 'Create your profile and showcase your talent or luxury venue. Artists can upload their portfolio, set availability, and define their specialties. Hotels can list their performance spaces and accommodation.',
       details: [
@@ -18,7 +18,7 @@ const HowItWorksPage: React.FC = () => {
       ]
     },
     {
-      icon: <Building className="w-8 h-8 text-gold" />,
+      icon: <Building className="w-8 h-8 text-white" />,
       title: 'Discover Perfect Matches',
       description: 'Our intelligent matching system connects artists with hotels based on location, availability, artistic style, and venue requirements. Browse profiles and find your ideal collaboration.',
       details: [
@@ -29,7 +29,7 @@ const HowItWorksPage: React.FC = () => {
       ]
     },
     {
-      icon: <Calendar className="w-8 h-8 text-gold" />,
+      icon: <Calendar className="w-8 h-8 text-white" />,
       title: 'Book Your Experience',
       description: 'Hotels use credits to book artists for their rooftop performances, intimate concerts, or special events. Artists receive accommodation and the opportunity to perform in luxury settings.',
       details: [
@@ -40,7 +40,7 @@ const HowItWorksPage: React.FC = () => {
       ]
     },
     {
-      icon: <Music className="w-8 h-8 text-gold" />,
+      icon: <Music className="w-8 h-8 text-white" />,
       title: 'Create Magic Together',
       description: 'Artists perform in stunning rooftop venues, intimate lounges, and luxury hotel spaces. Hotels provide accommodation and unforgettable experiences for their guests.',
       details: [
@@ -51,7 +51,7 @@ const HowItWorksPage: React.FC = () => {
       ]
     },
     {
-      icon: <Star className="w-8 h-8 text-gold" />,
+      icon: <Star className="w-8 h-8 text-white" />,
       title: 'Rate & Review',
       description: 'After each performance, hotels rate artists based on their performance quality, professionalism, and guest satisfaction. Artists see aggregated badges and feedback.',
       details: [
@@ -62,7 +62,7 @@ const HowItWorksPage: React.FC = () => {
       ]
     },
     {
-      icon: <CreditCard className="w-8 h-8 text-gold" />,
+      icon: <CreditCard className="w-8 h-8 text-white" />,
       title: 'Earn & Grow',
       description: 'Artists earn accommodation credits and build their portfolio. Hotels enhance their guest experience and create memorable moments. Both parties grow their network.',
       details: [
@@ -76,19 +76,19 @@ const HowItWorksPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+      <SimpleNavbar />
       
       {/* Hero Section */}
       <div className="relative py-20 pt-32 overflow-hidden">
-        {/* Background Image */}
+        {/* Background Image - Resort Island */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
-            alt="Luxury hotel" 
+            src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            alt="Resort island" 
             className="w-full h-full object-cover"
           />
-          {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-navy/70"></div>
+          {/* Gradient overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-navy/80 via-navy/60 to-navy/80"></div>
         </div>
         
         <div className="container mx-auto px-6 text-center relative z-10">
@@ -97,12 +97,12 @@ const HowItWorksPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
+            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6 text-white">
               How Travel Art
               <span className="block text-gold">Works</span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Connect luxury hotels with talented artists for unforgettable rooftop performances and intimate experiences. 
+            <p className="text-xl text-white mb-8 max-w-3xl mx-auto">
+              Connect luxury hotels with talented hearts for unforgettable rooftop performances and intimate experiences. 
               From jazz saxophonists on Parisian terraces to DJs spinning sunset sets in Ibiza.
             </p>
           </motion.div>
@@ -122,8 +122,10 @@ const HowItWorksPage: React.FC = () => {
             >
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center">
-                    {step.icon}
+                  <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center shadow-lg">
+                    <div className="text-white">
+                      {step.icon}
+                    </div>
                   </div>
                 </div>
                 <div className="flex-1">
@@ -167,8 +169,8 @@ const HowItWorksPage: React.FC = () => {
               transition={{ duration: 0.6 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
-                <Building className="w-10 h-10 text-navy" />
+              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Building className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-navy mb-4">
                 Luxury Venues
@@ -184,8 +186,8 @@ const HowItWorksPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="w-10 h-10 text-navy" />
+              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Users className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-navy mb-4">
                 Curated Artists
@@ -201,8 +203,8 @@ const HowItWorksPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
-                <Star className="w-10 h-10 text-navy" />
+              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <Star className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-navy mb-4">
                 Quality Guaranteed
@@ -227,13 +229,13 @@ const HowItWorksPage: React.FC = () => {
               Ready to Create Magic?
             </h2>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Join Travel Art today and start connecting luxury hotels with talented artists for unforgettable experiences.
+              Join Travel Art today and start connecting luxury hotels with talented hearts for unforgettable experiences.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/register" className="btn-primary text-lg px-8 py-4">
+              <a href="/register" className="btn-primary text-lg px-8 py-4 text-white">
                 Join as Artist
               </a>
-              <a href="/register" className="btn-secondary text-lg px-8 py-4">
+              <a href="/register" className="bg-transparent text-white border-2 border-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-navy transition-all duration-300 shadow-soft text-lg">
                 Join as Hotel
               </a>
             </div>

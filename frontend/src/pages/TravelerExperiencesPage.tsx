@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Calendar, Star, Music, ArrowRight, Globe } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import Header from '@/components/Header'
+import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
@@ -209,7 +209,7 @@ const TravelerExperiencesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+        <SimpleNavbar />
       
       {/* Hero Section */}
       <section className="relative py-24 bg-gradient-to-b from-navy to-navy/90 text-white overflow-hidden">
@@ -225,11 +225,11 @@ const TravelerExperiencesPage: React.FC = () => {
               Discover Artistic Experiences
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
-              Immerse yourself in world-class performances at luxury hotels around the globe
+              Immerse yourself in talented hearts performances at luxury hotels around the globe
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/register" className="btn-gold">
-                Join as Traveler
+                Join as Talent
               </Link>
               <Link to="/top-artists" className="btn-gold-outline">
                 Browse Artists

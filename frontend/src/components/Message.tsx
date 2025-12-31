@@ -48,11 +48,11 @@ const Message: React.FC<MessageProps> = ({
       text: 'text-red-800'
     },
     warning: {
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-200',
-      icon: <AlertCircle className="w-5 h-5 text-yellow-600" />,
-      title: 'text-yellow-900',
-      text: 'text-yellow-800'
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      icon: <AlertCircle className="w-5 h-5 text-amber-600" />,
+      title: 'text-amber-900',
+      text: 'text-amber-800'
     },
     info: {
       bg: 'bg-blue-50',

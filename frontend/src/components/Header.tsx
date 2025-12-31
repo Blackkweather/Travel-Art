@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { useClerk } from '@clerk/clerk-react'
 import { getLogoUrl } from '@/config/assets'
@@ -9,46 +9,18 @@ import { useAuthStore } from '@/store/authStore'
 const Header: React.FC = () => {
   const { user, logout } = useAuthStore()
   const { signOut } = useClerk()
-  const { scrollY } = useScroll()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [navbarBg, setNavbarBg] = useState('transparent')
-  const [textColor, setTextColor] = useState('text-white')
-  const location = useLocation()
+  const [headerScrolled, setHeaderScrolled] = useState(false)
   
-  // Detect background color behind navbar and adapt colors
+  // Header scroll effect - same as SimpleNavbar
   useEffect(() => {
-    const detectBackgroundColor = () => {
-      const navbar = document.querySelector('nav')
-      if (!navbar) return
-
-      const bodyBgColor = window.getComputedStyle(document.body).backgroundColor
-      const scrollPosition = window.scrollY
-
-      // Check if on dashboard pages
-      const isDashboard = location.pathname.includes('/dashboard')
-      
-      if (isDashboard || scrollPosition > 100) {
-        // Solid background with blur for dashboard and scrolled state
-        setNavbarBg('rgba(11, 31, 63, 0.95)')
-        setTextColor('text-white')
-      } else {
-        // Transparent with adaptive text color for landing pages
-        const brightness = getBrightness(bodyBgColor)
-        setNavbarBg('transparent')
-        setTextColor(brightness > 128 ? 'text-navy' : 'text-white')
-      }
+    const handleScroll = () => {
+      setHeaderScrolled(window.scrollY > 50)
     }
-
-    const getBrightness = (color: string) => {
-      const rgb = color.match(/\d+/g)
-      if (!rgb || rgb.length < 3) return 0
-      return (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000
-    }
-
-    detectBackgroundColor()
-    window.addEventListener('scroll', detectBackgroundColor)
-    return () => window.removeEventListener('scroll', detectBackgroundColor)
-  }, [location])
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
   
   const handleLogout = async () => {
     // Only logout on explicit user action - prevent any automatic logout
@@ -74,67 +46,137 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10 px-5 md:px-20 h-[55px] transition-all duration-500 ease-in-out"
-        style={{
-          background: navbarBg,
-          overflow: 'visible'
-        }}
-      >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <img 
-              src={getLogoUrl('transparent')} 
-              alt="Travel Art" 
-              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
-            />
-          </Link>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4 lg:space-x-6 xl:space-x-8 flex-wrap justify-center" data-testid="desktop-menu">
-            <Link to="/how-it-works" className={`${textColor} hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap`}>
-              How it Works
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        headerScrolled 
+          ? 'bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-lg' 
+          : 'bg-transparent'
+      }`}>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link to="/" className="hover:opacity-80 transition-all duration-300 hover:scale-105">
+              <img 
+                src={getLogoUrl('transparent')} 
+                alt="Travel Art" 
+                className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain transition-all duration-300"
+              />
             </Link>
-            <Link to="/partners" className={`${textColor} hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap`}>
-              Partners
-            </Link>
-            <Link to="/pricing" className={`${textColor} hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap`}>
-              Pricing
-            </Link>
-            <Link to="/top-artists" className={`${textColor} hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap`}>
-              Top Artists
-            </Link>
-            <Link to="/top-hotels" className={`${textColor} hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap`}>
-              Top Hotels
-            </Link>
-            <Link to="/experiences" className={`${textColor} hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap`}>
-              Experiences
-            </Link>
+            
+            {/* Desktop Navigation - Only show for logged-in users */}
+            {user && (
+              <nav className="hidden md:flex gap-8">
+                <Link 
+                  to="/how-it-works" 
+                  className={`text-sm font-semibold transition-all duration-300 relative group ${
+                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                  }`}
+                >
+                  How it Works
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                  }`} />
+                </Link>
+                <Link 
+                  to="/partners" 
+                  className={`text-sm font-semibold transition-all duration-300 relative group ${
+                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                  }`}
+                >
+                  Partners
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                  }`} />
+                </Link>
+                <Link 
+                  to="/pricing" 
+                  className={`text-sm font-semibold transition-all duration-300 relative group ${
+                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                  }`}
+                >
+                  Pricing
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                  }`} />
+                </Link>
+                <Link 
+                  to="/top-artists" 
+                  className={`text-sm font-semibold transition-all duration-300 relative group ${
+                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                  }`}
+                >
+                  Top Artists
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                  }`} />
+                </Link>
+                <Link 
+                  to="/top-hotels" 
+                  className={`text-sm font-semibold transition-all duration-300 relative group ${
+                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                  }`}
+                >
+                  Top Hotels
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                  }`} />
+                </Link>
+                <Link 
+                  to="/experiences" 
+                  className={`text-sm font-semibold transition-all duration-300 relative group ${
+                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                  }`}
+                >
+                  Experiences
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                  }`} />
+                </Link>
+              </nav>
+            )}
           </div>
           
           {/* Action Buttons */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-4">
             {user ? (
               <>
-                <Link to="/dashboard" className={`${textColor} hover:text-gold transition-colors font-medium text-sm px-4 py-2`}>
+                <Link 
+                  to="/dashboard" 
+                  className={`text-sm font-semibold transition-all duration-300 hidden sm:block relative group ${
+                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                  }`}
+                >
                   Dashboard
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                  }`} />
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 hover:scale-105 transition-all duration-200 text-sm shadow-lg"
+                  className="bg-teal-500 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-teal-400 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 relative overflow-hidden group"
                   data-testid="user-menu"
                 >
-                  Logout
+                  <span className="relative z-10">Logout</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-teal-400 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className={`${textColor} hover:text-gold transition-colors font-medium text-sm px-4 py-2 hidden md:block`}>
+                <Link 
+                  to="/login" 
+                  className={`text-sm font-semibold transition-all duration-300 hidden sm:block relative group ${
+                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                  }`}
+                >
                   Sign In
+                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                  }`} />
                 </Link>
-                <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 hover:scale-105 transition-all duration-200 text-sm shadow-lg">
-                  Join
+                <Link 
+                  to="/register"
+                  className="bg-teal-500 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-teal-400 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 relative overflow-hidden group"
+                >
+                  <span className="relative z-10">Join Now</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-teal-400 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </Link>
               </>
             )}
@@ -143,14 +185,16 @@ const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMobileMenu}
-            className={`md:hidden ${textColor} hover:text-gold transition-colors p-2`}
+            className={`md:hidden transition-colors p-2 ${
+              headerScrolled ? 'text-gray-900' : 'text-gray-200'
+            } hover:text-teal-500`}
             aria-label="Toggle mobile menu"
             data-testid="mobile-menu-toggle"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
-      </motion.nav>
+      </header>
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
@@ -158,63 +202,85 @@ const Header: React.FC = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="fixed top-[55px] left-0 right-0 z-40 bg-transparent border-b border-white/10 shadow-lg md:hidden"
+          className={`fixed top-[88px] left-0 right-0 z-40 border-b shadow-lg md:hidden transition-all duration-300 ${
+            headerScrolled 
+              ? 'bg-white/95 backdrop-blur-md border-gray-200/50' 
+              : 'bg-transparent border-white/10'
+          }`}
           data-testid="mobile-menu"
         >
           <div className="px-6 py-4 space-y-4">
-            {/* Mobile Navigation Links */}
-            <div className="space-y-3">
-              <Link 
-                to="/how-it-works" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                How it Works
-              </Link>
-              <Link 
-                to="/partners" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Partners
-              </Link>
-              <Link 
-                to="/pricing" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Pricing
-              </Link>
-              <Link 
-                to="/top-artists" 
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Top Artists
-              </Link>
-              <Link
-                to="/top-hotels"
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Top Hotels
-              </Link>
-              <Link
-                to="/experiences"
-                className="block text-white hover:text-gold transition-colors font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Experiences
-              </Link>
-            </div>
+            {/* Mobile Navigation Links - Only show for logged-in users */}
+            {user && (
+              <div className="space-y-3">
+                <Link 
+                  to="/how-it-works" 
+                  className={`block transition-colors font-medium py-2 ${
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  How it Works
+                </Link>
+                <Link 
+                  to="/partners" 
+                  className={`block transition-colors font-medium py-2 ${
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Partners
+                </Link>
+                <Link 
+                  to="/pricing" 
+                  className={`block transition-colors font-medium py-2 ${
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Pricing
+                </Link>
+                <Link 
+                  to="/top-artists" 
+                  className={`block transition-colors font-medium py-2 ${
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Top Artists
+                </Link>
+                <Link
+                  to="/top-hotels"
+                  className={`block transition-colors font-medium py-2 ${
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Top Hotels
+                </Link>
+                <Link
+                  to="/experiences"
+                  className={`block transition-colors font-medium py-2 ${
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Experiences
+                </Link>
+              </div>
+            )}
             
             {/* Mobile Action Buttons */}
-            <div className="pt-4 border-t border-white/10 space-y-3">
+            <div className={`pt-4 border-t space-y-3 ${
+              headerScrolled ? 'border-gray-200/50' : 'border-white/10'
+            }`}>
               {user ? (
                 <>
                   <Link 
                     to="/dashboard" 
-                    className="block text-white hover:text-gold transition-colors font-medium py-2"
+                    className={`block transition-colors font-medium py-2 ${
+                      headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-white hover:text-teal-300'
+                    }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Dashboard
@@ -225,7 +291,7 @@ const Header: React.FC = () => {
                       setIsMobileMenuOpen(false)
                       window.location.href = '/'
                     }}
-                    className="w-full bg-gold text-navy px-6 py-3 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-center shadow-lg"
+                    className="w-full bg-teal-500 text-white px-6 py-3 rounded-full font-bold hover:bg-teal-400 transition-all duration-300 text-center shadow-lg hover:shadow-xl"
                   >
                     Logout
                   </button>
@@ -234,14 +300,16 @@ const Header: React.FC = () => {
                 <>
                   <Link 
                     to="/login" 
-                    className="block text-white hover:text-gold transition-colors font-medium py-2"
+                    className={`block transition-colors font-medium py-2 ${
+                      headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-white hover:text-teal-300'
+                    }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link 
                     to="/register" 
-                    className="block bg-gold text-navy px-6 py-3 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-center shadow-lg"
+                    className="block bg-teal-500 text-white px-6 py-3 rounded-full font-bold hover:bg-teal-400 transition-all duration-300 text-center shadow-lg hover:shadow-xl"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Join Travel Art

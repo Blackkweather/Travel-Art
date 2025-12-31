@@ -5,11 +5,11 @@
 /* Custom CSS Variables - Travel Art */
 :root {
   --navy: #0B1F3F;
-  --gold: #C9A63C;
+  --gold: #14b8a6;
   --cream: #F9F8F3;
   --off-black: #111111;
   --primary-navy: #0B1F3F;
-  --gold-accent: #C9A63C;
+  --gold-accent: #14b8a6;
   --cream-bg: #F9F8F3;
   --text-dark: #0B1F3F;
   --border-light: #e5e7eb;
@@ -17,9 +17,9 @@
   --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-luxury: 0 25px 50px -12px rgba(11, 31, 63, 0.25);
-  --gradient-navy-gold: linear-gradient(135deg, #0B1F3F 0%, #C9A63C 100%);
-  --gradient-gold-navy: linear-gradient(135deg, #C9A63C 0%, #0B1F3F 100%);
-  --gradient-overlay: linear-gradient(135deg, rgba(11, 31, 63, 0.8) 0%, rgba(201, 166, 60, 0.2) 100%);
+  --gradient-navy-gold: linear-gradient(135deg, #0B1F3F 0%, #14b8a6 100%);
+  --gradient-gold-navy: linear-gradient(135deg, #14b8a6 0%, #0B1F3F 100%);
+  --gradient-overlay: linear-gradient(135deg, rgba(11, 31, 63, 0.8) 0%, rgba(20, 184, 166, 0.2) 100%);
 }
 
 /* Custom Components - Travel Art */
@@ -33,11 +33,11 @@
   }
   
   .btn-gold {
-    @apply bg-gold text-navy px-8 py-4 rounded-lg font-semibold hover:bg-gold/90 transition-all duration-300 shadow-soft border-0;
+    @apply bg-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-gold/90 transition-all duration-300 shadow-soft border-0;
   }
   
   .btn-gold-outline {
-    @apply bg-transparent text-gold border-2 border-gold px-8 py-4 rounded-lg font-semibold hover:bg-gold hover:text-navy transition-all duration-300 shadow-soft;
+    @apply bg-transparent text-gold border-2 border-gold px-8 py-4 rounded-lg font-semibold hover:bg-gold hover:text-white transition-all duration-300 shadow-soft;
   }
   
   .card-luxury {
@@ -330,7 +330,7 @@ h6 {
 
 .btn-gold {
   background-color: var(--gold-accent) !important;
-  color: var(--primary-navy) !important;
+  color: white !important;
   border: none !important;
   padding: 12px 24px !important;
   border-radius: 8px !important;
@@ -344,7 +344,7 @@ h6 {
 }
 
 .btn-gold:hover {
-  background-color: #b8942a !important;
+  background-color: #0d9488 !important;
   transform: translateY(-2px) !important;
   box-shadow: var(--shadow-medium) !important;
 }
@@ -415,7 +415,7 @@ h6 {
 .form-input:focus {
   outline: none;
   border-color: var(--gold-accent);
-  box-shadow: 0 0 0 3px rgba(201, 166, 60, 0.1);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
 }
 
 .form-textarea {
@@ -433,7 +433,7 @@ h6 {
 .form-textarea:focus {
   outline: none;
   border-color: var(--gold-accent);
-  box-shadow: 0 0 0 3px rgba(201, 166, 60, 0.1);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
 }
 
 /* Loading Animation */
@@ -1101,7 +1101,7 @@ h6 {
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--gold-accent) 0%, rgba(201, 166, 60, 0.3) 100%);
+    background: linear-gradient(90deg, var(--gold-accent) 0%, rgba(20, 184, 166, 0.3) 100%);
     opacity: 0.6;
   }
 

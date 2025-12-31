@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Check, Star, CreditCard, Users, Calendar, Award, Sparkles } from 'lucide-react'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { ArtistRank, RANK_CONFIG, type RankTier } from '../components/ArtistRank'
 
@@ -121,7 +121,7 @@ const PricingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+        <SimpleNavbar />
       
       {/* Hero Section */}
       <div className="relative py-20 pt-32 overflow-hidden">

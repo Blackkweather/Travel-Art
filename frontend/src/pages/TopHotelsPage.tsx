@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Star, MapPin, Building, Music, Users, Calendar, AlertCircle } from 'lucide-react'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { commonApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -139,7 +139,7 @@ const TopHotelsPage: React.FC = () => {
         )}
       </AnimatePresence>
       
-      <Header />
+        <SimpleNavbar />
       
       {/* Hero Section */}
       <div className="relative py-20 pt-32 overflow-hidden">

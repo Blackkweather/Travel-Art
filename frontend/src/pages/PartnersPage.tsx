@@ -93,7 +93,7 @@ const PartnersPage: React.FC = () => {
       rating: 4.9,
       bookings: 45,
       image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      description: 'Iconic luxury hotel in the heart of Paris with stunning Eiffel Tower views and world-class rooftop venues.',
+      description: 'Iconic luxury hotel in the heart of Paris with stunning Eiffel Tower views and talented hearts rooftop venues.',
       specialties: ['Eiffel Tower Views', 'Intimate Concerts', 'Classical Music'],
       performanceSpots: ['Rooftop Terrace', 'Grand Ballroom', 'Elegant Lounge']
     },
@@ -137,7 +137,7 @@ const PartnersPage: React.FC = () => {
       rating: 4.8,
       bookings: 25,
       image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      description: 'Luxury beachfront hotel with world-class dining and legendary rooftop DJ performances.',
+      description: 'Luxury beachfront hotel with talented hearts dining and legendary rooftop DJ performances.',
       specialties: ['Beach Views', 'Electronic Music', 'DJ Sets'],
       performanceSpots: ['Rooftop Beach Club', 'Sunset Lounge', 'Pool Deck']
     },
@@ -508,7 +508,7 @@ const PartnersPage: React.FC = () => {
               </div>
             </div>
             <p className="text-gray-600 mb-4">
-              "The jazz performances on our rooftop have become legendary. Travel Art connects us with world-class artists who create unforgettable experiences."
+              "The jazz performances on our rooftop have become legendary. Travel Art connects us with talented hearts who create unforgettable experiences."
             </p>
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gold rounded-full flex items-center justify-center mr-4">

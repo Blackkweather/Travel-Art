@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import Header from '../Header';
+import SimpleNavbar from '../SimpleNavbar';
 import Footer from '../Footer';
 import StepIndicator from './StepIndicator';
 import FormField from '../FormField';
@@ -312,7 +312,7 @@ const HotelRegistrationFlow: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
-      <Header />
+      <SimpleNavbar />
       <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
         <motion.div
           initial={{ opacity: 0, y: -20 }}

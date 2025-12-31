@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
 import FormField from '../FormField';
 import SelectWithSearch from './SelectWithSearch';
+import DatePicker from './DatePicker';
 import { BasicInfo, COUNTRIES, VALIDATION } from '@/types/artistRegistration';
 
 interface Step1Props {
@@ -119,11 +120,11 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
 
         {/* Birth Date */}
         <motion.div variants={itemVariants}>
-          <FormField
+          <DatePicker
             label="Date de naissance"
             placeholder="JJ/MM/AAAA"
             value={data.birthDate}
-            onChange={(e) => onChange({ ...data, birthDate: e.target.value })}
+            onChange={(value) => onChange({ ...data, birthDate: value })}
             error={errors.birthDate}
             disabled={isLoading}
           />

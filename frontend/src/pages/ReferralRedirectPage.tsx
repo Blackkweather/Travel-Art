@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 
 /**
@@ -36,6 +36,11 @@ const ReferralRedirectPage: React.FC = () => {
 }
 
 export default ReferralRedirectPage
+
+
+
+
+
 
 
 

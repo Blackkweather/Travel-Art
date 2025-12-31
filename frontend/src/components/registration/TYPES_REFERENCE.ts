@@ -537,7 +537,8 @@ export function createInitialArtisticCategory(): ArtisticCategory {
     mainCategory: '',
     secondaryCategory: undefined,
     audienceType: [],
-    languages: []
+    languages: [],
+    otherLanguages: undefined
   };
 }
 

@@ -249,12 +249,12 @@ const AdminDashboard: React.FC = () => {
               activity.map((item) => (
                 <div key={item.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    item.status === 'success' ? 'bg-green-100' : 'bg-yellow-100'
+                    item.status === 'success' ? 'bg-green-100' : 'bg-amber-100'
                   }`}>
                     {item.status === 'success' ? (
                       <CheckCircle className="w-4 h-4 text-green-600" />
                     ) : (
-                      <AlertCircle className="w-4 h-4 text-yellow-600" />
+                      <AlertCircle className="w-4 h-4 text-amber-600" />
                     )}
                   </div>
                   <div className="flex-1">

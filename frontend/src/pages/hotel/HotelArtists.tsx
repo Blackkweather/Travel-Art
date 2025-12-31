@@ -423,7 +423,7 @@ const HotelArtists: React.FC = () => {
       case 'Available':
         return 'bg-green-100 text-green-800'
       case 'Pending':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-amber-100 text-amber-800'
       case 'Unavailable':
       default:
         return 'bg-red-100 text-red-800'

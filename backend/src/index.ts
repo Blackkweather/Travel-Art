@@ -165,8 +165,16 @@ app.use('/api/trips', tripRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api', commonRoutes);
 
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve uploaded files with CORS headers
+app.use('/uploads', (req, res, next) => {
+  // Set CORS headers for uploaded files
+  const origin = req.headers.origin;
+  if (origin && (allowedOrigins.includes(origin) || config.nodeEnv === 'production')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  next();
+}, express.static(path.join(__dirname, '../uploads')));
 
 // Serve static files from the frontend build
 // Try multiple path resolutions to handle different deployment scenarios

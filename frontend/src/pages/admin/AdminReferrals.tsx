@@ -204,7 +204,7 @@ const AdminReferrals: React.FC = () => {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         referral.status === 'COMPLETED' || referral.status === 'REWARDED'
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                          : 'bg-amber-100 text-amber-800'
                       }`}>
                         {referral.status}
                       </span>

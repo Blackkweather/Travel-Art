@@ -35,19 +35,23 @@ const AppContent = (
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#0B1F3F',
-            color: '#F9F8F3',
+            background: '#14b8a6',
+            color: '#ffffff',
           },
           success: {
             iconTheme: {
-              primary: '#C9A63C',
-              secondary: '#F9F8F3',
+              primary: '#ffffff',
+              secondary: '#14b8a6',
             },
           },
           error: {
             iconTheme: {
               primary: '#ef4444',
-              secondary: '#F9F8F3',
+              secondary: '#ffffff',
+            },
+            style: {
+              background: '#ef4444',
+              color: '#ffffff',
             },
           },
         }}

@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
-import Header from '../Header';
+import SimpleNavbar from '../SimpleNavbar';
 import Footer from '../Footer';
 import StepIndicator from './StepIndicator';
 import Step1BasicInfo from './Step1BasicInfo';
 import Step2ArtisticCategory from './Step2ArtisticCategory';
-import Step3SubcategorySelection from './Step3SubcategorySelection';
+import Step3Confirmation from './Step3Confirmation';
 import {
   ArtistRegistrationData,
   BasicInfo,
@@ -34,7 +34,8 @@ const INITIAL_STATE: ArtistRegistrationData = {
     mainCategory: '',
     secondaryCategory: undefined,
     audienceType: [],
-    languages: []
+    languages: [],
+    otherLanguages: undefined
   },
   media: {
     profileImageUrl: '',
@@ -57,7 +58,7 @@ const ArtistRegistrationFlow: React.FC = () => {
   const stepTitles = [
     'Informations de base',
     'Catégorie artistique',
-    'Sous-catégories'
+    'Confirmation'
   ];
 
   // Update basic info
@@ -81,6 +82,12 @@ const ArtistRegistrationFlow: React.FC = () => {
       setState(prev => ({ ...prev, step: prev.step + 1 }));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  // Handle edit - go back to specific step
+  const handleEdit = (step: number) => {
+    setState(prev => ({ ...prev, step }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Move to previous step
@@ -119,6 +126,7 @@ const ArtistRegistrationFlow: React.FC = () => {
           secondaryCategory: state.artisticCategory.secondaryCategory,
           audienceType: state.artisticCategory.audienceType,
           languages: state.artisticCategory.languages,
+          otherLanguages: state.artisticCategory.otherLanguages,
           categoryType: state.subcategory.categoryType,
           specificCategory: state.subcategory.specificCategory,
           domain: state.subcategory.domain
@@ -169,11 +177,13 @@ const ArtistRegistrationFlow: React.FC = () => {
   // Check if user can proceed from step 2
   const canProceedFromStep2 = state.artisticCategory.mainCategory &&
     state.artisticCategory.audienceType.length > 0 &&
-    state.artisticCategory.languages.length > 0;
+    state.artisticCategory.languages.length > 0 &&
+    state.subcategory.categoryType &&
+    state.subcategory.domain;
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
-      <Header />
+      <SimpleNavbar />
 
       <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
         {/* Step Indicator */}
@@ -229,7 +239,9 @@ const ArtistRegistrationFlow: React.FC = () => {
               >
                 <Step2ArtisticCategory
                   data={state.artisticCategory}
+                  subcategoryData={state.subcategory}
                   onChange={handleArtisticCategoryChange}
+                  onSubcategoryChange={handleSubcategoryChange}
                   onNext={handleNextStep}
                   onBack={handlePreviousStep}
                   isLoading={isLoading}
@@ -237,7 +249,7 @@ const ArtistRegistrationFlow: React.FC = () => {
               </motion.div>
             )}
 
-            {/* Step 3: Subcategory Selection */}
+            {/* Step 3: Confirmation */}
             {state.step === 3 && (
               <motion.div
                 key="step3"
@@ -249,12 +261,12 @@ const ArtistRegistrationFlow: React.FC = () => {
                   ease: [0.4, 0, 0.2, 1]
                 }}
               >
-                <Step3SubcategorySelection
-                  mainCategory={state.artisticCategory.mainCategory}
-                  data={state.subcategory}
-                  onChange={handleSubcategoryChange}
-                  onNext={handleSubmit}
-                  onBack={handlePreviousStep}
+                <Step3Confirmation
+                  basicInfo={state.basicInfo}
+                  artisticCategory={state.artisticCategory}
+                  subcategory={state.subcategory}
+                  onEdit={handleEdit}
+                  onSubmit={handleSubmit}
                   isLoading={isLoading}
                 />
               </motion.div>
@@ -272,7 +284,7 @@ const ArtistRegistrationFlow: React.FC = () => {
           <p className="text-sm text-gray-600">
             Vos informations sont sécurisées et ne seront jamais partagées.
             <br />
-            Avez besoin d'aide? <a href="/contact" className="text-gold font-semibold hover:underline">Contactez-nous</a>
+            Avez besoin d'aide? <a href="/contact" className="text-teal-500 font-semibold hover:underline">Contactez-nous</a>
           </p>
         </motion.div>
       </main>

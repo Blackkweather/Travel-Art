@@ -30,7 +30,9 @@ import PageTransition from './components/PageTransition'
 console.log('🔒 PasswordPopup imported:', typeof PasswordPopup)
 
 // Public pages
-import LandingPage from '@/pages/LandingPageNew'
+import LandingPage from '@/pages/LandingPage'
+import LandingPageNewV2 from '@/pages/LandingPageNewV2'
+import LandingPageNewV3 from '@/pages/LandingPageNewV3'
 import HowItWorksPage from '@/pages/HowItWorksPage'
 import PartnersPage from '@/pages/PartnersPage'
 import TopArtistsPage from '@/pages/TopArtistsPage'
@@ -122,11 +124,12 @@ function App() {
     }
   }, [isLoaded, isSignedIn, clerkUser, syncClerkUser, checkAuth])
 
-  console.log('🔒 App.tsx rendering - PasswordPopup should be visible')
+  // console.log('🔒 App.tsx rendering - PasswordPopup should be visible')
   
   return (
     <>
-      <PasswordPopup />
+      {/* PasswordPopup temporarily disabled - uncomment to activate */}
+      {/* <PasswordPopup /> */}
       {isLoading ? (
         <div className="min-h-screen bg-cream flex items-center justify-center">
           <LoadingSpinner />
@@ -135,7 +138,8 @@ function App() {
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
-        <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
+        <Route path="/" element={<PageTransition><LandingPageNewV3 /></PageTransition>} />
+        <Route path="/v2" element={<PageTransition><LandingPageNewV2 /></PageTransition>} />
       <Route path="/how-it-works" element={<PageTransition><HowItWorksPage /></PageTransition>} />
       <Route path="/partners" element={<PageTransition><PartnersPage /></PageTransition>} />
       <Route path="/top-artists" element={<PageTransition><TopArtistsPage /></PageTransition>} />

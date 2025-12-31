@@ -44,14 +44,53 @@ const upload = multer({
   }
 });
 
+// Error handling middleware for multer
+const handleMulterError = (err: any, req: any, res: any, next: any) => {
+  if (err instanceof multer.MulterError) {
+    console.error('❌ Multer error:', err);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size is 5MB.'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'File upload error'
+    });
+  }
+  if (err) {
+    console.error('❌ Upload error:', err);
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'File upload failed'
+    });
+  }
+  next();
+};
+
 // Upload profile picture
-router.post('/profile-picture', authenticate, upload.single('profilePicture'), asyncHandler(async (req: AuthRequest, res) => {
+router.post('/profile-picture', authenticate, upload.single('profilePicture'), handleMulterError, asyncHandler(async (req: AuthRequest, res) => {
+  console.log('📤 Upload request received');
+  console.log('Request body keys:', Object.keys(req.body));
+  console.log('Request file:', req.file ? {
+    fieldname: req.file.fieldname,
+    originalname: req.file.originalname,
+    filename: req.file.filename,
+    mimetype: req.file.mimetype,
+    size: req.file.size
+  } : 'No file');
+  
   if (!req.file) {
+    console.error('❌ No file in request');
+    console.error('Request headers:', req.headers);
     throw new CustomError('No file uploaded', 400);
   }
 
   const user = req.user!;
+  console.log('👤 User:', { id: user.id, role: user.role });
   const fileUrl = `/uploads/profile-pictures/${req.file.filename}`;
+  console.log('📁 File URL:', fileUrl);
 
   // Update user's profile picture based on role
   if (user.role === 'ARTIST') {
@@ -206,6 +245,14 @@ router.delete('/file', authenticate, asyncHandler(async (req: AuthRequest, res) 
 }));
 
 export { router as uploadRoutes };
+
+
+
+
+
+
+
+
 
 
 

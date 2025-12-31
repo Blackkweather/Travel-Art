@@ -1,6 +1,7 @@
 /**
  * Normalizes image URLs from the API
- * If the URL is relative, prepends the API base URL
+ * If the URL is relative, prepends the appropriate base URL
+ * Upload paths (/uploads) are served directly, not through /api
  * If it's already absolute, returns it as-is
  */
 export const normalizeImageUrl = (url: string | null | undefined): string => {
@@ -18,10 +19,18 @@ export const normalizeImageUrl = (url: string | null | undefined): string => {
     return url
   }
 
-  // For relative paths, prepend API base URL
+  // Check if this is an upload path (served at /uploads, not /api/uploads)
+  // In development, Vite proxy handles /uploads -> localhost:4000/uploads
+  // In production, uploads are served from same origin
+  if (url.startsWith('/uploads')) {
+    // Use relative path - Vite proxy (dev) or same origin (prod) will handle it
+    return url
+  }
+  
+  // For other relative paths (API responses), prepend API base URL
   const isProduction = (import.meta as any).env?.MODE === 'production'
   const apiBaseUrl = (import.meta as any).env?.VITE_API_URL || 
-    (isProduction ? '' : 'http://localhost:4000')
+    (isProduction ? '/api' : '/api')
   
   // Remove leading slash from URL if present (we'll add it back)
   const cleanUrl = url.replace(/^\//, '')

@@ -504,12 +504,12 @@ const LandingPage: React.FC = () => {
             >
               <div className="gold-underline mb-4 sm:mb-6">
                 <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-navy mb-2 sm:mb-4">
-                  We Love Artists
+                  We Celebrate Artists
                 </h2>
               </div>
               <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4 sm:mb-6 md:mb-8 leading-relaxed">
                 At Travel Art, we believe that exceptional hospitality and artistic talent create 
-                the most memorable experiences. Our platform connects world-class artists with 
+                the most memorable experiences. Our platform connects talented hearts with 
                 luxury hotels to create moments that guests will treasure forever.
               </p>
               <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">

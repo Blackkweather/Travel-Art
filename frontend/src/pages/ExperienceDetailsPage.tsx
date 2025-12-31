@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Star, MapPin, Calendar, Music, Users, Globe, Clock, ArrowLeft, Award, Camera } from 'lucide-react'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { tripsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -133,7 +133,7 @@ const ExperienceDetailsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-cream">
-        <Header />
+        <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
           <LoadingSpinner />
           <p className="mt-4 text-gray-600">Loading experience...</p>
@@ -146,7 +146,7 @@ const ExperienceDetailsPage: React.FC = () => {
   if (error || !experience) {
     return (
       <div className="min-h-screen bg-cream">
-        <Header />
+        <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
           <h1 className="text-4xl font-serif font-bold text-navy mb-4">Experience Not Found</h1>
           <p className="text-gray-600 mb-8">The experience you're looking for doesn't exist.</p>
@@ -161,7 +161,7 @@ const ExperienceDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+      <SimpleNavbar />
       
       {/* Hero Section */}
       <div className="relative h-96 overflow-hidden">

@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
 import { authApi } from '@/utils/api'
@@ -48,7 +48,7 @@ const ResetPasswordPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+      <SimpleNavbar />
       
       {!token ? (
         <div className="flex items-center justify-center py-20 pt-32 px-4">

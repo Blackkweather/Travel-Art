@@ -95,7 +95,7 @@ const AdminBookings: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const configs = {
-      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
+      PENDING: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'Pending' },
       CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Confirmed' },
       COMPLETED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
       CANCELLED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' }
@@ -168,7 +168,7 @@ const AdminBookings: React.FC = () => {
             label: 'Pending', 
             value: bookings.filter(b => b.status === 'PENDING').length, 
             icon: Clock, 
-            color: 'text-yellow-600' 
+            color: 'text-amber-600' 
           },
           { 
             label: 'Confirmed', 

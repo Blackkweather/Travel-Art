@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Star, MapPin, Calendar, Music, ArrowLeft, MessageCircle, Heart, UserPlus, User } from 'lucide-react'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
 import { artistsApi } from '@/utils/api'
@@ -42,7 +42,7 @@ const PublicArtistProfile: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-cream">
-        <Header />
+        <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
@@ -57,7 +57,7 @@ const PublicArtistProfile: React.FC = () => {
   if (!artist) {
     return (
       <div className="min-h-screen bg-cream">
-        <Header />
+        <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <h2 className="text-2xl font-serif font-bold text-navy mb-4">Artist Not Found</h2>
@@ -110,7 +110,7 @@ const PublicArtistProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream" data-testid="artist-profile">
-      <Header />
+      <SimpleNavbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back Button */}
@@ -233,7 +233,7 @@ const PublicArtistProfile: React.FC = () => {
             <h2 className="text-2xl font-serif font-bold text-navy mb-4">About {artist.stageName || artist.user?.name}</h2>
             <div className="prose prose-lg max-w-none">
               <p className="text-gray-700 leading-relaxed text-base mb-4">
-                {artist.bio || `${artist.stageName || artist.user?.name} is a professional ${artist.discipline || 'artist'} bringing exceptional talent and experience to luxury venues worldwide. With a passion for creating unforgettable moments, they specialize in delivering world-class performances tailored to sophisticated audiences.`}
+                {artist.bio || `${artist.stageName || artist.user?.name} is a professional ${artist.discipline || 'artist'} bringing exceptional talent and experience to luxury venues worldwide. With a passion for creating unforgettable moments, they specialize in delivering talented hearts performances tailored to sophisticated audiences.`}
               </p>
               {!artist.bio && (
                 <>

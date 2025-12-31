@@ -4,9 +4,10 @@ import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import { useSignIn, useAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
+import { authApi } from '@/utils/api'
 import { LoginCredentials } from '@/types'
 import toast from 'react-hot-toast'
-import Header from '../components/Header'
+import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
 
@@ -25,33 +26,46 @@ const LoginPage: React.FC = () => {
   } = useForm<LoginCredentials>()
 
   const onSubmit = async (data: LoginCredentials) => {
-    if (!isLoaded) return
-    
     setIsLoading(true)
     try {
-      // Use Clerk to sign in
-      const result = await signIn.create({
-        identifier: data.email,
-        password: data.password,
-      })
+      // Try Clerk first if available
+      if (isLoaded && signIn) {
+        try {
+          const result = await signIn.create({
+            identifier: data.email,
+            password: data.password,
+          })
 
-      if (result.status === 'complete') {
-        // Set the active session
-        await setActive({ session: result.createdSessionId })
-        
-        // Sync with our backend to get user data
-        if (clerkUser) {
-          await syncClerkUser(clerkUser)
+          if (result.status === 'complete') {
+            // Set the active session
+            await setActive({ session: result.createdSessionId })
+            
+            // Sync with our backend to get user data
+            if (clerkUser) {
+              await syncClerkUser(clerkUser)
+            }
+            
+            toast.success('Welcome back!')
+            navigate('/dashboard')
+            return
+          }
+        } catch (clerkError: any) {
+          // If Clerk fails (e.g., user doesn't exist in Clerk), try local auth
+          console.log('Clerk login failed, trying local auth:', clerkError.message)
         }
-        
-        toast.success('Welcome back!')
-        // Always redirect to dashboard - it will route to correct role dashboard
-        navigate('/dashboard')
-      } else {
-        toast.error('Login incomplete. Please try again.')
       }
+
+      // Fallback to local database authentication
+      const { login } = useAuthStore.getState()
+      await login(data)
+      
+      toast.success('Welcome back!')
+      navigate('/dashboard')
     } catch (error: any) {
-      const errorMessage = error.errors?.[0]?.message || error.message || 'Login failed'
+      const errorMessage = error.response?.data?.error?.message || 
+                          error.errors?.[0]?.message || 
+                          error.message || 
+                          'Login failed. Please check your credentials.'
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -60,7 +74,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream">
-      <Header />
+      <SimpleNavbar />
       
       <div className="flex items-center justify-center py-20 pt-32 px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -168,7 +182,7 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn-primary py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gold text-white py-3 text-lg rounded-lg font-semibold hover:bg-gold/90 transition-all duration-300 shadow-soft disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>

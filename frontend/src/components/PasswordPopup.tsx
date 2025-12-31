@@ -215,7 +215,7 @@ const PasswordPopup: React.FC = () => {
                 boxSizing: 'border-box'
               }}
               onFocus={(e) => {
-                e.target.style.borderColor = '#D4AF37'
+                e.target.style.borderColor = '#14b8a6'
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = '#ddd'
@@ -242,8 +242,8 @@ const PasswordPopup: React.FC = () => {
             style={{
               width: '100%',
               padding: '14px',
-              backgroundColor: '#D4AF37',
-              color: '#0B1F3F',
+              backgroundColor: '#14b8a6',
+              color: '#ffffff',
               border: 'none',
               borderRadius: '12px',
               fontSize: '16px',
@@ -251,7 +251,7 @@ const PasswordPopup: React.FC = () => {
               cursor: (password.trim() && !isLoading) ? 'pointer' : 'not-allowed',
               opacity: (password.trim() && !isLoading) ? 1 : 0.5,
               transition: 'background-color 0.2s',
-              boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)',
+              boxShadow: '0 4px 12px rgba(20, 184, 166, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -259,12 +259,12 @@ const PasswordPopup: React.FC = () => {
             }}
             onMouseOver={(e) => {
               if (password.trim() && !isLoading) {
-                e.currentTarget.style.backgroundColor = '#c9a030'
+                e.currentTarget.style.backgroundColor = '#0d9488'
               }
             }}
             onMouseOut={(e) => {
               if (password.trim() && !isLoading) {
-                e.currentTarget.style.backgroundColor = '#D4AF37'
+                e.currentTarget.style.backgroundColor = '#14b8a6'
               }
             }}
           >

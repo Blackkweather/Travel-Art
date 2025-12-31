@@ -47,27 +47,40 @@ router.post('/register', asyncHandler(async (req, res) => {
     // Ensure database is initialized
     await initializeDatabase();
 
+    // Normalize email to lowercase for case-insensitive check
+    const normalizedEmail = email.toLowerCase().trim();
+    
     // Check if user already exists with error handling
     let existingUser;
     try {
-      existingUser = await getUserByEmail(email);
+      // Check with normalized email (case-insensitive)
+      const { prisma } = await import('../db');
+      existingUser = await prisma.user.findFirst({
+        where: {
+          email: {
+            equals: normalizedEmail,
+            mode: 'insensitive'
+          }
+        }
+      });
     } catch (dbError: any) {
       console.error('Database error during registration check:', dbError);
       throw new CustomError('Database connection error. Please try again later.', 500);
     }
 
     if (existingUser) {
-      throw new CustomError('User with this email already exists.', 400);
+      throw new CustomError('An account with this email address already exists. Please use a different email or try logging in.', 400);
     }
 
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Create user with error handling
+    // Use normalized email (lowercase) for storage
     let user;
     try {
       user = await createUser({
-        email,
+        email: normalizedEmail,
         name,
         passwordHash,
         role: role as 'ARTIST' | 'HOTEL',
