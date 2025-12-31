@@ -276,13 +276,12 @@ export default function AmbientAudio({
     })
 
     return () => {
-      document.removeEventListener('click', handleInteraction)
-      document.removeEventListener('touchstart', handleInteraction)
       scrollTrigger.kill()
       if (audioRef.current) {
         audioRef.current.pause()
         audioRef.current = null
       }
+      // Note: handleInteraction listeners use { once: true } so they auto-remove
     }
   }, [src, initialVolume, maxScrollForFade, prefersReducedMotion])
 
