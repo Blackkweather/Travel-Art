@@ -90,6 +90,7 @@ const ArtistRegistrationForm: React.FC = () => {
       await registerUser({
         email: state.email,
         password: state.password,
+        name: state.fullName,
         firstName,
         lastName,
         phone: state.phone,
