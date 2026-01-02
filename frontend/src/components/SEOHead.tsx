@@ -63,7 +63,7 @@ export default function SEOHead({
 
     // Add structured data
     if (structuredData) {
-      let scriptTag = document.querySelector('#structured-data')
+      let scriptTag = document.querySelector('#structured-data') as HTMLScriptElement | null
       if (!scriptTag) {
         scriptTag = document.createElement('script')
         scriptTag.id = 'structured-data'

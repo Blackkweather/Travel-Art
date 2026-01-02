@@ -164,6 +164,8 @@ export interface LoginCredentials {
 export interface RegisterData {
   role: 'ARTIST' | 'HOTEL'
   name: string
+  firstName?: string
+  lastName?: string
   stageName?: string
   email: string
   password: string
