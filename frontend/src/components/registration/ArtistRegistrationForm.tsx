@@ -103,10 +103,6 @@ const ArtistRegistrationForm: React.FC = () => {
       // Redirect based on role
       const redirectPath = state.role === 'ARTIST' ? '/dashboard' : '/dashboard';
       navigate(redirectPath);
-      } else {
-        // Handle incomplete sign-up (e.g., email verification required)
-        toast('Please check your email to verify your account', { icon: 'ℹ️' });
-      }
     } catch (error: any) {
       const errorMessage = error.errors?.[0]?.message || error.message || 'Registration failed';
       toast.error(errorMessage);
