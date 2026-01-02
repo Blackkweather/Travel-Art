@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import DOMPurify from 'isomorphic-dompurify';
 
 /**
  * Request sanitization middleware
@@ -17,11 +16,11 @@ const sanitizeString = (value: any): string => {
   // Remove null bytes
   let sanitized = value.replace(/\0/g, '');
   
-  // Sanitize HTML to prevent XSS
-  sanitized = DOMPurify.sanitize(sanitized, { 
-    ALLOWED_TAGS: [], // Remove all HTML tags
-    ALLOWED_ATTR: [] 
-  });
+  // Remove HTML tags to prevent XSS (simple regex-based approach)
+  sanitized = sanitized.replace(/<[^>]*>/g, '');
+  
+  // Remove potentially dangerous characters
+  sanitized = sanitized.replace(/[<>\"']/g, '');
   
   // Trim whitespace
   sanitized = sanitized.trim();

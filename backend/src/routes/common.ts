@@ -369,19 +369,15 @@ router.get('/testimonials', asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit as string) || 6
   
   // Get ratings with hotel and artist information
-  const ratings = await prisma.rating.findMany({
-    take: limit,
-    where: {
-      comment: {
-        not: null
-      }
-    },
+  const allRatings = await prisma.rating.findMany({
+    take: limit * 2, // Get more to filter out empty reviews
     include: {
       hotel: {
         include: {
           user: {
             select: {
-              name: true
+              name: true,
+              country: true
             }
           }
         }
@@ -401,6 +397,9 @@ router.get('/testimonials', asyncHandler(async (req, res) => {
     }
   })
 
+  // Filter out ratings without text reviews
+  const ratings = allRatings.filter(r => r.textReview && r.textReview.trim().length > 0).slice(0, limit)
+
   const testimonials = ratings.map(rating => {
     let location = null
     if (rating.hotel?.location) {
@@ -416,7 +415,7 @@ router.get('/testimonials', asyncHandler(async (req, res) => {
     return {
       id: rating.id,
       rating: rating.stars,
-      comment: rating.comment,
+      comment: rating.textReview,
       hotelName: rating.hotel?.user?.name || 'Hotel Partner',
       location: location 
         ? `${location.city || ''}, ${location.country || ''}`.trim()
