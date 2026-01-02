@@ -624,6 +624,242 @@ router.get('/artists/:id/logs', authenticate, authorize('ADMIN'), asyncHandler(a
   });
 }));
 
+// Get all platform activities (comprehensive activity log)
+router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const { type, page = '1', limit = '100', startDate, endDate } = req.query;
+  const pageNum = parseInt(page as string);
+  const limitNum = parseInt(limit as string);
+  const skip = (pageNum - 1) * limitNum;
+
+  try {
+    // Build date filter
+    const dateFilter: any = {};
+    if (startDate) {
+      dateFilter.gte = new Date(startDate as string);
+    }
+    if (endDate) {
+      dateFilter.lte = new Date(endDate as string);
+    }
+
+    const activities: any[] = [];
+
+    // Get user registrations
+    if (!type || type === 'USER_REGISTRATION') {
+      const users = await prisma.user.findMany({
+        where: {
+          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+        },
+        include: {
+          artist: true,
+          hotel: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      });
+      users.forEach(user => {
+        activities.push({
+          id: `user-${user.id}`,
+          type: 'USER_REGISTRATION',
+          action: `${user.role} registered`,
+          actor: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+          },
+          target: null,
+          details: {
+            role: user.role,
+            country: user.country,
+            hasArtistProfile: !!user.artist,
+            hasHotelProfile: !!user.hotel
+          },
+          timestamp: user.createdAt
+        });
+      });
+    }
+
+    // Get bookings
+    if (!type || type === 'BOOKING') {
+      const bookings = await prisma.booking.findMany({
+        where: {
+          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+        },
+        include: {
+          artist: {
+            include: { user: { select: { id: true, name: true, email: true } } }
+          },
+          hotel: {
+            include: { user: { select: { id: true, name: true, email: true } } }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100
+      });
+      bookings.forEach(booking => {
+        activities.push({
+          id: `booking-${booking.id}`,
+          type: 'BOOKING',
+          action: `Booking ${booking.status.toLowerCase()}`,
+          actor: booking.hotel?.user ? {
+            id: booking.hotel.user.id,
+            name: booking.hotel.user.name,
+            email: booking.hotel.user.email,
+            role: 'HOTEL'
+          } : null,
+          target: booking.artist?.user ? {
+            id: booking.artist.user.id,
+            name: booking.artist.user.name,
+            email: booking.artist.user.email,
+            role: 'ARTIST'
+          } : null,
+          details: {
+            bookingId: booking.id,
+            status: booking.status,
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            creditsUsed: booking.creditsUsed,
+            hotelName: booking.hotel?.name,
+            artistName: booking.artist?.user?.name
+          },
+          timestamp: booking.createdAt
+        });
+      });
+    }
+
+    // Get transactions
+    if (!type || type === 'TRANSACTION') {
+      const transactions = await prisma.transaction.findMany({
+        where: {
+          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+        },
+        include: {
+          hotel: {
+            include: { user: { select: { id: true, name: true, email: true } } }
+          },
+          artist: {
+            include: { user: { select: { id: true, name: true, email: true } } }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100
+      });
+      transactions.forEach(txn => {
+        activities.push({
+          id: `txn-${txn.id}`,
+          type: 'TRANSACTION',
+          action: txn.type,
+          actor: txn.hotel?.user || txn.artist?.user || null,
+          target: null,
+          details: {
+            transactionId: txn.id,
+            type: txn.type,
+            amount: txn.amount,
+            hotelId: txn.hotelId,
+            artistId: txn.artistId
+          },
+          timestamp: txn.createdAt
+        });
+      });
+    }
+
+    // Get ratings
+    if (!type || type === 'RATING') {
+      const ratings = await prisma.rating.findMany({
+        where: {
+          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+        },
+        include: {
+          hotel: {
+            include: { user: { select: { id: true, name: true, email: true } } }
+          },
+          artist: {
+            include: { user: { select: { id: true, name: true, email: true } } }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      });
+      ratings.forEach(rating => {
+        activities.push({
+          id: `rating-${rating.id}`,
+          type: 'RATING',
+          action: 'Rating submitted',
+          actor: rating.hotel?.user || rating.artist?.user || null,
+          target: rating.artist?.user || rating.hotel?.user || null,
+          details: {
+            ratingId: rating.id,
+            stars: rating.stars,
+            textReview: rating.textReview,
+            isVisibleToArtist: rating.isVisibleToArtist
+          },
+          timestamp: rating.createdAt
+        });
+      });
+    }
+
+    // Get admin logs
+    if (!type || type === 'ADMIN_ACTION') {
+      const adminLogs = await prisma.adminLog.findMany({
+        where: {
+          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+        },
+        include: {
+          actor: {
+            select: { id: true, name: true, email: true, role: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      });
+      adminLogs.forEach(log => {
+        activities.push({
+          id: `admin-${log.id}`,
+          type: 'ADMIN_ACTION',
+          action: log.action,
+          actor: log.actor,
+          target: log.targetId ? { id: log.targetId } : null,
+          details: {},
+          timestamp: log.createdAt
+        });
+      });
+    }
+
+    // Sort all activities by timestamp (most recent first)
+    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    // Apply pagination
+    const paginatedActivities = activities.slice(skip, skip + limitNum);
+    const total = activities.length;
+
+    res.json({
+      success: true,
+      data: {
+        activities: paginatedActivities,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum)
+        },
+        summary: {
+          totalActivities: total,
+          byType: {
+            USER_REGISTRATION: activities.filter(a => a.type === 'USER_REGISTRATION').length,
+            BOOKING: activities.filter(a => a.type === 'BOOKING').length,
+            TRANSACTION: activities.filter(a => a.type === 'TRANSACTION').length,
+            RATING: activities.filter(a => a.type === 'RATING').length,
+            ADMIN_ACTION: activities.filter(a => a.type === 'ADMIN_ACTION').length
+          }
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching activities:', error);
+    throw new CustomError('Failed to fetch activities', 500);
+  }
+}));
+
 export { router as adminRoutes };
 
 

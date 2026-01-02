@@ -77,6 +77,9 @@ model Hotel {
   performanceSpots String? // JSON string of performance spots
   rooms           String?  // JSON string of room data
   repName         String?
+  responsiblePhone String? // Phone number for WhatsApp contact (responsible person)
+  responsibleEmail String? // Email for direct contact (responsible person)
+  responsibleName  String? // Name of the responsible person for contact
 
   // Relations
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)

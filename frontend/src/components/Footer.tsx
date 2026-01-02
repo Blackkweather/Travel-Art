@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Mail, Phone, Instagram, Twitter, Facebook, Linkedin } from 'lucide-react'
+import { MapPin, Mail, Phone, Instagram, Twitter, Facebook, Linkedin, MessageCircle } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
 import NewsletterSignup from './NewsletterSignup'
 
@@ -82,14 +82,29 @@ const Footer: React.FC = () => {
                 <MapPin className="w-5 h-5 text-gold flex-shrink-0" />
                 <span className="text-gray-600">Paris, France</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <Mail className="w-5 h-5 text-gold flex-shrink-0" />
-                <span className="text-gray-600">hello@travelart.com</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-gold flex-shrink-0" />
-                <span className="text-gray-600">+33 1 23 45 67 89</span>
-              </div>
+              <a 
+                href="mailto:hello@travelart.com" 
+                className="flex items-center space-x-3 text-gray-600 hover:text-gold transition-colors group"
+              >
+                <Mail className="w-5 h-5 text-gold flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span>hello@travelart.com</span>
+              </a>
+              <a 
+                href="tel:+33123456789" 
+                className="flex items-center space-x-3 text-gray-600 hover:text-gold transition-colors group"
+              >
+                <Phone className="w-5 h-5 text-gold flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span>+33 1 23 45 67 89</span>
+              </a>
+              <a 
+                href="https://wa.me/33123456789?text=Hello%20Travel%20Art%2C%20I%20would%20like%20to%20know%20more%20about%20your%20services" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center space-x-3 text-gray-600 hover:text-gold transition-colors group"
+              >
+                <MessageCircle className="w-5 h-5 text-gold flex-shrink-0 group-hover:scale-110 transition-transform" />
+                <span>WhatsApp Us</span>
+              </a>
             </div>
           </div>
         </div>

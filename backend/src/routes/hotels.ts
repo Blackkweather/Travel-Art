@@ -79,7 +79,10 @@ const hotelProfileSchema = z.object({
   performanceSpots: z.string().optional(), // JSON string
   rooms: z.string().optional(), // JSON string
   repName: z.string().optional(),
-  profilePicture: z.string().optional()
+  profilePicture: z.string().optional(),
+  responsiblePhone: z.string().optional(), // Phone number for WhatsApp contact
+  responsibleEmail: z.string().email().optional(), // Email for direct contact
+  responsibleName: z.string().optional() // Name of the responsible person
 });
 
 const roomAvailabilitySchema = z.object({

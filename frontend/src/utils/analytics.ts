@@ -83,6 +83,15 @@ class Analytics {
     })
   }
 
+  pageView(path: string, title?: string) {
+    this.trackEvent({
+      category: 'navigation',
+      action: 'page_view',
+      label: path,
+      pageTitle: title
+    })
+  }
+
   trackNavigationClick(destination: string) {
     this.trackEvent({
       category: 'navigation',

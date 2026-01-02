@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { useLocation } from 'react-router-dom'
 
 interface PageTransitionProps {
   children: React.ReactNode
@@ -32,12 +33,16 @@ const pageVariants = {
 }
 
 const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
+  const location = useLocation()
+  
   return (
     <motion.div
+      key={location.pathname}
       variants={pageVariants}
       initial="initial"
       animate="animate"
       exit="exit"
+      style={{ minHeight: '100%' }}
     >
       {children}
     </motion.div>

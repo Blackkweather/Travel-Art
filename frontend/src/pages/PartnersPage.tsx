@@ -85,74 +85,52 @@ const PartnersPage: React.FC = () => {
     fetchHotels()
   }, [])
 
-  const staticPartners = [
-    {
-      name: 'Hotel Plaza Athénée',
-      location: 'Paris, France',
-      category: 'Luxury Palace',
-      rating: 4.9,
-      bookings: 45,
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      description: 'Iconic luxury hotel in the heart of Paris with stunning Eiffel Tower views and talented hearts rooftop venues.',
-      specialties: ['Eiffel Tower Views', 'Intimate Concerts', 'Classical Music'],
-      performanceSpots: ['Rooftop Terrace', 'Grand Ballroom', 'Elegant Lounge']
-    },
-    {
-      name: 'Hotel Negresco',
-      location: 'Nice, France',
-      category: 'Historic Luxury',
-      rating: 4.8,
-      bookings: 38,
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      description: 'Historic luxury hotel on the French Riviera with Mediterranean views and legendary rooftop performances.',
-      specialties: ['Mediterranean Views', 'Jazz Performances', 'Sunset Sets'],
-      performanceSpots: ['Rooftop Jazz Lounge', 'Garden Terrace', 'Beach Club']
-    },
-    {
-      name: 'La Mamounia',
-      location: 'Marrakech, Morocco',
-      category: 'Palace Hotel',
-      rating: 4.9,
-      bookings: 32,
-      image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      description: 'Iconic palace hotel with traditional Moroccan architecture and magical rooftop performances under the stars.',
-      specialties: ['Atlas Mountain Views', 'Traditional Music', 'Cultural Performances'],
-      performanceSpots: ['Atlas Rooftop Bar', 'Pool Deck Stage', 'Traditional Courtyard']
-    },
-    {
-      name: 'Palácio Belmonte',
-      location: 'Lisbon, Portugal',
-      category: 'Boutique Palace',
-      rating: 4.7,
-      bookings: 28,
-      image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      description: 'Boutique palace hotel with panoramic views of Lisbon and intimate rooftop concerts.',
-      specialties: ['Lisbon Views', 'Fado Music', 'Intimate Venues'],
-      performanceSpots: ['Terrace Bar', 'Wine Cellar', 'Garden Pavilion']
-    },
-    {
-      name: 'Nobu Hotel Ibiza',
-      location: 'Ibiza, Spain',
-      category: 'Beach Resort',
-      rating: 4.8,
-      bookings: 25,
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      description: 'Luxury beachfront hotel with talented hearts dining and legendary rooftop DJ performances.',
-      specialties: ['Beach Views', 'Electronic Music', 'DJ Sets'],
-      performanceSpots: ['Rooftop Beach Club', 'Sunset Lounge', 'Pool Deck']
-    },
-    {
-      name: 'The Ritz-Carlton',
-      location: 'Barcelona, Spain',
-      category: 'Luxury Chain',
-      rating: 4.6,
-      bookings: 22,
-      image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      description: 'Elegant hotel in Barcelona with stunning city views and sophisticated performance spaces.',
-      specialties: ['City Views', 'Sophisticated Venues', 'Cultural Events'],
-      performanceSpots: ['Sky Terrace', 'Elegant Lounge', 'Conference Center']
+  const [stats, setStats] = useState({
+    partnerHotels: 0,
+    performanceVenues: 0,
+    successfulEvents: 0,
+    averageRating: 0
+  })
+  const [testimonials, setTestimonials] = useState<any[]>([])
+
+  // Fetch stats from API
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const statsRes = await commonApi.getStats()
+        if (statsRes.data?.success) {
+          const statsData = statsRes.data.data
+          setStats({
+            partnerHotels: statsData.totalHotels || 0,
+            performanceVenues: statsData.totalVenues || 0,
+            successfulEvents: statsData.completedBookings || statsData.totalBookings || 0,
+            averageRating: statsData.averageRating || 0
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error)
+      }
     }
-  ]
+    
+    fetchStats()
+  }, [])
+
+  // Fetch testimonials from ratings/reviews
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const testimonialsRes = await commonApi.getTestimonials({ limit: 6 })
+        if (testimonialsRes.data?.success) {
+          setTestimonials(testimonialsRes.data.data || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch testimonials:', error)
+        setTestimonials([])
+      }
+    }
+    
+    fetchTestimonials()
+  }, [])
 
   const benefits = [
     {
@@ -177,11 +155,11 @@ const PartnersPage: React.FC = () => {
     }
   ]
 
-  const stats = [
-    { label: 'Partner Hotels', value: '23', icon: Building },
-    { label: 'Performance Venues', value: '67', icon: MapPin },
-    { label: 'Successful Events', value: '342', icon: Calendar },
-    { label: 'Average Rating', value: '4.8', icon: Star }
+  const statsData = [
+    { label: 'Partner Hotels', value: stats.partnerHotels.toString(), icon: Building },
+    { label: 'Performance Venues', value: stats.performanceVenues.toString(), icon: MapPin },
+    { label: 'Successful Events', value: stats.successfulEvents.toString(), icon: Calendar },
+    { label: 'Average Rating', value: stats.averageRating.toFixed(1), icon: Star }
   ]
 
   return (
@@ -287,7 +265,7 @@ const PartnersPage: React.FC = () => {
       <div className="bg-gray-50 py-16">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
-            {stats.map((stat, index) => {
+            {statsData.map((stat, index) => {
               const Icon = stat.icon
               return (
                 <motion.div
@@ -466,88 +444,44 @@ const PartnersPage: React.FC = () => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="card-luxury"
-          >
-            <div className="flex items-center mb-4">
-              <div className="flex text-gold">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-current" />
-                ))}
-              </div>
-            </div>
-            <p className="text-gray-600 mb-4">
-              "Travel Art has transformed our rooftop terrace into a magical performance space. The artists are incredibly talented and our guests love the intimate concerts."
-            </p>
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-gold rounded-full flex items-center justify-center mr-4">
-                <Building className="w-6 h-6 text-navy" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-navy">Marie Dubois</h4>
-                <p className="text-sm text-gray-600">Hotel Plaza Athénée, Paris</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="card-luxury"
-          >
-            <div className="flex items-center mb-4">
-              <div className="flex text-gold">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-current" />
-                ))}
-              </div>
-            </div>
-            <p className="text-gray-600 mb-4">
-              "The jazz performances on our rooftop have become legendary. Travel Art connects us with talented hearts who create unforgettable experiences."
-            </p>
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-gold rounded-full flex items-center justify-center mr-4">
-                <Building className="w-6 h-6 text-navy" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-navy">Jean-Pierre Martin</h4>
-                <p className="text-sm text-gray-600">Hotel Negresco, Nice</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="card-luxury"
-          >
-            <div className="flex items-center mb-4">
-              <div className="flex text-gold">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-current" />
-                ))}
-              </div>
-            </div>
-            <p className="text-gray-600 mb-4">
-              "Our Atlas rooftop bar has become the place to be in Marrakech. The cultural performances under the stars are absolutely magical."
-            </p>
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-gold rounded-full flex items-center justify-center mr-4">
-                <Building className="w-6 h-6 text-navy" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-navy">Ahmed Benali</h4>
-                <p className="text-sm text-gray-600">La Mamounia, Marrakech</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+        {testimonials.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">No testimonials available yet.</p>
+            <p className="text-gray-500 text-sm mt-2">Testimonials will appear here as hotels rate their experiences.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial.id || index}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="card-luxury"
+              >
+                <div className="flex items-center mb-4">
+                  <div className="flex text-gold">
+                    {[...Array(testimonial.rating || 5)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-current" />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-4">
+                  "{testimonial.comment}"
+                </p>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gold rounded-full flex items-center justify-center mr-4">
+                    <Building className="w-6 h-6 text-navy" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-navy">{testimonial.hotelName}</h4>
+                    <p className="text-sm text-gray-600">{testimonial.location}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* CTA Section */}

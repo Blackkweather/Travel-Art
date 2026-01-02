@@ -20,6 +20,9 @@ model Hotel {
   performanceSpots String? // JSON string of performance spots
   rooms           String?  // JSON string of room data
   repName         String?
+  responsiblePhone String? // Phone number for WhatsApp contact (responsible person)
+  responsibleEmail String? // Email for direct contact (responsible person)
+  responsibleName  String? // Name of the responsible person for contact
   totalBookings   Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

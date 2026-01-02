@@ -5,7 +5,8 @@ import { Star, MapPin, Calendar, Music, Users, Building, Clock, Phone, Mail, Glo
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
-import { hotelsApi } from '@/utils/api'
+import HotelContactButtons from '../components/HotelContactButtons'
+import { hotelsApi, bookingsApi, artistsApi } from '@/utils/api'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 
@@ -15,12 +16,59 @@ const HotelDetailsPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [hotel, setHotel] = useState<any>(null)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [hasConfirmedBooking, setHasConfirmedBooking] = useState(false)
 
   useEffect(() => {
     if (id) {
       fetchHotelDetails(id)
     }
   }, [id])
+
+  // Check for confirmed booking between artist and hotel
+  useEffect(() => {
+    const checkConfirmedBooking = async () => {
+      if (!user || user.role !== 'ARTIST' || !hotel?.id) {
+        setHasConfirmedBooking(false)
+        return
+      }
+
+      try {
+        // Get artist profile to get artist ID
+        const artistRes = await artistsApi.getMyProfile()
+        const artist = artistRes.data?.data
+        if (!artist?.id) {
+          setHasConfirmedBooking(false)
+          return
+        }
+
+        // Check for confirmed bookings between this artist and hotel
+        const bookingsRes = await bookingsApi.list({ 
+          status: 'CONFIRMED'
+        })
+        
+        const bookingsData = bookingsRes.data?.data
+        const bookings = Array.isArray(bookingsData) 
+          ? bookingsData 
+          : (bookingsData?.bookings || [])
+        
+        // Check if there's at least one confirmed booking between this artist and hotel
+        const hasConfirmed = bookings.some((booking: any) => 
+          booking.status === 'CONFIRMED' && 
+          booking.hotelId === hotel.id &&
+          booking.artistId === artist.id
+        )
+        
+        setHasConfirmedBooking(hasConfirmed)
+      } catch (error) {
+        console.error('Error checking confirmed booking:', error)
+        setHasConfirmedBooking(false)
+      }
+    }
+
+    if (hotel && user) {
+      checkConfirmedBooking()
+    }
+  }, [hotel, user])
 
   const fetchHotelDetails = async (hotelId: string) => {
     try {
@@ -265,7 +313,8 @@ const HotelDetailsPage: React.FC = () => {
                     <p className="text-gray-600">{locationString}</p>
                   </div>
                 )}
-                {hotel.contactPhone && (
+                {/* Only show phone/email if there's a confirmed booking */}
+                {hasConfirmedBooking && hotel.contactPhone && !hotel.responsiblePhone && (
                   <div className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-gold flex-shrink-0" />
                     <a href={`tel:${hotel.contactPhone}`} className="text-gray-600 hover:text-gold">
@@ -273,7 +322,7 @@ const HotelDetailsPage: React.FC = () => {
                     </a>
                   </div>
                 )}
-                {hotel.user?.email && (
+                {hasConfirmedBooking && hotel.user?.email && !hotel.responsibleEmail && (
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-gold flex-shrink-0" />
                     <a href={`mailto:${hotel.user.email}`} className="text-gray-600 hover:text-gold">
@@ -281,7 +330,24 @@ const HotelDetailsPage: React.FC = () => {
                     </a>
                   </div>
                 )}
+                {!hasConfirmedBooking && user?.role === 'ARTIST' && (
+                  <div className="text-sm text-gray-500 italic">
+                    Contact information will be available after booking confirmation.
+                  </div>
+                )}
               </div>
+
+              {/* Contact Hotel Buttons - Only show if confirmed booking */}
+              {hasConfirmedBooking && (
+                <div className="border-t border-gray-200 pt-6 mb-6">
+                  <HotelContactButtons
+                    phoneNumber={hotel.responsiblePhone || hotel.contactPhone}
+                    email={hotel.responsibleEmail || hotel.user?.email}
+                    responsibleName={hotel.responsibleName || hotel.repName}
+                    hotelName={hotel.name}
+                  />
+                </div>
+              )}
 
               {/* Performance Spots Summary */}
               {performanceSpots.length > 0 && (
@@ -303,15 +369,22 @@ const HotelDetailsPage: React.FC = () => {
               {/* Action Buttons for Artists */}
               {user && user.role === 'ARTIST' && (
                 <div className="border-t border-gray-200 pt-6 mt-6 space-y-3">
-                  <button
-                    onClick={() => {
-                      toast.success('Contact request sent to hotel!')
-                    }}
-                    className="w-full btn-primary flex items-center justify-center gap-2"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    Contact Hotel
-                  </button>
+                  {/* Only show contact button if there's a confirmed booking */}
+                  {hasConfirmedBooking ? (
+                    <a
+                      href={`mailto:${hotel.responsibleEmail || hotel.user?.email || ''}?subject=${encodeURIComponent(`Inquiry about ${hotel.name}`)}&body=${encodeURIComponent(hotel.responsibleName ? `Dear ${hotel.responsibleName},\n\nI would like to inquire about booking a performance at ${hotel.name}.\n\nBest regards,` : `Dear Sir/Madam,\n\nI would like to inquire about booking a performance at ${hotel.name}.\n\nBest regards,`)}`}
+                      className="w-full btn-primary flex items-center justify-center gap-2"
+                    >
+                      <Mail className="w-5 h-5" />
+                      Contact Hotel
+                    </a>
+                  ) : (
+                    <div className="w-full p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                      <p className="text-sm text-gray-600">
+                        Contact information will be available after booking confirmation.
+                      </p>
+                    </div>
+                  )}
                   <button
                     onClick={() => {
                       setIsFavorite(!isFavorite)

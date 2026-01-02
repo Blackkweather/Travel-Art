@@ -8,7 +8,8 @@ import {
   CreditCard, 
   Users, 
   Gift,
-  TrendingUp
+  TrendingUp,
+  Activity
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -44,6 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           { path: '/dashboard/bookings', label: 'Bookings', icon: Calendar },
           { path: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp },
           { path: '/dashboard/moderation', label: 'Moderation', icon: UserIcon },
+          { path: '/dashboard/logs', label: 'Activity Logs', icon: Activity },
         ]
       default:
         return []

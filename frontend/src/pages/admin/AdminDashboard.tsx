@@ -376,6 +376,18 @@ const AdminDashboard: React.FC = () => {
             View Referrals
           </button>
         </div>
+
+        <div className="card-luxury">
+          <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+            Activity Logs
+          </h3>
+          <p className="text-gray-600 mb-4">
+            View comprehensive activity logs for all platform events, user actions, and system activities.
+          </p>
+          <button className="btn-primary" onClick={() => navigate('/dashboard/logs')}>
+            View Activity Logs
+          </button>
+        </div>
       </div>
     </div>
   )

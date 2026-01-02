@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useSignUp, useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
+import { authApi } from '@/utils/api';
 import SimpleNavbar from '../SimpleNavbar';
 import Footer from '../Footer';
 import StepIndicator from './StepIndicator';
@@ -37,10 +37,7 @@ const ArtistRegistrationForm: React.FC = () => {
   const [state, setState] = useState<RegistrationState>(INITIAL_STATE);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { isLoaded, signUp, setActive } = useSignUp();
-  const auth = useAuth();
-  const clerkUser = auth.isSignedIn ? (auth as any).user : null;
-  const { syncClerkUser } = useAuthStore();
+  const { register: registerUser } = useAuthStore();
 
   const stepTitles = ['Choose Role', 'Basic Info', 'Details'];
 
@@ -83,52 +80,29 @@ const ArtistRegistrationForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!isLoaded) return;
-    
     setIsLoading(true);
     try {
-      // Use Clerk to sign up
-      const result = await signUp.create({
-        emailAddress: state.email,
+      // Use local registration
+      const nameParts = state.fullName.split(' ');
+      const firstName = nameParts[0] || state.fullName;
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      await registerUser({
+        email: state.email,
         password: state.password,
-        firstName: state.fullName.split(' ')[0] || state.fullName,
-        lastName: state.fullName.split(' ').slice(1).join(' ') || '',
+        firstName,
+        lastName,
+        phone: state.phone,
+        country: state.country,
+        role: state.role,
+        ...(state.role === 'ARTIST' && { stageName: state.fullName })
       });
-
-      // Complete the sign-up process
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
-        
-        // Sync with our backend to create user profile with role and additional data
-        const syncResponse = await fetch('/api/auth/clerk/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clerkId: result.createdUserId,
-            email: state.email,
-            name: state.fullName,
-            phone: state.phone,
-            country: state.country,
-            role: state.role,
-            stageName: state.role === 'ARTIST' ? state.fullName : undefined
-          })
-        });
-
-        if (syncResponse.ok) {
-          const { user } = await syncResponse.json();
-          // Sync with our store
-          if (clerkUser) {
-            await syncClerkUser(clerkUser);
-          }
-          
-          toast.success('Registration successful! Welcome to Travel Art');
-          
-          // Redirect based on role
-          const redirectPath = state.role === 'ARTIST' ? '/dashboard' : '/dashboard';
-          navigate(redirectPath);
-        } else {
-          throw new Error('Failed to sync user profile');
-        }
+      
+      toast.success('Registration successful! Welcome to Travel Art');
+      
+      // Redirect based on role
+      const redirectPath = state.role === 'ARTIST' ? '/dashboard' : '/dashboard';
+      navigate(redirectPath);
       } else {
         // Handle incomplete sign-up (e.g., email verification required)
         toast('Please check your email to verify your account', { icon: 'ℹ️' });

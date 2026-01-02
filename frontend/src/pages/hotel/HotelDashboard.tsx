@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore'
 import { Calendar, Users, CreditCard, MapPin, Music, Heart } from 'lucide-react'
 import { hotelsApi, bookingsApi, artistsApi, apiClient } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import ContactSupport from '@/components/ContactSupport'
 import toast from 'react-hot-toast'
 
 interface Booking {
@@ -67,7 +68,11 @@ const HotelDashboard: React.FC = () => {
 
         // Get bookings for this hotel
         const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
-        const bookings = bookingsRes.data?.data || []
+        // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
+        const bookingsData = bookingsRes.data?.data
+        const bookings = Array.isArray(bookingsData) 
+          ? bookingsData 
+          : (bookingsData?.bookings || [])
         
         // Get credits
         let credits = 0
@@ -362,6 +367,13 @@ const HotelDashboard: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Contact Support */}
+      <ContactSupport
+        userRole={user?.role || 'HOTEL'}
+        userName={user?.name || ''}
+        userEmail={user?.email || ''}
+      />
     </div>
   )
 }

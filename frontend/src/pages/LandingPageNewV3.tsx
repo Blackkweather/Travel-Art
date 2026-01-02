@@ -46,44 +46,8 @@ export default function LandingPageNewV3() {
   
   const weLovetags = ['MUSIC', 'ART', 'TRAVEL', 'LUXURY', 'CULTURE', 'EXPERIENCE', 'CREATIVITY', 'PERFORMANCE']
 
-  // Default slides
-  const defaultSlides: Slide[] = [
-    {
-      id: '1',
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=80',
-      title: 'BETWEEN SHADOW',
-      subtitle: 'AND LIGHT',
-      category: 'EXPERIENCE'
-    },
-    {
-      id: '2',
-      image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1920&q=80',
-      title: 'ARTISTIC JOURNEYS',
-      subtitle: 'IN PARADISE',
-      category: 'TRAVEL'
-    },
-    {
-      id: '3',
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=80',
-      title: 'CULTURAL IMMERSION',
-      subtitle: 'WORLDWIDE',
-      category: 'CULTURE'
-    },
-    {
-      id: '4',
-      image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80',
-      title: 'LUXURY DESTINATIONS',
-      subtitle: '30+ LOCATIONS',
-      category: 'LUXURY'
-    },
-    {
-      id: '5',
-      image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80',
-      title: 'UNFORGETTABLE',
-      subtitle: 'EXPERIENCES',
-      category: 'MUSIC'
-    }
-  ]
+  // Default slides - only used as fallback if no experiences in database
+  const defaultSlides: Slide[] = []
 
   // Header scroll effect
   useEffect(() => {
@@ -142,12 +106,13 @@ export default function LandingPageNewV3() {
               category: exp.category
             }
           })
-          setSlides(experienceSlides.length >= 3 ? experienceSlides : defaultSlides)
+          setSlides(experienceSlides)
         } else {
-          setSlides(defaultSlides)
+          // If less than 3 experiences, show empty state or minimal slides
+          setSlides([])
         }
       } catch (error: any) {
-        console.error('❌ Failed to fetch experiences:', error)
+        console.error('Failed to fetch experiences:', error)
         setExperiences([])
         setSlides(defaultSlides)
       }
@@ -408,10 +373,12 @@ export default function LandingPageNewV3() {
       if (!slideshowElement) return
       
       const rect = slideshowElement.getBoundingClientRect()
-      const isInSlideshow = rect.top <= 0 && rect.bottom >= window.innerHeight
+      // More precise check: only intercept if slideshow is fully in viewport
+      const isInSlideshow = rect.top <= 0 && rect.bottom >= window.innerHeight && 
+                           rect.top >= -window.innerHeight && rect.bottom <= window.innerHeight * 2
       
-      // If we're at the last slide and scrolling down, allow normal scroll
-      // If we're at the first slide and scrolling up, allow normal scroll
+      // Always allow normal scrolling - don't prevent default
+      // Only navigate slides on wheel if user is clearly in slideshow area
       if (isInSlideshow) {
         // Check if we're trying to scroll past the slideshow
         if (e.deltaY > 0 && currentSlideIndex === slides.length - 1) {
@@ -423,12 +390,14 @@ export default function LandingPageNewV3() {
           return
         }
         
-        // Otherwise, navigate slides
-        e.preventDefault()
-        if (e.deltaY > 0) {
-          navigate(NEXT)
-        } else {
-          navigate(PREV)
+        // Only navigate if scroll is significant and user is clearly in slideshow
+        // Don't prevent default - let page scroll naturally
+        if (Math.abs(e.deltaY) > 50) {
+          if (e.deltaY > 0) {
+            navigate(NEXT)
+          } else {
+            navigate(PREV)
+          }
         }
       }
     }
@@ -465,7 +434,8 @@ export default function LandingPageNewV3() {
 
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseleave', handleMouseLeave)
-    window.addEventListener('wheel', handleWheel)
+    // Use passive: true to allow normal scrolling - we won't preventDefault
+    window.addEventListener('wheel', handleWheel, { passive: true })
     document.addEventListener('touchstart', handleTouchStart)
     document.addEventListener('touchend', handleTouchEnd)
     document.addEventListener('click', handleClick)

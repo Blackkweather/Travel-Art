@@ -1,25 +1,15 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useAuth as useClerkAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
-import { useEffect } from 'react'
-import { setClerkTokenGetter } from '@/utils/clerkToken'
-
-// Safe wrapper for useAuth that won't crash if Clerk is not properly initialized
-const useSafeAuth = () => {
-  // Check if we're inside ClerkProvider by checking if VITE_CLERK_PUBLISHABLE_KEY exists
-  const hasClerkKey = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-  
-  if (!hasClerkKey) {
-    // Return dummy auth state if no Clerk key
-    return { isLoaded: true, isSignedIn: false, getToken: null, user: null }
-  }
-  
-  // Use actual Clerk auth if key exists
-  return useClerkAuth()
-}
-import { AnimatePresence } from 'framer-motion'
-import Layout from '@/components/Layout'
+import { useEffect, lazy, Suspense } from 'react'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import SEOHead from '@/components/SEOHead'
+import { getDefaultOrganizationSchema } from '@/utils/structuredData'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import SkipToContent from '@/components/SkipToContent'
+import analytics from '@/utils/analytics'
+import { useAppKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+
+import Layout from '@/components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import RoleRoute from './components/RoleRoute'
 import RoleAwareRoute from './components/RoleAwareRoute'
@@ -29,49 +19,47 @@ import PageTransition from './components/PageTransition'
 // Force import to ensure it loads
 console.log('🔒 PasswordPopup imported:', typeof PasswordPopup)
 
-// Public pages
-import LandingPage from '@/pages/LandingPage'
-import LandingPageNewV2 from '@/pages/LandingPageNewV2'
-import LandingPageNewV3 from '@/pages/LandingPageNewV3'
-import HowItWorksPage from '@/pages/HowItWorksPage'
-import PartnersPage from '@/pages/PartnersPage'
-import TopArtistsPage from '@/pages/TopArtistsPage'
-import TopHotelsPage from '@/pages/TopHotelsPage'
-import HotelDetailsPage from '@/pages/HotelDetailsPage'
-import PricingPage from '@/pages/PricingPage'
-import LoginPage from '@/pages/LoginPage'
-import RegisterPage from '@/pages/RegisterPage'
-import ReferralRedirectPage from '@/pages/ReferralRedirectPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage'
-import TermsPage from '@/pages/TermsPage'
-import CookiePolicyPage from '@/pages/CookiePolicyPage'
-import AboutPage from '@/pages/AboutPage'
+// Lazy load pages for code splitting
+const LandingPage = lazy(() => import('@/pages/LandingPage'))
+const LandingPageNewV2 = lazy(() => import('@/pages/LandingPageNewV2'))
+const LandingPageNewV3 = lazy(() => import('@/pages/LandingPageNewV3'))
+const HowItWorksPage = lazy(() => import('@/pages/HowItWorksPage'))
+const PartnersPage = lazy(() => import('@/pages/PartnersPage'))
+const TopArtistsPage = lazy(() => import('@/pages/TopArtistsPage'))
+const TopHotelsPage = lazy(() => import('@/pages/TopHotelsPage'))
+const HotelDetailsPage = lazy(() => import('@/pages/HotelDetailsPage'))
+const PricingPage = lazy(() => import('@/pages/PricingPage'))
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
+const ReferralRedirectPage = lazy(() => import('@/pages/ReferralRedirectPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'))
+const TermsPage = lazy(() => import('@/pages/TermsPage'))
+const CookiePolicyPage = lazy(() => import('@/pages/CookiePolicyPage'))
+const AboutPage = lazy(() => import('@/pages/AboutPage'))
 
-// Protected pages
-import ArtistDashboard from '@/pages/artist/ArtistDashboard'
-import ArtistProfile from '@/pages/artist/ArtistProfile'
-import PublicArtistProfile from '@/pages/PublicArtistProfile'
-// removed unused direct import: ArtistBookings (resolved inside RoleAwareRoute)
-import ArtistMembership from '@/pages/artist/ArtistMembership'
-import ArtistReferrals from '@/pages/artist/ArtistReferrals'
+// Protected pages - lazy loaded
+const ArtistDashboard = lazy(() => import('@/pages/artist/ArtistDashboard'))
+const ArtistProfile = lazy(() => import('@/pages/artist/ArtistProfile'))
+const PublicArtistProfile = lazy(() => import('@/pages/PublicArtistProfile'))
+const ArtistMembership = lazy(() => import('@/pages/artist/ArtistMembership'))
+const ArtistReferrals = lazy(() => import('@/pages/artist/ArtistReferrals'))
 
-import HotelDashboard from '@/pages/hotel/HotelDashboard'
-import HotelProfile from '@/pages/hotel/HotelProfile'
-import HotelArtists from '@/pages/hotel/HotelArtists'
-// removed unused direct import: HotelBookings (resolved inside RoleAwareRoute)
-import HotelCredits from '@/pages/hotel/HotelCredits'
+const HotelDashboard = lazy(() => import('@/pages/hotel/HotelDashboard'))
+const HotelProfile = lazy(() => import('@/pages/hotel/HotelProfile'))
+const HotelArtists = lazy(() => import('@/pages/hotel/HotelArtists'))
+const HotelCredits = lazy(() => import('@/pages/hotel/HotelCredits'))
 
-import AdminDashboard from '@/pages/admin/AdminDashboard'
-import AdminUsers from '@/pages/admin/AdminUsers'
-// removed unused direct import: AdminBookings (resolved inside RoleAwareRoute)
-import AdminAnalytics from '@/pages/admin/AdminAnalytics'
-import AdminModeration from '@/pages/admin/AdminModeration'
-import AdminReferrals from '@/pages/admin/AdminReferrals'
-import TravelerExperiencesPage from '@/pages/TravelerExperiencesPage'
-import ExperienceDetailsPage from '@/pages/ExperienceDetailsPage'
-import PaymentPage from '@/pages/PaymentPage'
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
+const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
+const AdminAnalytics = lazy(() => import('@/pages/admin/AdminAnalytics'))
+const AdminModeration = lazy(() => import('@/pages/admin/AdminModeration'))
+const AdminReferrals = lazy(() => import('@/pages/admin/AdminReferrals'))
+const AdminLogs = lazy(() => import('@/pages/admin/AdminLogs'))
+const TravelerExperiencesPage = lazy(() => import('@/pages/TravelerExperiencesPage'))
+const ExperienceDetailsPage = lazy(() => import('@/pages/ExperienceDetailsPage'))
+const PaymentPage = lazy(() => import('@/pages/PaymentPage'))
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
@@ -95,39 +83,28 @@ const DashboardRedirect = () => {
 }
 
 function App() {
-  const { isLoading, checkAuth, syncClerkUser } = useAuthStore()
-  const auth = useSafeAuth()
-  const { isLoaded, isSignedIn, getToken } = auth
-  const clerkUser = isSignedIn ? (auth as any).user : null
+  const { isLoading, checkAuth } = useAuthStore()
   const location = useLocation()
+  
+  // Enable keyboard shortcuts
+  useAppKeyboardShortcuts()
 
-  // Set up Clerk token getter for API client
+  // Check auth on mount
   useEffect(() => {
-    if (isLoaded && getToken) {
-      setClerkTokenGetter(async () => {
-        try {
-          return await getToken()
-        } catch (error) {
-          return null
-        }
-      })
-    }
-  }, [isLoaded, getToken])
+    checkAuth()
+  }, [checkAuth])
 
+  // Track page views
   useEffect(() => {
-    // Sync Clerk user with our backend when Clerk user is available
-    if (isLoaded && isSignedIn && clerkUser) {
-      syncClerkUser(clerkUser)
-    } else if (!isSignedIn) {
-      // Fallback to existing auth check if not using Clerk
-      checkAuth()
-    }
-  }, [isLoaded, isSignedIn, clerkUser, syncClerkUser, checkAuth])
+    analytics.pageView(location.pathname, document.title)
+  }, [location.pathname])
 
   // console.log('🔒 App.tsx rendering - PasswordPopup should be visible')
   
   return (
-    <>
+    <ErrorBoundary>
+      <SkipToContent />
+      <SEOHead structuredData={getDefaultOrganizationSchema()} />
       {/* PasswordPopup temporarily disabled - uncomment to activate */}
       {/* <PasswordPopup /> */}
       {isLoading ? (
@@ -135,8 +112,8 @@ function App() {
           <LoadingSpinner />
         </div>
       ) : (
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
+        <Suspense fallback={<LoadingSpinner />}>
+            <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
         <Route path="/" element={<PageTransition><LandingPageNewV3 /></PageTransition>} />
         <Route path="/v2" element={<PageTransition><LandingPageNewV2 /></PageTransition>} />
@@ -251,6 +228,14 @@ function App() {
             </RoleRoute>
           } 
         />
+        <Route 
+          path="logs"
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminLogs />
+            </RoleRoute>
+          } 
+        />
       </Route>
 
       {/* Artist Public Profile */}
@@ -261,10 +246,10 @@ function App() {
       
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        </AnimatePresence>
+            </Routes>
+          </Suspense>
       )}
-    </>
+    </ErrorBoundary>
   )
 }
 

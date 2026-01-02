@@ -44,7 +44,11 @@ const HotelBookings: React.FC = () => {
 
         // Get bookings for this hotel
         const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
-        const bookingsData = bookingsRes.data?.data || []
+        // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
+        const bookingsDataRaw = bookingsRes.data?.data
+        const bookingsData = Array.isArray(bookingsDataRaw) 
+          ? bookingsDataRaw 
+          : (bookingsDataRaw?.bookings || [])
         
         // Transform bookings to match component format
         const transformedBookings = bookingsData.map((b: any) => ({
@@ -113,7 +117,11 @@ const HotelBookings: React.FC = () => {
       if (!hotel) return
 
       const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
-      const bookingsData = bookingsRes.data?.data || []
+      // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
+      const bookingsDataRaw = bookingsRes.data?.data
+      const bookingsData = Array.isArray(bookingsDataRaw) 
+        ? bookingsDataRaw 
+        : (bookingsDataRaw?.bookings || [])
       
       const transformedBookings = bookingsData.map((b: any) => ({
         id: b.id,

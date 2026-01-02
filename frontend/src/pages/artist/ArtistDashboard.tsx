@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/authStore'
 import { Calendar, Star, Users, CreditCard } from 'lucide-react'
 import { bookingsApi, artistsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import ContactSupport from '@/components/ContactSupport'
 
 interface Booking {
   id: string
@@ -47,7 +48,11 @@ const ArtistDashboard: React.FC = () => {
 
         // Get bookings for this artist (use artist ID, not user ID!)
         const bookingsRes = await bookingsApi.list({ artistId: artist.id })
-        const bookings = bookingsRes.data?.data || []
+        // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
+        const bookingsData = bookingsRes.data?.data
+        const bookings = Array.isArray(bookingsData) 
+          ? bookingsData 
+          : (bookingsData?.bookings || [])
 
         // Calculate stats
         const totalBookings = bookings.length
@@ -203,6 +208,13 @@ const ArtistDashboard: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Contact Support */}
+      <ContactSupport
+        userRole={user?.role || 'ARTIST'}
+        userName={user?.name || ''}
+        userEmail={user?.email || ''}
+      />
     </div>
   )
 }

@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
-import { useSignIn, useAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/utils/api'
 import { LoginCredentials } from '@/types'
@@ -13,10 +12,6 @@ import { getLogoUrl } from '@/config/assets'
 
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
-  const { isLoaded, signIn, setActive } = useSignIn()
-  const auth = useAuth()
-  const clerkUser = auth.isSignedIn ? (auth as any).user : null
-  const { syncClerkUser } = useAuthStore()
   const navigate = useNavigate()
 
   const {
@@ -28,34 +23,7 @@ const LoginPage: React.FC = () => {
   const onSubmit = async (data: LoginCredentials) => {
     setIsLoading(true)
     try {
-      // Try Clerk first if available
-      if (isLoaded && signIn) {
-        try {
-          const result = await signIn.create({
-            identifier: data.email,
-            password: data.password,
-          })
-
-          if (result.status === 'complete') {
-            // Set the active session
-            await setActive({ session: result.createdSessionId })
-            
-            // Sync with our backend to get user data
-            if (clerkUser) {
-              await syncClerkUser(clerkUser)
-            }
-            
-            toast.success('Welcome back!')
-            navigate('/dashboard')
-            return
-          }
-        } catch (clerkError: any) {
-          // If Clerk fails (e.g., user doesn't exist in Clerk), try local auth
-          console.log('Clerk login failed, trying local auth:', clerkError.message)
-        }
-      }
-
-      // Fallback to local database authentication
+      // Use local database authentication
       const { login } = useAuthStore.getState()
       await login(data)
       

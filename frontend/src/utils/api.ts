@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
 import { useAuthStore } from '@/store/authStore'
 import { ApiResponse, LoginCredentials, RegisterData, User } from '@/types'
-import { getClerkToken } from './clerkToken'
 
 class ApiClient {
   private client: AxiosInstance
@@ -23,16 +22,10 @@ class ApiClient {
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
       async (config) => {
-        // Try to get Clerk session token first
-        const clerkToken = await getClerkToken()
-        if (clerkToken) {
-          config.headers.Authorization = `Bearer ${clerkToken}`
-        } else {
-          // Fallback to auth store token (for backward compatibility)
-          const token = useAuthStore.getState().token
-          if (token) {
-            config.headers.Authorization = `Bearer ${token}`
-          }
+        // Get auth token from store
+        const token = useAuthStore.getState().token
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`
         }
         
         // For FormData, let the browser set Content-Type automatically (with boundary)
@@ -173,6 +166,12 @@ export const adminApi = {
   getBookings: (params?: any) =>
     apiClient.get('/admin/bookings', params),
   
+  getLogs: (params?: any) =>
+    apiClient.get('/admin/logs', params),
+  
+  getAllActivities: (params?: any) =>
+    apiClient.get('/admin/activities', params),
+  
   exportData: async (type: string) => {
     const response = await axios.get(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api'}/admin/export?type=${type}`, {
       responseType: 'blob',
@@ -200,6 +199,9 @@ export const commonApi = {
   
   getStats: () =>
     apiClient.get('/stats'),
+  
+  getTestimonials: (params?: any) =>
+    apiClient.get('/testimonials', params),
 }
 
 // Trips API

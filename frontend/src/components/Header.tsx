@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
-import { useClerk } from '@clerk/clerk-react'
 import { getLogoUrl } from '@/config/assets'
 import { useAuthStore } from '@/store/authStore'
 
 const Header: React.FC = () => {
   const { user, logout } = useAuthStore()
-  const { signOut } = useClerk()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [headerScrolled, setHeaderScrolled] = useState(false)
   
@@ -27,14 +25,6 @@ const Header: React.FC = () => {
     const confirmLogout = window.confirm('Are you sure you want to logout?')
     if (!confirmLogout) return
     
-    try {
-      // Sign out from Clerk if available
-      if (signOut) {
-        await signOut()
-      }
-    } catch (error) {
-      console.error('Clerk sign out error:', error)
-    }
     // Clear local auth state
     logout()
     window.location.href = '/'

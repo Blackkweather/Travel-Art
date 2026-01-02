@@ -54,9 +54,9 @@ const TopHotelsPage: React.FC = () => {
           const statsData = statsResponse.data.data
           setStats({
             totalHotels: statsData.totalHotels || 0,
-            totalVenues: (statsData.totalHotels || 0) * 3, // Estimate
-            averageRating: 4.8,
-            totalEvents: statsData.totalBookings || 0
+            totalVenues: statsData.totalVenues || 0,
+            averageRating: statsData.averageRating || 0,
+            totalEvents: statsData.completedBookings || statsData.totalBookings || 0
           })
         }
       } catch (err: any) {
@@ -98,7 +98,17 @@ const TopHotelsPage: React.FC = () => {
     if (!spots) return []
     try {
       const parsed = typeof spots === 'string' ? JSON.parse(spots) : spots
-      return Array.isArray(parsed) ? parsed : []
+      if (!Array.isArray(parsed)) return []
+      
+      // Convert array items to strings - handle both string and object formats
+      return parsed.map((spot: any) => {
+        if (typeof spot === 'string') return spot
+        if (typeof spot === 'object' && spot !== null) {
+          // If it's an object, extract the name property or stringify it
+          return spot.name || spot.title || JSON.stringify(spot)
+        }
+        return String(spot)
+      })
     } catch {
       return []
     }

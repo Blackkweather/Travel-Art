@@ -311,13 +311,44 @@ router.get('/stats', asyncHandler(async (req, res) => {
     totalArtists,
     totalHotels,
     totalBookings,
-    activeBookings
+    activeBookings,
+    completedBookings,
+    allHotels
   ] = await Promise.all([
     prisma.artist.count(),
     prisma.hotel.count(),
     prisma.booking.count(),
-    prisma.booking.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } })
+    prisma.booking.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } }),
+    prisma.booking.count({ where: { status: 'COMPLETED' } }),
+    prisma.hotel.findMany({
+      select: {
+        performanceSpots: true
+      }
+    })
   ]);
+
+  // Calculate total performance venues from all hotels
+  let totalVenues = 0
+  allHotels.forEach(hotel => {
+    if (hotel.performanceSpots) {
+      try {
+        const spots = typeof hotel.performanceSpots === 'string' 
+          ? JSON.parse(hotel.performanceSpots) 
+          : hotel.performanceSpots
+        totalVenues += Array.isArray(spots) ? spots.length : 0
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+  })
+
+  // Calculate average rating from all ratings
+  const ratings = await prisma.rating.findMany({
+    select: { stars: true }
+  })
+  const averageRating = ratings.length > 0
+    ? ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length
+    : 0
 
   res.json({
     success: true,
@@ -325,9 +356,79 @@ router.get('/stats', asyncHandler(async (req, res) => {
       totalArtists,
       totalHotels,
       totalBookings,
-      activeBookings
+      activeBookings,
+      completedBookings,
+      totalVenues,
+      averageRating: Math.round(averageRating * 10) / 10 // Round to 1 decimal
     }
   });
+}));
+
+// Get testimonials from ratings
+router.get('/testimonials', asyncHandler(async (req, res) => {
+  const limit = parseInt(req.query.limit as string) || 6
+  
+  // Get ratings with hotel and artist information
+  const ratings = await prisma.rating.findMany({
+    take: limit,
+    where: {
+      comment: {
+        not: null
+      }
+    },
+    include: {
+      hotel: {
+        include: {
+          user: {
+            select: {
+              name: true
+            }
+          }
+        }
+      },
+      artist: {
+        include: {
+          user: {
+            select: {
+              name: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  const testimonials = ratings.map(rating => {
+    let location = null
+    if (rating.hotel?.location) {
+      try {
+        location = typeof rating.hotel.location === 'string' 
+          ? JSON.parse(rating.hotel.location) 
+          : rating.hotel.location
+      } catch (e) {
+        location = null
+      }
+    }
+
+    return {
+      id: rating.id,
+      rating: rating.stars,
+      comment: rating.comment,
+      hotelName: rating.hotel?.user?.name || 'Hotel Partner',
+      location: location 
+        ? `${location.city || ''}, ${location.country || ''}`.trim()
+        : rating.hotel?.user?.country || '',
+      createdAt: rating.createdAt
+    }
+  })
+
+  res.json({
+    success: true,
+    data: testimonials
+  })
 }));
 
 export { router as commonRoutes };
