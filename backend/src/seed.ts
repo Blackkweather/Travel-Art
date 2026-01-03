@@ -454,7 +454,11 @@ async function main() {
       startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
       endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
       status: 'CONFIRMED',
-      creditsUsed: 1
+      creditsUsed: 0, // Deprecated
+      weeklyPaymentAmount: 200.0,
+      numberOfWeeks: 1,
+      totalPaymentAmount: 200.0,
+      paymentStatus: 'PAID'
     },
     {
       hotelId: createdHotels[1].id,
@@ -462,7 +466,11 @@ async function main() {
       startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks from now
       endDate: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000), // 17 days from now
       status: 'COMPLETED',
-      creditsUsed: 1
+      creditsUsed: 0, // Deprecated
+      weeklyPaymentAmount: 200.0,
+      numberOfWeeks: 1,
+      totalPaymentAmount: 200.0,
+      paymentStatus: 'PAID'
     },
     {
       hotelId: createdHotels[2].id,
@@ -470,7 +478,11 @@ async function main() {
       startDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 3 weeks from now
       endDate: new Date(Date.now() + 24 * 24 * 60 * 60 * 1000), // 24 days from now
       status: 'PENDING',
-      creditsUsed: 1
+      creditsUsed: 0, // Deprecated
+      weeklyPaymentAmount: 200.0,
+      numberOfWeeks: 1,
+      totalPaymentAmount: 200.0,
+      paymentStatus: 'PENDING'
     }
   ];
 
