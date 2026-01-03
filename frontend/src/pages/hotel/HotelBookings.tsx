@@ -18,7 +18,11 @@ interface Booking {
   startDate: string
   endDate: string
   status: string
-  creditsUsed: number
+  creditsUsed?: number // Deprecated
+  weeklyPaymentAmount?: number
+  numberOfWeeks?: number
+  totalPaymentAmount?: number
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
   performanceSpot?: string
   notes?: string
 }
@@ -337,10 +341,33 @@ const HotelBookings: React.FC = () => {
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-navy mb-2">Booking Info</h4>
+                    <h4 className="text-sm font-medium text-navy mb-2">Payment Info</h4>
                     <div className="space-y-1 text-sm text-gray-600">
-                      <div>Credits: <span className="font-medium text-gold">{booking.creditsUsed}</span></div>
-                      {booking.notes && <div>Notes: {booking.notes}</div>}
+                      {booking.totalPaymentAmount && (
+                        <div className="flex items-center justify-between">
+                          <span>Total Payment:</span>
+                          <span className="font-bold text-gold">€{booking.totalPaymentAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {booking.numberOfWeeks && booking.weeklyPaymentAmount && (
+                        <div className="flex items-center justify-between">
+                          <span>{booking.numberOfWeeks} week{booking.numberOfWeeks > 1 ? 's' : ''} × €{booking.weeklyPaymentAmount}/week</span>
+                        </div>
+                      )}
+                      {booking.paymentStatus && (
+                        <div className="flex items-center justify-between mt-2">
+                          <span>Status:</span>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                            booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
+                            booking.paymentStatus === 'PENDING' ? 'bg-amber-100 text-amber-800' :
+                            booking.paymentStatus === 'REFUNDED' ? 'bg-blue-100 text-blue-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {booking.paymentStatus}
+                          </span>
+                        </div>
+                      )}
+                      {booking.notes && <div className="mt-2 pt-2 border-t border-gray-200">Notes: {booking.notes}</div>}
                     </div>
                   </div>
                 </div>

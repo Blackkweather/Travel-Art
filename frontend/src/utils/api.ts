@@ -39,11 +39,17 @@ class ApiClient {
     )
 
     // Response interceptor to handle auth errors
+    // Keep users logged in until they explicitly logout
+    // Only handle errors, don't auto-logout
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
+        // Don't automatically logout on 401 errors
+        // Keep the session active - user must explicitly logout
+        // Only log the error for debugging
         if (error.response?.status === 401) {
-          useAuthStore.getState().logout()
+          console.warn('Authentication error (user remains logged in):', error.response?.data)
+          // Don't call logout() - keep user logged in
         }
         return Promise.reject(error)
       }
@@ -171,6 +177,9 @@ export const adminApi = {
   
   getAllActivities: (params?: any) =>
     apiClient.get('/admin/activities', params),
+  
+  getReferrals: (params?: any) =>
+    apiClient.get('/admin/referrals', params),
   
   exportData: async (type: string) => {
     const response = await axios.get(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api'}/admin/export?type=${type}`, {

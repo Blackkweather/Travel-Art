@@ -46,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           { path: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp },
           { path: '/dashboard/moderation', label: 'Moderation', icon: UserIcon },
           { path: '/dashboard/logs', label: 'Activity Logs', icon: Activity },
+          { path: '/dashboard/referrals', label: 'Referrals', icon: Gift },
         ]
       default:
         return []

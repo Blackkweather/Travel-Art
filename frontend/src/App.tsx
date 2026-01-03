@@ -173,30 +173,6 @@ function App() {
           } 
         />
         <Route 
-          path="referrals" 
-          element={
-            <RoleRoute allowedRoles={['ARTIST']}>
-              <ArtistReferrals />
-            </RoleRoute>
-          } 
-        />
-        <Route 
-          path="artists" 
-          element={
-            <RoleRoute allowedRoles={['HOTEL']}>
-              <HotelArtists />
-            </RoleRoute>
-          } 
-        />
-        <Route 
-          path="credits" 
-          element={
-            <RoleRoute allowedRoles={['HOTEL']}>
-              <HotelCredits />
-            </RoleRoute>
-          } 
-        />
-        <Route 
           path="users" 
           element={
             <RoleRoute allowedRoles={['ADMIN']}>
@@ -233,6 +209,30 @@ function App() {
           element={
             <RoleRoute allowedRoles={['ADMIN']}>
               <AdminLogs />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="artists" 
+          element={
+            <RoleRoute allowedRoles={['HOTEL']}>
+              <HotelArtists />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="credits" 
+          element={
+            <RoleRoute allowedRoles={['HOTEL']}>
+              <HotelCredits />
+            </RoleRoute>
+          } 
+        />
+        <Route 
+          path="referrals" 
+          element={
+            <RoleRoute allowedRoles={['ARTIST']}>
+              <ArtistReferrals />
             </RoleRoute>
           } 
         />

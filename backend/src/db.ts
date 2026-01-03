@@ -15,7 +15,7 @@ import { config } from './config';
 // Use the DATABASE_URL directly from environment or config
 const getDatabaseUrl = () => {
   // Check environment variable first (required for production)
-  const envUrl = process.env.DATABASE_URL;
+  let envUrl = process.env.DATABASE_URL;
   if (envUrl) {
     // If using Supabase direct connection (IPv6-only), try to use pooler instead
     if (envUrl.includes('db.rtvtzyjlbtgnvzzqxzxv.supabase.co')) {
@@ -27,9 +27,20 @@ const getDatabaseUrl = () => {
       // Try Session Pooler (port 5432) - supports prepared statements
       // Try different regions - user can override with POOLER_REGION env var
       const region = process.env.POOLER_REGION || 'us-east-1';
-      // Session mode pooler (port 5432) - IPv4 compatible
-      return `postgres://postgres.${projectRef}:${password}@aws-0-${region}.pooler.supabase.com:5432/postgres?sslmode=require`;
+      // Session mode pooler (port 5432) - IPv4 compatible with increased connection limit
+      envUrl = `postgres://postgres.${projectRef}:${password}@aws-0-${region}.pooler.supabase.com:5432/postgres?sslmode=require`;
     }
+    
+    // Increase connection limit if it's too low (remove or increase connection_limit=1)
+    // Supabase pooler supports up to 15 connections by default
+    if (envUrl.includes('connection_limit=1')) {
+      envUrl = envUrl.replace('connection_limit=1', 'connection_limit=10');
+    } else if (envUrl.includes('pooler.supabase.com') && !envUrl.includes('connection_limit=')) {
+      // Add connection_limit if not present (for pooler connections)
+      const separator = envUrl.includes('?') ? '&' : '?';
+      envUrl = `${envUrl}${separator}connection_limit=10`;
+    }
+    
     return envUrl;
   }
   // Fallback to config (for local development)

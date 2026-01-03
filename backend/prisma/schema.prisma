@@ -53,6 +53,7 @@ model Artist {
   artisticProfile   String?  // JSON string: {mainCategory, secondaryCategory, audienceType, languages, categoryType, specificCategory, domain}
   referralCode      String   @unique @default(cuid())
   loyaltyPoints     Int      @default(0)
+  createdAt         DateTime @default(now())
 
   // Relations
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -80,6 +81,7 @@ model Hotel {
   responsiblePhone String? // Phone number for WhatsApp contact (responsible person)
   responsibleEmail String? // Email for direct contact (responsible person)
   responsibleName  String? // Name of the responsible person for contact
+  createdAt       DateTime @default(now())
 
   // Relations
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -120,19 +122,24 @@ model ArtistAvailability {
 }
 
 model Booking {
-  id          String   @id @default(cuid())
-  hotelId     String
-  artistId    String
-  startDate   DateTime
-  endDate     DateTime
-  status      String   @default("PENDING") // PENDING, CONFIRMED, REJECTED, COMPLETED, CANCELLED
-  creditsUsed Int
-  createdAt   DateTime @default(now())
+  id                String   @id @default(cuid())
+  hotelId           String
+  artistId          String
+  startDate         DateTime
+  endDate           DateTime
+  status            String   @default("PENDING") // PENDING, CONFIRMED, REJECTED, COMPLETED, CANCELLED
+  creditsUsed       Int      @default(0) // Deprecated - kept for backward compatibility
+  weeklyPaymentAmount Float  @default(200.0) // Weekly payment amount in EUR
+  numberOfWeeks      Int      // Number of weeks for this booking
+  totalPaymentAmount Float   // Total payment (weeklyPaymentAmount * numberOfWeeks)
+  paymentStatus      String   @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  notes              String?
+  createdAt         DateTime @default(now())
 
   // Relations
-  hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  artist      Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  ratings     Rating[]
+  hotel             Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  artist            Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  ratings           Rating[]
 
   @@map("bookings")
 }
@@ -171,8 +178,9 @@ model Transaction {
   id        String   @id @default(cuid())
   hotelId   String?
   artistId  String?
-  type      String   // CREDIT_PURCHASE, MEMBERSHIP, BOOKING_FEE, REFUND
+  type      String   // CREDIT_PURCHASE, MEMBERSHIP, BOOKING_FEE, REFUND, WEEKLY_PAYMENT
   amount    Float
+  status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
   createdAt DateTime @default(now())
 
   // Relations

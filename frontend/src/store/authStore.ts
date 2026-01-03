@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>()(
         const { token, user } = get()
         
         // If we have a user in state, keep them logged in
-        // Only check auth if we have a token but no user
+        // Session persists until explicit logout
         if (user && token) {
           set({ isLoading: false, isAuthenticated: true })
           return
@@ -91,6 +91,8 @@ export const useAuthStore = create<AuthState>()(
           return
         }
 
+        // If we have a token but no user, try to fetch user
+        // But don't clear auth on errors - keep session active
         set({ isLoading: true })
         try {
           const response = await authApi.getCurrentUser()
@@ -100,20 +102,12 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false
           })
         } catch (error) {
-          // Only clear auth on explicit 401/403 errors
-          // Keep user logged in for network errors
-          const status = (error as any)?.response?.status
-          if (status === 401 || status === 403) {
-            set({
-              user: null,
-              token: null,
-              isAuthenticated: false,
-              isLoading: false
-            })
-          } else {
-            // Network error - keep user logged in
-            set({ isLoading: false })
-          }
+          // Keep user logged in even on auth errors
+          // Session persists until explicit logout
+          // Only clear loading state, don't clear auth
+          console.warn('Auth check failed, but keeping session active:', error)
+          set({ isLoading: false })
+          // Don't clear user/token - keep them logged in
         }
       },
 

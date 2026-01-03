@@ -43,10 +43,10 @@ const HotelDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     activeBookings: 0,
-    availableCredits: 0,
+    totalSpent: 0, // Total amount spent on bookings
     artistsBooked: 0,
     performanceSpots: 0,
-    totalCreditsUsed: 0
+    pendingPayments: 0 // Total pending payment amount
   })
   const [upcomingPerformances, setUpcomingPerformances] = useState<UpcomingPerformance[]>([])
   const [performanceSpots, setPerformanceSpots] = useState<PerformanceSpot[]>([])
@@ -74,21 +74,19 @@ const HotelDashboard: React.FC = () => {
           ? bookingsData 
           : (bookingsData?.bookings || [])
         
-        // Get credits
-        let credits = 0
-        try {
-          const creditsRes = await hotelsApi.getCredits(hotel.id)
-          credits = creditsRes.data?.data?.availableCredits || 0
-        } catch (e) {
-          // Credits might not exist yet
-        }
-
         // Calculate stats
         const activeBookings = bookings.filter((b: Booking) => 
           ['PENDING', 'CONFIRMED'].includes(b.status)
         ).length
 
-        const totalCreditsUsed = 0 // Credits used would come from booking data if available
+        // Calculate payment stats
+        const totalSpent = bookings
+          .filter((b: Booking) => b.paymentStatus === 'PAID')
+          .reduce((sum: number, b: Booking) => sum + (b.totalPaymentAmount || 0), 0)
+        
+        const pendingPayments = bookings
+          .filter((b: Booking) => b.paymentStatus === 'PENDING' && b.status === 'CONFIRMED')
+          .reduce((sum: number, b: Booking) => sum + (b.totalPaymentAmount || 0), 0)
 
         const uniqueArtists = new Set(
           bookings.map((b: Booking) => b.artist?.name).filter(Boolean)
@@ -126,10 +124,10 @@ const HotelDashboard: React.FC = () => {
 
         setStats({
           activeBookings,
-          availableCredits: credits,
+          totalSpent,
           artistsBooked: uniqueArtists.size,
           performanceSpots: spots.length,
-          totalCreditsUsed
+          pendingPayments
         })
         setUpcomingPerformances(upcoming)
         setPerformanceSpots(spots)
@@ -184,196 +182,322 @@ const HotelDashboard: React.FC = () => {
 
   const statsData = [
     { label: 'Active Bookings', value: stats.activeBookings.toString(), icon: Calendar, color: 'text-blue-600' },
-    { label: 'Available Credits', value: stats.availableCredits.toString(), icon: CreditCard, color: 'text-green-600' },
+    { label: 'Total Spent', value: `€${stats.totalSpent.toFixed(0)}`, icon: CreditCard, color: 'text-green-600' },
     { label: 'Artists Booked', value: stats.artistsBooked.toString(), icon: Users, color: 'text-purple-600' },
     { label: 'Performance Spots', value: stats.performanceSpots.toString(), icon: MapPin, color: 'text-orange-600' }
   ]
 
   return (
-    <div className="space-y-8" data-testid="dashboard">
-      <div className="fade-in-up">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="dashboard-title mb-3 gold-underline">
-              Welcome back, {user?.name}!
-            </h1>
-            <p className="dashboard-subtitle">
-              Manage your hotel&apos;s artist bookings and rooftop performances.
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-cream/30 via-white to-cream/20" data-testid="dashboard">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Header Section */}
+        <div className="fade-in-up">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-12 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
+              <div>
+                <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-2 tracking-tight">
+                  Welcome back, <span className="text-gold">{user?.name?.split(' ')[0]}</span>!
+                </h1>
+                <p className="text-lg text-gray-600 font-medium">
+                  Manage your hotel&apos;s artist bookings and rooftop performances.
+                </p>
+              </div>
+            </div>
+            {hotelId && (
+              <button 
+                className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={handleDeleteProfile}
+              >
+                Supprimer le profil
+              </button>
+            )}
           </div>
-          {hotelId && (
-            <button className="btn-primary" onClick={handleDeleteProfile}>
-              Supprimer le profil
-            </button>
-          )}
         </div>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsData.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <div 
-              key={index} 
-              className={`dashboard-stat-card ${index === 0 ? 'fade-in-up-delay-0' : index === 1 ? 'fade-in-up-delay-1' : index === 2 ? 'fade-in-up-delay-2' : 'fade-in-up-delay-3'}`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="section-subtitle mb-2">{stat.label}</p>
-                  <p className="text-3xl font-bold text-navy count-up">{stat.value}</p>
-                </div>
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color.replace('text-', 'bg-').replace('-600', '-100')} ${stat.color}`}>
-                  <Icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Upcoming Performances */}
-      <div className="card-luxury fade-in-up-delay-1">
-        <h2 className="section-title gold-underline">
-          Upcoming Performances
-        </h2>
-        {upcomingPerformances.length > 0 ? (
-          <div className="space-y-3">
-            {upcomingPerformances.map((performance, idx) => (
-            <div 
-              key={performance.id} 
-              className="flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-gold/30 transition-all duration-300 hover:shadow-md fade-in-up"
-              style={{ animationDelay: `${0.1 + idx * 0.05}s` }}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-gold to-gold/80 rounded-xl flex items-center justify-center shadow-sm">
-                  <Music className="w-7 h-7 text-navy" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-navy text-lg mb-1">{performance.artist}</h3>
-                  <p className="text-sm text-gray-600 font-medium mb-1">{performance.discipline}</p>
-                  <p className="text-xs text-gray-500">{performance.spot} • {performance.date} at {performance.time}</p>
-                </div>
-              </div>
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold shadow-sm ${
-                performance.status === 'confirmed' ? 'bg-green-100 text-green-800 border border-green-200' :
-                'bg-amber-100 text-amber-800 border border-amber-200'
-              }`}>
-                {performance.status}
-              </span>
-            </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-12 text-base">No upcoming performances scheduled.</p>
-        )}
-      </div>
-
-      {/* Performance Spots */}
-      <div className="card-luxury fade-in-up-delay-2">
-        <h2 className="section-title gold-underline">
-          Your Performance Spots
-        </h2>
-        {performanceSpots.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {performanceSpots.map((spot, index) => (
+        {/* Stats Grid - Enhanced */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {statsData.map((stat, index) => {
+            const Icon = stat.icon
+            const colorMap: Record<string, { bg: string; iconBg: string; iconColor: string; accent: string }> = {
+              'text-blue-600': {
+                bg: 'from-blue-50 via-blue-50/50 to-white',
+                iconBg: 'from-blue-500 to-blue-600',
+                iconColor: 'text-white',
+                accent: 'bg-blue-500'
+              },
+              'text-green-600': {
+                bg: 'from-emerald-50 via-emerald-50/50 to-white',
+                iconBg: 'from-emerald-500 to-emerald-600',
+                iconColor: 'text-white',
+                accent: 'bg-emerald-500'
+              },
+              'text-purple-600': {
+                bg: 'from-purple-50 via-purple-50/50 to-white',
+                iconBg: 'from-purple-500 to-purple-600',
+                iconColor: 'text-white',
+                accent: 'bg-purple-500'
+              },
+              'text-orange-600': {
+                bg: 'from-orange-50 via-orange-50/50 to-white',
+                iconBg: 'from-orange-500 to-orange-600',
+                iconColor: 'text-white',
+                accent: 'bg-orange-500'
+              }
+            }
+            const colors = colorMap[stat.color] || colorMap['text-blue-600']
+            
+            return (
               <div 
                 key={index} 
-                className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:border-gold/30 fade-in-up"
-                style={{ animationDelay: `${0.2 + index * 0.1}s` }}
+                className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${colors.bg} border border-gray-100/80 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 transition-all duration-500 hover:-translate-y-2 ${index === 0 ? 'fade-in-up-delay-0' : index === 1 ? 'fade-in-up-delay-1' : index === 2 ? 'fade-in-up-delay-2' : 'fade-in-up-delay-3'}`}
               >
-                {spot.image && (
-                  <div className="relative h-40 overflow-hidden">
-                    <img 
-                      src={spot.image} 
-                      alt={spot.name}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                {/* Accent bar */}
+                <div className={`absolute top-0 left-0 right-0 h-1 ${colors.accent} opacity-80`}></div>
+                
+                {/* Decorative gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-all duration-500 pointer-events-none"></div>
+                
+                <div className="relative p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">{stat.label}</p>
+                      <p className="text-4xl font-bold text-navy count-up leading-none mb-1">{stat.value}</p>
+                    </div>
+                    <div className={`p-4 rounded-2xl bg-gradient-to-br ${colors.iconBg} shadow-lg shadow-gray-400/20 group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon className={`w-7 h-7 ${colors.iconColor}`} />
+                    </div>
                   </div>
-                )}
-                <div className="p-5">
-                  <h3 className="font-semibold text-navy text-lg mb-2">{spot.name}</h3>
-                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">{spot.description || 'No description available'}</p>
-                  <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-100">
-                    <span className="text-gray-600 font-medium">Capacity: <span className="font-semibold text-navy">{spot.capacity || 'N/A'}</span></span>
-                    <span className="px-3 py-1 bg-gold/10 text-gold rounded-full text-xs font-semibold capitalize">{spot.type || 'N/A'}</span>
+                  
+                  {/* Subtle progress indicator */}
+                  <div className="mt-4 h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div className={`h-full ${colors.accent} rounded-full transition-all duration-1000`} style={{ width: '75%' }}></div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-12 text-base">No performance spots configured yet. Update your hotel profile to add spots.</p>
-        )}
-      </div>
+            )
+          })}
+        </div>
 
-      {/* Favorite Artists */}
-      {favoriteArtists.length > 0 && (
-        <div className="card-luxury fade-in-up-delay-3">
+        {/* Upcoming Performances - Enhanced */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-1">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="section-title gold-underline">
-              Your Favorite Artists
-            </h2>
-            <Link to="/dashboard/artists" className="text-sm font-semibold text-gold hover:text-gold/80 transition-colors flex items-center gap-1">
-              View All <span>→</span>
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
+              <h2 className="text-2xl font-serif font-bold text-navy">
+                Upcoming Performances
+              </h2>
+            </div>
+            <Link 
+              to="/dashboard/bookings" 
+              className="text-sm font-semibold text-gold hover:text-gold/80 transition-colors flex items-center gap-1 group"
+            >
+              View All <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {favoriteArtists.map((artist: any, idx) => (
-              <Link
-                key={artist.id}
-                to={`/artist/${artist.id}`}
-                className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-100 hover:shadow-lg hover:border-gold/30 transition-all duration-300 hover:-translate-y-1 fade-in-up"
-                style={{ animationDelay: `${0.3 + idx * 0.05}s` }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Heart className="w-4 h-4 text-red-500 fill-current flex-shrink-0" />
-                  <h3 className="font-semibold text-navy text-sm truncate">{artist.user?.name || artist.name || 'Artist'}</h3>
+          
+          {upcomingPerformances.length > 0 ? (
+            <div className="space-y-4">
+              {upcomingPerformances.map((performance, idx) => (
+                <div 
+                  key={performance.id} 
+                  className="group relative overflow-hidden flex items-center justify-between p-6 bg-gradient-to-r from-gray-50/80 via-white to-gray-50/80 rounded-2xl border border-gray-200/60 hover:border-gold/40 hover:shadow-lg transition-all duration-300 fade-in-up backdrop-blur-sm"
+                  style={{ animationDelay: `${0.1 + idx * 0.05}s` }}
+                >
+                  {/* Hover gradient effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-gold/0 via-gold/0 to-gold/0 group-hover:from-gold/5 group-hover:via-gold/0 group-hover:to-gold/5 transition-all duration-300"></div>
+                  
+                  <div className="relative flex items-center gap-5 flex-1">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/20 group-hover:scale-110 transition-transform duration-300">
+                      <Music className="w-7 h-7 text-gold" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-navy text-lg mb-1.5 truncate">{performance.artist}</h3>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-1.5">
+                        <span className="font-medium">{performance.discipline}</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="font-medium">{performance.spot}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 font-medium">{performance.date} at {performance.time}</p>
+                    </div>
+                  </div>
+                  
+                  <span className={`relative px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all duration-300 ${
+                    performance.status === 'confirmed' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-green-500/30' :
+                    'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-amber-500/30'
+                  }`}>
+                    {performance.status.charAt(0).toUpperCase() + performance.status.slice(1)}
+                  </span>
                 </div>
-                <p className="text-xs text-gray-600 mb-2">{artist.discipline || 'Performer'}</p>
-                {artist.averageRating && (
-                  <p className="text-xs text-gold font-semibold">◆ {artist.averageRating.toFixed(1)}</p>
-                )}
-              </Link>
-            ))}
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <Music className="w-10 h-10 text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-lg font-medium mb-2">No upcoming performances</p>
+              <p className="text-gray-400 text-sm">Book artists to see your scheduled performances here!</p>
+            </div>
+          )}
+        </div>
+
+        {/* Performance Spots - Enhanced */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
+            <h2 className="text-2xl font-serif font-bold text-navy">
+              Your Performance Spots
+            </h2>
           </div>
+          
+          {performanceSpots.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {performanceSpots.map((spot, index) => (
+                <div 
+                  key={index} 
+                  className="group relative overflow-hidden bg-white rounded-2xl border border-gray-200/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 fade-in-up"
+                  style={{ animationDelay: `${0.2 + index * 0.1}s` }}
+                >
+                  {spot.image && (
+                    <div className="relative h-48 overflow-hidden">
+                      <img 
+                        src={spot.image} 
+                        alt={spot.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
+                      <div className="absolute top-3 right-3 px-3 py-1 bg-gold/90 backdrop-blur-sm text-navy rounded-lg text-xs font-bold">
+                        {spot.type || 'Spot'}
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <h3 className="font-bold text-navy text-xl mb-3">{spot.name}</h3>
+                    <p className="text-sm text-gray-600 mb-4 leading-relaxed line-clamp-2">{spot.description || 'No description available'}</p>
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div>
+                        <span className="text-xs text-gray-500 font-medium">Capacity</span>
+                        <p className="text-lg font-bold text-navy">{spot.capacity || 'N/A'}</p>
+                      </div>
+                      <div className="px-4 py-2 bg-gradient-to-r from-gold/20 to-gold/10 border border-gold/30 rounded-xl">
+                        <span className="text-gold font-bold text-sm">{spot.type || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <MapPin className="w-10 h-10 text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-lg font-medium mb-2">No performance spots configured</p>
+              <p className="text-gray-400 text-sm">Update your hotel profile to add performance spots.</p>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="card-luxury fade-in-up-delay-2 hover:border-gold/40">
-          <h3 className="text-xl font-serif font-semibold text-navy mb-3">
-            Browse Artists
-          </h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            Discover talented artists for your rooftop performances and intimate venues.
-          </p>
-          <Link to="/dashboard/artists" className="btn-primary inline-flex items-center gap-2">
-            Find Artists <span>→</span>
+        {/* Favorite Artists - Enhanced */}
+        {favoriteArtists.length > 0 && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-gray-200/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-3">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
+                <h2 className="text-2xl font-serif font-bold text-navy">
+                  Your Favorite Artists
+                </h2>
+              </div>
+              <Link 
+                to="/dashboard/artists" 
+                className="text-sm font-semibold text-gold hover:text-gold/80 transition-colors flex items-center gap-1 group"
+              >
+                View All <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {favoriteArtists.map((artist: any, idx) => (
+                <Link
+                  key={artist.id}
+                  to={`/artist/${artist.id}`}
+                  className="group relative overflow-hidden bg-gradient-to-br from-gray-50/80 via-white to-gray-50/80 rounded-2xl p-5 border border-gray-200/60 hover:shadow-xl hover:border-gold/40 transition-all duration-300 hover:-translate-y-2 fade-in-up"
+                  style={{ animationDelay: `${0.3 + idx * 0.05}s` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-gold/0 to-gold/0 group-hover:from-gold/5 group-hover:to-gold/0 transition-all duration-300"></div>
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Heart className="w-5 h-5 text-red-500 fill-current flex-shrink-0 group-hover:scale-110 transition-transform" />
+                      <h3 className="font-bold text-navy text-sm truncate">{artist.user?.name || artist.name || 'Artist'}</h3>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-3 font-medium">{artist.discipline || 'Performer'}</p>
+                    {artist.averageRating && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-gold font-bold text-sm">◆</span>
+                        <p className="text-sm text-gold font-bold">{artist.averageRating.toFixed(1)}</p>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Quick Actions - Enhanced */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link 
+            to="/dashboard/artists" 
+            className="group relative overflow-hidden bg-gradient-to-br from-navy via-navy/95 to-navy rounded-3xl border border-gold/20 shadow-2xl shadow-navy/20 hover:shadow-gold/10 transition-all duration-500 hover:-translate-y-1 fade-in-up-delay-2"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-gold/0 via-gold/0 to-gold/0 group-hover:from-gold/10 group-hover:via-gold/5 group-hover:to-gold/10 transition-all duration-500"></div>
+            <div className="relative p-8">
+              <div className="w-14 h-14 mb-5 rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Users className="w-7 h-7 text-gold" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-white mb-3 group-hover:text-gold transition-colors">
+                Browse Artists
+              </h3>
+              <p className="text-gray-300 mb-6 leading-relaxed text-base">
+                Discover talented artists for your rooftop performances and intimate venues.
+              </p>
+              <div className="inline-flex items-center gap-2 px-6 py-3 bg-gold text-navy font-bold rounded-xl hover:bg-gold/90 transition-all duration-300 group-hover:gap-3">
+                Find Artists <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </div>
+          </Link>
+
+          <Link 
+            to="/dashboard/bookings" 
+            className="group relative overflow-hidden bg-gradient-to-br from-white via-cream/30 to-white rounded-3xl border-2 border-gold/30 shadow-xl shadow-gray-200/30 hover:shadow-gold/20 transition-all duration-500 hover:-translate-y-1 fade-in-up-delay-3"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-gold/0 via-gold/0 to-gold/0 group-hover:from-gold/5 group-hover:via-gold/0 group-hover:to-gold/5 transition-all duration-500"></div>
+            <div className="relative p-8">
+              <div className="w-14 h-14 mb-5 rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <CreditCard className="w-7 h-7 text-gold" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-navy mb-3 group-hover:text-gold transition-colors">
+                Manage Bookings
+              </h3>
+              <p className="text-gray-600 mb-6 leading-relaxed text-base">
+                View and manage your artist bookings and payment status.
+              </p>
+              <div className="inline-flex items-center gap-2 px-6 py-3 bg-navy text-white font-bold rounded-xl hover:bg-navy/90 transition-all duration-300 group-hover:gap-3">
+                View Bookings <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </div>
           </Link>
         </div>
 
-        <div className="card-luxury fade-in-up-delay-3 hover:border-gold/40">
-          <h3 className="text-xl font-serif font-semibold text-navy mb-3">
-            Manage Credits
-          </h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            Purchase credits to book artists for unforgettable rooftop experiences.
-          </p>
-          <Link to="/dashboard/credits" className="btn-secondary inline-flex items-center gap-2">
-            Buy Credits <span>→</span>
-          </Link>
+        {/* Contact Support */}
+        <div className="fade-in-up-delay-3">
+          <ContactSupport
+            userRole={user?.role || 'HOTEL'}
+            userName={user?.name || ''}
+            userEmail={user?.email || ''}
+          />
         </div>
       </div>
-
-      {/* Contact Support */}
-      <ContactSupport
-        userRole={user?.role || 'HOTEL'}
-        userName={user?.name || ''}
-        userEmail={user?.email || ''}
-      />
     </div>
   )
 }

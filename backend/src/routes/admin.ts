@@ -33,7 +33,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
     }).catch(() => ({ _sum: { amount: null } })),
     prisma.booking.findMany({
       take: 10,
-      orderBy: { createdAt: 'desc' } as any,
+      orderBy: { createdAt: 'desc' },
       include: {
         artist: {
           include: {
@@ -53,7 +53,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
     }).catch(() => []),
     prisma.artist.findMany({
       take: 5,
-      orderBy: { createdAt: 'desc' } as any,
+      orderBy: { createdAt: 'desc' },
       include: {
         user: {
           select: { name: true, email: true }
@@ -62,7 +62,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
     }).catch(() => []),
     prisma.hotel.findMany({
       take: 5,
-      orderBy: { createdAt: 'desc' } as any,
+      orderBy: { createdAt: 'desc' },
       include: {
         user: {
           select: { name: true, email: true }
@@ -184,9 +184,9 @@ router.get('/export', authenticate, authorize('ADMIN'), asyncHandler(async (req:
     });
 
     const csvData = [
-      'Booking ID,Hotel Name,Artist Name,Start Date,End Date,Status,Credits Used,Created At',
+      'Booking ID,Hotel Name,Artist Name,Start Date,End Date,Status,Payment Amount,Payment Status,Weeks,Created At',
       ...bookings.map(booking => 
-        `${booking.id},"${booking.hotel.user.name}","${booking.artist.user.name}",${booking.startDate.toISOString()},${booking.endDate.toISOString()},${booking.status},${booking.creditsUsed},${booking.createdAt.toISOString()}`
+        `${booking.id},"${booking.hotel.user.name}","${booking.artist.user.name}",${booking.startDate.toISOString()},${booking.endDate.toISOString()},${booking.status},€${booking.totalPaymentAmount || 0},${booking.paymentStatus || 'PENDING'},${booking.numberOfWeeks || 0},${booking.createdAt.toISOString()}`
       )
     ].join('\n');
 
@@ -718,7 +718,10 @@ router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (
             status: booking.status,
             startDate: booking.startDate,
             endDate: booking.endDate,
-            creditsUsed: booking.creditsUsed,
+            totalPaymentAmount: booking.totalPaymentAmount || 0,
+            weeklyPaymentAmount: booking.weeklyPaymentAmount || 200,
+            numberOfWeeks: booking.numberOfWeeks || 0,
+            paymentStatus: booking.paymentStatus || 'PENDING',
             hotelName: booking.hotel?.name,
             artistName: booking.artist?.user?.name
           },
@@ -858,6 +861,134 @@ router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (
     console.error('Error fetching activities:', error);
     throw new CustomError('Failed to fetch activities', 500);
   }
+}));
+
+// Get all referrals for admin
+router.get('/referrals', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const { page = '1', limit = '50', status, search } = req.query;
+  const pageNum = parseInt(page as string, 10);
+  const limitNum = parseInt(limit as string, 10);
+  const skip = (pageNum - 1) * limitNum;
+
+  const where: any = {};
+  
+  // Filter by status if provided
+  if (status) {
+    // Status logic: if invitee artist is ACTIVE, referral is COMPLETED
+    // We'll handle this in the query result processing
+  }
+
+  // Search filter
+  if (search) {
+    where.OR = [
+      {
+        inviter: {
+          name: { contains: search as string, mode: 'insensitive' }
+        }
+      },
+      {
+        invitee: {
+          name: { contains: search as string, mode: 'insensitive' }
+        }
+      }
+    ];
+  }
+
+  const [referrals, total] = await Promise.all([
+    prisma.referral.findMany({
+      where,
+      include: {
+        inviter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        },
+        invitee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            artist: {
+              select: {
+                id: true,
+                membershipStatus: true,
+                referralCode: true,
+                loyaltyPoints: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limitNum
+    }),
+    prisma.referral.count({ where })
+  ]);
+
+  // Calculate stats
+  const allReferrals = await prisma.referral.findMany({
+    include: {
+      invitee: {
+        include: {
+          artist: {
+            select: {
+              membershipStatus: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const totalReferrals = allReferrals.length;
+  const completedReferrals = allReferrals.filter(r => 
+    r.invitee.artist?.membershipStatus === 'ACTIVE'
+  ).length;
+  const totalRewards = allReferrals.reduce((sum, r) => sum + r.rewardPoints, 0);
+  const uniqueReferrers = new Set(allReferrals.map(r => r.inviterUserId));
+
+  // Format referrals
+  const formattedReferrals = referrals.map(r => {
+    const isCompleted = r.invitee.artist?.membershipStatus === 'ACTIVE';
+    return {
+      id: r.id,
+      referrerId: r.inviterUserId,
+      referrerName: r.inviter.name,
+      referrerEmail: r.inviter.email,
+      referrerType: r.inviter.role,
+      referredId: r.inviteeUserId,
+      referredName: r.invitee.name,
+      referredEmail: r.invitee.email,
+      status: isCompleted ? 'COMPLETED' : 'PENDING',
+      createdAt: r.createdAt,
+      rewardEarned: r.rewardPoints,
+      inviteeMembershipStatus: r.invitee.artist?.membershipStatus || null
+    };
+  });
+
+  res.json({
+    success: true,
+    data: {
+      referrals: formattedReferrals,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      },
+      stats: {
+        totalReferrals,
+        completedReferrals,
+        totalRewards,
+        activeReferrers: uniqueReferrers.size
+      }
+    }
+  });
 }));
 
 export { router as adminRoutes };

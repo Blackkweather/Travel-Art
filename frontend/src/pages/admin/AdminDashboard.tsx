@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Building, Calendar, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
+import { Users, Building, Calendar, TrendingUp, AlertCircle, CheckCircle, DollarSign, Activity, ArrowUpRight, ArrowDownRight, Eye, Gift } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { adminApi, commonApi, paymentsApi } from '@/utils/api'
 
@@ -201,191 +201,265 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8" data-testid="dashboard">
-      <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
-          Admin Dashboard
-        </h1>
-        <p className="text-gray-600">
-          Monitor platform activity and manage the Travel Art community.
-        </p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <div key={index} className="card-luxury">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-navy">{stat.value.toLocaleString()}</p>
-                </div>
-                <Icon className={`w-8 h-8 ${stat.color}`} />
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Activity */}
-        <div className="card-luxury">
-          <div className="flex items-start justify-between mb-6">
+    <div className="min-h-screen bg-gray-50" data-testid="dashboard">
+      <div className="max-w-[1600px] mx-auto px-6 py-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
-                Recent Activity
-              </h2>
-              <p className="text-sm text-gray-500">Latest bookings, payments, and platform updates.</p>
+              <h1 className="text-3xl font-semibold text-gray-900 mb-1">
+                Dashboard
+              </h1>
+              <p className="text-sm text-gray-500">
+                Platform overview and analytics
+              </p>
             </div>
-            <div className="text-right text-sm text-gray-600">
-              <span className="block font-semibold text-navy">{totalRevenueFormatted}</span>
-              <span className="text-xs text-gray-500">Lifetime revenue</span>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Revenue</div>
+                <div className="text-2xl font-semibold text-gray-900">{totalRevenueFormatted}</div>
+              </div>
             </div>
-          </div>
-          <div className="space-y-4">
-            {activity.length > 0 ? (
-              activity.map((item) => (
-                <div key={item.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    item.status === 'success' ? 'bg-green-100' : 'bg-amber-100'
-                  }`}>
-                    {item.status === 'success' ? (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-amber-600" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-navy">{item.message}</p>
-                    <p className="text-xs text-gray-500">{item.time}</p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-center py-4">No recent activity</p>
-            )}
           </div>
         </div>
 
-        {/* Top Artists */}
-        <div className="card-luxury">
-          <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
-            Top Performing Artists
-          </h2>
-          <div className="space-y-4">
-            {topArtists.length > 0 ? (
-              topArtists.map((artist) => (
-                <div key={artist.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-semibold text-navy">{artist.name}</h3>
-                    <p className="text-sm text-gray-600">{artist.specialty || artist.id}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-navy">{artist.bookings} bookings</p>
-                    {artist.rating && (
-                      <p className="text-xs text-gray-500 flex items-center space-x-1">
-                        <span className="text-gold font-bold">◆</span>
-                        <span>{artist.rating.toFixed(1)}</span>
-                      </p>
-                    )}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {statsCards.map((stat, index) => {
+            const Icon = stat.icon
+            const colorMap: Record<string, { bg: string; iconColor: string; border: string }> = {
+              'text-blue-600': {
+                bg: 'bg-blue-50',
+                iconColor: 'text-blue-600',
+                border: 'border-blue-200'
+              },
+              'text-green-600': {
+                bg: 'bg-emerald-50',
+                iconColor: 'text-emerald-600',
+                border: 'border-emerald-200'
+              },
+              'text-purple-600': {
+                bg: 'bg-purple-50',
+                iconColor: 'text-purple-600',
+                border: 'border-purple-200'
+              },
+              'text-orange-600': {
+                bg: 'bg-orange-50',
+                iconColor: 'text-orange-600',
+                border: 'border-orange-200'
+              }
+            }
+            const colors = colorMap[stat.color] || colorMap['text-blue-600']
+            
+            return (
+              <div 
+                key={index} 
+                className="bg-white rounded-lg border border-gray-200 p-6 hover:border-gray-300 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-2 rounded-lg ${colors.bg}`}>
+                    <Icon className={`w-5 h-5 ${colors.iconColor}`} />
                   </div>
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-center py-4">No artist data available</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Top Hotels */}
-      <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
-          Most Active Hotels
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {topHotels.length > 0 ? (
-            topHotels.map((hotel) => (
-              <div key={hotel.id} className="bg-white rounded-lg shadow-soft p-4">
-                <h3 className="font-semibold text-navy mb-2">{hotel.name}</h3>
-                {hotel.location && <p className="text-sm text-gray-600 mb-2">{hotel.location}</p>}
-                {hotel.highlight && <p className="text-xs text-gray-500 mb-3">{hotel.highlight}</p>}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-navy">{hotel.bookings} bookings</span>
-                  <TrendingUp className="w-4 h-4 text-green-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{stat.label}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stat.value.toLocaleString()}</p>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-8 text-gray-500">No hotel data available</div>
-          )}
+            )
+          })}
         </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card-luxury">
-          <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-            User Management
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Manage users, verify accounts, and handle support requests.
-          </p>
-          <button className="btn-primary" onClick={() => navigate('/dashboard/users')}>
-            Manage Users
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Recent Activity */}
+          <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+                <button 
+                  onClick={() => navigate('/dashboard/logs')}
+                  className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                >
+                  View all <ArrowUpRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-200">
+              {activity.length > 0 ? (
+                activity.slice(0, 8).map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="px-6 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-0.5 flex-shrink-0 w-2 h-2 rounded-full ${
+                        item.status === 'success' ? 'bg-green-500' : 'bg-amber-500'
+                      }`}></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 mb-1">{item.message}</p>
+                        <p className="text-xs text-gray-500">{item.time}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-6 py-12 text-center">
+                  <Activity className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">No recent activity</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Top Artists */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Top Artists</h2>
+            </div>
+            <div className="divide-y divide-gray-200">
+              {topArtists.length > 0 ? (
+                topArtists.map((artist, idx) => (
+                  <div 
+                    key={artist.id} 
+                    className="px-6 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="flex-shrink-0 w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-600">
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{artist.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{artist.specialty || 'Artist'}</p>
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-sm font-semibold text-gray-900">{artist.bookings}</p>
+                        <p className="text-xs text-gray-500">bookings</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-6 py-12 text-center">
+                  <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">No data available</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Top Hotels */}
+        <div className="bg-white rounded-lg border border-gray-200 mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Active Hotels</h2>
+              <button 
+                onClick={() => navigate('/dashboard/hotels')}
+                className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+              >
+                View all <ArrowUpRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hotel</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bookings</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {topHotels.length > 0 ? (
+                  topHotels.map((hotel) => (
+                    <tr key={hotel.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{hotel.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{hotel.location || '—'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{hotel.bookings}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Active
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center">
+                      <Building className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">No hotel data available</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <button 
+            onClick={() => navigate('/dashboard/users')}
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+          >
+            <Users className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
+            <div className="text-sm font-medium text-gray-900">Users</div>
+            <div className="text-xs text-gray-500 mt-1">Manage accounts</div>
           </button>
-        </div>
 
-        <div className="card-luxury">
-          <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-            Platform Analytics
-          </h3>
-          <p className="text-gray-600 mb-4">
-            View detailed analytics and performance metrics for the platform.
-          </p>
-          <button className="btn-secondary" onClick={() => navigate('/dashboard/analytics')}>
-            View Analytics
+          <button 
+            onClick={() => navigate('/dashboard/bookings')}
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+          >
+            <Calendar className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
+            <div className="text-sm font-medium text-gray-900">Bookings</div>
+            <div className="text-xs text-gray-500 mt-1">View all</div>
           </button>
-        </div>
 
-        <div className="card-luxury">
-          <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-            Content Moderation
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Review artist profiles, hotel listings, and user-generated content.
-          </p>
-          <button className="btn-secondary" onClick={() => navigate('/dashboard/moderation')}>
-            Moderate Content
+          <button 
+            onClick={() => navigate('/dashboard/analytics')}
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+          >
+            <TrendingUp className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
+            <div className="text-sm font-medium text-gray-900">Analytics</div>
+            <div className="text-xs text-gray-500 mt-1">Platform metrics</div>
           </button>
-        </div>
-      </div>
 
-      {/* Additional Admin Tools */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="card-luxury">
-          <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-            Referral Tracking
-          </h3>
-          <p className="text-gray-600 mb-4">
-            Monitor referral program performance and track rewards.
-          </p>
-          <button className="btn-secondary" onClick={() => navigate('/dashboard/referrals')}>
-            View Referrals
+          <button 
+            onClick={() => navigate('/dashboard/logs')}
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+          >
+            <Activity className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
+            <div className="text-sm font-medium text-gray-900">Logs</div>
+            <div className="text-xs text-gray-500 mt-1">Activity history</div>
           </button>
-        </div>
 
-        <div className="card-luxury">
-          <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-            Activity Logs
-          </h3>
-          <p className="text-gray-600 mb-4">
-            View comprehensive activity logs for all platform events, user actions, and system activities.
-          </p>
-          <button className="btn-primary" onClick={() => navigate('/dashboard/logs')}>
-            View Activity Logs
+          <button 
+            onClick={() => navigate('/dashboard/moderation')}
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+          >
+            <AlertCircle className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
+            <div className="text-sm font-medium text-gray-900">Moderation</div>
+            <div className="text-xs text-gray-500 mt-1">Review content</div>
+          </button>
+
+          <button 
+            onClick={() => navigate('/dashboard/referrals')}
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+          >
+            <Gift className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
+            <div className="text-sm font-medium text-gray-900">Referrals</div>
+            <div className="text-xs text-gray-500 mt-1">Track program</div>
           </button>
         </div>
       </div>

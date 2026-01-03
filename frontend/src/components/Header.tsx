@@ -57,67 +57,67 @@ const Header: React.FC = () => {
                 <Link 
                   to="/how-it-works" 
                   className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
                   }`}
                 >
                   How it Works
                   <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
                   }`} />
                 </Link>
                 <Link 
                   to="/partners" 
                   className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
                   }`}
                 >
                   Partners
                   <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
                   }`} />
                 </Link>
                 <Link 
                   to="/pricing" 
                   className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
                   }`}
                 >
                   Pricing
                   <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
                   }`} />
                 </Link>
                 <Link 
                   to="/top-artists" 
                   className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
                   }`}
                 >
                   Top Artists
                   <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
                   }`} />
                 </Link>
                 <Link 
                   to="/top-hotels" 
                   className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
                   }`}
                 >
                   Top Hotels
                   <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
                   }`} />
                 </Link>
                 <Link 
                   to="/experiences" 
                   className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
                   }`}
                 >
                   Experiences
                   <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
                   }`} />
                 </Link>
               </nav>
@@ -131,12 +131,12 @@ const Header: React.FC = () => {
                 <Link 
                   to="/dashboard" 
                   className={`text-sm font-semibold transition-all duration-300 hidden sm:block relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
                   }`}
                 >
                   Dashboard
                   <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
                   }`} />
                 </Link>
                 <button
@@ -153,12 +153,12 @@ const Header: React.FC = () => {
                 <Link 
                   to="/login" 
                   className={`text-sm font-semibold transition-all duration-300 hidden sm:block relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-200'
+                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
                   }`}
                 >
                   Sign In
                   <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
+                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
                   }`} />
                 </Link>
                 <Link 
@@ -176,7 +176,7 @@ const Header: React.FC = () => {
           <button
             onClick={toggleMobileMenu}
             className={`md:hidden transition-colors p-2 ${
-              headerScrolled ? 'text-gray-900' : 'text-gray-200'
+              headerScrolled ? 'text-gray-900' : 'text-gray-800'
             } hover:text-teal-500`}
             aria-label="Toggle mobile menu"
             data-testid="mobile-menu-toggle"
@@ -206,7 +206,7 @@ const Header: React.FC = () => {
                 <Link 
                   to="/how-it-works" 
                   className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -215,7 +215,7 @@ const Header: React.FC = () => {
                 <Link 
                   to="/partners" 
                   className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -224,7 +224,7 @@ const Header: React.FC = () => {
                 <Link 
                   to="/pricing" 
                   className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -233,7 +233,7 @@ const Header: React.FC = () => {
                 <Link 
                   to="/top-artists" 
                   className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -242,7 +242,7 @@ const Header: React.FC = () => {
                 <Link
                   to="/top-hotels"
                   className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -251,7 +251,7 @@ const Header: React.FC = () => {
                 <Link
                   to="/experiences"
                   className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-200 hover:text-teal-300'
+                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -269,7 +269,7 @@ const Header: React.FC = () => {
                   <Link 
                     to="/dashboard" 
                     className={`block transition-colors font-medium py-2 ${
-                      headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-white hover:text-teal-300'
+                      headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -291,7 +291,7 @@ const Header: React.FC = () => {
                   <Link 
                     to="/login" 
                     className={`block transition-colors font-medium py-2 ${
-                      headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-white hover:text-teal-300'
+                      headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >

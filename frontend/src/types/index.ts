@@ -84,7 +84,12 @@ export interface Booking {
   startDate: string
   endDate: string
   status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED'
-  creditsUsed: number
+  creditsUsed?: number // Deprecated - kept for backward compatibility
+  weeklyPaymentAmount?: number // Weekly payment in EUR (default: 200)
+  numberOfWeeks?: number // Number of weeks for this booking
+  totalPaymentAmount?: number // Total payment amount
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' // Payment status
+  notes?: string
   createdAt: string
   hotel?: Hotel
   artist?: Artist

@@ -12,9 +12,15 @@ const createBookingSchema = z.object({
   artistId: z.string(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
-  creditsUsed: z.number().int().positive(),
   notes: z.string().optional()
 });
+
+// Helper function to calculate weeks between dates
+const calculateWeeks = (startDate: Date, endDate: Date): number => {
+  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.max(1, Math.ceil(diffDays / 7)); // Minimum 1 week
+};
 
 const updateStatusSchema = z.object({
   status: z.enum(['PENDING', 'CONFIRMED', 'REJECTED', 'COMPLETED', 'CANCELLED'])
@@ -226,13 +232,25 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   const end = new Date(bookingData.endDate);
   const now = new Date();
 
-  // Basic date validation for MVP
+  // Validate date format
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new CustomError('Invalid date format. Please use ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)', 400);
+  }
+
+  // Validate dates
   if (start < now) {
     throw new CustomError('Start date must be in the future', 400);
   }
 
   if (end <= start) {
     throw new CustomError('End date must be after start date', 400);
+  }
+
+  // Check if booking duration is reasonable (max 52 weeks = 1 year)
+  const maxWeeks = 52;
+  const weeks = calculateWeeks(start, end);
+  if (weeks > maxWeeks) {
+    throw new CustomError(`Booking duration cannot exceed ${maxWeeks} weeks (1 year)`, 400);
   }
 
   // Verify hotel belongs to user
@@ -248,26 +266,34 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
     throw new CustomError('Hotel ID mismatch', 400);
   }
 
-  // Verify artist exists
+  // Verify artist exists and check availability
   const artist = await prisma.artist.findUnique({
-    where: { id: bookingData.artistId }
+    where: { id: bookingData.artistId },
+    include: {
+      availability: {
+        where: {
+          dateFrom: { lte: end },
+          dateTo: { gte: start }
+        }
+      }
+    }
   });
 
   if (!artist) {
     throw new CustomError('Artist not found', 404);
   }
 
-  // Check hotel has enough credits
-  const credit = await prisma.credit.findUnique({
-    where: { hotelId: hotel.id }
-  });
-
-  const availableCredits = (credit?.totalCredits || 0) - (credit?.usedCredits || 0);
-  if (availableCredits < bookingData.creditsUsed) {
-    throw new CustomError('Insufficient credits', 400);
+  // Check if artist is available for the requested dates
+  if (!artist.availability || artist.availability.length === 0) {
+    throw new CustomError('Artist is not available for the selected dates', 400);
   }
 
-  // Create booking
+  // Calculate weekly payment
+  const numberOfWeeks = calculateWeeks(start, end);
+  const weeklyPaymentAmount = 200.0; // Fixed weekly rate
+  const totalPaymentAmount = numberOfWeeks * weeklyPaymentAmount;
+
+  // Create booking with weekly payment
   const booking = await prisma.booking.create({
     data: {
       hotelId: bookingData.hotelId,
@@ -275,7 +301,12 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
       startDate: start,
       endDate: end,
       status: 'PENDING',
-      creditsUsed: bookingData.creditsUsed
+      creditsUsed: 0, // Deprecated - kept for backward compatibility
+      weeklyPaymentAmount,
+      numberOfWeeks,
+      totalPaymentAmount,
+      paymentStatus: 'PENDING',
+      notes: bookingData.notes
     },
     include: {
       artist: {
@@ -303,19 +334,25 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
     }
   });
 
-  // Update credits (reserve them, don't use yet - will be used when confirmed)
-  if (credit) {
-    await prisma.credit.update({
-      where: { hotelId: hotel.id },
-      data: {
-        usedCredits: { increment: bookingData.creditsUsed }
-      }
-    });
-  }
+  // Create pending transaction for the booking payment
+  await prisma.transaction.create({
+    data: {
+      hotelId: hotel.id,
+      artistId: bookingData.artistId,
+      type: 'BOOKING_FEE',
+      amount: totalPaymentAmount,
+      status: 'PENDING'
+    }
+  });
 
   res.status(201).json({
     success: true,
-    data: booking
+    data: {
+      ...booking,
+      weeklyPaymentAmount,
+      numberOfWeeks,
+      totalPaymentAmount
+    }
   });
 }));
 
@@ -393,16 +430,22 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
     }
   });
 
-  // If booking is rejected or cancelled, refund credits
+  // If booking is rejected or cancelled, update payment status and create refund transaction
   if ((status === 'REJECTED' || status === 'CANCELLED') && booking.status === 'PENDING') {
-    const credit = await prisma.credit.findUnique({
-      where: { hotelId: booking.hotelId }
+    await prisma.booking.update({
+      where: { id },
+      data: { paymentStatus: 'REFUNDED' }
     });
-    if (credit) {
-      await prisma.credit.update({
-        where: { hotelId: booking.hotelId },
+    
+    // Create refund transaction if payment was already made
+    if (booking.paymentStatus === 'PAID') {
+      await prisma.transaction.create({
         data: {
-          usedCredits: { decrement: booking.creditsUsed }
+          hotelId: booking.hotelId,
+          artistId: booking.artistId,
+          type: 'REFUND',
+          amount: -booking.totalPaymentAmount,
+          status: 'COMPLETED'
         }
       });
     }

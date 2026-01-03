@@ -28,7 +28,7 @@ router.get('/', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthR
         },
         skip,
         take: limitNum,
-        orderBy: { createdAt: 'desc' } as any
+        orderBy: { createdAt: 'desc' }
       }).catch(() => []),
       prisma.hotel.count().catch(() => 0)
     ]);
@@ -748,7 +748,37 @@ router.post('/:id/bookings', authenticate, authorize('HOTEL'), asyncHandler(asyn
     throw new CustomError('Hotel not found or access denied.', 404);
   }
 
-  // Check if artist has active membership
+  // Validate dates first
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const now = new Date();
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new CustomError('Invalid date format. Please use ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)', 400);
+  }
+  
+  if (start < now) {
+    throw new CustomError('Start date must be in the future', 400);
+  }
+  
+  if (end <= start) {
+    throw new CustomError('End date must be after start date', 400);
+  }
+  
+  // Calculate weekly payment (consistent with bookings route)
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const numberOfWeeks = Math.max(1, Math.ceil(diffDays / 7)); // Minimum 1 week
+  
+  // Validate booking duration (max 52 weeks)
+  if (numberOfWeeks > 52) {
+    throw new CustomError('Booking duration cannot exceed 52 weeks (1 year)', 400);
+  }
+  
+  const weeklyPaymentAmount = 200.0; // Fixed weekly rate
+  const totalPaymentAmount = numberOfWeeks * weeklyPaymentAmount;
+
+  // Verify artist exists
   const artist = await prisma.artist.findUnique({
     where: { id: artistId },
     include: { user: true }
@@ -758,32 +788,32 @@ router.post('/:id/bookings', authenticate, authorize('HOTEL'), asyncHandler(asyn
     throw new CustomError('Artist not found.', 404);
   }
 
-  if (artist.membershipStatus !== 'ACTIVE') {
-    throw new CustomError('Artist must have active membership to be booked.', 400);
-  }
-
   // Check artist availability
   const isAvailable = await prisma.artistAvailability.findFirst({
     where: {
       artistId,
-      dateFrom: { lte: new Date(startDate) },
-      dateTo: { gte: new Date(endDate) }
+      dateFrom: { lte: end },
+      dateTo: { gte: start }
     }
   });
 
   if (!isAvailable) {
-    throw new CustomError('Artist is not available for the selected dates.', 400);
+    throw new CustomError('Artist is not available for the selected dates. Please check the artist\'s availability calendar.', 400);
   }
 
-  // Create booking
+  // Create booking with weekly payment
   const booking = await prisma.booking.create({
     data: {
       hotelId: id,
       artistId,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: start,
+      endDate: end,
       status: 'PENDING',
-      creditsUsed: 1 // Assuming 1 credit per booking
+      creditsUsed: 0, // Deprecated - kept for backward compatibility
+      weeklyPaymentAmount,
+      numberOfWeeks,
+      totalPaymentAmount,
+      paymentStatus: 'PENDING'
     },
     include: {
       artist: {
@@ -799,13 +829,31 @@ router.post('/:id/bookings', authenticate, authorize('HOTEL'), asyncHandler(asyn
     }
   });
 
+  // Create pending transaction for the booking payment
+  await prisma.transaction.create({
+    data: {
+      hotelId: id,
+      artistId,
+      type: 'BOOKING_FEE',
+      amount: totalPaymentAmount,
+      status: 'PENDING'
+    }
+  });
+
   res.status(201).json({
     success: true,
-    data: booking
+    message: `Booking request created. Payment required: €${totalPaymentAmount.toFixed(2)} (${numberOfWeeks} week${numberOfWeeks > 1 ? 's' : ''} × €${weeklyPaymentAmount}/week)`,
+    data: {
+      ...booking,
+      weeklyPaymentAmount,
+      numberOfWeeks,
+      totalPaymentAmount,
+      paymentStatus: 'PENDING'
+    }
   });
 }));
 
-// Confirm booking (consumes credits)
+// Confirm booking (processes payment)
 router.post('/:id/bookings/:bookingId/confirm', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
   const { id, bookingId } = req.params;
 
@@ -827,32 +875,40 @@ router.post('/:id/bookings/:bookingId/confirm', authenticate, authorize('HOTEL')
     throw new CustomError('Booking not found or already processed.', 404);
   }
 
-  // Check available credits
-  const credits = await prisma.credit.findUnique({
-    where: { hotelId: id }
-  });
-
-  if (!credits || (credits.totalCredits - credits.usedCredits) < booking.creditsUsed) {
-    throw new CustomError('Insufficient credits to confirm booking.', 400);
-  }
-
-  // Update booking status and consume credits
-  const [updatedBooking, updatedCredits] = await Promise.all([
+  // Process payment for booking
+  // In a real implementation, you would integrate with a payment gateway here
+  // For now, we'll mark the payment as completed and update booking status
+  
+  const [updatedBooking, transaction] = await Promise.all([
     prisma.booking.update({
       where: { id: bookingId },
-      data: { status: 'CONFIRMED' }
+      data: { 
+        status: 'CONFIRMED',
+        paymentStatus: 'PAID'
+      }
     }),
-    prisma.credit.update({
-      where: { hotelId: id },
-      data: { usedCredits: { increment: booking.creditsUsed } }
+    prisma.transaction.updateMany({
+      where: {
+        hotelId: id,
+        artistId: booking.artistId,
+        type: 'BOOKING_FEE',
+        status: 'PENDING'
+      },
+      data: {
+        status: 'COMPLETED'
+      }
     })
   ]);
 
   res.json({
     success: true,
+    message: `Booking confirmed! Payment of €${(booking.totalPaymentAmount || 0).toFixed(2)} processed successfully.`,
     data: {
       booking: updatedBooking,
-      remainingCredits: updatedCredits.totalCredits - updatedCredits.usedCredits
+      paymentAmount: booking.totalPaymentAmount || 0,
+      weeklyPayment: booking.weeklyPaymentAmount || 200,
+      numberOfWeeks: booking.numberOfWeeks || 0,
+      paymentStatus: 'PAID'
     }
   });
 }));

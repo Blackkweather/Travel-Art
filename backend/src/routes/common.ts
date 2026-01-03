@@ -200,43 +200,53 @@ router.get('/top', asyncHandler(async (req, res) => {
 
     const topArtists = sortedArtists.slice(0, 10);
 
-    // Add rating badges
-    const artistsWithBadges = await Promise.all(
-      topArtists.map(async (artist) => {
-        const ratings = await prisma.rating.findMany({
-          where: { artistId: artist.id },
-          select: { stars: true }
-        });
+    // Fetch all ratings for top artists in a single query (more efficient)
+    const artistIds = topArtists.map(a => a.id);
+    const allRatings = await prisma.rating.findMany({
+      where: { artistId: { in: artistIds } },
+      select: { artistId: true, stars: true }
+    });
 
-        let ratingBadge = null;
-        if (ratings.length > 0) {
-          const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
-          if (avgRating >= 4.5) {
-            ratingBadge = 'Top 10% Performer';
-          } else if (avgRating >= 4.0) {
-            ratingBadge = 'Excellent Performer';
-          } else if (avgRating >= 3.5) {
-            ratingBadge = 'Good Performer';
-          }
-        }
+    // Group ratings by artistId
+    const ratingsByArtist = allRatings.reduce((acc, rating) => {
+      if (!acc[rating.artistId]) {
+        acc[rating.artistId] = [];
+      }
+      acc[rating.artistId].push(rating.stars);
+      return acc;
+    }, {} as Record<string, number[]>);
 
-        let images = [];
-        if (artist.images) {
-          try {
-            images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-          } catch (e) {
-            images = [];
-          }
+    // Add rating badges (no additional queries needed)
+    const artistsWithBadges = topArtists.map((artist) => {
+      const ratings = ratingsByArtist[artist.id] || [];
+      let ratingBadge = null;
+      if (ratings.length > 0) {
+        const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+        if (avgRating >= 4.5) {
+          ratingBadge = 'Top 10% Performer';
+        } else if (avgRating >= 4.0) {
+          ratingBadge = 'Excellent Performer';
+        } else if (avgRating >= 3.5) {
+          ratingBadge = 'Good Performer';
         }
-        
-        return {
-          ...artist,
-          ratingBadge,
-          bookingCount: artist.bookings?.length || 0,
-          images: images
-        };
-      })
-    );
+      }
+
+      let images = [];
+      if (artist.images) {
+        try {
+          images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
+        } catch (e) {
+          images = [];
+        }
+      }
+      
+      return {
+        ...artist,
+        ratingBadge,
+        bookingCount: artist.bookings?.length || 0,
+        images: images
+      };
+    });
 
     res.json({
       success: true,

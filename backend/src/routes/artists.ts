@@ -92,7 +92,7 @@ router.get('/', asyncHandler(async (req, res) => {
         },
         skip,
         take: limitNum,
-        orderBy: { createdAt: 'desc' } as any
+        orderBy: { createdAt: 'desc' }
       }).catch(() => []),
       prisma.artist.count({ where }).catch(() => 0)
     ]);

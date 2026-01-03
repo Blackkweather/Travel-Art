@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { artistsApi, hotelsApi, adminApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { User, Building, Download, FileText } from 'lucide-react'
+import { User, Building, Download, FileText, Eye, Ban, CheckCircle } from 'lucide-react'
 
 type ArtistListItem = {
   id: string
@@ -151,36 +151,61 @@ const AdminModeration: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">Content Moderation</h1>
-          <p className="text-gray-600">Review artists and hotels; suspend or re-activate accounts.</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex space-x-2">
-            <button onClick={() => setTab('artists')} className={`btn-secondary ${tab==='artists' ? 'bg-navy text-white' : ''}`}>Artists</button>
-            <button onClick={() => setTab('hotels')} className={`btn-secondary ${tab==='hotels' ? 'bg-navy text-white' : ''}`}>Hotels</button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-[1600px] mx-auto px-6 py-8">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold text-gray-900 mb-1">
+                Content Moderation
+              </h1>
+              <p className="text-sm text-gray-500">
+                Review artists and hotels; suspend or re-activate accounts.
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
+            <button 
+              onClick={() => setTab('artists')} 
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                tab === 'artists' 
+                  ? 'bg-gray-900 text-white shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Artists
+            </button>
+            <button 
+              onClick={() => setTab('hotels')} 
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                tab === 'hotels' 
+                  ? 'bg-gray-900 text-white shadow-sm' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Hotels
+            </button>
           </div>
           <button
             onClick={() => exportToCSV(tab === 'artists' ? artists : hotels, tab)}
-            className="flex items-center space-x-2 btn-secondary"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             title="Export to CSV"
           >
             <Download className="w-4 h-4" />
-            <span>Export</span>
+            Export
           </button>
         </div>
       </div>
+    </div>
 
       {loading ? (
         <div className="flex justify-center items-center min-h-[200px]"><LoadingSpinner /></div>
       ) : error ? (
-        <div className="card-luxury text-red-700 bg-red-50">{error}</div>
+        <div className="bg-white rounded-lg border border-red-200 p-4 text-red-700">{error}</div>
       ) : (
-        <div className="card-luxury">
+        <div className="bg-white rounded-lg border border-gray-200">
           {tab === 'artists' ? (
-            <div className="space-y-3">
+            <div className="divide-y divide-gray-200">
               {artists.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <User className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -188,25 +213,47 @@ const AdminModeration: React.FC = () => {
                 </div>
               ) : (
                 artists.map((a) => (
-                <div key={a.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center"><User className="w-5 h-5 text-gold" /></div>
+                <div key={a.id} className="flex items-center justify-between p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                      <User className="w-6 h-6 text-gray-600" />
+                    </div>
                     <div>
-                      <div className="font-medium text-navy">{a.user?.name || a.name || 'Artist'}</div>
-                      <div className="text-sm text-gray-600">{a.discipline}</div>
+                      <div className="font-semibold text-gray-900">{a.user?.name || a.name || 'Artist'}</div>
+                      <div className="text-sm text-gray-500">{a.discipline || 'Artist'}</div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <a className="btn-secondary" href={`/artist/${a.id}`}>Review</a>
-                    <button onClick={() => suspendUser(a.userId || a.user?.id)} disabled={processing === (a.userId || a.user?.id)} className="text-red-600 hover:text-red-800">Suspend</button>
-                    <button onClick={() => activateUser(a.userId || a.user?.id)} disabled={processing === (a.userId || a.user?.id)} className="text-green-600 hover:text-green-800">Activate</button>
+                  <div className="flex items-center gap-3">
+                    <a 
+                      href={`/artist/${a.id}`}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Review
+                    </a>
+                    <button 
+                      onClick={() => suspendUser(a.userId || a.user?.id)} 
+                      disabled={processing === (a.userId || a.user?.id)} 
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-red-300 rounded-lg text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Ban className="w-4 h-4" />
+                      Suspend
+                    </button>
+                    <button 
+                      onClick={() => activateUser(a.userId || a.user?.id)} 
+                      disabled={processing === (a.userId || a.user?.id)} 
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-green-300 rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Activate
+                    </button>
                   </div>
                 </div>
                 ))
               )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="divide-y divide-gray-200">
               {hotels.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <Building className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -214,20 +261,42 @@ const AdminModeration: React.FC = () => {
                 </div>
               ) : (
                 hotels.map((h) => (
-                <div key={h.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center"><Building className="w-5 h-5 text-gold" /></div>
+                <div key={h.id} className="flex items-center justify-between p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Building className="w-6 h-6 text-gray-600" />
+                    </div>
                     <div>
-                      <div className="font-medium text-navy">{h.name}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="font-semibold text-gray-900">{h.name}</div>
+                      <div className="text-sm text-gray-500">
                         {h.location || 'N/A'}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <a className="btn-secondary" href={`/hotel/${h.id}`}>Review</a>
-                    <button onClick={() => suspendUser(h.userId || h.user?.id)} disabled={processing === (h.userId || h.user?.id)} className="text-red-600 hover:text-red-800">Suspend</button>
-                    <button onClick={() => activateUser(h.userId || h.user?.id)} disabled={processing === (h.userId || h.user?.id)} className="text-green-600 hover:text-green-800">Activate</button>
+                  <div className="flex items-center gap-3">
+                    <a 
+                      href={`/hotel/${h.id}`}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Review
+                    </a>
+                    <button 
+                      onClick={() => suspendUser(h.userId || h.user?.id)} 
+                      disabled={processing === (h.userId || h.user?.id)} 
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-red-300 rounded-lg text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Ban className="w-4 h-4" />
+                      Suspend
+                    </button>
+                    <button 
+                      onClick={() => activateUser(h.userId || h.user?.id)} 
+                      disabled={processing === (h.userId || h.user?.id)} 
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-green-300 rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Activate
+                    </button>
                   </div>
                 </div>
                 ))
@@ -236,6 +305,7 @@ const AdminModeration: React.FC = () => {
           )}
         </div>
       )}
+      </div>
     </div>
   )
 }
