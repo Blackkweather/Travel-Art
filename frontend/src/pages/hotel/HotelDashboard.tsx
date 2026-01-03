@@ -17,6 +17,10 @@ interface Booking {
   endDate: string
   status: string
   performanceSpot?: string
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
+  totalPaymentAmount?: number
+  weeklyPaymentAmount?: number
+  numberOfWeeks?: number
 }
 
 interface PerformanceSpot {
