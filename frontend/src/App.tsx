@@ -1,6 +1,6 @@
+import React, { useEffect, lazy, Suspense, useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import { useEffect, lazy, Suspense } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import SEOHead from '@/components/SEOHead'
 import { getDefaultOrganizationSchema } from '@/utils/structuredData'
@@ -82,17 +82,45 @@ const DashboardRedirect = () => {
   }
 }
 
+// Referrals route component - renders appropriate referrals page based on role
+const ReferralsRoute = () => {
+  const { user } = useAuthStore()
+  
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  switch (user.role) {
+    case 'ARTIST':
+      return <ArtistReferrals />
+    case 'ADMIN':
+      return <AdminReferrals />
+    default:
+      return <Navigate to="/dashboard" replace />
+  }
+}
+
 function App() {
-  const { isLoading, checkAuth } = useAuthStore()
+  const { isLoading, checkAuth, user, token } = useAuthStore()
   const location = useLocation()
+  const [initialAuthChecked, setInitialAuthChecked] = useState(false)
   
   // Enable keyboard shortcuts
   useAppKeyboardShortcuts()
 
-  // Check auth on mount
+  // Check auth on mount - non-blocking
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    // If we have user and token in state, skip API call for faster initial load
+    if (user && token) {
+      setInitialAuthChecked(true)
+      return
+    }
+    
+    // Otherwise, check auth but don't block rendering
+    checkAuth().finally(() => {
+      setInitialAuthChecked(true)
+    })
+  }, []) // Empty deps - only run once on mount
 
   // Track page views
   useEffect(() => {
@@ -101,18 +129,25 @@ function App() {
 
   // console.log('🔒 App.tsx rendering - PasswordPopup should be visible')
   
+  // Show loading only on very first mount if we don't have cached auth
+  const showInitialLoading = !initialAuthChecked && !user && !token
+  
   return (
     <ErrorBoundary>
       <SkipToContent />
       <SEOHead structuredData={getDefaultOrganizationSchema()} />
       {/* PasswordPopup temporarily disabled - uncomment to activate */}
       {/* <PasswordPopup /> */}
-      {isLoading ? (
+      {showInitialLoading ? (
         <div className="min-h-screen bg-cream flex items-center justify-center">
           <LoadingSpinner />
         </div>
       ) : (
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense fallback={
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <LoadingSpinner size="lg" />
+          </div>
+        }>
             <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
         <Route path="/" element={<PageTransition><LandingPageNewV3 /></PageTransition>} />
@@ -199,9 +234,7 @@ function App() {
         <Route 
           path="referrals"
           element={
-            <RoleRoute allowedRoles={['ADMIN']}>
-              <AdminReferrals />
-            </RoleRoute>
+            <ReferralsRoute />
           } 
         />
         <Route 
@@ -225,14 +258,6 @@ function App() {
           element={
             <RoleRoute allowedRoles={['HOTEL']}>
               <HotelCredits />
-            </RoleRoute>
-          } 
-        />
-        <Route 
-          path="referrals" 
-          element={
-            <RoleRoute allowedRoles={['ARTIST']}>
-              <ArtistReferrals />
             </RoleRoute>
           } 
         />

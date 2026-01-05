@@ -260,6 +260,8 @@ const TravelerExperiencesPage: React.FC = () => {
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
+              minZoom={3}
+              maxZoom={18}
               style={{ height: '100%', width: '100%', zIndex: 0 }}
               scrollWheelZoom={true}
               key={`${mapCenter[0]}-${mapCenter[1]}-${filteredExperiences.length}`} // Force re-render on filter change

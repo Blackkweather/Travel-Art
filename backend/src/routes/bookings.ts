@@ -336,14 +336,14 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
 
   // Create pending transaction for the booking payment
   await prisma.transaction.create({
-    data: {
+      data: {
       hotelId: hotel.id,
       artistId: bookingData.artistId,
       type: 'BOOKING_FEE',
       amount: totalPaymentAmount,
       status: 'PENDING'
-    }
-  });
+      }
+    });
 
   res.status(201).json({
     success: true,

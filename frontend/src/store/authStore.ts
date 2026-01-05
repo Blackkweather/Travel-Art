@@ -93,19 +93,31 @@ export const useAuthStore = create<AuthState>()(
 
         // If we have a token but no user, try to fetch user
         // But don't clear auth on errors - keep session active
+        // Use a timeout to prevent blocking for too long
         set({ isLoading: true })
         try {
-          const response = await authApi.getCurrentUser()
+          // Add timeout to prevent blocking
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Auth check timeout')), 3000)
+          )
+          
+          const response = await Promise.race([
+            authApi.getCurrentUser(),
+            timeoutPromise
+          ]) as any
+          
           set({
             user: response.data.data.user,
             isAuthenticated: true,
             isLoading: false
           })
-        } catch (error) {
-          // Keep user logged in even on auth errors
+        } catch (error: any) {
+          // Keep user logged in even on auth errors or timeout
           // Session persists until explicit logout
           // Only clear loading state, don't clear auth
-          console.warn('Auth check failed, but keeping session active:', error)
+          if (!error.message?.includes('timeout')) {
+            console.warn('Auth check failed, but keeping session active:', error)
+          }
           set({ isLoading: false })
           // Don't clear user/token - keep them logged in
         }

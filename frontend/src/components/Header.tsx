@@ -43,7 +43,7 @@ const Header: React.FC = () => {
       }`}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link to="/" className="hover:opacity-80 transition-all duration-300 hover:scale-105">
+            <Link to={user ? "/dashboard" : "/"} className="hover:opacity-80 transition-all duration-300 hover:scale-105">
               <img 
                 src={getLogoUrl('transparent')} 
                 alt="Travel Art" 

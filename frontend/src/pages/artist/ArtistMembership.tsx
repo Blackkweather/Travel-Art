@@ -180,22 +180,22 @@ const ArtistMembership: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+        <h1 className="text-3xl font-semibold text-navy mb-2">
           Membership & Billing
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm text-gray-500">
           Manage your membership plan and track your performance
         </p>
       </div>
 
       {/* Current Membership Status */}
-      <div className="card-luxury">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-serif font-semibold text-navy mb-2">
+            <h2 className="text-lg font-semibold text-navy mb-2">
               Current Membership
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm text-gray-600">
               {membershipStatus === 'ACTIVE' 
                 ? `${currentPlan === 'professional' ? 'Professional' : 'Artist'} Plan • Active since ${memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Recently'}`
                 : 'No active membership • Choose a plan below to get started'}
@@ -203,11 +203,11 @@ const ArtistMembership: React.FC = () => {
           </div>
           {membershipStatus === 'ACTIVE' && (
             <div className="text-right">
-              <p className="text-2xl font-bold text-gold">
+              <p className="text-2xl font-bold text-navy">
                 {currentPlan === 'professional' ? '€100' : '€50'}/year
               </p>
               {artist?.membershipRenewal && (
-                <p className="text-sm text-gray-600">
+                <p className="text-xs text-gray-500 mt-1">
                   Next billing: {new Date(artist.membershipRenewal).toLocaleDateString()}
                 </p>
               )}
@@ -220,10 +220,16 @@ const ArtistMembership: React.FC = () => {
           {membershipStats.map((stat, index) => {
             const Icon = stat.icon
             return (
-              <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                <Icon className="w-6 h-6 text-gold mx-auto mb-2" />
-                <p className="text-sm text-gray-600">{stat.label}</p>
-                <p className="font-semibold text-navy">{stat.value}</p>
+              <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gold/10">
+                    <Icon className="w-5 h-5 text-gold" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{stat.label}</p>
+                    <p className="text-lg font-semibold text-navy">{stat.value}</p>
+                  </div>
+                </div>
               </div>
             )
           })}
@@ -232,94 +238,108 @@ const ArtistMembership: React.FC = () => {
 
       {/* Membership Plans */}
       <div>
-        <h2 className="text-2xl font-serif font-bold text-navy mb-6 gold-underline">
+        <h2 className="text-2xl font-semibold text-navy mb-6">
           {membershipStatus === 'ACTIVE' ? 'Upgrade Your Membership' : 'Choose Your Membership Plan'}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto pt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={`card-luxury relative ${plan.popular ? 'ring-2 ring-gold' : ''} ${plan.current ? 'bg-gold/5' : ''}`}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              className={`relative bg-white rounded-lg border-2 transition-all hover:shadow-lg ${
+                plan.popular && !plan.current
+                  ? 'border-gold shadow-md'
+                  : plan.current
+                  ? 'border-gold/50 bg-gold/5'
+                  : 'border-gray-200 hover:border-gold/30'
+              }`}
             >
               {plan.popular && !plan.current && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gold text-navy px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-gold text-navy px-4 py-1 rounded-full text-xs font-semibold shadow-md">
                     Most Popular
                   </span>
                 </div>
               )}
               
               {plan.current && (
-                <div className="absolute -top-4 right-4">
-                  <span className="bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+                <div className="absolute -top-3 right-4">
+                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-md">
                     Current Plan
                   </span>
                 </div>
               )}
               
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-serif font-semibold text-navy mb-2">
-                  {plan.name}
-                </h3>
-                <p className="text-gray-600 mb-4">{plan.description}</p>
-                <div className="flex items-baseline justify-center">
-                  <span className="text-4xl font-bold text-navy">{plan.price}</span>
-                  <span className="text-gray-600 ml-2">{plan.period}</span>
+              <div className="p-6">
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-navy mb-2">
+                    {plan.name}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
+                  <div className="flex items-baseline">
+                    <span className="text-4xl font-bold text-navy">{plan.price}</span>
+                    <span className="text-gray-500 ml-2 text-sm">{plan.period}</span>
+                  </div>
                 </div>
+
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-start">
+                      <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mr-3 mt-0.5 ${
+                        plan.popular ? 'bg-gold/20' : 'bg-gold/10'
+                      }`}>
+                        <Check className={`w-3 h-3 ${
+                          plan.popular ? 'text-gold' : 'text-gold'
+                        }`} />
+                      </div>
+                      <span className="text-sm text-gray-700 leading-relaxed">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button 
+                  className={`w-full py-3 px-4 rounded-lg font-semibold text-sm transition-all ${
+                    plan.current 
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                      : plan.popular 
+                        ? 'bg-gold text-navy hover:bg-gold/90 shadow-md hover:shadow-lg' 
+                        : 'bg-navy text-white hover:bg-navy/90 shadow-md hover:shadow-lg'
+                  }`}
+                  disabled={processing || plan.current}
+                  onClick={() => handleUpgrade(plan.name === 'Professional Artist' ? 'PROFESSIONAL' : 'PROFESSIONAL')}
+                >
+                  {plan.current ? 'Current Plan' : (processing ? 'Processing…' : membershipStatus === 'ACTIVE' ? 'Upgrade Plan' : 'Choose Plan')}
+                </button>
               </div>
-
-              <ul className="space-y-4 mb-8">
-                {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start">
-                    <Check className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-600">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button 
-                className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                  plan.current 
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                    : plan.popular 
-                      ? 'bg-gold text-navy hover:bg-gold/90' 
-                      : 'bg-navy text-white hover:bg-navy/90'
-                }`}
-                disabled={processing || plan.current}
-                onClick={() => handleUpgrade(plan.name === 'Professional Artist' ? 'PROFESSIONAL' : 'PROFESSIONAL')}
-              >
-                {plan.current ? 'Current Plan' : (processing ? 'Processing…' : membershipStatus === 'ACTIVE' ? 'Upgrade Plan' : 'Choose Plan')}
-              </button>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* Benefits Section */}
-      <div className="card-luxury">
-        <h2 className="text-2xl font-serif font-bold text-navy mb-6 gold-underline">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-xl font-semibold text-navy mb-6">
           Membership Benefits
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {benefits.map((benefit, index) => (
             <motion.div
               key={benefit.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="flex items-start space-x-4"
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
-                {benefit.icon}
+              <div className="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                {React.cloneElement(benefit.icon, { className: "w-5 h-5 text-gold" })}
               </div>
               <div>
-                <h3 className="text-lg font-serif font-semibold text-navy mb-2">
+                <h3 className="text-base font-semibold text-navy mb-1">
                   {benefit.title}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-sm text-gray-600">
                   {benefit.description}
                 </p>
               </div>
@@ -329,57 +349,57 @@ const ArtistMembership: React.FC = () => {
       </div>
 
       {/* Billing History */}
-      <div className="card-luxury">
-        <h2 className="text-2xl font-serif font-bold text-navy mb-6 gold-underline">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-xl font-semibold text-navy mb-6">
           Billing History
         </h2>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {artist?.transactions && artist.transactions.length > 0 ? (
             artist.transactions.map((transaction: any, index: number) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
                 <div>
-                  <p className="font-medium text-navy">{transaction.type || 'Membership'}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm font-medium text-navy">{transaction.type || 'Membership'}</p>
+                  <p className="text-xs text-gray-500 mt-1">
                     {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString() : 'Unknown date'}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-navy">€{transaction.amount || 0}</p>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                    paid
+                  <p className="text-sm font-semibold text-navy">€{transaction.amount || 0}</p>
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded">
+                    Paid
                   </span>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-gray-600 text-center py-8">No billing history yet</p>
+            <p className="text-sm text-gray-500 text-center py-8">No billing history yet</p>
           )}
         </div>
       </div>
 
       {/* Referral Program */}
       {referralCode && (
-        <div className="card-luxury">
-          <h2 className="text-2xl font-serif font-bold text-navy mb-6 gold-underline">
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold text-navy mb-6">
             Referral Program
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+              <h3 className="text-base font-semibold text-navy mb-3">
                 Invite Fellow Artists
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 mb-4">
                 Share your referral code and earn credits for each successful referral.
               </p>
-              <div className="flex items-center space-x-2 mb-4">
+              <div className="flex items-center gap-2 mb-3">
                 <input
                   type="text"
                   value={referralCode}
                   readOnly
-                  className="form-input flex-1"
+                  className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono text-navy"
                 />
                 <button 
-                  className="btn-secondary"
+                  className="px-4 py-2 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy/90 transition-colors"
                   onClick={() => {
                     navigator.clipboard.writeText(referralCode)
                     toast.success('Referral code copied!')
@@ -388,22 +408,22 @@ const ArtistMembership: React.FC = () => {
                   Copy
                 </button>
               </div>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-gray-500">
                 Share this code with other artists. You'll both benefit when they join!
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+              <h3 className="text-base font-semibold text-navy mb-4">
                 Referral Stats
               </h3>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Loyalty Points</span>
-                  <span className="font-semibold text-navy">{artist?.loyaltyPoints || 0}</span>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Loyalty Points</span>
+                  <span className="text-sm font-semibold text-navy">{artist?.loyaltyPoints || 0}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Bookings</span>
-                  <span className="font-semibold text-navy">{totalBookings}</span>
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm text-gray-600">Total Bookings</span>
+                  <span className="text-sm font-semibold text-navy">{totalBookings}</span>
                 </div>
               </div>
             </div>

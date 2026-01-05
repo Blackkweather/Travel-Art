@@ -206,10 +206,10 @@ const AdminDashboard: React.FC = () => {
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
+      <div>
               <h1 className="text-3xl font-semibold text-gray-900 mb-1">
                 Dashboard
-              </h1>
+        </h1>
               <p className="text-sm text-gray-500">
                 Platform overview and analytics
               </p>
@@ -221,12 +221,12 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+      </div>
 
-        {/* Stats Grid */}
+      {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {statsCards.map((stat, index) => {
-            const Icon = stat.icon
+        {statsCards.map((stat, index) => {
+          const Icon = stat.icon
             const colorMap: Record<string, { bg: string; iconColor: string; border: string }> = {
               'text-blue-600': {
                 bg: 'bg-blue-50',
@@ -251,7 +251,7 @@ const AdminDashboard: React.FC = () => {
             }
             const colors = colorMap[stat.color] || colorMap['text-blue-600']
             
-            return (
+          return (
               <div 
                 key={index} 
                 className="bg-white rounded-lg border border-gray-200 p-6 hover:border-gray-300 transition-colors"
@@ -264,14 +264,14 @@ const AdminDashboard: React.FC = () => {
                 <div>
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{stat.label}</p>
                   <p className="text-2xl font-semibold text-gray-900">{stat.value.toLocaleString()}</p>
-                </div>
               </div>
-            )
-          })}
-        </div>
+            </div>
+          )
+        })}
+      </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Recent Activity */}
+        {/* Recent Activity */}
           <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -298,8 +298,8 @@ const AdminDashboard: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 mb-1">{item.message}</p>
                         <p className="text-xs text-gray-500">{item.time}</p>
-                      </div>
-                    </div>
+            </div>
+          </div>
                   </div>
                 ))
               ) : (
@@ -307,17 +307,17 @@ const AdminDashboard: React.FC = () => {
                   <Activity className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-500">No recent activity</p>
                 </div>
-              )}
-            </div>
+            )}
           </div>
+        </div>
 
-          {/* Top Artists */}
+        {/* Top Artists */}
           <div className="bg-white rounded-lg border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Top Artists</h2>
             </div>
             <div className="divide-y divide-gray-200">
-              {topArtists.length > 0 ? (
+            {topArtists.length > 0 ? (
                 topArtists.map((artist, idx) => (
                   <div 
                     key={artist.id} 
@@ -337,7 +337,7 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-sm font-semibold text-gray-900">{artist.bookings}</p>
                         <p className="text-xs text-gray-500">bookings</p>
                       </div>
-                    </div>
+                  </div>
                   </div>
                 ))
               ) : (
@@ -345,15 +345,15 @@ const AdminDashboard: React.FC = () => {
                   <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-500">No data available</p>
                 </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Top Hotels */}
+      {/* Top Hotels */}
         <div className="bg-white rounded-lg border border-gray-200 mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Active Hotels</h2>
               <button 
                 onClick={() => navigate('/dashboard/hotels')}
@@ -361,8 +361,8 @@ const AdminDashboard: React.FC = () => {
               >
                 View all <ArrowUpRight className="w-4 h-4" />
               </button>
-            </div>
-          </div>
+                </div>
+              </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -392,21 +392,21 @@ const AdminDashboard: React.FC = () => {
                         </span>
                       </td>
                     </tr>
-                  ))
-                ) : (
+            ))
+          ) : (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
                       <Building className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-gray-500">No hotel data available</p>
                     </td>
                   </tr>
-                )}
+          )}
               </tbody>
             </table>
-          </div>
         </div>
+      </div>
 
-        {/* Quick Actions */}
+      {/* Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <button 
             onClick={() => navigate('/dashboard/users')}

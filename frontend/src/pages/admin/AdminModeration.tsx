@@ -154,15 +154,15 @@ const AdminModeration: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1600px] mx-auto px-6 py-8">
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
+      <div className="flex items-center justify-between">
+        <div>
               <h1 className="text-3xl font-semibold text-gray-900 mb-1">
                 Content Moderation
               </h1>
               <p className="text-sm text-gray-500">
                 Review artists and hotels; suspend or re-activate accounts.
               </p>
-            </div>
+        </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1">
             <button 
@@ -195,8 +195,8 @@ const AdminModeration: React.FC = () => {
             Export
           </button>
         </div>
+        </div>
       </div>
-    </div>
 
       {loading ? (
         <div className="flex justify-center items-center min-h-[200px]"><LoadingSpinner /></div>

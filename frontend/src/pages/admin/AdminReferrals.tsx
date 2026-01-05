@@ -129,26 +129,26 @@ const AdminReferrals: React.FC = () => {
       <div className="max-w-[1600px] mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
+      <div className="flex items-center justify-between">
+        <div>
               <h1 className="text-3xl font-semibold text-gray-900 mb-1">
-                Referral Tracking
-              </h1>
+            Referral Tracking
+          </h1>
               <p className="text-sm text-gray-500">
-                Monitor referral program performance and rewards
-              </p>
-            </div>
-            <button
-              onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
-          </div>
+            Monitor referral program performance and rewards
+          </p>
         </div>
+        <button
+          onClick={exportToCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+              Export CSV
+        </button>
+          </div>
+      </div>
 
-        {/* Stats Grid */}
+      {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -165,8 +165,8 @@ const AdminReferrals: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-emerald-50">
                 <Users className="w-5 h-5 text-emerald-600" />
-              </div>
-            </div>
+          </div>
+        </div>
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Completed</p>
               <p className="text-2xl font-semibold text-gray-900">{stats.completedReferrals}</p>
@@ -176,8 +176,8 @@ const AdminReferrals: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-amber-50">
                 <Gift className="w-5 h-5 text-amber-600" />
-              </div>
-            </div>
+          </div>
+        </div>
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Rewards</p>
               <p className="text-2xl font-semibold text-gray-900">€{stats.totalRewards.toLocaleString()}</p>
@@ -187,8 +187,8 @@ const AdminReferrals: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 rounded-lg bg-purple-50">
                 <Users className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
+          </div>
+        </div>
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Active Referrers</p>
               <p className="text-2xl font-semibold text-gray-900">{stats.activeReferrers}</p>
@@ -226,19 +226,19 @@ const AdminReferrals: React.FC = () => {
                 <option value="COMPLETED">Completed</option>
                 <option value="PENDING">Pending</option>
               </select>
-            </div>
           </div>
         </div>
+      </div>
 
-        {/* Referrals Table */}
+      {/* Referrals Table */}
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Referrals</h2>
           </div>
-          {referrals.length > 0 ? (
+        {referrals.length > 0 ? (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+          <div className="overflow-x-auto">
+            <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referrer</th>
@@ -247,10 +247,10 @@ const AdminReferrals: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Reward</th>
-                    </tr>
-                  </thead>
+                </tr>
+              </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {referrals.map((referral) => (
+                {referrals.map((referral) => (
                       <tr key={referral.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{referral.referrerName}</div>
@@ -258,13 +258,13 @@ const AdminReferrals: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            referral.referrerType === 'ARTIST' 
-                              ? 'bg-purple-100 text-purple-800'
+                        referral.referrerType === 'ARTIST' 
+                          ? 'bg-purple-100 text-purple-800'
                               : 'bg-emerald-100 text-emerald-800'
-                          }`}>
-                            {referral.referrerType}
-                          </span>
-                        </td>
+                      }`}>
+                        {referral.referrerType}
+                      </span>
+                    </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{referral.referredName}</div>
                           <div className="text-xs text-gray-500">{referral.referredEmail}</div>
@@ -272,23 +272,23 @@ const AdminReferrals: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             referral.status === 'COMPLETED'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}>
-                            {referral.status}
-                          </span>
-                        </td>
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {referral.status}
+                      </span>
+                    </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(referral.createdAt).toLocaleDateString()}
-                        </td>
+                      {new Date(referral.createdAt).toLocaleDateString()}
+                    </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
                           €{referral.rewardEarned}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
               {pagination.pages > 1 && (
                 <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                   <div className="text-sm text-gray-500">
@@ -321,7 +321,7 @@ const AdminReferrals: React.FC = () => {
               <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
               <p className="text-sm text-gray-500">No referrals tracked yet.</p>
             </div>
-          )}
+        )}
         </div>
       </div>
     </div>
