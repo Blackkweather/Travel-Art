@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
 import { tripsApi } from '@/utils/api'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import AmbientAudio from '@/components/AmbientAudio'
-import CustomCursor from '@/components/CustomCursor'
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -28,6 +28,7 @@ export default function LandingPageNewV3() {
   // States
   const [headerScrolled, setHeaderScrolled] = useState(false)
   const [experiences, setExperiences] = useState<any[]>([])
+  const [isLoadingExperiences, setIsLoadingExperiences] = useState(true)
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
   const [slides, setSlides] = useState<Slide[]>([])
   const [showSlideshowCursor, setShowSlideshowCursor] = useState(true)
@@ -142,6 +143,8 @@ export default function LandingPageNewV3() {
         console.error('Failed to fetch experiences:', error)
         setExperiences([])
         setSlides(defaultSlides)
+      } finally {
+        setIsLoadingExperiences(false)
       }
     }
     fetchData()
@@ -357,42 +360,15 @@ export default function LandingPageNewV3() {
       })
     }
 
-    // Custom cursor functionality
+    // Cursor position is still tracked for the wheel/drag direction logic, but
+    // the page no longer paints its own cursor: custom cursors hurt
+    // accessibility, cost a frame on every mouse move, and do not exist on
+    // touch. The hero exposes real prev/next buttons instead.
     const handleMouseMove = (e: MouseEvent) => {
-      if (!cursorRef.current) return
-
       mouseXRef.current = e.clientX
-
-      gsap.to(cursorRef.current, {
-        left: e.clientX,
-        top: e.clientY,
-        duration: 0.1
-      })
-
-      cursorRef.current.classList.add('active')
-
-      const windowWidth = window.innerWidth
-      if (e.clientX < windowWidth / 2) {
-        cursorRef.current.classList.remove('next')
-        cursorRef.current.classList.add('prev')
-      } else {
-        cursorRef.current.classList.remove('prev')
-        cursorRef.current.classList.add('next')
-      }
-
-      clearTimeout((window as any).cursorTimeout)
-      ;(window as any).cursorTimeout = setTimeout(() => {
-        if (cursorRef.current) {
-          cursorRef.current.classList.remove('active')
-        }
-      }, 2000)
     }
 
-    const handleMouseLeave = () => {
-      if (cursorRef.current) {
-        cursorRef.current.classList.remove('active')
-      }
-    }
+    const handleMouseLeave = () => {}
 
     const handleWheel = (e: WheelEvent) => {
       // Only navigate slides if we're in the slideshow area and not at the edges
@@ -599,10 +575,7 @@ export default function LandingPageNewV3() {
   }, [])
 
   return (
-    <div className="overflow-x-hidden relative bg-white">
-      {/* Custom Cursor - V2 Style */}
-      {!showSlideshowCursor && <CustomCursor />}
-
+    <div className="overflow-x-hidden relative bg-[var(--surface)]">
       {/* Ambient Audio */}
       <AmbientAudio 
         src="https://www.youtube.com/watch?v=LCQSGDqWIEY" 
@@ -610,83 +583,76 @@ export default function LandingPageNewV3() {
         maxScrollForFade={1000}
       />
 
-      {/* 1. FIXED HEADER - Enhanced with backdrop blur */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        headerScrolled 
-          ? 'bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-lg' 
+      {/* Fixed header. Total height stays at 72px: the logo was previously
+          scaling to h-24, which pushed the bar past 120px. */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
+        headerScrolled
+          ? 'bg-[var(--surface)]/90 backdrop-blur-md border-b border-[var(--border-subtle)]'
           : 'bg-transparent'
       }`}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="hover:opacity-80 transition-all duration-300 hover:scale-105">
-              <img 
-                src={getLogoUrl('transparent')} 
-                alt="Travel Art" 
-                className="h-12 md:h-16 lg:h-20 xl:h-24 w-auto object-contain transition-all duration-300"
+        <div className="shell h-[72px] flex items-center justify-between">
+          <div className="flex items-center gap-10">
+            <Link to="/" className="shrink-0" aria-label="Travel Art home">
+              <img
+                src={getLogoUrl('transparent')}
+                alt="Travel Art"
+                className={`h-8 md:h-9 w-auto object-contain transition-all duration-500 ${
+                  headerScrolled ? 'dark:invert dark:brightness-0 dark:contrast-200' : 'brightness-0 invert'
+                }`}
               />
             </Link>
-            <nav className="hidden md:flex gap-8">
-              <Link 
-                to="/experiences" 
-                className={`text-sm font-semibold transition-all duration-300 relative group ${
-                  headerScrolled ? 'text-gray-900' : 'text-white'
-                }`}
-              >
-                Experiences
-                <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                  headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
-                }`} />
-              </Link>
-              <Link 
-                to="/how-it-works" 
-                className={`text-sm font-semibold transition-all duration-300 relative group ${
-                  headerScrolled ? 'text-gray-900' : 'text-white'
-                }`}
-              >
-                How it Works
-                <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                  headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
-                }`} />
-              </Link>
+            <nav className="hidden md:flex gap-8" aria-label="Main">
+              {[
+                { to: '/experiences', label: 'Experiences' },
+                { to: '/how-it-works', label: 'How it works' },
+                { to: '/pricing', label: 'Pricing' },
+              ].map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`text-sm font-medium whitespace-nowrap transition-colors duration-300 relative group ${
+                    headerScrolled ? 'text-[var(--text-primary)]' : 'text-white'
+                  }`}
+                >
+                  {item.label}
+                  <span className="absolute -bottom-1 left-0 w-0 h-px bg-gold transition-all duration-300 group-hover:w-full" />
+                </Link>
+              ))}
             </nav>
           </div>
-          <div className="flex items-center gap-4">
-            <Link 
-              to="/login" 
-              className={`text-sm font-semibold transition-all duration-300 hidden sm:block relative group ${
-                headerScrolled ? 'text-gray-900' : 'text-white'
+          <div className="flex items-center gap-5">
+            <Link
+              to="/login"
+              className={`text-sm font-medium whitespace-nowrap transition-colors duration-300 hidden sm:block ${
+                headerScrolled ? 'text-[var(--text-primary)]' : 'text-white'
               }`}
             >
-              Sign In
-              <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                headerScrolled ? 'bg-teal-600' : 'bg-teal-300'
-              }`} />
+              Sign in
             </Link>
-            <Link 
-              to="/register"
-              className="bg-teal-500 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-teal-400 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 relative overflow-hidden group"
-            >
-              <span className="relative z-10">Join Now</span>
-              <span className="absolute inset-0 bg-gradient-to-r from-teal-400 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <Link to="/register" className="btn-gold !px-6 !py-2.5">
+              Join now
             </Link>
           </div>
         </div>
       </header>
 
-      {/* 2. SLIDESHOW - CodePen Style */}
-      <section ref={heroRef} className="slideshow-section relative h-screen flex items-center overflow-hidden">
+      {/* Hero. min-h-[100dvh] rather than h-screen so the iOS address bar does
+          not crop it. */}
+      <section ref={heroRef} className="slideshow-section relative min-h-[100dvh] flex items-center overflow-hidden">
         <div ref={slideshowRef} className="slideshow">
           {slides.map((slide, index) => (
             <div
               key={slide.id}
               className={`slide ${index === 0 ? 'active' : ''}`}
             >
-              <div 
+              <div
                 className="slide__img"
                 style={{
                   backgroundImage: `url(${slide.image})`
                 }}
               />
+              {/* Scrim keeps the headline above AA contrast whatever the photo. */}
+              <div className="slide__scrim" aria-hidden="true" />
               <div className="slide__text">
                 <h1 className="slide__text-line">{slide.title}</h1>
                 <h2 className="slide__text-line">{slide.subtitle}</h2>
@@ -695,283 +661,278 @@ export default function LandingPageNewV3() {
           ))}
         </div>
 
-
-        {/* Slideshow Custom Cursor - Only show when in slideshow */}
-        {showSlideshowCursor && (
-          <div ref={cursorRef} className="cursor">
-            <div className="cursor-arrow prev">←</div>
-            <div className="cursor-arrow next">→</div>
+        {/* Real buttons instead of a custom cursor: keyboard reachable and
+            visible on touch, where a cursor affordance does not exist. */}
+        {slides.length > 1 && (
+          <div className="absolute bottom-10 right-5 sm:right-8 lg:right-12 z-20 flex gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(PREV)}
+              aria-label="Previous experience"
+              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-white hover:text-navy transition-colors duration-300 active:translate-y-px"
+            >
+              <ArrowLeft size={18} strokeWidth={1.5} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(NEXT)}
+              aria-label="Next experience"
+              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-white hover:text-navy transition-colors duration-300 active:translate-y-px"
+            >
+              <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
+            </button>
           </div>
         )}
       </section>
 
-      {/* Rest of the page sections - keeping existing structure */}
-      <div className="bg-white">
-        {/* 3. INFINITE SCROLL "WE LOVE" SECTION */}
-        <section ref={weLoveSectionRef} className="py-24 md:py-32 bg-gradient-to-b from-gray-50 to-white relative opacity-100" style={{ opacity: 1, minHeight: '400px' }}>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(20,184,166,0.05),transparent_50%)] pointer-events-none" style={{ zIndex: 0 }} />
-          <div className="relative z-10" style={{ zIndex: 10 }}>
-            <h2 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-serif font-bold text-center mb-16 text-gray-900">
-              We love
+      <div className="bg-[var(--surface)]">
+        {/* Kinetic marquee. The only marquee on the page - it carries the
+            disciplines at a glance, which a static list would bury. */}
+        <section ref={weLoveSectionRef} className="section-y relative overflow-hidden" style={{ opacity: 1 }}>
+          <div className="shell">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[var(--text-primary)] mb-14 max-w-prose">
+              We love what moves people.
             </h2>
-            
-            <div className="space-y-8 overflow-hidden">
-              <div className="flex animate-scroll-right" style={{ willChange: 'transform', width: 'fit-content' }}>
-                {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
-                  <div 
-                    key={i} 
-                    className="flex-shrink-0 text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mx-8 md:mx-12 whitespace-nowrap hover:text-teal-600 transition-colors duration-300"
-                    style={{ opacity: 1, visibility: 'visible' }}
-                  >
-                    {tag}
-                  </div>
-                ))}
-              </div>
+          </div>
 
-              <div className="flex animate-scroll-left" style={{ willChange: 'transform', width: 'fit-content' }}>
-                {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
-                  <div 
-                    key={i} 
-                    className="flex-shrink-0 text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 mx-8 md:mx-12 whitespace-nowrap hover:text-teal-600 transition-colors duration-300"
-                    style={{ opacity: 1, visibility: 'visible' }}
-                  >
-                    {tag}
-                  </div>
-                ))}
-              </div>
+          <div aria-hidden="true" className="space-y-6 overflow-hidden select-none">
+            <div className="flex animate-scroll-right" style={{ willChange: 'transform', width: 'fit-content' }}>
+              {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
+                <span
+                  key={i}
+                  className="flex-shrink-0 text-5xl md:text-7xl lg:text-8xl font-serif text-[var(--text-primary)]/15 mx-8 md:mx-14 whitespace-nowrap"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex animate-scroll-left" style={{ willChange: 'transform', width: 'fit-content' }}>
+              {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
+                <span
+                  key={i}
+                  className="flex-shrink-0 text-5xl md:text-7xl lg:text-8xl font-serif text-gold/30 mx-8 md:mx-14 whitespace-nowrap"
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
+
+          {/* Screen readers get the plain list the marquee is decorating. */}
+          <ul className="sr-only">
+            {weLovetags.map((tag) => <li key={tag}>{tag}</li>)}
+          </ul>
         </section>
 
-        {/* 4. DESCRIPTION PARAGRAPH */}
-        <section ref={descriptionRef} className="py-24 md:py-32 px-6 bg-white relative opacity-100" style={{ opacity: 1, minHeight: '300px' }}>
-          <div className="max-w-5xl mx-auto">
-            <p className="text-xl md:text-2xl lg:text-3xl leading-relaxed text-gray-700 text-center font-light" style={{ opacity: 1 }}>
-              Travel Art is founded on the idea that <span className="font-semibold text-gray-900">travel and cultural immersion</span> are at the origin of inspiration. 
-              We connect highly talented hearts with luxury hotels to create <span className="font-semibold text-teal-600">unforgettable experiences</span>. Our platform 
-              brings together a community of artists and creatives across multiple disciplines (Music, Visual Arts, 
-              Performance) to develop their artistic projects in <span className="font-semibold text-gray-900">over 30 destinations worldwide</span>, combining travel 
-              and creation in the most beautiful places on earth.
-            </p>
-          </div>
-        </section>
-
-        {/* 5. EXPERIENCE IMAGES SECTION */}
-        <section ref={experienceImagesSectionRef} className="py-16 md:py-24 px-6 bg-white experience-images-section" style={{ opacity: 1 }}>
-          <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-              {experiences.length > 0 ? (
-                experiences.slice(0, 3).map((exp, index) => (
-                  <Link
-                    key={exp.id}
-                    to={`/experience/${exp.id}`}
-                    className="group relative overflow-hidden rounded-2xl aspect-[4/3] bg-gray-200 experience-image-card block"
-                    style={{ animationDelay: `${index * 0.15}s` }}
-                  >
-                    <img
-                      src={exp.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800'}
-                      alt={exp.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    
-                    <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 via-black/60 to-transparent transform -translate-y-full group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out experience-card-top-text">
-                      <div className="text-sm text-teal-400 font-bold mb-1 uppercase tracking-wider">
-                        {exp.category || 'Experience'}
-                      </div>
-                      <h3 className="text-white text-2xl font-bold leading-tight">
-                        {exp.title}
-                      </h3>
-                    </div>
-                    
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                      <div className="text-sm text-teal-400 font-bold mb-2 uppercase tracking-wide">
-                        {exp.category || 'Experience'}
-                      </div>
-                      <h3 className="text-white text-xl font-bold">
-                        {exp.title}
-                      </h3>
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <>
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="relative overflow-hidden rounded-2xl aspect-[4/3] bg-gray-200 animate-pulse">
-                      <div className="w-full h-full bg-gray-300" />
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* 6. CTA SECTION */}
-        <section className="py-12 text-center bg-gradient-to-b from-white to-gray-50">
-          <Link 
-            to="/experiences"
-            className="inline-block bg-teal-500 text-white px-14 py-6 rounded-full text-xl font-bold hover:bg-teal-400 transition-all duration-300 shadow-2xl hover:shadow-teal-500/50 hover:scale-110 relative overflow-hidden group"
-          >
-            <span className="relative z-10 flex items-center gap-3">
-              Discover Experiences
-              <svg className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </span>
-            <span className="absolute inset-0 bg-gradient-to-r from-teal-400 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </Link>
-        </section>
-
-        {/* 7. EXPERIENCES GRID */}
-        <section ref={experiencesSectionRef} className="pt-0 pb-24 md:pb-32 px-6 bg-gradient-to-b from-gray-50 to-white opacity-100" style={{ opacity: 1 }}>
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-20">
-              <h2 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold mb-8 text-gray-900">
-                Immersive Experiences
-              </h2>
-              <p className="text-lg md:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto font-light">
-                Discover unique artistic moments in luxury settings. Get inspired by 
-                the experiences of our artist community and join the program yourself.
+        {/* Manifesto. Offset into the grid rather than centred, so it reads as
+            a statement instead of a paragraph. */}
+        <section ref={descriptionRef} className="section-y" style={{ opacity: 1 }}>
+          <div className="shell grid grid-cols-1 lg:grid-cols-12 gap-y-10 gap-x-8">
+            <div className="lg:col-start-2 lg:col-span-7">
+              <p className="text-2xl md:text-3xl lg:text-4xl font-serif leading-[1.35] text-[var(--text-primary)]">
+                Travel and cultural immersion are where inspiration starts. We place artists
+                inside luxury hotels and let the work happen there.
+              </p>
+              <p className="mt-8 text-base md:text-lg leading-relaxed text-[var(--text-secondary)] max-w-prose">
+                Musicians, visual artists and performers develop their projects across more than
+                thirty destinations, and the hotels that host them get work no booking agency
+                could arrange.
               </p>
             </div>
 
-            {experiences.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-                {experiences.map((exp) => (
-                  <Link 
-                    key={exp.id} 
-                    to={`/experience/${exp.id}`} 
-                    className="group experience-card cursor-pointer opacity-100"
-                    style={{ opacity: 1 }}
-                  >
-                    <div className="aspect-[4/3] overflow-hidden rounded-2xl mb-6 bg-gray-200 relative">
-                      <img
-                        src={exp.image}
-                        alt={exp.title}
-                        className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      <div className="absolute bottom-4 left-4 right-4 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                        <span className="text-white text-sm font-semibold">View Details →</span>
-                      </div>
-                    </div>
-                    <div className="text-sm text-teal-600 font-bold mb-3 uppercase tracking-wide">
-                      {exp.category}
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 group-hover:text-teal-600 transition-colors duration-300">
-                      {exp.title}
-                    </h3>
-                  </Link>
-                ))}
+            <dl className="lg:col-span-3 lg:col-start-10 grid grid-cols-2 lg:grid-cols-1 gap-8 self-end">
+              <div>
+                <dt className="text-sm text-[var(--text-secondary)]">Destinations</dt>
+                <dd className="font-serif text-4xl text-gold mt-1">30+</dd>
               </div>
-            ) : (
-              <div className="text-center py-16">
-                <p className="text-gray-600 text-lg">No experiences available at the moment.</p>
-                <p className="text-gray-500 text-sm mt-2">Check back soon for new experiences!</p>
+              <div>
+                <dt className="text-sm text-[var(--text-secondary)]">Disciplines</dt>
+                <dd className="font-serif text-4xl text-gold mt-1">Three</dd>
               </div>
-            )}
+            </dl>
+          </div>
+        </section>
 
-            <div className="text-center mt-16">
-              <Link 
-                to="/experiences"
-                className="inline-block border-2 border-gray-900 text-gray-900 px-10 py-4 rounded-full font-bold hover:bg-gray-900 hover:text-white transition-all duration-300 hover:scale-105 relative overflow-hidden group"
-              >
-                <span className="relative z-10">View all experiences</span>
-                <span className="absolute inset-0 bg-gray-900 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+        {/* Full-bleed inverse band. Breaks the light rhythm and gives the
+            primary conversion its own moment, without repeating a card grid. */}
+        <section ref={experienceImagesSectionRef} className="relative bg-navy text-white overflow-hidden" style={{ opacity: 1 }}>
+          <div className="shell py-24 md:py-32 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            <div className="lg:col-span-7">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif leading-[1.1]">
+                A residency, not a booking.
+              </h2>
+              <p className="mt-6 text-base md:text-lg text-white/70 max-w-prose">
+                Artists apply, hotels host, and the exchange is settled through the platform.
+                No agents, no commission on the artist side.
+              </p>
+            </div>
+
+            <div className="lg:col-span-4 lg:col-start-9 flex lg:justify-end">
+              <Link to="/experiences" className="btn-gold">
+                Discover experiences
               </Link>
             </div>
           </div>
         </section>
 
-        {/* 8. FOOTER */}
-        <footer className="bg-gray-900 text-white py-20 px-6 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(20,184,166,0.1),transparent_50%)]" />
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
-              <div>
-                <h4 className="font-bold mb-6 text-lg">Programme</h4>
-                <ul className="space-y-3 text-sm text-gray-400">
-                  <li>
-                    <Link to="/register" className="hover:text-teal-400 transition-colors duration-300 inline-block transform hover:translate-x-1">
-                      Join Now
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/login" className="hover:text-teal-400 transition-colors duration-300 inline-block transform hover:translate-x-1">
-                      Sign In
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-bold mb-6 text-lg">Discover</h4>
-                <ul className="space-y-3 text-sm text-gray-400">
-                  <li>
-                    <Link to="/about" className="hover:text-teal-400 transition-colors duration-300 inline-block transform hover:translate-x-1">
-                      About
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/terms" className="hover:text-teal-400 transition-colors duration-300 inline-block transform hover:translate-x-1">
-                      Terms & Conditions
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-bold mb-6 text-lg">Social</h4>
-                <ul className="space-y-3 text-sm text-gray-400">
-                  <li>
-                    <a href="#" className="hover:text-teal-400 transition-colors duration-300 inline-block transform hover:translate-x-1">
-                      Instagram
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="hover:text-teal-400 transition-colors duration-300 inline-block transform hover:translate-x-1">
-                      Facebook
-                    </a>
-                  </li>
-                </ul>
-              </div>
-              <div></div>
+        {/* Editorial grid: the first entry runs wide, the rest sit beside it,
+            so the eye gets a hierarchy instead of a uniform card wall. */}
+        <section ref={experiencesSectionRef} className="section-y" style={{ opacity: 1 }}>
+          <div className="shell">
+            <div className="max-w-prose mb-16">
+              <p className="text-xs uppercase tracking-[0.2em] text-gold-700 dark:text-gold-300 mb-4">
+                Recent work
+              </p>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[var(--text-primary)] leading-[1.1]">
+                Where our artists have been.
+              </h2>
             </div>
-            
-            <div className="text-sm text-gray-500 text-center pt-8 border-t border-gray-800">
-              © 2024 Travel Art. All rights reserved.
+
+            {isLoadingExperiences ? (
+              /* Skeletons mirror the real grid shape rather than spinning. */
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 aspect-[16/10] bg-[var(--surface-sunken)] animate-pulse rounded-card" />
+                <div className="grid gap-6">
+                  <div className="aspect-[4/3] bg-[var(--surface-sunken)] animate-pulse rounded-card" />
+                  <div className="aspect-[4/3] bg-[var(--surface-sunken)] animate-pulse rounded-card" />
+                </div>
+              </div>
+            ) : experiences.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {experiences.slice(0, 3).map((exp: any, index: number) => (
+                  <Link
+                    key={exp.id}
+                    to={`/experience/${exp.id}`}
+                    className={`group block ${index === 0 ? 'md:col-span-2 md:row-span-2' : ''}`}
+                  >
+                    <div className={`relative overflow-hidden rounded-card bg-[var(--surface-sunken)] ${
+                      index === 0 ? 'aspect-[16/10]' : 'aspect-[4/3]'
+                    }`}>
+                      <img
+                        src={exp.image}
+                        alt={exp.title}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        className="w-full h-full object-cover transition-transform duration-[900ms] ease-entrance group-hover:scale-[1.04]"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    </div>
+                    <div className="mt-5">
+                      <p className="text-sm text-[var(--text-secondary)]">{exp.category}</p>
+                      <h3 className={`font-serif text-[var(--text-primary)] mt-1 group-hover:text-gold-700 dark:group-hover:text-gold-300 transition-colors duration-300 ${
+                        index === 0 ? 'text-2xl md:text-3xl' : 'text-xl'
+                      }`}>
+                        {exp.title}
+                      </h3>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              /* Composed empty state that still points somewhere useful. */
+              <div className="border border-[var(--border-subtle)] rounded-card px-8 py-20 text-center">
+                <p className="font-serif text-2xl text-[var(--text-primary)]">
+                  No experiences published yet.
+                </p>
+                <p className="mt-3 text-[var(--text-secondary)] max-w-prose mx-auto">
+                  Artist residencies appear here once they are confirmed by a host hotel.
+                </p>
+                <Link to="/register" className="btn-secondary mt-8">
+                  Apply as an artist
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <footer className="bg-[var(--surface-sunken)] border-t border-[var(--border-subtle)]">
+          <div className="shell py-20">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-16">
+              <div className="col-span-2 md:col-span-1">
+                <img
+                  src={getLogoUrl('transparent')}
+                  alt="Travel Art"
+                  className="h-10 w-auto dark:invert dark:brightness-0 dark:contrast-200"
+                />
+                <p className="mt-5 text-sm text-[var(--text-secondary)] max-w-[28ch]">
+                  Artist residencies inside luxury hotels.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-sans text-sm font-semibold text-[var(--text-primary)] mb-5">
+                  Programme
+                </h3>
+                <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
+                  <li><Link to="/register" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Join now</Link></li>
+                  <li><Link to="/login" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Sign in</Link></li>
+                  <li><Link to="/pricing" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Pricing</Link></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-sans text-sm font-semibold text-[var(--text-primary)] mb-5">
+                  Discover
+                </h3>
+                <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
+                  <li><Link to="/about" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">About</Link></li>
+                  <li><Link to="/how-it-works" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">How it works</Link></li>
+                  <li><Link to="/experiences" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Experiences</Link></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-sans text-sm font-semibold text-[var(--text-primary)] mb-5">
+                  Legal
+                </h3>
+                <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
+                  <li><Link to="/terms" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Terms</Link></li>
+                  <li><Link to="/privacy" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Privacy</Link></li>
+                  <li><Link to="/cookies" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Cookies</Link></li>
+                </ul>
+              </div>
             </div>
+
+            <p className="text-sm text-[var(--text-secondary)] pt-8 border-t border-[var(--border-subtle)]">
+              © {new Date().getFullYear()} Travel Art
+            </p>
           </div>
         </footer>
       </div>
 
-      {/* CSS - CodePen Style */}
       <style>{`
-        @import url('https://fonts.cdnfonts.com/css/pp-neue-montreal');
-        
-        *,
-        *:before,
-        *:after {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
+        /* The remote PP Neue Montreal @import was removed: it is a
+           render-blocking request to an unofficial font CDN, and the page now
+           uses the self-hosted brand fonts. */
         body {
-          font-family: "PP Neue Montreal", sans-serif;
           overflow-x: hidden;
         }
-        
-        /* Only apply black background to slideshow section */
+
+        /* Off-black rather than pure #000, which flattens the photography. */
         .slideshow-section {
-          background-color: #000;
+          background-color: #08101D;
           color: #fff;
         }
-        
+
         .slideshow {
           position: relative;
           width: 100%;
-          height: 100vh;
+          min-height: 100dvh;
+          height: 100%;
           overflow: hidden;
+        }
+
+        .slide__scrim {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          pointer-events: none;
+          background: linear-gradient(
+            to top,
+            rgba(8, 16, 29, 0.72) 0%,
+            rgba(8, 16, 29, 0.28) 45%,
+            rgba(8, 16, 29, 0.45) 100%
+          );
         }
         
         .slide {

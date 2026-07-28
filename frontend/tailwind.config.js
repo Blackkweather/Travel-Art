@@ -3,6 +3,7 @@ module.exports = {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -19,18 +20,21 @@ module.exports = {
           800: '#243b53',
           900: '#0B1F3F',
         },
+        // Sampled from the compass rose in the brand wordmark (#B99851).
+        // This token was previously teal, which clashed with the gold logo it
+        // sat beside. Gold is the single accent for the whole site.
         gold: {
-          DEFAULT: '#14b8a6',
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
+          DEFAULT: '#B99851',
+          50: '#FBF8F1',
+          100: '#F4ECD9',
+          200: '#E8D8B4',
+          300: '#DAC189',
+          400: '#CAAC6C',
+          500: '#B99851',
+          600: '#9B7C3E',
+          700: '#7B6231',
+          800: '#5A4827',
+          900: '#3B301B',
         },
         cream: {
           DEFAULT: '#F9F8F3',
@@ -47,9 +51,26 @@ module.exports = {
         },
         'off-black': '#111111'
       },
+      // Cormorant Garamond echoes the engraved serif of the wordmark and earns
+      // its place on a heritage/luxury brief. Outfit replaces Inter for UI text.
+      // Both are self-hosted through fontsource - no render-blocking Google
+      // Fonts request.
       fontFamily: {
-        'serif': ['Playfair Display', 'serif'],
-        'sans': ['Inter', 'sans-serif'],
+        'serif': ['"Cormorant Garamond Variable"', 'Cormorant Garamond', 'Georgia', 'serif'],
+        'sans': ['"Outfit Variable"', 'Outfit', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        // Documented shape system: media and cards are near-sharp, controls are
+        // pill. Nothing else is allowed to invent its own radius.
+        'card': '2px',
+        'control': '999px',
+      },
+      maxWidth: {
+        'shell': '1400px',
+        'prose': '65ch',
+      },
+      transitionTimingFunction: {
+        'entrance': 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       spacing: {
         '18': '4.5rem',
