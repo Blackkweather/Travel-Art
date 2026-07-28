@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+﻿import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
@@ -6,6 +6,7 @@ import { tripsApi } from '@/utils/api'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import AmbientAudio from '@/components/AmbientAudio'
+import GalleryPan from '@/components/GalleryPan'
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -685,22 +686,45 @@ export default function LandingPageNewV3() {
         )}
       </section>
 
-      <div className="bg-[var(--surface)]">
-        {/* Kinetic marquee. The only marquee on the page - it carries the
-            disciplines at a glance, which a static list would bury. */}
-        <section ref={weLoveSectionRef} className="section-y relative overflow-hidden" style={{ opacity: 1 }}>
-          <div className="shell">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[var(--text-primary)] mb-14 max-w-prose">
-              We love what moves people.
-            </h2>
-          </div>
+      {/* The page is dark end to end: a hotel hosting artists is a gallery
+          after hours, and gold is the only warm light in the room. No section
+          inverts to a light theme. */}
+      <div className="bg-[#08101D]">
+        {/* Manifesto. A drop cap and a hanging measure make this read as
+            editorial opening copy rather than a hero subtitle. */}
+        <section ref={descriptionRef} className="section-y" style={{ opacity: 1 }}>
+          <div className="shell grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8">
+            <p className="lg:col-span-7 lg:col-start-2 text-2xl md:text-3xl lg:text-[2.6rem] font-serif
+                          leading-[1.3] text-white
+                          [&>span:first-child]:float-left [&>span:first-child]:font-serif
+                          [&>span:first-child]:text-gold [&>span:first-child]:text-[5.5rem]
+                          [&>span:first-child]:leading-[0.78] [&>span:first-child]:pr-4
+                          [&>span:first-child]:pt-1">
+              <span>T</span>ravel and cultural immersion are where the work starts. We put
+              artists inside hotels worth staying in, and let what happens there be the point.
+            </p>
 
-          <div aria-hidden="true" className="space-y-6 overflow-hidden select-none">
+            <div className="lg:col-span-3 lg:col-start-10 self-end">
+              <p className="text-white/50 leading-relaxed">
+                Musicians, visual artists and performers, across more than thirty
+                destinations.
+              </p>
+              <div className="mt-8 h-px w-full bg-gold/30" />
+              <p className="mt-8 font-serif text-5xl text-gold">30+</p>
+              <p className="text-white/40 text-sm mt-1">Destinations</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Kinetic marquee. The only marquee on the page: it carries the
+            disciplines at a glance, where a static list would bury them. */}
+        <section ref={weLoveSectionRef} className="pb-24 md:pb-32 relative overflow-hidden" style={{ opacity: 1 }}>
+          <div aria-hidden="true" className="space-y-4 select-none">
             <div className="flex animate-scroll-right" style={{ willChange: 'transform', width: 'fit-content' }}>
               {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
                 <span
                   key={i}
-                  className="flex-shrink-0 text-5xl md:text-7xl lg:text-8xl font-serif text-[var(--text-primary)]/15 mx-8 md:mx-14 whitespace-nowrap"
+                  className="flex-shrink-0 text-6xl md:text-8xl lg:text-9xl font-serif italic text-white/[0.07] mx-8 md:mx-14 whitespace-nowrap"
                 >
                   {tag}
                 </span>
@@ -711,7 +735,7 @@ export default function LandingPageNewV3() {
               {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
                 <span
                   key={i}
-                  className="flex-shrink-0 text-5xl md:text-7xl lg:text-8xl font-serif text-gold/30 mx-8 md:mx-14 whitespace-nowrap"
+                  className="flex-shrink-0 text-6xl md:text-8xl lg:text-9xl font-serif italic text-gold/20 mx-8 md:mx-14 whitespace-nowrap"
                 >
                   {tag}
                 </span>
@@ -719,182 +743,143 @@ export default function LandingPageNewV3() {
             </div>
           </div>
 
-          {/* Screen readers get the plain list the marquee is decorating. */}
+          {/* Screen readers get the plain list the marquee decorates. */}
           <ul className="sr-only">
             {weLovetags.map((tag) => <li key={tag}>{tag}</li>)}
           </ul>
         </section>
 
-        {/* Manifesto. Offset into the grid rather than centred, so it reads as
-            a statement instead of a paragraph. */}
-        <section ref={descriptionRef} className="section-y" style={{ opacity: 1 }}>
-          <div className="shell grid grid-cols-1 lg:grid-cols-12 gap-y-10 gap-x-8">
-            <div className="lg:col-start-2 lg:col-span-7">
-              <p className="text-2xl md:text-3xl lg:text-4xl font-serif leading-[1.35] text-[var(--text-primary)]">
-                Travel and cultural immersion are where inspiration starts. We place artists
-                inside luxury hotels and let the work happen there.
-              </p>
-              <p className="mt-8 text-base md:text-lg leading-relaxed text-[var(--text-secondary)] max-w-prose">
-                Musicians, visual artists and performers develop their projects across more than
-                thirty destinations, and the hotels that host them get work no booking agency
-                could arrange.
-              </p>
-            </div>
+        {/* Signature moment: the work travels sideways while the page holds. */}
+        <GalleryPan items={experiences.slice(0, 6)} />
 
-            <dl className="lg:col-span-3 lg:col-start-10 grid grid-cols-2 lg:grid-cols-1 gap-8 self-end">
-              <div>
-                <dt className="text-sm text-[var(--text-secondary)]">Destinations</dt>
-                <dd className="font-serif text-4xl text-gold mt-1">30+</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-[var(--text-secondary)]">Disciplines</dt>
-                <dd className="font-serif text-4xl text-gold mt-1">Three</dd>
-              </div>
-            </dl>
-          </div>
-        </section>
-
-        {/* Full-bleed inverse band. Breaks the light rhythm and gives the
-            primary conversion its own moment, without repeating a card grid. */}
-        <section ref={experienceImagesSectionRef} className="relative bg-navy text-white overflow-hidden" style={{ opacity: 1 }}>
-          <div className="shell py-24 md:py-32 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-7">
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif leading-[1.1]">
-                A residency, not a booking.
-              </h2>
-              <p className="mt-6 text-base md:text-lg text-white/70 max-w-prose">
-                Artists apply, hotels host, and the exchange is settled through the platform.
-                No agents, no commission on the artist side.
-              </p>
-            </div>
-
-            <div className="lg:col-span-4 lg:col-start-9 flex lg:justify-end">
-              <Link to="/experiences" className="btn-gold">
-                Discover experiences
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Editorial grid: the first entry runs wide, the rest sit beside it,
-            so the eye gets a hierarchy instead of a uniform card wall. */}
-        <section ref={experiencesSectionRef} className="section-y" style={{ opacity: 1 }}>
+        {/* Closing band. The one moment on the page where gold fills a surface
+            instead of accenting it, so the final action carries the most
+            contrast on the page. */}
+        <section ref={experienceImagesSectionRef} className="relative overflow-hidden" style={{ opacity: 1 }}>
           <div className="shell">
-            <div className="max-w-prose mb-16">
-              <p className="text-xs uppercase tracking-[0.2em] text-gold-700 dark:text-gold-300 mb-4">
-                Recent work
-              </p>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[var(--text-primary)] leading-[1.1]">
-                Where our artists have been.
+            <div className="border-t border-white/10 py-24 md:py-36 text-center">
+              <h2 className="font-serif text-white text-5xl md:text-7xl lg:text-8xl leading-[1.02]">
+                A residency,
+                <span className="block text-gold italic leading-[1.1] pb-1">not a booking.</span>
               </h2>
-            </div>
-
-            {isLoadingExperiences ? (
-              /* Skeletons mirror the real grid shape rather than spinning. */
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2 aspect-[16/10] bg-[var(--surface-sunken)] animate-pulse rounded-card" />
-                <div className="grid gap-6">
-                  <div className="aspect-[4/3] bg-[var(--surface-sunken)] animate-pulse rounded-card" />
-                  <div className="aspect-[4/3] bg-[var(--surface-sunken)] animate-pulse rounded-card" />
-                </div>
-              </div>
-            ) : experiences.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {experiences.slice(0, 3).map((exp: any, index: number) => (
-                  <Link
-                    key={exp.id}
-                    to={`/experience/${exp.id}`}
-                    className={`group block ${index === 0 ? 'md:col-span-2 md:row-span-2' : ''}`}
-                  >
-                    <div className={`relative overflow-hidden rounded-card bg-[var(--surface-sunken)] ${
-                      index === 0 ? 'aspect-[16/10]' : 'aspect-[4/3]'
-                    }`}>
-                      <img
-                        src={exp.image}
-                        alt={exp.title}
-                        loading={index === 0 ? 'eager' : 'lazy'}
-                        className="w-full h-full object-cover transition-transform duration-[900ms] ease-entrance group-hover:scale-[1.04]"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-navy/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    </div>
-                    <div className="mt-5">
-                      <p className="text-sm text-[var(--text-secondary)]">{exp.category}</p>
-                      <h3 className={`font-serif text-[var(--text-primary)] mt-1 group-hover:text-gold-700 dark:group-hover:text-gold-300 transition-colors duration-300 ${
-                        index === 0 ? 'text-2xl md:text-3xl' : 'text-xl'
-                      }`}>
-                        {exp.title}
-                      </h3>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              /* Composed empty state that still points somewhere useful. */
-              <div className="border border-[var(--border-subtle)] rounded-card px-8 py-20 text-center">
-                <p className="font-serif text-2xl text-[var(--text-primary)]">
-                  No experiences published yet.
-                </p>
-                <p className="mt-3 text-[var(--text-secondary)] max-w-prose mx-auto">
-                  Artist residencies appear here once they are confirmed by a host hotel.
-                </p>
-                <Link to="/register" className="btn-secondary mt-8">
-                  Apply as an artist
+              <p className="mt-8 text-white/55 max-w-[46ch] mx-auto leading-relaxed">
+                Apply as an artist, or open your hotel to the programme.
+              </p>
+              <div className="mt-12 flex flex-wrap gap-4 justify-center">
+                <Link to="/register" className="btn-gold">
+                  Join now
+                </Link>
+                <Link
+                  to="/how-it-works"
+                  className="btn-base bg-transparent text-white border border-white/30 hover:bg-white hover:text-navy"
+                >
+                  How it works
                 </Link>
               </div>
-            )}
+            </div>
           </div>
         </section>
 
-        <footer className="bg-[var(--surface-sunken)] border-t border-[var(--border-subtle)]">
+        {/* The exchange, set as two facing columns. A different layout family
+            from the gallery above and the band below, and it states both sides
+            of the trade at once rather than as three identical cards. */}
+        <section ref={experiencesSectionRef} className="section-y" style={{ opacity: 1 }}>
+          <div className="shell">
+            <h2 className="font-serif text-white text-4xl md:text-5xl lg:text-6xl leading-[1.05] max-w-[16ch] mb-20">
+              One exchange, two sides.
+            </h2>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              <div className="lg:pr-16 lg:border-r border-white/10">
+                <p className="font-serif text-gold text-3xl md:text-4xl">For artists</p>
+                <p className="mt-6 text-white/60 leading-relaxed max-w-[42ch]">
+                  A room, a stage and the time to make something. You keep your fee and
+                  your work.
+                </p>
+                <ul className="mt-10 space-y-5">
+                  {[
+                    'Residencies in hotels that programme culture seriously',
+                    'No commission taken on the artist side',
+                    'Travel and accommodation settled before you arrive',
+                  ].map((line) => (
+                    <li key={line} className="flex gap-4 text-white/80">
+                      <span aria-hidden="true" className="mt-2.5 h-px w-6 shrink-0 bg-gold" />
+                      <span className="leading-relaxed">{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-16 lg:mt-0 lg:pl-16">
+                <p className="font-serif text-gold text-3xl md:text-4xl">For hotels</p>
+                <p className="mt-6 text-white/60 leading-relaxed max-w-[42ch]">
+                  A cultural programme without an agency, a producer or a season of
+                  planning.
+                </p>
+                <ul className="mt-10 space-y-5">
+                  {[
+                    'Vetted artists across music, visual art and performance',
+                    'One credit balance covers every booking',
+                    'Dates you control, cancelled or confirmed in a click',
+                  ].map((line) => (
+                    <li key={line} className="flex gap-4 text-white/80">
+                      <span aria-hidden="true" className="mt-2.5 h-px w-6 shrink-0 bg-gold" />
+                      <span className="leading-relaxed">{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer className="border-t border-white/10">
           <div className="shell py-20">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-16">
               <div className="col-span-2 md:col-span-1">
                 <img
                   src={getLogoUrl('transparent')}
                   alt="Travel Art"
-                  className="h-10 w-auto dark:invert dark:brightness-0 dark:contrast-200"
+                  className="h-9 w-auto brightness-0 invert"
                 />
-                <p className="mt-5 text-sm text-[var(--text-secondary)] max-w-[28ch]">
+                <p className="mt-5 text-sm text-white/50 max-w-[28ch]">
                   Artist residencies inside luxury hotels.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-sans text-sm font-semibold text-[var(--text-primary)] mb-5">
+                <h3 className="font-sans text-sm font-semibold text-white mb-5">
                   Programme
                 </h3>
-                <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
-                  <li><Link to="/register" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Join now</Link></li>
-                  <li><Link to="/login" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Sign in</Link></li>
-                  <li><Link to="/pricing" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Pricing</Link></li>
+                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/register" className="hover:text-gold transition-colors">Join now</Link></li>
+                  <li><Link to="/login" className="hover:text-gold transition-colors">Sign in</Link></li>
+                  <li><Link to="/pricing" className="hover:text-gold transition-colors">Pricing</Link></li>
                 </ul>
               </div>
 
               <div>
-                <h3 className="font-sans text-sm font-semibold text-[var(--text-primary)] mb-5">
+                <h3 className="font-sans text-sm font-semibold text-white mb-5">
                   Discover
                 </h3>
-                <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
-                  <li><Link to="/about" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">About</Link></li>
-                  <li><Link to="/how-it-works" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">How it works</Link></li>
-                  <li><Link to="/experiences" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Experiences</Link></li>
+                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/about" className="hover:text-gold transition-colors">About</Link></li>
+                  <li><Link to="/how-it-works" className="hover:text-gold transition-colors">How it works</Link></li>
+                  <li><Link to="/experiences" className="hover:text-gold transition-colors">Experiences</Link></li>
                 </ul>
               </div>
 
               <div>
-                <h3 className="font-sans text-sm font-semibold text-[var(--text-primary)] mb-5">
+                <h3 className="font-sans text-sm font-semibold text-white mb-5">
                   Legal
                 </h3>
-                <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
-                  <li><Link to="/terms" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Terms</Link></li>
-                  <li><Link to="/privacy" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Privacy</Link></li>
-                  <li><Link to="/cookies" className="hover:text-gold-700 dark:hover:text-gold-300 transition-colors">Cookies</Link></li>
+                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/terms" className="hover:text-gold transition-colors">Terms</Link></li>
+                  <li><Link to="/privacy" className="hover:text-gold transition-colors">Privacy</Link></li>
+                  <li><Link to="/cookies" className="hover:text-gold transition-colors">Cookies</Link></li>
                 </ul>
               </div>
             </div>
 
-            <p className="text-sm text-[var(--text-secondary)] pt-8 border-t border-[var(--border-subtle)]">
-              © {new Date().getFullYear()} Travel Art
+            <p className="text-sm text-white/40 pt-8 border-t border-white/10">
+              &copy; {new Date().getFullYear()} Travel Art
             </p>
           </div>
         </footer>
