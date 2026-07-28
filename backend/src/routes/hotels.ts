@@ -267,6 +267,84 @@ router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, 
   });
 }));
 
+// Get current user's hotel profile.
+// MUST stay above `/:id`, otherwise Express matches `/me` as an id and 404s.
+router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const hotel = await prisma.hotel.findUnique({
+    where: { userId: req.user!.id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          country: true,
+          createdAt: true
+        }
+      },
+      availabilities: {
+        where: {
+          dateFrom: { gte: new Date() }
+        },
+        orderBy: { dateFrom: 'asc' }
+      }
+    }
+  });
+
+  if (!hotel) {
+    throw new CustomError('Hotel profile not found', 404);
+  }
+
+  // Parse JSON fields
+  let location = null;
+  let images = [];
+  let performanceSpots = [];
+  let rooms = [];
+
+  if (hotel.location) {
+    try {
+      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
+    } catch (e) {
+      location = null;
+    }
+  }
+
+  if (hotel.images) {
+    try {
+      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
+    } catch (e) {
+      images = [];
+    }
+  }
+
+  if (hotel.performanceSpots) {
+    try {
+      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
+    } catch (e) {
+      performanceSpots = [];
+    }
+  }
+
+  if (hotel.rooms) {
+    try {
+      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
+    } catch (e) {
+      rooms = [];
+    }
+  }
+
+  res.json({
+    success: true,
+    data: {
+      ...hotel,
+      location,
+      images,
+      performanceSpots,
+      rooms
+    }
+  });
+}));
+
 // Get hotel profile
 router.get('/:id', asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -340,83 +418,6 @@ router.get('/:id', asyncHandler(async (req, res) => {
       images: images,
       performanceSpots: performanceSpots,
       rooms: rooms
-    }
-  });
-}));
-
-// Get current user's hotel profile
-router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const hotel = await prisma.hotel.findUnique({
-    where: { userId: req.user!.id },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          country: true,
-          createdAt: true
-        }
-      },
-      availabilities: {
-        where: {
-          dateFrom: { gte: new Date() }
-        },
-        orderBy: { dateFrom: 'asc' }
-      }
-    }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel profile not found', 404);
-  }
-
-  // Parse JSON fields
-  let location = null;
-  let images = [];
-  let performanceSpots = [];
-  let rooms = [];
-  
-  if (hotel.location) {
-    try {
-      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch (e) {
-      location = null;
-    }
-  }
-  
-  if (hotel.images) {
-    try {
-      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch (e) {
-      images = [];
-    }
-  }
-  
-  if (hotel.performanceSpots) {
-    try {
-      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch (e) {
-      performanceSpots = [];
-    }
-  }
-  
-  if (hotel.rooms) {
-    try {
-      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch (e) {
-      rooms = [];
-    }
-  }
-
-  res.json({
-    success: true,
-    data: {
-      ...hotel,
-      location,
-      images,
-      performanceSpots,
-      rooms
     }
   });
 }));

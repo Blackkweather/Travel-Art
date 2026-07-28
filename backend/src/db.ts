@@ -17,20 +17,6 @@ const getDatabaseUrl = () => {
   // Check environment variable first (required for production)
   let envUrl = process.env.DATABASE_URL;
   if (envUrl) {
-    // If using Supabase direct connection (IPv6-only), try to use pooler instead
-    if (envUrl.includes('db.rtvtzyjlbtgnvzzqxzxv.supabase.co')) {
-      // Extract password from original URL
-      const urlMatch = envUrl.match(/postgres(ql)?:\/\/postgres:([^@]+)@/);
-      const password = urlMatch ? encodeURIComponent(decodeURIComponent(urlMatch[2])) : 'Trvael69120Arts%3B';
-      const projectRef = 'rtvtzyjlbtgnvzzqxzxv';
-      
-      // Try Session Pooler (port 5432) - supports prepared statements
-      // Try different regions - user can override with POOLER_REGION env var
-      const region = process.env.POOLER_REGION || 'us-east-1';
-      // Session mode pooler (port 5432) - IPv4 compatible with increased connection limit
-      envUrl = `postgres://postgres.${projectRef}:${password}@aws-0-${region}.pooler.supabase.com:5432/postgres?sslmode=require`;
-    }
-    
     // Increase connection limit if it's too low (remove or increase connection_limit=1)
     // Supabase pooler supports up to 15 connections by default
     if (envUrl.includes('connection_limit=1')) {
@@ -98,10 +84,8 @@ async function initializeDatabase() {
     // Check if it's a pooler authentication error
     if (error.message.includes('Tenant or user not found') || error.message.includes('FATAL')) {
       if (dbUrl?.includes('pooler.supabase.com')) {
-        console.error('\n⚠️  Pooler connection failed. Possible issues:');
-        console.error('1. Wrong region - Try setting POOLER_REGION env var (e.g., eu-west-1, ap-southeast-1)');
-        console.error('2. Pooler not enabled - Enable Session Pooler in Supabase Dashboard');
-        console.error('3. Get exact connection string from: https://supabase.com/dashboard/project/rtvtzyjlbtgnvzzqxzxv/settings/database');
+        console.error('\n⚠️  Pooler connection failed. Check that DATABASE_URL points at the');
+        console.error('   connection string shown in your database provider dashboard.');
         console.error('\nCurrent connection string:', dbUrl.replace(/:[^:@]+@/, ':****@'));
       }
     }
@@ -143,10 +127,12 @@ export function isUsingPrisma(): boolean {
 }
 
 // Get user by email using Prisma
+// Registration stores emails lowercased, so lookups must be case-insensitive -
+// otherwise anyone who signed up with capitals can never log back in.
 export async function getUserByEmail(email: string) {
   await initializeDatabase();
-  const user = await prisma.user.findUnique({
-    where: { email },
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: email.toLowerCase().trim(), mode: 'insensitive' } },
     include: {
       artist: true,
       hotel: true,

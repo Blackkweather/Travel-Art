@@ -79,7 +79,6 @@ dist
 
 # Gatsby files
 .cache/
-public
 
 # Storybook build outputs
 .out
@@ -113,5 +112,11 @@ docker-compose.yml
 .dockerignore
 
 # Prisma
+# NOTE: migrations MUST stay tracked - `prisma migrate deploy` needs them.
 prisma/dev.db
-prisma/migrations/
+*.db.backup
+*.db-journal
+
+# Never commit data exports or vendored binaries
+*.csv
+*.exe

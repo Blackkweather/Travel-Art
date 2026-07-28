@@ -5,10 +5,29 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+
+// A missing JWT_SECRET in production would silently fall back to a known
+// constant, making every issued token forgeable. Fail loudly instead.
+const resolveJwtSecret = (): string => {
+  const secret = process.env.JWT_SECRET;
+  if (secret && secret.length >= 32) return secret;
+
+  if (nodeEnv === 'production') {
+    throw new Error(
+      'JWT_SECRET must be set to a value of at least 32 characters in production.'
+    );
+  }
+
+  if (secret) return secret;
+  console.warn('⚠️  JWT_SECRET is not set - using an insecure development-only secret.');
+  return 'development-only-insecure-secret-do-not-use-in-production';
+};
+
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
-  jwtSecret: process.env.JWT_SECRET || 'fallback-secret-key',
+  nodeEnv,
+  jwtSecret: resolveJwtSecret(),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   // For SQLite (dev), use file: protocol. For PostgreSQL (prod), use postgresql://
@@ -28,8 +47,8 @@ export const config = {
   fromEmail: process.env.FROM_EMAIL || 'noreply@travelart.com',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  clerkSecretKey: process.env.CLERK_SECRET_KEY || '',
-  clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY || '',
-  clerkWebhookSecret: process.env.CLERK_WEBHOOK_SECRET || '',
+  // Regex matching additional allowed CORS origins, e.g. Vercel preview URLs:
+  // ^https://travel-art-[a-z0-9-]+\.vercel\.app$
+  previewOriginPattern: process.env.PREVIEW_ORIGIN_PATTERN,
 };
 

@@ -7,9 +7,6 @@ import fs from 'fs';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
-import { clerkRoutes } from './routes/clerk';
-import { clerkWebhookRoutes } from './routes/clerk-webhook';
-import { quickAuthRoutes } from './routes/quick-auth';
 import { artistRoutes } from './routes/artists';
 import { hotelRoutes } from './routes/hotels';
 import { adminRoutes } from './routes/admin';
@@ -58,9 +55,9 @@ app.use(helmet({
     },
   },
 }));
-// CORS configuration - allow multiple origins for flexibility
-const allowedOrigins = [
-  config.corsOrigin,
+// CORS configuration - explicit allowlist. Because credentials are enabled, an
+// unrestricted origin would let any site issue authenticated cross-origin calls.
+const devOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002',
@@ -68,18 +65,29 @@ const allowedOrigins = [
   'http://localhost:5173', // Vite default port
 ];
 
+const allowedOrigins = [
+  config.corsOrigin,
+  config.frontendUrl,
+  ...(config.nodeEnv === 'production' ? [] : devOrigins),
+].filter((origin): origin is string => Boolean(origin));
+
+// Vercel preview deployments get a generated subdomain per commit.
+const isAllowedOrigin = (origin: string): boolean => {
+  if (allowedOrigins.includes(origin)) return true;
+  return config.previewOriginPattern
+    ? new RegExp(config.previewOriginPattern).test(origin)
+    : false;
+};
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Requests with no Origin header (curl, server-to-server, same-origin
+    // navigations) are not subject to the browser's cross-origin rules.
     if (!origin) return callback(null, true);
-    
-    // Allow if origin is in the allowed list
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    // In production, also allow same-origin requests
-    callback(null, true);
+
+    if (isAllowedOrigin(origin)) return callback(null, true);
+
+    callback(new Error(`Origin ${origin} is not allowed by CORS`));
   },
   credentials: true
 }));
@@ -93,8 +101,6 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Body parsing middleware
-// Note: Clerk webhook needs raw body for signature verification
-app.use('/api/webhooks/clerk', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -153,9 +159,6 @@ app.get('/api/health', async (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
-app.use('/api/auth/clerk', clerkRoutes);
-app.use('/api/webhooks/clerk', clerkWebhookRoutes);
-app.use('/api/quick-auth', quickAuthRoutes);
 app.use('/api/artists', artistRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/admin', adminRoutes);
@@ -249,8 +252,10 @@ process.on('SIGTERM', async () => {
 });
 
 const PORT = config.port;
-// Only start server if not in test mode
-if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
+// Only start a listener for a long-running process. Under Vercel the exported
+// app is invoked as a request handler, and binding a port would be wrong.
+const isServerless = Boolean(process.env.VERCEL);
+if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID && !isServerless) {
   const startTime = Date.now();
   app.listen(PORT, () => {
     const startupTime = Date.now() - startTime;
@@ -262,4 +267,5 @@ if (process.env.NODE_ENV !== 'test' && !process.env.JEST_WORKER_ID) {
 }
 
 export { app };
+export default app;
 

@@ -16,7 +16,6 @@
         "lint:fix": "eslint . --ext ts,tsx --fix"
     },
     "dependencies": {
-        "@clerk/clerk-react": "^5.59.2",
         "@iconify/react": "^6.0.2",
         "@radix-ui/react-avatar": "^1.0.4",
         "@radix-ui/react-dialog": "^1.0.5",
@@ -51,7 +50,6 @@
         "tailwind-merge": "^2.0.0",
         "tailwindcss": "^3.4.18",
         "three": "^0.182.0",
-        "travel-art": "file:..",
         "zustand": "^4.4.7"
     },
     "devDependencies": {

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { createHash } from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
@@ -9,6 +10,11 @@ import { getUserByEmail, createUser, initializeDatabase } from '../simple-db';
 import { generateUniqueReferralCode } from '../utils/referralCode';
 
 const router = Router();
+
+// Short, non-reversible marker of a password hash, used to make reset tokens
+// single-use without adding a table.
+const passwordFingerprint = (passwordHash: string): string =>
+  createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
 
 // Validation schemas
 const registerSchema = z.object({
@@ -308,11 +314,9 @@ router.post('/login', asyncHandler(async (req, res) => {
     if (error.name === 'ZodError') {
       throw new CustomError('Invalid request data.', 400);
     }
-    // Handle other errors
+    // Handle other errors - never surface internal details to the client
     console.error('Login error:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    throw new CustomError(`Login failed: ${error.message || 'Unknown error'}. Please try again later.`, 500);
+    throw new CustomError('Login failed. Please try again later.', 500);
   }
 }));
 
@@ -359,9 +363,11 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
 
   // Always return success for security (don't reveal if email exists)
   if (user) {
-    // Generate reset token (JWT with short expiry)
+    // Generate reset token (JWT with short expiry). Binding the token to the
+    // current password hash makes it single-use: resetting the password
+    // changes the hash and invalidates any outstanding token.
     const resetToken = jwt.sign(
-      { userId: user.id, type: 'password-reset' },
+      { userId: user.id, type: 'password-reset', pwh: passwordFingerprint(user.passwordHash) },
       config.jwtSecret,
       { expiresIn: '1h' }
     );
@@ -389,11 +395,11 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
       });
     }
 
-    // TODO: In production, send email with reset link
+    // TODO: send the reset email in production.
     // Example: await sendEmail(user.email, 'Password Reset', { resetLink })
-    // For now, log in production too (remove in final version)
-    console.log(`Password reset requested for: ${email}`);
-    console.log(`Reset link: ${resetLink}`);
+    // The link is deliberately NOT logged - anyone with log access could use it
+    // to take over the account.
+    console.log(`Password reset requested for user ${user.id}`);
   }
 
   res.json({
@@ -429,6 +435,12 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
     
     if (!user) {
       throw new CustomError('User not found.', 404);
+    }
+
+    // Reject tokens that were already used (the password has changed since the
+    // token was issued) or that predate this check.
+    if (decoded.pwh !== passwordFingerprint(user.passwordHash)) {
+      throw new CustomError('Invalid or expired token.', 400);
     }
 
     // Hash new password

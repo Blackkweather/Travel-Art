@@ -1,11 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import { verifyToken } from '@clerk/backend';
 import { config } from '../config';
+import { prisma } from '../db';
 import { CustomError } from './errorHandler';
-
-const prisma = new PrismaClient();
 
 export interface AuthRequest<
   P = any,
@@ -33,40 +30,6 @@ export const authenticate = async (
       throw new CustomError('Access denied. No token provided.', 401);
     }
 
-    // Try Clerk authentication first if configured
-    if (config.clerkSecretKey) {
-      try {
-        // Verify Clerk session token using verifyToken function
-        // verifyToken expects the token and secretKey option
-        const sessionClaims = await verifyToken(token, {
-          secretKey: config.clerkSecretKey
-        });
-        
-        if (sessionClaims && typeof sessionClaims === 'object' && 'sub' in sessionClaims) {
-          // Find user by Clerk ID (sub is the user ID in Clerk)
-          const user = await prisma.user.findFirst({
-            where: { 
-              clerkId: sessionClaims.sub as string,
-              isActive: true
-            },
-            select: { id: true, role: true, email: true, isActive: true }
-          });
-
-          if (user) {
-            req.user = user;
-            return next();
-          }
-        }
-      } catch (clerkError: any) {
-        // If Clerk verification fails, try JWT (backward compatibility)
-        // Only log if it's not a token format error (expected for JWT tokens)
-        if (!clerkError?.message?.includes('Invalid') && !clerkError?.message?.includes('token')) {
-          console.log('Clerk verification failed, trying JWT:', clerkError.message);
-        }
-      }
-    }
-
-    // Fallback to JWT authentication
     try {
       const decoded = jwt.verify(token, config.jwtSecret) as any;
       
