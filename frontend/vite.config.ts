@@ -1,17 +1,10 @@
 import type { UserConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 import path from 'path'
-
-// Dynamic import to handle missing packages gracefully
-let reactPlugin: any = null
-try {
-  reactPlugin = require('@vitejs/plugin-react')
-} catch (e) {
-  console.warn('@vitejs/plugin-react not found, using basic config')
-}
 
 // https://vitejs.dev/config/
 export default {
-  plugins: reactPlugin ? [reactPlugin()] : [],
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
