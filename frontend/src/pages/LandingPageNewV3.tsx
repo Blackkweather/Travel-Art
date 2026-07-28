@@ -46,8 +46,34 @@ export default function LandingPageNewV3() {
   
   const weLovetags = ['MUSIC', 'ART', 'TRAVEL', 'LUXURY', 'CULTURE', 'EXPERIENCE', 'CREATIVITY', 'PERFORMANCE']
 
-  // Default slides - only used as fallback if no experiences in database
-  const defaultSlides: Slide[] = []
+  // The hero is a full-viewport section, so an empty slide list renders as a
+  // black void. These fallbacks keep the landing page presentable whenever the
+  // API is unreachable or the catalogue is still too small to fill the
+  // slideshow. Imagery is served from the Unsplash CDN, which the backend CSP
+  // already allows.
+  const defaultSlides: Slide[] = [
+    {
+      id: 'fallback-1',
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=80&fit=crop',
+      title: 'BETWEEN SHADOW',
+      subtitle: 'AND LIGHT',
+      category: 'Experience'
+    },
+    {
+      id: 'fallback-2',
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=80&fit=crop',
+      title: 'WHERE ART',
+      subtitle: 'MEETS LUXURY',
+      category: 'Performance'
+    },
+    {
+      id: 'fallback-3',
+      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&q=80&fit=crop',
+      title: 'STAGES WITHOUT',
+      subtitle: 'BORDERS',
+      category: 'Travel'
+    }
+  ]
 
   // Header scroll effect
   useEffect(() => {
@@ -108,8 +134,9 @@ export default function LandingPageNewV3() {
           })
           setSlides(experienceSlides)
         } else {
-          // If less than 3 experiences, show empty state or minimal slides
-          setSlides([])
+          // Too few experiences to fill the slideshow - fall back rather than
+          // leaving the hero blank.
+          setSlides(defaultSlides)
         }
       } catch (error: any) {
         console.error('Failed to fetch experiences:', error)
