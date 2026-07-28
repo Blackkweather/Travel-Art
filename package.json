@@ -27,7 +27,6 @@
     "lint:frontend": "npm --prefix frontend run lint"
   },
   "devDependencies": {
-    "@vercel/config": "^0.5.5",
     "concurrently": "^8.2.2"
   },
   "dependencies": {

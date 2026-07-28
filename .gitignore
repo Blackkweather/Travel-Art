@@ -120,3 +120,5 @@ prisma/dev.db
 # Never commit data exports or vendored binaries
 *.csv
 *.exe
+.vercel
+.env*
