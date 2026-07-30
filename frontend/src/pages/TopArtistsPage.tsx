@@ -88,7 +88,7 @@ const TopArtistsPage: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[#08101D]">
       {/* Header */}
       <motion.nav 
         className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
@@ -149,7 +149,7 @@ const TopArtistsPage: React.FC = () => {
                 Sign In
               </Link>
             </motion.div>
-            <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
+            <Link to="/register" className="bg-gold text-off-black px-6 py-2 rounded-card font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
               Join
             </Link>
           </div>
@@ -173,7 +173,7 @@ const TopArtistsPage: React.FC = () => {
               Top Performing
               <span className="block text-gold">Artists</span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-white/65 mb-8 max-w-3xl mx-auto">
               Discover the world's most talented artists who create magical moments on hotel rooftops and luxury venues.
             </p>
           </motion.div>
@@ -181,7 +181,7 @@ const TopArtistsPage: React.FC = () => {
       </div>
 
       {/* Stats Section */}
-      <div className="bg-gray-50 py-16">
+      <div className="bg-[#0C1526] py-16">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <motion.div
@@ -189,11 +189,11 @@ const TopArtistsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-navy" />
+              <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalArtists || 0}</h3>
-              <p className="text-gray-600">Verified Artists</p>
+              <h3 className="text-3xl font-bold text-white mb-2">{stats.totalArtists || 0}</h3>
+              <p className="text-white/60">Verified Artists</p>
             </motion.div>
 
             <motion.div
@@ -201,11 +201,11 @@ const TopArtistsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-navy" />
+              <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                <Star className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">{stats.averageRating.toFixed(1)}</h3>
-              <p className="text-gray-600">Average Rating</p>
+              <h3 className="text-3xl font-bold text-white mb-2">{stats.averageRating.toFixed(1)}</h3>
+              <p className="text-white/60">Average Rating</p>
             </motion.div>
 
             <motion.div
@@ -213,11 +213,11 @@ const TopArtistsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-navy" />
+              <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                <Calendar className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalBookings || 0}</h3>
-              <p className="text-gray-600">Successful Bookings</p>
+              <h3 className="text-3xl font-bold text-white mb-2">{stats.totalBookings || 0}</h3>
+              <p className="text-white/60">Successful Bookings</p>
             </motion.div>
 
             <motion.div
@@ -225,11 +225,11 @@ const TopArtistsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-navy" />
+              <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalHotels || 0}</h3>
-              <p className="text-gray-600">Luxury Hotels</p>
+              <h3 className="text-3xl font-bold text-white mb-2">{stats.totalHotels || 0}</h3>
+              <p className="text-white/60">Luxury Hotels</p>
             </motion.div>
           </div>
         </div>
@@ -238,10 +238,10 @@ const TopArtistsPage: React.FC = () => {
       {/* Artists Grid */}
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-serif font-bold text-navy mb-6 gold-underline">
+          <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
             Featured Artists
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-white/60 max-w-3xl mx-auto">
             Meet our top-performing artists who specialize in creating unforgettable rooftop experiences
           </p>
         </div>
@@ -253,8 +253,8 @@ const TopArtistsPage: React.FC = () => {
         ) : error ? (
           <div className="text-center py-20">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-navy mb-2">Failed to Load Artists</h3>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <h3 className="text-2xl font-semibold text-white mb-2">Failed to Load Artists</h3>
+            <p className="text-white/60 mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary"
@@ -264,9 +264,9 @@ const TopArtistsPage: React.FC = () => {
           </div>
         ) : topArtists.length === 0 ? (
           <div className="text-center py-20">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-navy mb-2">No Artists Found</h3>
-            <p className="text-gray-600 mb-6">
+            <Users className="w-16 h-16 text-white/40 mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold text-white mb-2">No Artists Found</h3>
+            <p className="text-white/60 mb-6">
               Check back soon to discover our top-performing artists.
             </p>
             <Link to="/register" className="btn-primary">
@@ -299,15 +299,15 @@ const TopArtistsPage: React.FC = () => {
                         e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
                       }}
                     />
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
+                    <div className="absolute top-4 right-4 bg-[var(--surface-raised)]/90 backdrop-blur-sm px-3 py-2 rounded-control flex items-center space-x-2">
                       <ArtistRank tier={getQuickRank(rating, bookings)} size="sm" />
-                      <span className="text-sm font-semibold text-navy">{rating.toFixed(1)}</span>
+                      <span className="text-sm font-semibold text-white">{rating.toFixed(1)}</span>
                     </div>
                   </div>
                   
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xl font-serif font-semibold text-navy">
+                      <h3 className="text-xl font-serif font-semibold text-white">
                         {artist.user.name}
                       </h3>
                       {artist.ratingBadge && (
@@ -322,16 +322,16 @@ const TopArtistsPage: React.FC = () => {
                       <p className="text-gold font-medium mb-1">{artist.discipline}</p>
                     )}
                     {artist.ratingBadge && (
-                      <p className="text-xs text-gray-500 mb-3">
+                      <p className="text-xs text-white/45 mb-3">
                         {artist.ratingBadge}
                       </p>
                     )}
-                    <p className="text-gray-600 text-sm mb-4 flex items-center">
+                    <p className="text-white/60 text-sm mb-4 flex items-center">
                       <MapPin className="w-4 h-4 mr-2" />
                       {formatLocation(artist.user.country)}
                     </p>
 
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <div className="flex items-center justify-between text-sm text-white/45 mb-4">
                       <span className="flex items-center">
                         <Calendar className="w-4 h-4 mr-1" />
                         {bookings} {bookings === 1 ? 'booking' : 'bookings'}
@@ -367,7 +367,7 @@ const TopArtistsPage: React.FC = () => {
             <h2 className="text-4xl font-serif font-bold mb-6">
               Ready to Perform?
             </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-white/65 mb-8 max-w-2xl mx-auto">
               Join our community of talented artists and start performing at the world's most luxurious hotels.
             </p>
             <a href="/register" className="btn-primary text-lg px-8 py-4">

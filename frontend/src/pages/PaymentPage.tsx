@@ -183,11 +183,11 @@ const PaymentPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[#08101D]">
       <div className="container mx-auto px-6 py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">Checkout</h1>
-          <p className="text-gray-600">Complete your billing details and choose a payment method.</p>
+          <h1 className="text-3xl font-serif font-bold text-white mb-2 gold-underline">Checkout</h1>
+          <p className="text-white/60">Complete your billing details and choose a payment method.</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -213,7 +213,7 @@ const PaymentPage: React.FC = () => {
                     transition={{ duration: 0.2 }}
                     className="card-luxury"
                   >
-                    <h3 className="text-lg font-serif font-semibold text-navy mb-4 flex items-center gap-2">
+                    <h3 className="text-lg font-serif font-semibold text-white mb-4 flex items-center gap-2">
                       <CardIcon className="w-5 h-5 text-gold" />
                       Card Details
                     </h3>
@@ -283,12 +283,12 @@ const PaymentPage: React.FC = () => {
                     transition={{ duration: 0.2 }}
                     className="card-luxury"
                   >
-                    <h3 className="text-lg font-serif font-semibold text-navy mb-4">PayPal</h3>
-                    <p className="text-sm text-gray-600 mb-4">You will be redirected to PayPal to complete your purchase.</p>
+                    <h3 className="text-lg font-serif font-semibold text-white mb-4">PayPal</h3>
+                    <p className="text-sm text-white/60 mb-4">You will be redirected to PayPal to complete your purchase.</p>
                     <button
                       type="button"
                       onClick={() => handleSubmit(new Event('submit') as any)}
-                      className="w-full bg-[#ffc439] hover:bg-[#f2b400] text-navy font-semibold py-3 rounded-lg transition-colors"
+                      className="w-full bg-[#ffc439] hover:bg-[#f2b400] text-white font-semibold py-3 rounded-card transition-colors"
                       aria-label="Pay with PayPal"
                     >
                       Continue to PayPal
@@ -298,7 +298,7 @@ const PaymentPage: React.FC = () => {
               </AnimatePresence>
 
               <div className="card-luxury">
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                <div className="flex items-center gap-2 text-sm text-white/60 mb-4">
                   <Shield className="w-4 h-4 text-gold" />
                   <span>Payments are secured and encrypted.</span>
                 </div>

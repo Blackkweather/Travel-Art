@@ -89,12 +89,12 @@ const HotelDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cream">
+      <div className="min-h-screen bg-[#08101D]">
         <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading hotel details...</p>
+            <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
+            <p className="text-white/60">Loading hotel details...</p>
           </div>
         </div>
         <Footer />
@@ -104,11 +104,11 @@ const HotelDetailsPage: React.FC = () => {
 
   if (!hotel) {
     return (
-      <div className="min-h-screen bg-cream">
+      <div className="min-h-screen bg-[#08101D]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl font-serif font-bold text-navy mb-4">Hotel Not Found</h1>
-          <p className="text-gray-600 mb-8">The hotel you're looking for doesn't exist.</p>
+          <h1 className="text-4xl font-serif font-bold text-white mb-4">Hotel Not Found</h1>
+          <p className="text-white/60 mb-8">The hotel you're looking for doesn't exist.</p>
           <Link to="/top-hotels" className="btn-primary">
             Back to Hotels
           </Link>
@@ -160,7 +160,7 @@ const HotelDetailsPage: React.FC = () => {
   const rating = hotel.rating || 0
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[#08101D]">
       <SimpleNavbar />
       
       {/* Hero Section */}
@@ -192,7 +192,7 @@ const HotelDetailsPage: React.FC = () => {
         </div>
         <Link
           to="/top-hotels"
-          className="absolute top-6 left-6 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-colors flex items-center gap-2"
+          className="absolute top-6 left-6 bg-[var(--surface-raised)]/20 backdrop-blur-sm text-white px-4 py-2 rounded-card hover:bg-[var(--surface-raised)]/30 transition-colors flex items-center gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Hotels
@@ -205,32 +205,32 @@ const HotelDetailsPage: React.FC = () => {
           <div className="lg:col-span-2">
             <ScrollAnimationWrapper animation="fade-up">
               <div className="card-luxury mb-8">
-              <h2 className="text-3xl font-serif font-bold text-navy mb-4 gold-underline">
+              <h2 className="text-3xl font-serif font-bold text-white mb-4 gold-underline">
                 About {hotel.name}
               </h2>
-              <p className="text-gray-600 text-lg leading-relaxed mb-6">
+              <p className="text-white/60 text-lg leading-relaxed mb-6">
                 {hotel.description || 'No description available.'}
               </p>
               
               <div className="grid grid-cols-2 gap-6 mb-6">
                 {rating > 0 && (
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center">
                       <Star className="w-6 h-6 text-gold" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Rating</p>
-                      <p className="text-xl font-bold text-navy">{rating.toFixed(1)}</p>
+                      <p className="text-sm text-white/45">Rating</p>
+                      <p className="text-xl font-bold text-white">{rating.toFixed(1)}</p>
                     </div>
                   </div>
                 )}
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Total Bookings</p>
-                    <p className="text-xl font-bold text-navy">{hotel.totalBookings || 0}</p>
+                    <p className="text-sm text-white/45">Total Bookings</p>
+                    <p className="text-xl font-bold text-white">{hotel.totalBookings || 0}</p>
                   </div>
                 </div>
               </div>
@@ -238,12 +238,12 @@ const HotelDetailsPage: React.FC = () => {
               {/* Performance Spots */}
               {performanceSpots.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-xl font-serif font-semibold text-navy mb-3">Performance Spots</h3>
+                  <h3 className="text-xl font-serif font-semibold text-white mb-3">Performance Spots</h3>
                   <div className="flex flex-wrap gap-2">
                     {performanceSpots.map((spot: any, index: number) => (
                       <span
                         key={index}
-                        className="px-4 py-2 bg-gold/20 text-gold rounded-full text-sm font-medium"
+                        className="px-4 py-2 bg-gold/20 text-gold rounded-control text-sm font-medium"
                       >
                         {typeof spot === 'string' ? spot : spot.name || spot}
                       </span>
@@ -258,7 +258,7 @@ const HotelDetailsPage: React.FC = () => {
             {performanceSpots.length > 0 && (
               <ScrollAnimationWrapper animation="fade-up" delay={0.1}>
                 <div className="card-luxury">
-                <h2 className="text-3xl font-serif font-bold text-navy mb-6 gold-underline">
+                <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
                   Performance Venues
                 </h2>
                 <div className="space-y-6">
@@ -269,14 +269,14 @@ const HotelDetailsPage: React.FC = () => {
                         key={index}
                         className="border-l-4 border-gold pl-6 py-4 bg-gold/5 rounded-r-lg"
                       >
-                        <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+                        <h3 className="text-xl font-serif font-semibold text-white mb-2">
                           {spotData.name || spotData.title || 'Performance Venue'}
                         </h3>
                         {spotData.description && (
-                          <p className="text-gray-600 mb-4">{spotData.description}</p>
+                          <p className="text-white/60 mb-4">{spotData.description}</p>
                         )}
                         {(spotData.time || spotData.capacity) && (
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                          <div className="flex flex-wrap gap-4 text-sm text-white/45">
                             {spotData.time && (
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4" />
@@ -304,20 +304,20 @@ const HotelDetailsPage: React.FC = () => {
           <div className="lg:col-span-1">
             <ScrollAnimationWrapper animation="slide-left" delay={0.2}>
               <div className="card-luxury sticky top-6">
-              <h3 className="text-2xl font-serif font-bold text-navy mb-6">Contact Information</h3>
+              <h3 className="text-2xl font-serif font-bold text-white mb-6">Contact Information</h3>
               
               <div className="space-y-4 mb-6">
                 {locationString && (
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-gold mt-1 flex-shrink-0" />
-                    <p className="text-gray-600">{locationString}</p>
+                    <p className="text-white/60">{locationString}</p>
                   </div>
                 )}
                 {/* Only show phone/email if there's a confirmed booking */}
                 {hasConfirmedBooking && hotel.contactPhone && !hotel.responsiblePhone && (
                   <div className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-gold flex-shrink-0" />
-                    <a href={`tel:${hotel.contactPhone}`} className="text-gray-600 hover:text-gold">
+                    <a href={`tel:${hotel.contactPhone}`} className="text-white/60 hover:text-gold">
                       {hotel.contactPhone}
                     </a>
                   </div>
@@ -325,13 +325,13 @@ const HotelDetailsPage: React.FC = () => {
                 {hasConfirmedBooking && hotel.user?.email && !hotel.responsibleEmail && (
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-gold flex-shrink-0" />
-                    <a href={`mailto:${hotel.user.email}`} className="text-gray-600 hover:text-gold">
+                    <a href={`mailto:${hotel.user.email}`} className="text-white/60 hover:text-gold">
                       {hotel.user.email}
                     </a>
                   </div>
                 )}
                 {!hasConfirmedBooking && user?.role === 'ARTIST' && (
-                  <div className="text-sm text-gray-500 italic">
+                  <div className="text-sm text-white/45 italic">
                     Contact information will be available after booking confirmation.
                   </div>
                 )}
@@ -339,7 +339,7 @@ const HotelDetailsPage: React.FC = () => {
 
               {/* Contact Hotel Buttons - Only show if confirmed booking */}
               {hasConfirmedBooking && (
-                <div className="border-t border-gray-200 pt-6 mb-6">
+                <div className="border-t border-white/10 pt-6 mb-6">
                   <HotelContactButtons
                     phoneNumber={hotel.responsiblePhone || hotel.contactPhone}
                     email={hotel.responsibleEmail || hotel.user?.email}
@@ -351,13 +351,13 @@ const HotelDetailsPage: React.FC = () => {
 
               {/* Performance Spots Summary */}
               {performanceSpots.length > 0 && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="text-lg font-serif font-semibold text-navy mb-4">Available Venues</h4>
+                <div className="border-t border-white/10 pt-6">
+                  <h4 className="text-lg font-serif font-semibold text-white mb-4">Available Venues</h4>
                   <div className="flex flex-wrap gap-2">
                     {performanceSpots.map((spot: any, index: number) => (
                       <span
                         key={index}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                        className="px-3 py-1 bg-[#0C1526] text-white/75 rounded-control text-sm"
                       >
                         {typeof spot === 'string' ? spot : spot.name || spot}
                       </span>
@@ -368,7 +368,7 @@ const HotelDetailsPage: React.FC = () => {
               
               {/* Action Buttons for Artists */}
               {user && user.role === 'ARTIST' && (
-                <div className="border-t border-gray-200 pt-6 mt-6 space-y-3">
+                <div className="border-t border-white/10 pt-6 mt-6 space-y-3">
                   {/* Only show contact button if there's a confirmed booking */}
                   {hasConfirmedBooking ? (
                     <a
@@ -379,8 +379,8 @@ const HotelDetailsPage: React.FC = () => {
                       Contact Hotel
                     </a>
                   ) : (
-                    <div className="w-full p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                      <p className="text-sm text-gray-600">
+                    <div className="w-full p-4 bg-[#0C1526] rounded-card border border-white/10 text-center">
+                      <p className="text-sm text-white/60">
                         Contact information will be available after booking confirmation.
                       </p>
                     </div>

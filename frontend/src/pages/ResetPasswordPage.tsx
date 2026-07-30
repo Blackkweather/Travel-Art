@@ -47,16 +47,16 @@ const ResetPasswordPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[#08101D]">
       <SimpleNavbar />
       
       {!token ? (
         <div className="flex items-center justify-center py-20 pt-32 px-4">
           <div className="text-center">
-            <h2 className="text-3xl font-serif font-bold text-navy mb-4">
+            <h2 className="text-3xl font-serif font-bold text-white mb-4">
               Invalid Reset Link
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-white/60 mb-4">
               This password reset link is invalid or has expired.
             </p>
             <Link to="/forgot-password" className="text-gold hover:text-gold-600 font-medium">
@@ -87,15 +87,15 @@ const ResetPasswordPage: React.FC = () => {
                   }}
                 />
                 <div id="logo-fallback-reset" className="hidden text-4xl font-serif font-bold">
-                  <span className="text-navy">TRAVEL</span>
+                  <span className="text-white">TRAVEL</span>
                   <span className="text-gold mx-2">+</span>
-                  <span className="text-navy">ART</span>
+                  <span className="text-white">ART</span>
                 </div>
               </div>
-              <h2 className="text-3xl font-serif font-bold text-navy gold-underline">
+              <h2 className="text-3xl font-serif font-bold text-white gold-underline">
                 Reset Password
               </h2>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-2 text-white/60">
                 Enter your new password below
               </p>
             </div>

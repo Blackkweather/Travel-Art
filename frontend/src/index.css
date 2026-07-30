@@ -1,4 +1,4 @@
-/* Self-hosted variable fonts. Loading these here rather than via a Google
+﻿/* Self-hosted variable fonts. Loading these here rather than via a Google
    Fonts <link> removes a render-blocking third-party request. */
 @import '@fontsource-variable/cormorant-garamond';
 @import '@fontsource-variable/outfit';
@@ -34,6 +34,18 @@
   --shadow-luxury: 0 24px 64px rgba(11, 31, 63, 0.18);
 
   --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Aliases for the older variable names still referenced further down this
+     file and in styles/registration.css. They resolve to the tokens above so
+     the legacy rules stay in step with the theme instead of silently
+     falling back to unstyled defaults. */
+  --primary-navy: var(--navy);
+  --gold-accent: var(--gold);
+  --cream: var(--surface);
+  --cream-bg: var(--surface);
+  --text-dark: var(--text-primary);
+  --border-light: var(--border-subtle);
+  --gradient-overlay: linear-gradient(135deg, rgba(11, 31, 63, 0.85) 0%, rgba(185, 152, 81, 0.18) 100%);
 }
 
 .dark {
@@ -159,7 +171,7 @@
   }
   
   .card-showcase {
-    @apply bg-white rounded-xl shadow-soft p-6 border border-gray-100 transition-all duration-300 hover:shadow-medium hover:scale-105;
+    @apply bg-[var(--surface-raised)] rounded-card shadow-soft p-6 border border-[var(--border-subtle)] transition-all duration-300 hover:shadow-medium;
   }
   
   .gold-underline {
@@ -171,24 +183,38 @@
     @apply absolute bottom-0 left-0 w-16 h-0.5 bg-gold;
   }
   
+  /* Defer to the tokens so shadows change with the theme instead of staying
+     tuned for a light background. */
   .shadow-soft {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-soft);
   }
-  
+
   .shadow-medium {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-medium);
   }
-  
+
   .shadow-luxury {
-    box-shadow: 0 25px 50px -12px rgba(11, 31, 63, 0.25);
+    box-shadow: var(--shadow-luxury);
   }
   
+  /* Inputs sit on a sunken surface so the field reads as a well rather than a
+     white box punched into a dark page. Placeholder contrast is deliberately
+     kept above the AA floor. */
   .form-input {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors;
+    @apply w-full px-4 py-3 rounded-card transition-colors
+           bg-[var(--surface-sunken)] text-[var(--text-primary)]
+           border border-[var(--border-strong)]
+           placeholder:text-[var(--text-secondary)]
+           focus:border-gold focus:ring-2 focus:ring-gold/40;
   }
-  
+
   .form-label {
-    @apply block text-sm font-medium text-navy mb-2;
+    @apply block text-sm font-medium text-[var(--text-primary)] mb-2;
+  }
+
+  /* Error text must clear AA on the dark surface; red-600 does not. */
+  .form-error {
+    @apply mt-1 text-sm text-red-400;
   }
   
   .hero-title {
@@ -200,11 +226,11 @@
   }
   
   .section-title {
-    @apply text-4xl md:text-5xl font-serif font-bold text-navy mb-6 text-center;
+    @apply text-4xl md:text-5xl font-serif text-[var(--text-primary)] mb-6;
   }
-  
+
   .section-subtitle {
-    @apply text-xl text-gray-600 max-w-3xl mx-auto mb-12 text-center leading-relaxed;
+    @apply text-xl text-[var(--text-secondary)] max-w-prose mb-12 leading-relaxed;
   }
   
   .compass-scroll {
@@ -447,7 +473,7 @@ h6 {
 
 /* Card Styles */
 .card {
-  background: white;
+  background: var(--surface-raised);
   border-radius: 12px;
   padding: 24px;
   box-shadow: var(--shadow-soft);
@@ -461,7 +487,7 @@ h6 {
 }
 
 .card-luxury {
-  background: white;
+  background: var(--surface-raised);
   border-radius: 16px;
   padding: 32px;
   box-shadow: var(--shadow-large);
@@ -498,20 +524,28 @@ h6 {
   color: var(--text-dark);
 }
 
+/* This rule sits outside @layer, so it overrides the component class above.
+   It previously forced background-color: white, which on the dark theme meant
+   white text on a white field. */
 .form-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid var(--border-light);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background-color: white;
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.form-input::placeholder {
+  color: var(--text-secondary);
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--gold-accent);
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(185, 152, 81, 0.25);
 }
 
 .form-textarea {
@@ -521,7 +555,7 @@ h6 {
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background-color: white;
+  background-color: var(--surface-sunken);
   resize: vertical;
   min-height: 120px;
 }
@@ -559,7 +593,7 @@ h6 {
 }
 
 .compass-loader::before {
-  content: '🧭';
+  content: 'ðŸ§­';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1180,7 +1214,7 @@ h6 {
 
 /* Enhanced Card Styling - Always Classy Colors */
   .card-luxury {
-    background: #ffffff !important;
+    background: var(--surface-raised) !important;
     border: 1px solid rgba(201, 166, 60, 0.15) !important;
     border-radius: 1rem !important;
     padding: 1.5rem 2rem !important;
@@ -1224,7 +1258,7 @@ img[src*="logo-transparent.png"] {
 .search-container {
   position: relative;
   z-index: 2;
-  background: #fff;
+  background: var(--surface-raised);
   padding: 1.5rem;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -1259,7 +1293,7 @@ input[type="text"].search-input,
   outline: none;
   box-sizing: border-box;
   transition: all 0.3s ease;
-  background-color: #fff;
+  background-color: var(--surface-sunken);
 }
 
 input[type="search"]:focus,
@@ -1297,7 +1331,7 @@ select.form-input {
   font-size: 1rem;
   outline: none;
   box-sizing: border-box;
-  background-color: #fff;
+  background-color: var(--surface-sunken);
   transition: all 0.3s ease;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");

@@ -208,7 +208,7 @@ const TravelerExperiencesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[#08101D]">
         <SimpleNavbar />
       
       {/* Hero Section */}
@@ -240,23 +240,23 @@ const TravelerExperiencesPage: React.FC = () => {
       </section>
 
       {/* Interactive Map Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-[var(--surface-raised)]">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl font-serif font-bold text-navy mb-4">
+            <h2 className="text-4xl font-serif font-bold text-white mb-4">
               Explore Experiences Worldwide
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <p className="text-white/60 max-w-2xl mx-auto">
               Click on locations to discover upcoming performances and artist residencies
             </p>
           </motion.div>
 
           {/* Interactive Map */}
-          <div className="relative rounded-xl overflow-hidden mb-8 shadow-lg" style={{ height: '500px' }}>
+          <div className="relative rounded-card overflow-hidden mb-8 shadow-lg" style={{ height: '500px' }}>
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
@@ -282,10 +282,10 @@ const TravelerExperiencesPage: React.FC = () => {
                   >
                     <Popup>
                       <div className="p-2">
-                        <h3 className="font-semibold text-navy text-sm mb-1">{exp.location.city}</h3>
-                        <p className="text-xs text-gray-600 mb-2">{exp.title}</p>
-                        <p className="text-xs text-gray-500">{exp.artist} at {exp.hotel}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <h3 className="font-semibold text-white text-sm mb-1">{exp.location.city}</h3>
+                        <p className="text-xs text-white/60 mb-2">{exp.title}</p>
+                        <p className="text-xs text-white/45">{exp.artist} at {exp.hotel}</p>
+                        <p className="text-xs text-white/45 mt-1">
                           {new Date(exp.date).toLocaleDateString()}
                         </p>
                       </div>
@@ -300,10 +300,10 @@ const TravelerExperiencesPage: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <button
               onClick={() => setSelectedLocation(null)}
-              className={`px-4 py-2 rounded-full transition-colors ${
+              className={`px-4 py-2 rounded-control transition-colors ${
                 !selectedLocation
-                  ? 'bg-gold text-navy font-semibold'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-gold text-off-black font-semibold'
+                  : 'bg-gray-200 text-white/75 hover:bg-gray-300'
               }`}
             >
               All Locations
@@ -312,10 +312,10 @@ const TravelerExperiencesPage: React.FC = () => {
               <button
                 key={loc}
                 onClick={() => setSelectedLocation(loc)}
-                className={`px-4 py-2 rounded-full transition-colors ${
+                className={`px-4 py-2 rounded-control transition-colors ${
                   selectedLocation === loc
-                    ? 'bg-gold text-navy font-semibold'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-gold text-off-black font-semibold'
+                    : 'bg-gray-200 text-white/75 hover:bg-gray-300'
                 }`}
               >
                 {loc}
@@ -329,10 +329,10 @@ const TravelerExperiencesPage: React.FC = () => {
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
-                className={`px-4 py-2 rounded-full transition-colors capitalize ${
+                className={`px-4 py-2 rounded-control transition-colors capitalize ${
                   filterType === type
                     ? 'bg-navy text-white font-semibold'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-gray-200 text-white/75 hover:bg-gray-300'
                 }`}
               >
                 {type === 'all' ? 'All Types' : type}
@@ -343,19 +343,19 @@ const TravelerExperiencesPage: React.FC = () => {
       </section>
 
       {/* Experiences Grid */}
-      <section className="py-16 bg-cream">
+      <section className="py-16 bg-[#08101D]">
         <div className="max-w-7xl mx-auto px-6">
           {loading ? (
             <div className="text-center py-20">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gold mb-4"></div>
-              <p className="text-gray-600 text-lg">Loading experiences...</p>
+              <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
+              <p className="text-white/60 text-lg">Loading experiences...</p>
             </div>
           ) : filteredExperiences.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-gray-600 text-lg mb-4">No experiences found.</p>
-              <p className="text-gray-500 mb-2">Total experiences in state: {experiences.length}</p>
-              <p className="text-gray-500 mb-2">Filtered experiences: {filteredExperiences.length}</p>
-              <p className="text-gray-500">Check back soon to discover our immersive experiences.</p>
+              <p className="text-white/60 text-lg mb-4">No experiences found.</p>
+              <p className="text-white/45 mb-2">Total experiences in state: {experiences.length}</p>
+              <p className="text-white/45 mb-2">Filtered experiences: {filteredExperiences.length}</p>
+              <p className="text-white/45">Check back soon to discover our immersive experiences.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -392,18 +392,18 @@ const TravelerExperiencesPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="p-6 bg-white">
+                <div className="p-6 bg-[var(--surface-raised)]">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-3 py-1 bg-gold/20 text-gold text-xs font-semibold rounded-full capitalize">
+                    <span className="px-3 py-1 bg-gold/20 text-gold text-xs font-semibold rounded-control capitalize">
                       {exp.type}
                     </span>
-                    <div className="flex items-center text-gray-600 text-sm">
+                    <div className="flex items-center text-white/60 text-sm">
                       <Calendar className="w-4 h-4 mr-1" />
                       {new Date(exp.date).toLocaleDateString()}
                     </div>
                   </div>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{exp.description}</p>
-                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <p className="text-white/60 text-sm mb-4 line-clamp-2">{exp.description}</p>
+                  <div className="space-y-2 text-sm text-white/60 mb-4">
                     <div className="flex items-center">
                       <Music className="w-4 h-4 mr-2 text-gold" />
                       <span>{exp.artist}</span>
@@ -413,7 +413,7 @@ const TravelerExperiencesPage: React.FC = () => {
                       <span>{exp.hotel}</span>
                     </div>
                   </div>
-                  <div className="inline-flex items-center text-gold font-semibold group-hover:text-navy transition-colors">
+                  <div className="inline-flex items-center text-gold font-semibold group-hover:text-white transition-colors">
                     Learn More
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -444,7 +444,7 @@ const TravelerExperiencesPage: React.FC = () => {
               <Link to="/register" className="btn-gold text-lg px-8 py-4">
                 Get Started
               </Link>
-              <Link to="/top-artists" className="btn-gold-outline text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-navy">
+              <Link to="/top-artists" className="btn-gold-outline text-lg px-8 py-4 border-white text-white hover:bg-[var(--surface-raised)] hover:text-white">
                 Explore Artists
               </Link>
             </div>

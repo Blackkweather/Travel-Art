@@ -163,7 +163,7 @@ const PartnersPage: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[#08101D]">
       {/* Header */}
       <motion.nav 
         className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
@@ -224,7 +224,7 @@ const PartnersPage: React.FC = () => {
                 Sign In
               </Link>
             </motion.div>
-            <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
+            <Link to="/register" className="bg-gold text-off-black px-6 py-2 rounded-card font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
               Join
             </Link>
           </div>
@@ -254,7 +254,7 @@ const PartnersPage: React.FC = () => {
               Our Luxury Hotel
               <span className="block text-gold">Partners</span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-white/65 mb-8 max-w-3xl mx-auto">
               Discover the world's most prestigious hotels offering stunning rooftop venues and intimate performance spaces for unforgettable artistic experiences.
             </p>
           </motion.div>
@@ -262,7 +262,7 @@ const PartnersPage: React.FC = () => {
       </div>
 
       {/* Stats Section */}
-      <div className="bg-gray-50 py-16">
+      <div className="bg-[#0C1526] py-16">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             {statsData.map((stat, index) => {
@@ -274,11 +274,11 @@ const PartnersPage: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon className="w-8 h-8 text-navy" />
+                  <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                    <Icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-3xl font-bold text-navy mb-2">{stat.value}</h3>
-                  <p className="text-gray-600">{stat.label}</p>
+                  <h3 className="text-3xl font-bold text-white mb-2">{stat.value}</h3>
+                  <p className="text-white/60">{stat.label}</p>
                 </motion.div>
               )
             })}
@@ -289,23 +289,23 @@ const PartnersPage: React.FC = () => {
       {/* Partners Grid */}
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-serif font-bold text-navy mb-6 gold-underline">
+          <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
             Featured Partners
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-white/60 max-w-3xl mx-auto">
             Experience the world's most luxurious hotels with stunning rooftop venues and intimate performance spaces
           </p>
         </div>
 
         {loading ? (
           <div className="text-center py-20">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gold mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading partners...</p>
+            <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
+            <p className="text-white/60 text-lg">Loading partners...</p>
           </div>
         ) : partners.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-600 text-lg mb-4">No partner hotels found.</p>
-            <p className="text-gray-500">Check back soon to discover our luxury hotel partners.</p>
+            <p className="text-white/60 text-lg mb-4">No partner hotels found.</p>
+            <p className="text-white/45">Check back soon to discover our luxury hotel partners.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -326,35 +326,35 @@ const PartnersPage: React.FC = () => {
                     e.currentTarget.src = 'https://via.placeholder.com/600x400/0B1F3F/C9A63C?text=' + encodeURIComponent(partner.name)
                   }}
                 />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
+                <div className="absolute top-4 right-4 bg-[var(--surface-raised)]/90 backdrop-blur-sm px-3 py-1 rounded-control text-sm font-semibold text-white flex items-center space-x-1">
                   <span className="text-gold font-bold">◆</span>
                   <span>{partner.rating}</span>
                 </div>
-                <div className="absolute bottom-4 left-4 bg-navy text-white px-3 py-1 rounded-full text-sm font-medium">
+                <div className="absolute bottom-4 left-4 bg-navy text-white px-3 py-1 rounded-control text-sm font-medium">
                   {partner.category}
                 </div>
               </div>
               
               <div className="p-6">
-                <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+                <h3 className="text-xl font-serif font-semibold text-white mb-2">
                   {partner.name}
                 </h3>
-                <p className="text-gray-600 text-sm mb-4 flex items-center">
+                <p className="text-white/60 text-sm mb-4 flex items-center">
                   <MapPin className="w-4 h-4 mr-2" />
                   {partner.location}
                 </p>
                 
-                <p className="text-gray-600 text-sm mb-4">
+                <p className="text-white/60 text-sm mb-4">
                   {partner.description}
                 </p>
 
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Specialties:</h4>
+                  <h4 className="text-sm font-medium text-white mb-2">Specialties:</h4>
                   <div className="flex flex-wrap gap-2">
                     {partner.specialties.map((specialty, specIndex) => (
                       <span
                         key={specIndex}
-                        className="px-2 py-1 bg-gold/20 text-gold text-xs rounded-full"
+                        className="px-2 py-1 bg-gold/20 text-gold text-xs rounded-control"
                       >
                         {specialty}
                       </span>
@@ -363,12 +363,12 @@ const PartnersPage: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-navy mb-2">Performance Spots:</h4>
+                  <h4 className="text-sm font-medium text-white mb-2">Performance Spots:</h4>
                   <div className="flex flex-wrap gap-2">
                     {partner.performanceSpots.map((spot, spotIndex) => (
                       <span
                         key={spotIndex}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                        className="px-2 py-1 bg-[#0C1526] text-white/75 text-xs rounded-control"
                       >
                         {spot}
                       </span>
@@ -376,7 +376,7 @@ const PartnersPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                <div className="flex items-center justify-between text-sm text-white/45 mb-4">
                   <span className="flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
                     {partner.bookings} bookings
@@ -401,13 +401,13 @@ const PartnersPage: React.FC = () => {
       </div>
 
       {/* Benefits Section */}
-      <div className="bg-gray-50 py-20">
+      <div className="bg-[#0C1526] py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-navy mb-6 gold-underline">
+            <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
               Partnership Benefits
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-white/60 max-w-3xl mx-auto">
               Why luxury hotels choose to partner with Travel Art
             </p>
           </div>
@@ -421,13 +421,13 @@ const PartnersPage: React.FC = () => {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-6">
                   {benefit.icon}
                 </div>
-                <h3 className="text-xl font-serif font-semibold text-navy mb-4">
+                <h3 className="text-xl font-serif font-semibold text-white mb-4">
                   {benefit.title}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-white/60">
                   {benefit.description}
                 </p>
               </motion.div>
@@ -439,15 +439,15 @@ const PartnersPage: React.FC = () => {
       {/* Testimonials Section */}
       <div className="container mx-auto px-6 py-20 pb-32">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-serif font-bold text-navy mb-6 gold-underline">
+          <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
             What Our Partners Say
           </h2>
         </div>
 
         {testimonials.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">No testimonials available yet.</p>
-            <p className="text-gray-500 text-sm mt-2">Testimonials will appear here as hotels rate their experiences.</p>
+            <p className="text-white/60 text-lg">No testimonials available yet.</p>
+            <p className="text-white/45 text-sm mt-2">Testimonials will appear here as hotels rate their experiences.</p>
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -466,16 +466,16 @@ const PartnersPage: React.FC = () => {
                 ))}
               </div>
             </div>
-            <p className="text-gray-600 mb-4">
+            <p className="text-white/60 mb-4">
                   "{testimonial.comment}"
             </p>
             <div className="flex items-center">
-              <div className="w-12 h-12 bg-gold rounded-full flex items-center justify-center mr-4">
-                <Building className="w-6 h-6 text-navy" />
+              <div className="w-12 h-12 bg-gold/15 rounded-control flex items-center justify-center mr-4">
+                <Building className="w-6 h-6 text-white" />
               </div>
               <div>
-                    <h4 className="font-semibold text-navy">{testimonial.hotelName}</h4>
-                    <p className="text-sm text-gray-600">{testimonial.location}</p>
+                    <h4 className="font-semibold text-white">{testimonial.hotelName}</h4>
+                    <p className="text-sm text-white/60">{testimonial.location}</p>
               </div>
             </div>
           </motion.div>
@@ -495,7 +495,7 @@ const PartnersPage: React.FC = () => {
             <h2 className="text-4xl font-serif font-bold mb-6">
               Ready to Become a Partner?
             </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-white/65 mb-8 max-w-2xl mx-auto">
               Join our exclusive network of luxury hotels and start offering unforgettable artistic experiences to your guests.
             </p>
             <a href="/register" className="btn-primary text-lg px-8 py-4">

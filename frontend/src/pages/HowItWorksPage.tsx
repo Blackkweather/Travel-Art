@@ -5,64 +5,69 @@ import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 
 /**
- * Steps are titled by the action they describe rather than numbered "Stage 1 /
- * Stage 2", and they are set as a hairline-separated ladder beside a sticky
- * heading. Six items is too many for equal cards, which is what this page used
- * to render.
+ * Copy is the original page content, unchanged. Only the presentation moved:
+ * six equal cards with white-on-gold circle icons (a contrast failure) became
+ * a hairline ladder beside a sticky heading, which suits six items far better.
  */
 const STEPS = [
   {
-    title: 'Join',
-    lede: 'Artists build a profile around their work. Hotels describe the rooms and spaces they can offer.',
+    title: 'Join as Artist or Hotel',
+    lede: 'Create your profile and showcase your talent or luxury venue. Artists can upload their portfolio, set availability, and define their specialties. Hotels can list their performance spaces and accommodation.',
     points: [
-      'Upload performance footage and images',
-      'List rooftop terraces and intimate venues',
-      'Set the dates you are available',
+      'Artists: Upload photos/videos of performances',
+      'Hotels: Showcase rooftop terraces and intimate venues',
+      'Set your availability calendar',
+      'Define your artistic discipline and price range',
     ],
   },
   {
-    title: 'Match',
-    lede: 'Matching runs on location, dates, discipline and what a venue can actually host.',
+    title: 'Discover Perfect Matches',
+    lede: 'Our intelligent matching system connects artists with hotels based on location, availability, artistic style, and venue requirements. Browse profiles and find your ideal collaboration.',
     points: [
-      'Filter by city, date and discipline',
-      'Read full profiles and past residencies',
-      'See ratings left by previous hosts',
+      'Smart matching algorithm',
+      'Filter by location, date, and style',
+      'View detailed profiles and portfolios',
+      'Read reviews and ratings',
     ],
   },
   {
-    title: 'Book',
-    lede: 'Hotels spend credits to confirm a residency. Artists pay one annual membership and nothing per booking.',
+    title: 'Book Your Experience',
+    lede: 'Hotels use credits to book artists for their rooftop performances, intimate concerts, or special events. Artists receive accommodation and the opportunity to perform in luxury settings.',
     points: [
-      'Credit packages, bought once and drawn down',
-      'No commission taken on the artist side',
-      'Cancellation terms agreed up front',
+      'Hotels purchase credit packages',
+      'Artists pay annual membership fee',
+      'Secure booking system',
+      'Flexible cancellation policies',
     ],
   },
   {
-    title: 'Perform',
-    lede: 'The residency happens: a rooftop set, an acoustic evening in a lounge, an installation in a lobby.',
+    title: 'Create Magic Together',
+    lede: 'Artists perform in stunning rooftop venues, intimate lounges, and luxury hotel spaces. Hotels provide accommodation and unforgettable experiences for their guests.',
     points: [
-      'Rooftop performances with a view worth the trip',
-      'Acoustic sets in rooms built for listening',
-      'Work made on site, for the site',
+      'Rooftop performances with city views',
+      'Intimate acoustic sets in luxury lounges',
+      'Jazz ensembles in elegant ballrooms',
+      'DJ sets at sunset beach clubs',
     ],
   },
   {
-    title: 'Review',
-    lede: 'Hosts rate the residency afterwards, and that record follows the artist.',
+    title: 'Rate & Review',
+    lede: 'After each performance, hotels rate artists based on their performance quality, professionalism, and guest satisfaction. Artists see aggregated badges and feedback.',
     points: [
-      'Hotels rate performance and professionalism',
-      'Artists carry their record between venues',
-      'Written feedback stays private',
+      'Hotels rate artists (1-5 stars)',
+      'Artists see performance badges',
+      'Detailed feedback system',
+      'Build reputation over time',
     ],
   },
   {
-    title: 'Grow',
-    lede: 'Artists build a body of work and a reputation. Hotels build a programme guests remember.',
+    title: 'Earn & Grow',
+    lede: 'Artists earn accommodation credits and build their portfolio. Hotels enhance their guest experience and create memorable moments. Both parties grow their network.',
     points: [
-      'Accommodation and fees, not exposure',
-      'Referral rewards for bringing others in',
-      'Loyalty credit that carries forward',
+      'Artists: Free accommodation + performance fees',
+      'Hotels: Enhanced guest experience',
+      'Referral rewards program',
+      'Loyalty points system',
     ],
   },
 ]
@@ -97,8 +102,8 @@ const HowItWorksPage: React.FC = () => {
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-7 font-serif text-white text-5xl md:text-6xl lg:text-7xl leading-[1.03]"
           >
-            How a residency
-            <span className="block text-gold italic leading-[1.1] pb-1">comes together.</span>
+            How Travel Art
+            <span className="block text-gold italic leading-[1.1] pb-1">Works</span>
           </motion.h1>
 
           <motion.p
@@ -107,8 +112,9 @@ const HowItWorksPage: React.FC = () => {
             transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-4 lg:col-start-9 text-white/65 leading-relaxed"
           >
-            Six steps, from a profile to a performance on a terrace in Paris or a
-            sunset set in Ibiza.
+            Connect luxury hotels with talented hearts for unforgettable rooftop
+            performances and intimate experiences. From jazz saxophonists on Parisian
+            terraces to DJs spinning sunset sets in Ibiza.
           </motion.p>
         </div>
       </section>
@@ -119,14 +125,14 @@ const HowItWorksPage: React.FC = () => {
           <div className="lg:col-span-4">
             <div className="lg:sticky lg:top-32">
               <h2 className="font-serif text-white text-3xl md:text-4xl leading-[1.1]">
-                The whole arrangement, in order.
+                Why Choose Travel Art?
               </h2>
               <p className="mt-5 text-white/50 leading-relaxed max-w-[34ch]">
-                Nothing here happens by email. Every step is settled on the
-                platform.
+                Experience the perfect blend of luxury hospitality and artistic
+                excellence.
               </p>
               <Link to="/register" className="btn-gold mt-10">
-                Start now
+                Join now
               </Link>
             </div>
           </div>
@@ -163,20 +169,21 @@ const HowItWorksPage: React.FC = () => {
       <section className="shell">
         <div className="border-t border-white/10 py-24 md:py-32 text-center">
           <h2 className="font-serif text-white text-4xl md:text-6xl leading-[1.05]">
-            Two ways in.
+            Ready to Create Magic?
           </h2>
-          <p className="mt-6 text-white/55 max-w-[44ch] mx-auto leading-relaxed">
-            Apply as an artist, or open your hotel to the programme.
+          <p className="mt-6 text-white/55 max-w-[52ch] mx-auto leading-relaxed">
+            Join Travel Art today and start connecting luxury hotels with talented
+            hearts for unforgettable experiences.
           </p>
           <div className="mt-12 flex flex-wrap gap-4 justify-center">
             <Link to="/register" className="btn-gold">
-              Join as artist
+              Join as Artist
             </Link>
             <Link
               to="/register"
               className="btn-base bg-transparent text-white border border-white/30 hover:bg-white hover:text-navy"
             >
-              Join as hotel
+              Join as Hotel
             </Link>
           </div>
         </div>
