@@ -5,43 +5,38 @@ import { asyncHandler, CustomError } from '../middleware/errorHandler';
 
 const router = Router();
 
-// Get all credit packages
+/**
+ * Get all credit packages.
+ *
+ * These now come from the credit_packages table, which is the only place pack
+ * pricing is allowed to live. This handler previously returned a hardcoded
+ * array of EUR 49.99 / 129.99 / 399.99 while the pricing page advertised
+ * EUR 1,500 / 3,500 / 6,500, so a hotel was quoted thirty times what the API
+ * would have charged.
+ *
+ * priceCents is the stored value; price is derived for display only. Clients
+ * should prefer priceCents and must never hardcode either.
+ */
 router.get('/packages', asyncHandler(async (req, res) => {
-  // For now, return default packages since CreditPackage model doesn't exist
-  // In production, these should come from a database table
-  const packages = [
-    {
-      id: 'package-1',
-      name: 'Starter Package',
-      credits: 5,
-      price: 49.99,
-      discount: 0,
-      description: 'Perfect for small hotels getting started',
-      isActive: true
-    },
-    {
-      id: 'package-2',
-      name: 'Professional Package',
-      credits: 15,
-      price: 129.99,
-      discount: 10,
-      description: 'Best value for regular bookings',
-      isActive: true
-    },
-    {
-      id: 'package-3',
-      name: 'Enterprise Package',
-      credits: 50,
-      price: 399.99,
-      discount: 20,
-      description: 'Maximum savings for high-volume hotels',
-      isActive: true
-    }
-  ];
+  const packages = await prisma.creditPackage.findMany({
+    where: { active: true },
+    orderBy: { sortOrder: 'asc' }
+  });
 
   res.json({
     success: true,
-    data: packages
+    data: packages.map((pkg) => ({
+      id: pkg.id,
+      slug: pkg.slug,
+      name: pkg.name,
+      credits: pkg.credits,
+      bonusCredits: pkg.bonusCredits,
+      totalCredits: pkg.credits + pkg.bonusCredits,
+      priceCents: pkg.priceCents,
+      price: pkg.priceCents / 100,
+      currency: pkg.currency,
+      isActive: pkg.active
+    }))
   });
 }));
 
@@ -62,25 +57,17 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
     throw new CustomError('Hotel not found or access denied', 404);
   }
 
-  // Get package details (matching the packages from GET /packages)
-  const packageMap: Record<string, { credits: number; price: number; name: string }> = {
-    'package-1': { credits: 5, price: 49.99, name: 'Starter Package' },
-    'package-2': { credits: 15, price: 129.99, name: 'Professional Package' },
-    'package-3': { credits: 50, price: 399.99, name: 'Enterprise Package' }
-  };
-
-  const selectedPackage = packageMap[packageId];
-  if (!selectedPackage) {
-    throw new CustomError('Invalid package ID', 400);
-  }
-
-  // Check if first-time purchase (50% discount)
-  const existingTransactions = await prisma.transaction.findMany({
-    where: {
-      hotelId: hotelId,
-      type: 'CREDIT_PURCHASE'
-    }
+  // Validate against the packages table rather than a hardcoded map. The map
+  // that used to sit here listed EUR 49.99 / 129.99 / 399.99 and its keys
+  // ('package-1'...) no longer match any real package id, so a valid request
+  // was rejected as "Invalid package ID" before reaching the honest error.
+  const selectedPackage = await prisma.creditPackage.findFirst({
+    where: { OR: [{ id: packageId }, { slug: packageId }], active: true }
   });
+
+  if (!selectedPackage) {
+    throw new CustomError('Unknown credit package', 400);
+  }
 
   // DISABLED: credits must never be created by a request the client controls.
   //
