@@ -57,6 +57,17 @@ model Artist {
   artisticProfile   String?  // JSON string: {mainCategory, secondaryCategory, audienceType, languages, categoryType, specificCategory, domain}
   referralCode      String   @unique @default(cuid())
   loyaltyPoints     Int      @default(0)
+
+  /// What a hotel pays, in credits, to book this artist. Varies with the
+  /// artist's standing outside the platform: a headline act might be 100,
+  /// an emerging local musician 5.
+  ///
+  /// Deliberately NOT derived from the rank tier. Rank is reputation earned
+  /// here (rating and completed bookings), so a famous artist joining today
+  /// would compute as the lowest tier while still commanding the highest fee.
+  /// Set by an admin at onboarding and adjustable afterwards.
+  bookingCreditCost Int      @default(5)
+
   createdAt         DateTime @default(now())
 
   // Relations
@@ -138,7 +149,13 @@ model Booking {
   startDate         DateTime
   endDate           DateTime
   status            String   @default("PENDING") // PENDING, CONFIRMED, REJECTED, COMPLETED, CANCELLED
-  creditsUsed       Int      @default(0) // Deprecated - kept for backward compatibility
+  creditsUsed       Int      @default(0) // Deprecated - superseded by creditCost below
+
+  /// Credits this booking cost, copied from the artist at the moment of
+  /// booking. Stored rather than looked up so that repricing an artist later
+  /// never rewrites the cost of bookings already made, and so the ledger,
+  /// the booking and any invoice always agree.
+  creditCost        Int      @default(0)
   weeklyPaymentAmount Float  @default(200.0) // Weekly payment amount in EUR
   numberOfWeeks      Int      // Number of weeks for this booking
   totalPaymentAmount Float   // Total payment (weeklyPaymentAmount * numberOfWeeks)
