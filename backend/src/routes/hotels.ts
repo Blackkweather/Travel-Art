@@ -563,50 +563,18 @@ router.get('/:id/credits', authenticate, authorize('HOTEL'), asyncHandler(async 
   });
 }));
 
-// Purchase credits
-router.post('/:id/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { amount, credits } = creditPurchaseSchema.parse(req.body);
-
-  // Verify hotel belongs to user
-  const hotel = await prisma.hotel.findFirst({
-    where: { id, userId: req.user!.id }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel not found or access denied.', 404);
-  }
-
-  // Update credits
-  const creditRecord = await prisma.credit.upsert({
-    where: { hotelId: id },
-    update: {
-      totalCredits: { increment: credits }
-    },
-    create: {
-      hotelId: id,
-      totalCredits: credits,
-      usedCredits: 0
-    }
-  });
-
-  // Create transaction record
-  const transaction = await prisma.transaction.create({
-    data: {
-      hotelId: id,
-      type: 'CREDIT_PURCHASE',
-      amount
-    }
-  });
-
-  res.json({
-    success: true,
-    data: {
-      credits: creditRecord,
-      transaction
-    }
-  });
-}));
+// REMOVED: POST /:id/credits/purchase
+//
+// This route read `credits` and `amount` straight from the request body and
+// incremented the hotel's balance by whatever the client sent, with no payment
+// of any kind. A hotel could post { credits: 999999, amount: 0 } and receive
+// unlimited free inventory while recording zero revenue.
+//
+// Nothing in the frontend called it (the UI uses POST /api/payments/credits/purchase),
+// so removing it breaks no screen.
+//
+// Credits must only ever be granted by a verified Stripe webhook. Until that
+// exists there is deliberately no route here capable of creating them.
 
 // Browse artists with filters
 router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {

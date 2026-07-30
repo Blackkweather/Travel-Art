@@ -144,6 +144,12 @@ model Booking {
   artist            Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
   ratings           Rating[]
 
+  // Postgres does not index foreign keys automatically. Without these, every
+  // dashboard listing and status count is a sequential scan over all bookings.
+  @@index([hotelId])
+  @@index([artistId])
+  @@index([status])
+  @@index([startDate])
   @@map("bookings")
 }
 
@@ -162,6 +168,10 @@ model Rating {
   hotel                Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   artist               Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
 
+  // hotels.ts fetches ratings per artist inside a Promise.all over a page of
+  // artists, so this index is what stops that becoming an N+1 of table scans.
+  @@index([artistId])
+  @@index([bookingId])
   @@map("ratings")
 }
 
@@ -190,6 +200,12 @@ model Transaction {
   hotel     Hotel?   @relation(fields: [hotelId], references: [id], onDelete: SetNull)
   artist    Artist?  @relation(fields: [artistId], references: [id], onDelete: SetNull)
 
+  // Financial history is queried per hotel and per period on every dashboard
+  // and export, so these cannot be left unindexed.
+  @@index([hotelId])
+  @@index([artistId])
+  @@index([type])
+  @@index([createdAt])
   @@map("transactions")
 }
 

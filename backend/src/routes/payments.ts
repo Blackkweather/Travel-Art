@@ -82,51 +82,32 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
     }
   });
 
-  const isFirstPurchase = existingTransactions.length === 0;
-  const finalPrice = isFirstPurchase ? selectedPackage.price * 0.5 : selectedPackage.price;
+  // DISABLED: credits must never be created by a request the client controls.
+  //
+  // What this code used to do: accept a `paymentMethod` field, never use it,
+  // increment the hotel's balance, then write a Transaction row recording
+  // revenue that was never collected. Any authenticated hotel could call it
+  // repeatedly for unlimited free inventory, and the transaction log made the
+  // books look settled.
+  //
+  // The replacement flow is:
+  //   1. create a Stripe Checkout Session for the chosen CreditPackage
+  //   2. Stripe charges the card
+  //   3. the checkout.session.completed webhook, after signature verification,
+  //      writes an append-only CreditLedger entry inside one transaction
+  //   4. balance is derived from the ledger, never incremented in place
+  //
+  // A hotel seeing an honest error costs far less than a hotel quietly taking
+  // free stock while finance believes it was paid for.
+  console.warn(
+    `Blocked credit purchase: no payment processor configured (hotel ${hotelId}, package ${packageId})`
+  );
 
-  // Calculate bonus credits
-  let bonusCredits = 0;
-  if (selectedPackage.name.includes('Professional')) {
-    bonusCredits = 4;
-  } else if (selectedPackage.name.includes('Enterprise')) {
-    bonusCredits = 10;
-  }
-
-  const totalCredits = selectedPackage.credits + bonusCredits;
-
-  // Update or create credits record
-  const creditRecord = await prisma.credit.upsert({
-    where: { hotelId: hotelId },
-    update: {
-      totalCredits: { increment: totalCredits }
-    },
-    create: {
-      hotelId: hotelId,
-      totalCredits: totalCredits,
-      usedCredits: 0
-    }
-  });
-
-  // Create transaction record
-  const transaction = await prisma.transaction.create({
-    data: {
-      hotelId: hotelId,
-      type: 'CREDIT_PURCHASE',
-      amount: finalPrice
-    }
-  });
-
-  res.json({
-    success: true,
-    data: {
-      credits: creditRecord,
-      transaction: transaction,
-      package: selectedPackage,
-      bonusCredits: bonusCredits,
-      isFirstPurchase: isFirstPurchase
-    }
-  });
+  throw new CustomError(
+    'Credit purchases are temporarily unavailable while payment processing is being set up. ' +
+    'No card has been charged and no credits have been added. Please contact us to arrange a purchase.',
+    503
+  );
 }));
 
 // Get transactions for a user
