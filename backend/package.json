@@ -10,6 +10,7 @@
     "migrate": "npx prisma migrate dev",
     "prisma:deploy": "npx prisma migrate deploy",
     "seed": "npx tsx src/seed.ts",
+    "seed:packages": "npx tsx prisma/seed-packages.ts",
     "test": "npx jest",
     "test:watch": "npx jest --watch",
     "lint": "eslint src --ext .ts",
