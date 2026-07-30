@@ -114,9 +114,13 @@ export const artistsApi = {
   createProfile: (data: any) =>
     apiClient.post('/artists', data),
   
-  updateProfile: (id: string, data: any) =>
-    apiClient.put(`/artists/${id}`, data),
-  
+  // The server exposes PUT /artists/me, not PUT /artists/:id. This previously
+  // pointed at an endpoint that does not exist, so saving a profile 404d.
+  // The id parameter is kept so existing callers do not need to change; the
+  // server identifies the artist from the auth token.
+  updateProfile: (_id: string | undefined, data: any) =>
+    apiClient.put('/artists/me', data),
+
   setAvailability: (id: string, data: any) =>
     apiClient.post(`/artists/${id}/availability`, data),
 }
@@ -135,8 +139,12 @@ export const hotelsApi = {
   createProfile: (data: any) =>
     apiClient.post('/hotels', data),
   
-  updateProfile: (id: string, data: any) =>
-    apiClient.put(`/hotels/${id}`, data),
+  // Same as artists: the server exposes PUT /hotels/me, not PUT /hotels/:id.
+  updateProfile: (_id: string | undefined, data: any) =>
+    apiClient.put('/hotels/me', data),
+
+  getMyProfile: () =>
+    apiClient.get('/hotels/me'),
   
   addRoomAvailability: (id: string, data: any) =>
     apiClient.post(`/hotels/${id}/rooms`, data),

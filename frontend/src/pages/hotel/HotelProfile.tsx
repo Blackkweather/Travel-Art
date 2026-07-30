@@ -1,372 +1,384 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Camera, Upload, Save, Edit3, MapPin, Building, Calendar, Users } from 'lucide-react'
+import { Save, Edit3, MapPin, Building, Plus, Trash2, AlertCircle } from 'lucide-react'
+import { hotelsApi } from '@/utils/api'
+
+/**
+ * Hotel profile.
+ *
+ * This screen previously rendered a hardcoded Plaza Athenee profile and its
+ * save handler was an empty function with a "Save profile logic here" comment.
+ * Every hotel saw another hotel's details, edited them, and was told the save
+ * succeeded while nothing was written.
+ *
+ * It now loads from GET /hotels/me and writes through PUT /hotels/me, sending
+ * only the fields hotelProfileSchema accepts.
+ *
+ * location, images and performanceSpots are stored as JSON strings server-side,
+ * so they are parsed on load and re-serialised on save.
+ */
+
+interface PerformanceSpot {
+  name: string
+  capacity: number
+  description: string
+}
+
+interface HotelLocation {
+  city: string
+  country: string
+  coords?: { lat: number; lng: number }
+}
+
+const emptyLocation: HotelLocation = { city: '', country: '' }
+
+/** Server stores these columns as JSON strings; tolerate bad data rather than crash. */
+const parseJson = <T,>(value: unknown, fallback: T): T => {
+  if (!value) return fallback
+  if (typeof value !== 'string') return (value as T) ?? fallback
+  try {
+    return JSON.parse(value) as T
+  } catch {
+    return fallback
+  }
+}
 
 const HotelProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false)
-  const [profile, setProfile] = useState({
-    name: 'Hotel Plaza Athénée',
-    category: 'Luxury Palace',
-    bio: 'Iconic luxury hotel in the heart of Paris with stunning Eiffel Tower views and talented hearts rooftop venues. We specialize in intimate concerts and grand performances.',
-    location: 'Paris, France',
-    address: '25 Avenue Montaigne, 75008 Paris, France',
-    specialties: ['Eiffel Tower Views', 'Intimate Concerts', 'Classical Music', 'Rooftop Performances'],
-    performanceSpots: [
-      {
-        name: 'Rooftop Terrace',
-        capacity: 50,
-        description: 'Stunning outdoor space with panoramic city views',
-        amenities: ['Sound System', 'Lighting', 'Weather Protection']
-      },
-      {
-        name: 'Grand Ballroom',
-        capacity: 200,
-        description: 'Elegant indoor venue for formal performances',
-        amenities: ['Grand Piano', 'Professional Lighting', 'Air Conditioning']
-      },
-      {
-        name: 'Elegant Lounge',
-        capacity: 30,
-        description: 'Intimate space for acoustic performances',
-        amenities: ['Acoustic Setup', 'Intimate Lighting', 'Bar Service']
-      }
-    ],
-    images: [
-      'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80'
-    ],
-    rating: 4.9,
-    totalBookings: 45,
-    memberSince: '2023-01-10',
-    contactEmail: 'events@plaza-athenee.com',
-    contactPhone: '+33 1 53 67 66 00'
-  })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
-  const handleSave = () => {
-    // Save profile logic here
-    setIsEditing(false)
-    // Show success message
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [location, setLocation] = useState<HotelLocation>(emptyLocation)
+  const [contactPhone, setContactPhone] = useState('')
+  const [responsibleName, setResponsibleName] = useState('')
+  const [responsibleEmail, setResponsibleEmail] = useState('')
+  const [spots, setSpots] = useState<PerformanceSpot[]>([])
+
+  const applyProfile = (hotel: any) => {
+    setName(hotel?.name ?? '')
+    setDescription(hotel?.description ?? '')
+    setLocation(parseJson<HotelLocation>(hotel?.location, emptyLocation))
+    setContactPhone(hotel?.contactPhone ?? '')
+    setResponsibleName(hotel?.responsibleName ?? '')
+    setResponsibleEmail(hotel?.responsibleEmail ?? '')
+    setSpots(parseJson<PerformanceSpot[]>(hotel?.performanceSpots, []))
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        const response = await hotelsApi.getMyProfile()
+        if (cancelled) return
+        applyProfile(response.data?.data ?? response.data)
+        setError(null)
+      } catch (err: any) {
+        if (cancelled) return
+        setError(
+          err?.response?.status === 404
+            ? 'No hotel profile exists for this account yet. Fill this in and save to create one.'
+            : 'Could not load your profile. Please try again.'
+        )
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    setNotice(null)
+
+    try {
+      // Only the fields the server's schema accepts, with the JSON columns
+      // serialised the way it expects them.
+      const response = await hotelsApi.updateProfile(undefined, {
+        name,
+        description,
+        location: JSON.stringify(location),
+        contactPhone,
+        responsibleName,
+        responsibleEmail,
+        performanceSpots: JSON.stringify(spots),
+      })
+
+      applyProfile(response.data?.data ?? response.data)
+      setIsEditing(false)
+      setNotice('Profile saved.')
+    } catch (err: any) {
+      // Surface the real reason. The previous implementation reported success
+      // unconditionally, which is how a silent failure survives to production.
+      const detail =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        'Your changes were not saved. Please try again.'
+      setError(detail)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateSpot = (index: number, patch: Partial<PerformanceSpot>) => {
+    setSpots((current) =>
+      current.map((spot, i) => (i === index ? { ...spot, ...patch } : spot))
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        <div className="h-10 w-64 rounded-card bg-[var(--surface-sunken)] animate-pulse" />
+        <div className="h-64 rounded-card bg-[var(--surface-sunken)] animate-pulse" />
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-8 space-y-8">
-          {/* Page Header */}
-          <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
-            Hotel Profile
-          </h1>
-          <p className="text-gray-600">
-            Manage your hotel profile and showcase your luxury venues to artists
-          </p>
-        </div>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="btn-secondary flex items-center space-x-2"
-        >
-          <Edit3 className="w-4 h-4" />
-          <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
-        </button>
-      </div>
-
-      {/* Profile Overview */}
-      <div className="card-luxury">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Hotel Image */}
-          <div className="flex-shrink-0">
-            <div className="relative">
-              <img
-                src={profile.images[0]}
-                alt={profile.name}
-                className="w-48 h-48 rounded-xl object-cover"
-              />
-              {isEditing && (
-                <button className="absolute bottom-2 right-2 bg-gold text-navy p-2 rounded-full hover:bg-gold/90 transition-colors">
-                  <Camera className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-serif text-[var(--text-primary)] mb-2">Hotel Profile</h1>
+            <p className="text-[var(--text-secondary)]">
+              This is what artists see when you invite them.
+            </p>
           </div>
 
-          {/* Profile Info */}
-          <div className="flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="form-label">Hotel Name</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profile.name}
-                    onChange={(e) => setProfile({...profile, name: e.target.value})}
-                    className="form-input"
-                  />
-                ) : (
-                  <p className="text-xl font-serif font-semibold text-navy">{profile.name}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="form-label">Category</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profile.category}
-                    onChange={(e) => setProfile({...profile, category: e.target.value})}
-                    className="form-input"
-                  />
-                ) : (
-                  <p className="text-lg text-gold font-medium">{profile.category}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="form-label">Location</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profile.location}
-                    onChange={(e) => setProfile({...profile, location: e.target.value})}
-                    className="form-input"
-                  />
-                ) : (
-                  <p className="text-gray-600 flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {profile.location}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="form-label">Contact Email</label>
-                {isEditing ? (
-                  <input
-                    type="email"
-                    value={profile.contactEmail}
-                    onChange={(e) => setProfile({...profile, contactEmail: e.target.value})}
-                    className="form-input"
-                  />
-                ) : (
-                  <p className="text-gray-600">{profile.contactEmail}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div className="mt-6">
-              <label className="form-label">Hotel Description</label>
-              {isEditing ? (
-                <textarea
-                  value={profile.bio}
-                  onChange={(e) => setProfile({...profile, bio: e.target.value})}
-                  className="form-input h-32 resize-none"
-                  placeholder="Describe your hotel and its unique features..."
-                />
-              ) : (
-                <p className="text-gray-600 leading-relaxed">{profile.bio}</p>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div className="mt-6 grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-center mb-2">
-                  <span className="text-gold font-bold mr-1">◆</span>
-                  <span className="text-lg font-bold text-navy">{profile.rating}</span>
-                </div>
-                <p className="text-sm text-gray-600">Average Rating</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-center mb-2">
-                  <Calendar className="w-5 h-5 text-gold mr-1" />
-                  <span className="text-lg font-bold text-navy">{profile.totalBookings}</span>
-                </div>
-                <p className="text-sm text-gray-600">Total Bookings</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-center mb-2">
-                  <Building className="w-5 h-5 text-gold mr-1" />
-                  <span className="text-lg font-bold text-navy">Member</span>
-                </div>
-                <p className="text-sm text-gray-600">Since {new Date(profile.memberSince).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Specialties */}
-      <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
-          Hotel Specialties
-        </h2>
-        {isEditing ? (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {profile.specialties.map((specialty, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-gold/20 text-gold rounded-full text-sm flex items-center"
-                >
-                  {specialty}
-                  <button className="ml-2 text-gold hover:text-gold/70">×</button>
-                </span>
-              ))}
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                placeholder="Add new specialty..."
-                className="form-input flex-1"
-              />
-              <button className="btn-secondary">Add</button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-3">
-            {profile.specialties.map((specialty, index) => (
-              <span
-                key={index}
-                className="px-4 py-2 bg-gold/20 text-gold rounded-full text-sm font-medium"
+          {isEditing ? (
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsEditing(false)}
+                disabled={saving}
+                className="btn-secondary"
               >
-                {specialty}
-              </span>
-            ))}
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="btn-gold flex items-center gap-2 disabled:opacity-60"
+              >
+                <Save size={16} strokeWidth={1.5} aria-hidden="true" />
+                {saving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setIsEditing(true); setNotice(null) }}
+              className="btn-gold flex items-center gap-2"
+            >
+              <Edit3 size={16} strokeWidth={1.5} aria-hidden="true" />
+              Edit profile
+            </button>
+          )}
+        </div>
+
+        {error && (
+          <div
+            role="alert"
+            className="flex gap-3 rounded-card border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+          >
+            <AlertCircle size={18} strokeWidth={1.5} className="shrink-0 mt-px" aria-hidden="true" />
+            <span>{error}</span>
           </div>
         )}
-      </div>
 
-      {/* Performance Spots */}
-      <div className="card-luxury">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
-            Performance Venues
-          </h2>
-          {isEditing && (
-            <button className="btn-secondary flex items-center space-x-2">
-              <Upload className="w-4 h-4" />
-              <span>Add Venue</span>
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profile.performanceSpots.map((spot, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="border border-gray-200 rounded-lg p-4"
-            >
-              <h3 className="font-semibold text-navy mb-2">{spot.name}</h3>
-              <p className="text-sm text-gray-600 mb-3">{spot.description}</p>
-              <div className="flex items-center text-sm text-gray-500 mb-3">
-                <Users className="w-4 h-4 mr-1" />
-                <span>Capacity: {spot.capacity}</span>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-navy mb-2">Amenities:</h4>
-                <div className="flex flex-wrap gap-1">
-                  {spot.amenities.map((amenity, amenityIndex) => (
-                    <span
-                      key={amenityIndex}
-                      className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                    >
-                      {amenity}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {isEditing && (
-                <div className="mt-4 flex space-x-2">
-                  <button className="flex-1 btn-secondary text-sm">Edit</button>
-                  <button className="btn-secondary text-sm text-red-600">Remove</button>
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Hotel Images */}
-      <div className="card-luxury">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
-            Hotel Gallery
-          </h2>
-          {isEditing && (
-            <button className="btn-secondary flex items-center justify-center space-x-2">
-              <Upload className="w-4 h-4 flex-shrink-0" />
-              <span className="leading-none">Add Images</span>
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {profile.images.map((image, index) => (
-            <div key={index} className="relative group">
-              <img
-                src={image}
-                alt={`Hotel ${index + 1}`}
-                className="w-full h-48 object-cover rounded-lg"
-              />
-              {isEditing && (
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                  <button className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
-                    ×
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Contact Information */}
-      <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
-          Contact Information
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="form-label">Address</label>
-            {isEditing ? (
-              <textarea
-                value={profile.address}
-                onChange={(e) => setProfile({...profile, address: e.target.value})}
-                className="form-input h-20 resize-none"
-              />
-            ) : (
-              <p className="text-gray-600">{profile.address}</p>
-            )}
+        {notice && (
+          <div
+            role="status"
+            className="rounded-card border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold-200"
+          >
+            {notice}
           </div>
-          <div>
-            <label className="form-label">Phone Number</label>
-            {isEditing ? (
+        )}
+
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="card-luxury space-y-6"
+        >
+          <h2 className="font-serif text-xl text-[var(--text-primary)] flex items-center gap-2">
+            <Building size={18} strokeWidth={1.5} aria-hidden="true" />
+            Details
+          </h2>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <label htmlFor="hotel-name" className="form-label">Hotel name</label>
               <input
-                type="tel"
-                value={profile.contactPhone}
-                onChange={(e) => setProfile({...profile, contactPhone: e.target.value})}
+                id="hotel-name"
                 className="form-input"
+                value={name}
+                disabled={!isEditing}
+                onChange={(e) => setName(e.target.value)}
               />
-            ) : (
-              <p className="text-gray-600">{profile.contactPhone}</p>
-            )}
-          </div>
-        </div>
-      </div>
+            </div>
 
-      {/* Save Button */}
-      {isEditing && (
-        <div className="flex justify-end">
-          <button onClick={handleSave} className="btn-primary flex items-center justify-center space-x-2">
-            <Save className="w-4 h-4 flex-shrink-0" />
-            <span className="leading-none">Save Changes</span>
-          </button>
-        </div>
-      )}
-        </div>
+            <div>
+              <label htmlFor="hotel-phone" className="form-label">Contact phone</label>
+              <input
+                id="hotel-phone"
+                className="form-input"
+                value={contactPhone}
+                disabled={!isEditing}
+                onChange={(e) => setContactPhone(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="hotel-city" className="form-label">City</label>
+              <input
+                id="hotel-city"
+                className="form-input"
+                value={location.city}
+                disabled={!isEditing}
+                onChange={(e) => setLocation({ ...location, city: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="hotel-country" className="form-label">Country</label>
+              <input
+                id="hotel-country"
+                className="form-input"
+                value={location.country}
+                disabled={!isEditing}
+                onChange={(e) => setLocation({ ...location, country: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="hotel-description" className="form-label">Description</label>
+            <textarea
+              id="hotel-description"
+              rows={5}
+              className="form-input"
+              value={description}
+              disabled={!isEditing}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              Between 10 and 1000 characters.
+            </p>
+          </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.05 }}
+          className="card-luxury space-y-6"
+        >
+          <h2 className="font-serif text-xl text-[var(--text-primary)] flex items-center gap-2">
+            <MapPin size={18} strokeWidth={1.5} aria-hidden="true" />
+            Performance spaces
+          </h2>
+
+          {spots.length === 0 && (
+            <p className="text-[var(--text-secondary)]">
+              No spaces listed yet. Artists use these to judge whether your venue suits their work.
+            </p>
+          )}
+
+          <div className="space-y-5">
+            {spots.map((spot, index) => (
+              <div
+                key={index}
+                className="grid gap-4 md:grid-cols-[2fr_1fr_auto] items-end border-t border-[var(--border-subtle)] pt-5 first:border-0 first:pt-0"
+              >
+                <div>
+                  <label htmlFor={`spot-name-${index}`} className="form-label">Name</label>
+                  <input
+                    id={`spot-name-${index}`}
+                    className="form-input"
+                    value={spot.name ?? ''}
+                    disabled={!isEditing}
+                    onChange={(e) => updateSpot(index, { name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`spot-capacity-${index}`} className="form-label">Capacity</label>
+                  <input
+                    id={`spot-capacity-${index}`}
+                    type="number"
+                    min={0}
+                    className="form-input"
+                    value={spot.capacity ?? 0}
+                    disabled={!isEditing}
+                    onChange={(e) => updateSpot(index, { capacity: Number(e.target.value) })}
+                  />
+                </div>
+                {isEditing && (
+                  <button
+                    onClick={() => setSpots(spots.filter((_, i) => i !== index))}
+                    aria-label={`Remove ${spot.name || 'space'}`}
+                    className="btn-secondary !px-4"
+                  >
+                    <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {isEditing && (
+            <button
+              onClick={() => setSpots([...spots, { name: '', capacity: 0, description: '' }])}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Plus size={16} strokeWidth={1.5} aria-hidden="true" />
+              Add a space
+            </button>
+          )}
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="card-luxury space-y-6"
+        >
+          <h2 className="font-serif text-xl text-[var(--text-primary)]">Main contact</h2>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <label htmlFor="rep-name" className="form-label">Name</label>
+              <input
+                id="rep-name"
+                className="form-input"
+                value={responsibleName}
+                disabled={!isEditing}
+                onChange={(e) => setResponsibleName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="rep-email" className="form-label">Email</label>
+              <input
+                id="rep-email"
+                type="email"
+                className="form-input"
+                value={responsibleEmail}
+                disabled={!isEditing}
+                onChange={(e) => setResponsibleEmail(e.target.value)}
+              />
+            </div>
+          </div>
+        </motion.section>
       </div>
+    </div>
   )
 }
 
