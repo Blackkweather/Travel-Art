@@ -33,6 +33,7 @@ model User {
   notifications Notification[]
   referralsSent Referral[] @relation("Referrer")
   referralsReceived Referral[] @relation("Referee")
+  payments      Payment[]
   adminLogs    AdminLog[]
 
   @@map("users")
@@ -65,7 +66,12 @@ model Artist {
   ratings           Rating[]
   transactions      Transaction[]
   trips             Trip[]   // Experiences featuring this artist
+  memberships       Membership[]
+  payouts           Payout[]
 
+  // membershipStatus above is now derived state: the Membership rows are
+  // authoritative. It is kept for the existing queries that read it and
+  // should be backfilled from Membership, then dropped.
   @@map("artists")
 }
 
@@ -92,6 +98,7 @@ model Hotel {
   bookings        Booking[]
   ratings         Rating[]
   credits         Credit[]
+  creditLedger    CreditLedger[]
   transactions    Transaction[]
   trips           Trip[]   // Experiences at this hotel
 
@@ -175,6 +182,10 @@ model Rating {
   @@map("ratings")
 }
 
+/// Running balance, kept only as a cache for fast reads.
+/// CreditLedger is the source of truth: a balance that disagrees with
+/// SUM(credit_ledger.delta) for the same hotel is by definition wrong and
+/// should be rebuilt from the ledger, never the other way round.
 model Credit {
   id           String @id @default(cuid())
   hotelId      String @unique
@@ -185,6 +196,168 @@ model Credit {
   hotel        Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@map("credits")
+}
+
+/// Append-only record of every credit movement. Never updated, never deleted.
+/// Grants are positive, spends are negative, and the balance is the sum.
+/// This is what makes a disputed invoice answerable.
+model CreditLedger {
+  id        String       @id @default(cuid())
+  hotelId   String
+  delta     Int
+  reason    LedgerReason
+  bookingId String?
+  paymentId String?
+  note      String?
+  createdAt DateTime     @default(now())
+
+  hotel     Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  payment   Payment?     @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([hotelId])
+  @@index([createdAt])
+  @@index([bookingId])
+  @@map("credit_ledger")
+}
+
+/// The single source of truth for credit pack pricing. Prices must never be
+/// duplicated in the frontend or hardcoded in a route: both were previously
+/// true and disagreed by a factor of thirty.
+model CreditPackage {
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  name         String
+  credits      Int
+  bonusCredits Int       @default(0)
+  priceCents   Int
+  currency     String    @default("EUR")
+  active       Boolean   @default(true)
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  payments     Payment[]
+
+  @@index([active])
+  @@map("credit_packages")
+}
+
+/// Artist membership. Nothing previously wrote membershipStatus = ACTIVE, so
+/// no artist could hold a membership and every referral stayed PENDING forever.
+model Membership {
+  id             String           @id @default(cuid())
+  artistId       String
+  tier           MembershipTier
+  priceCents     Int
+  currency       String           @default("EUR")
+  status         MembershipStatus @default(PENDING)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  stripeSubId    String?          @unique
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  artist         Artist           @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  payments       Payment[]
+
+  @@index([artistId])
+  @@index([status])
+  @@index([endsAt])
+  @@map("memberships")
+}
+
+/// One row per Stripe charge. stripePaymentIntentId is unique so a retried
+/// webhook can never be applied twice.
+model Payment {
+  id                    String         @id @default(cuid())
+  stripePaymentIntentId String?        @unique
+  stripeSessionId       String?        @unique
+  actorUserId           String
+  amountCents           Int
+  currency              String         @default("EUR")
+  status                PaymentStatus  @default(PENDING)
+  packageId             String?
+  membershipId          String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  actor                 User           @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  creditPackage         CreditPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  membership            Membership?    @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  ledgerEntries         CreditLedger[]
+
+  @@index([actorUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+/// What the platform owes an artist for a completed booking. Nothing paid
+/// artists before: a grep for "payout" across the backend returned nothing.
+model Payout {
+  id               String       @id @default(cuid())
+  artistId         String
+  bookingId        String       @unique
+  amountCents      Int
+  currency         String       @default("EUR")
+  status           PayoutStatus @default(PENDING)
+  stripeTransferId String?      @unique
+  paidAt           DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  artist           Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([artistId])
+  @@index([status])
+  @@map("payouts")
+}
+
+/// Stripe retries webhooks. Recording the event id makes replay a no-op
+/// instead of a second grant of credits.
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  type          String
+  processedAt   DateTime @default(now())
+  payload       String?
+
+  @@index([type])
+  @@map("webhook_events")
+}
+
+enum LedgerReason {
+  PURCHASE
+  BOOKING_SPEND
+  BOOKING_REFUND
+  ADMIN_ADJUSTMENT
+  PROMOTIONAL_GRANT
+}
+
+enum MembershipTier {
+  ARTIST
+  PROFESSIONAL
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
 }
 
 model Transaction {
