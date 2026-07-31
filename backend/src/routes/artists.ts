@@ -228,6 +228,14 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
       ratings: {
         take: 10,
         orderBy: { createdAt: 'desc' }
+      },
+      // The membership screen needs to know which tier is held, not just that
+      // one is active — without it the UI cannot tell an ARTIST member from a
+      // PROFESSIONAL one and marked both plans as current.
+      memberships: {
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'desc' },
+        take: 1
       }
     }
   });
@@ -290,7 +298,8 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
       totalRatings: ratings.length,
       images,
       videos,
-      mediaUrls
+      mediaUrls,
+      membershipTier: artist.memberships[0]?.tier ?? null
     }
   });
 }));

@@ -293,6 +293,28 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   const weeklyPaymentAmount = 200.0; // Fixed weekly rate
   const totalPaymentAmount = numberOfWeeks * weeklyPaymentAmount;
 
+  // What this booking costs in credits, read from the artist now and frozen
+  // onto the booking. Repricing the artist later must not rewrite the cost of
+  // bookings already made.
+  const creditCost = artist.bookingCreditCost;
+
+  // The hotel must be able to afford it before anything is written. Balance is
+  // derived from the ledger, which is the authoritative record; the Credit row
+  // is the running total kept in step with it.
+  const creditAccount = await prisma.credit.findUnique({
+    where: { hotelId: hotel.id }
+  });
+
+  const availableCredits =
+    (creditAccount?.totalCredits ?? 0) - (creditAccount?.usedCredits ?? 0);
+
+  if (availableCredits < creditCost) {
+    throw new CustomError(
+      `This booking costs ${creditCost} credits and you have ${availableCredits}. Please top up before booking.`,
+      400
+    );
+  }
+
   // Create booking with weekly payment
   const booking = await prisma.booking.create({
     data: {
@@ -302,6 +324,7 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
       endDate: end,
       status: 'PENDING',
       creditsUsed: 0, // Deprecated - kept for backward compatibility
+      creditCost,
       weeklyPaymentAmount,
       numberOfWeeks,
       totalPaymentAmount,
@@ -333,6 +356,26 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
       }
     }
   });
+
+  // Spend the credits. The ledger entry and the running total move together
+  // so the two can never disagree; the ledger is what answers a dispute.
+  if (creditCost > 0) {
+    await prisma.$transaction([
+      prisma.creditLedger.create({
+        data: {
+          hotelId: hotel.id,
+          delta: -creditCost,
+          reason: 'BOOKING_SPEND',
+          bookingId: booking.id,
+          note: `Booking ${booking.id}`
+        }
+      }),
+      prisma.credit.update({
+        where: { hotelId: hotel.id },
+        data: { usedCredits: { increment: creditCost } }
+      })
+    ]);
+  }
 
   // Create pending transaction for the booking payment
   await prisma.transaction.create({
@@ -436,7 +479,35 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
       where: { id },
       data: { paymentStatus: 'REFUNDED' }
     });
-    
+
+    // Return the credits the booking reserved. Without this the hotel paid for
+    // a booking the artist declined: the spend was recorded on creation and
+    // nothing ever gave it back. Guarded so a repeated status change cannot
+    // refund the same booking twice.
+    if (booking.creditCost > 0) {
+      const alreadyRefunded = await prisma.creditLedger.findFirst({
+        where: { bookingId: booking.id, reason: 'BOOKING_REFUND' }
+      });
+
+      if (!alreadyRefunded) {
+        await prisma.$transaction([
+          prisma.creditLedger.create({
+            data: {
+              hotelId: booking.hotelId,
+              delta: booking.creditCost,
+              reason: 'BOOKING_REFUND',
+              bookingId: booking.id,
+              note: `Booking ${booking.id} ${status.toLowerCase()}`
+            }
+          }),
+          prisma.credit.update({
+            where: { hotelId: booking.hotelId },
+            data: { usedCredits: { decrement: booking.creditCost } }
+          })
+        ]);
+      }
+    }
+
     // Create refund transaction if payment was already made
     if (booking.paymentStatus === 'PAID') {
       await prisma.transaction.create({

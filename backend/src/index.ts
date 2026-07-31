@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import { config } from './config';
-import { errorHandler } from './middleware/errorHandler';
+import { errorHandler, CustomError } from './middleware/errorHandler';
 import { authRoutes } from './routes/auth';
 import { artistRoutes } from './routes/artists';
 import { hotelRoutes } from './routes/hotels';
@@ -57,23 +57,28 @@ app.use(helmet({
 }));
 // CORS configuration - explicit allowlist. Because credentials are enabled, an
 // unrestricted origin would let any site issue authenticated cross-origin calls.
-const devOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:3002',
-  'http://localhost:4000',
-  'http://localhost:5173', // Vite default port
-];
+const isDevelopment = config.nodeEnv !== 'production';
+
+// Any loopback origin is acceptable outside production. This used to be a
+// hardcoded list of ports (3000, 3001, 3002, 4000, 5173); Vite picks the next
+// free port whenever those are taken, so a second dev server — or a stale
+// process still holding 5173 — landed on a port the API rejected, and every
+// request failed with "Origin http://localhost:5199 is not allowed by CORS".
+//
+// This stays strictly development-only. In production the allowlist below is
+// still the sole authority, because credentials are enabled and a permissive
+// origin would let any site make authenticated cross-origin calls.
+const LOOPBACK_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
 
 const allowedOrigins = [
   config.corsOrigin,
   config.frontendUrl,
-  ...(config.nodeEnv === 'production' ? [] : devOrigins),
 ].filter((origin): origin is string => Boolean(origin));
 
 // Vercel preview deployments get a generated subdomain per commit.
 const isAllowedOrigin = (origin: string): boolean => {
   if (allowedOrigins.includes(origin)) return true;
+  if (isDevelopment && LOOPBACK_ORIGIN.test(origin)) return true;
   return config.previewOriginPattern
     ? new RegExp(config.previewOriginPattern).test(origin)
     : false;
@@ -87,7 +92,10 @@ app.use(cors({
 
     if (isAllowedOrigin(origin)) return callback(null, true);
 
-    callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    // A rejected origin is a forbidden request, not a server fault. This threw
+    // a bare Error, which the handler defaulted to 500 — so a CORS denial was
+    // indistinguishable from the API genuinely breaking.
+    callback(new CustomError(`Origin ${origin} is not allowed by CORS`, 403));
   },
   credentials: true
 }));

@@ -97,6 +97,50 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
   );
 }));
 
+/**
+ * Purchase an artist membership.
+ *
+ * The frontend has always called this endpoint, but it was never implemented,
+ * so every upgrade attempt 404'd and the page reported "Membership purchase
+ * failed. Please try again." — advice that could never work.
+ *
+ * It takes the same position as /credits/purchase above: validate everything
+ * that can be validated, then refuse honestly rather than granting a paid
+ * benefit no one was charged for. Activating a membership here would make an
+ * artist ACTIVE, and therefore priority-placed, for free.
+ */
+router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
+  const { artistId, membershipType } = req.body;
+
+  if (!artistId || !membershipType) {
+    throw new CustomError('artistId and membershipType are required', 400);
+  }
+
+  // Tiers are constrained by the MembershipTier enum; anything else is a
+  // client bug and should not reach the payment step.
+  if (!['ARTIST', 'PROFESSIONAL'].includes(membershipType)) {
+    throw new CustomError('Unknown membership tier', 400);
+  }
+
+  const artist = await prisma.artist.findFirst({
+    where: { id: artistId, userId: req.user!.id }
+  });
+
+  if (!artist) {
+    throw new CustomError('Artist not found or access denied', 404);
+  }
+
+  console.warn(
+    `Blocked membership purchase: no payment processor configured (artist ${artistId}, tier ${membershipType})`
+  );
+
+  throw new CustomError(
+    'Memberships are temporarily unavailable while payment processing is being set up. ' +
+    'No card has been charged and your membership has not changed. Please contact us to arrange an upgrade.',
+    503
+  );
+}));
+
 // Get transactions for a user
 router.get('/transactions', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   const { limit = '50', page = '1' } = req.query;
