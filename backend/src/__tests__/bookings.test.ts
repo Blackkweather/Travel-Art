@@ -82,10 +82,21 @@ describe('Bookings API', () => {
       },
     });
 
+    // POST /bookings refuses an artist with no availability covering the
+    // requested dates. Without this window every booking-creation test got a
+    // 400 from that check rather than exercising the path under test.
+    await prisma.artistAvailability.create({
+      data: {
+        artistId: artist.id,
+        dateFrom: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        dateTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      },
+    });
+
     // Verify profiles were created
     expect(hotel).toBeDefined();
     expect(artist).toBeDefined();
-    
+
     // Verify users can be retrieved (ensures database is ready)
     const verifyHotelUser = await prisma.user.findUnique({ where: { email: hotelEmail } });
     const verifyArtistUser = await prisma.user.findUnique({ where: { email: artistEmail } });
@@ -153,6 +164,8 @@ describe('Bookings API', () => {
         startDate: start.toISOString(),
         endDate: end.toISOString(),
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       });
 
     expect(res.status).toBe(201);
@@ -199,6 +212,8 @@ describe('Bookings API', () => {
         startDate: past.toISOString(),
         endDate: future.toISOString(),
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       });
     expect(resPast.status).toBe(400);
 
@@ -214,6 +229,8 @@ describe('Bookings API', () => {
         startDate: start.toISOString(),
         endDate: end.toISOString(),
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       });
     expect(resRange.status).toBe(400);
   });
@@ -256,6 +273,8 @@ describe('Bookings API', () => {
           endDate: new Date(),
           status: 'PENDING',
           creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
         },
         {
           hotelId: hotel.id,
@@ -264,6 +283,8 @@ describe('Bookings API', () => {
           endDate: new Date(),
           status: 'PENDING',
           creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
         },
         {
           hotelId: secondHotel.id,
@@ -272,6 +293,8 @@ describe('Bookings API', () => {
           endDate: new Date(),
           status: 'PENDING',
           creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
         },
       ],
     });
@@ -319,6 +342,8 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         status: 'PENDING',
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -369,6 +394,9 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         status: 'PENDING',
         creditsUsed: 1,
+        creditCost: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -431,6 +459,9 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         status: 'PENDING',
         creditsUsed: 1,
+        creditCost: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -486,6 +517,8 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         status: 'PENDING',
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -529,6 +562,8 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         status: 'COMPLETED',
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 

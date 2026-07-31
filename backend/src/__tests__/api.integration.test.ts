@@ -103,23 +103,35 @@ describe('API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      // The list is paginated: data is { artists, pagination }, not an array.
+      expect(Array.isArray(response.body.data.artists)).toBe(true);
+      expect(response.body.data.pagination).toBeDefined();
     });
 
-    it('should require authentication', async () => {
+    // The artist directory is deliberately public — TopArtistsPage and the
+    // public artist profiles are served to signed-out visitors. This used to
+    // assert a 401 that the route has never returned. The endpoint that does
+    // require a session is /artists/me.
+    it('should serve the artist directory publicly', async () => {
       const response = await request(app).get('/api/artists');
+      expect(response.status).toBe(200);
+    });
+
+    it('should require authentication for the current artist profile', async () => {
+      const response = await request(app).get('/api/artists/me');
       expect(response.status).toBe(401);
     });
   });
 
   describe('Hotels API', () => {
-    it('should get all hotels', async () => {
+    // GET /hotels is the admin directory. The token here belongs to an ARTIST,
+    // so 403 is the correct answer; the test previously expected 200.
+    it('should refuse the hotel directory to non-admins', async () => {
       const response = await request(app)
         .get('/api/hotels')
         .set('Authorization', `Bearer ${authToken}`);
 
-      expect(response.status).toBe(200);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.status).toBe(403);
     });
   });
 });

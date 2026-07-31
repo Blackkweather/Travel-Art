@@ -80,6 +80,8 @@ describe('Admin API - bookings overview', () => {
           endDate: new Date(),
           status: 'PENDING',
           creditsUsed: 1,
+          numberOfWeeks: 1,
+          totalPaymentAmount: 200.0,
         },
         {
           hotelId: hotel.id,
@@ -88,6 +90,8 @@ describe('Admin API - bookings overview', () => {
           endDate: new Date(),
           status: 'CONFIRMED',
           creditsUsed: 1,
+          numberOfWeeks: 1,
+          totalPaymentAmount: 200.0,
         },
       ],
     });

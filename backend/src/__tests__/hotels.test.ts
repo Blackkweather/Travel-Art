@@ -178,7 +178,12 @@ describe('Hotels API', () => {
     expect(res.body.data).toHaveProperty('usedCredits');
   });
 
-  it('TC-HOTEL-005: should purchase credits', async () => {
+  // POST /hotels/:id/credits/purchase took `amount` and `credits` straight
+  // from the request body and added them to the balance, so a hotel could ask
+  // for any number of credits it liked. It has been removed; purchases go
+  // through /payments/credits/purchase, which prices from the packages table.
+  // This asserts the old route stays gone rather than testing it works.
+  it('TC-HOTEL-005: should no longer expose the client-priced credit purchase route', async () => {
     const hotel = await prisma.hotel.findFirst({
       where: { user: { email: hotelEmail } }
     });
@@ -188,9 +193,14 @@ describe('Hotels API', () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: hotelEmail, password });
-    
+
     expect(loginRes.status).toBe(200);
     const token = loginRes.body.data.token;
+
+    const creditsBefore = await prisma.credit.findUnique({
+      where: { hotelId: hotel.id }
+    });
+    const balanceBefore = creditsBefore?.totalCredits ?? 0;
 
     const res = await request(app)
       .post(`/api/hotels/${hotel.id}/credits/purchase`)
@@ -200,16 +210,12 @@ describe('Hotels API', () => {
         credits: 5,
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toHaveProperty('credits');
-    expect(res.body.data).toHaveProperty('transaction');
+    expect(res.status).toBe(404);
 
-    // Verify credits were added
-    const credits = await prisma.credit.findUnique({
+    const creditsAfter = await prisma.credit.findUnique({
       where: { hotelId: hotel.id }
     });
-    expect(credits?.totalCredits).toBeGreaterThanOrEqual(15); // 10 initial + 5 new
+    expect(creditsAfter?.totalCredits ?? 0).toBe(balanceBefore);
   });
 
   it('TC-HOTEL-006: should browse artists (authenticated hotel)', async () => {

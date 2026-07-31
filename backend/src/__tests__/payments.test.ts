@@ -75,17 +75,36 @@ describe('Payments API', () => {
     expect(res.body.data[0]).toHaveProperty('price');
   });
 
-  it('TC-PAY-002: should purchase credits (first purchase with 50% discount)', async () => {
+  // This suite used to assert that POSTing a package id granted credits and
+  // wrote a Transaction. That was the vulnerability: no processor was ever
+  // called, so any authenticated hotel could mint unlimited inventory while
+  // the ledger showed the revenue as collected. The route now refuses until a
+  // payment processor is wired up, and the property worth testing is that a
+  // request which was never paid for grants nothing.
+  it('TC-PAY-002: should refuse to grant credits when no payment was taken', async () => {
     const hotel = await prisma.hotel.findFirst({
       where: { user: { email: hotelEmail } }
     });
     expect(hotel).toBeDefined();
     if (!hotel) throw new Error('Hotel not found');
 
+    // Use a real package so the request reaches the payment step rather than
+    // being turned away as an unknown package.
+    const creditPackage = await prisma.creditPackage.findFirst({
+      where: { active: true }
+    });
+    expect(creditPackage).toBeDefined();
+    if (!creditPackage) throw new Error('No active credit package seeded');
+
+    const creditsBefore = await prisma.credit.findUnique({
+      where: { hotelId: hotel.id }
+    });
+    const balanceBefore = creditsBefore?.totalCredits ?? 0;
+
     const loginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: hotelEmail, password });
-    
+
     expect(loginRes.status).toBe(200);
     expect(loginRes.body.success).toBe(true);
     const token = loginRes.body.data.token;
@@ -96,23 +115,18 @@ describe('Payments API', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         hotelId: hotel.id,
-        packageId: 'package-1',
+        packageId: creditPackage.id,
         paymentMethod: 'card'
       });
 
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toHaveProperty('credits');
-    expect(res.body.data).toHaveProperty('transaction');
-    expect(res.body.data).toHaveProperty('package');
-    expect(res.body.data.isFirstPurchase).toBe(true);
-    
-    // Verify credits were added
-    const credits = await prisma.credit.findUnique({
+    expect(res.status).toBe(503);
+    expect(res.body.success).toBe(false);
+
+    // The balance must be untouched.
+    const creditsAfter = await prisma.credit.findUnique({
       where: { hotelId: hotel.id }
     });
-    expect(credits).toBeDefined();
-    expect(credits?.totalCredits).toBeGreaterThan(0);
+    expect(creditsAfter?.totalCredits ?? 0).toBe(balanceBefore);
   });
 
   it('TC-PAY-003: should get transactions for hotel', async () => {

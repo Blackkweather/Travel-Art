@@ -26,7 +26,7 @@ describe('Trips API (public)', () => {
           description: 'Art in Italy',
           priceFrom: 2000,
           priceTo: 4000,
-          location: 'Italy',
+          location: JSON.stringify({ city: 'Rome', country: 'Italy' }),
           images: JSON.stringify(['italy1.jpg']),
           status: 'PUBLISHED',
         },
@@ -36,7 +36,7 @@ describe('Trips API (public)', () => {
           description: 'Art in France',
           priceFrom: 2500,
           priceTo: 4500,
-          location: 'France',
+          location: JSON.stringify({ city: 'Paris', country: 'France' }),
           images: JSON.stringify(['france1.jpg']),
           status: 'PUBLISHED',
         },
@@ -46,7 +46,7 @@ describe('Trips API (public)', () => {
           description: 'Draft trip',
           priceFrom: 1500,
           priceTo: 3000,
-          location: 'Spain',
+          location: JSON.stringify({ city: 'Madrid', country: 'Spain' }),
           images: JSON.stringify(['spain1.jpg']),
           status: 'DRAFT',
         },
@@ -56,7 +56,7 @@ describe('Trips API (public)', () => {
           description: 'Archived trip',
           priceFrom: 3000,
           priceTo: 6000,
-          location: 'Japan',
+          location: JSON.stringify({ city: 'Tokyo', country: 'Japan' }),
           images: JSON.stringify(['japan1.jpg']),
           status: 'ARCHIVED',
         },
@@ -83,7 +83,7 @@ describe('Trips API (public)', () => {
           description: 'Florence trip',
           priceFrom: 2500,
           priceTo: 5000,
-          location: 'Florence, Italy',
+          location: JSON.stringify({ city: 'Florence', country: 'Italy' }),
           images: JSON.stringify(['florence1.jpg']),
           status: 'PUBLISHED',
         },
@@ -93,7 +93,7 @@ describe('Trips API (public)', () => {
           description: 'Paris trip',
           priceFrom: 2200,
           priceTo: 4200,
-          location: 'Paris, France',
+          location: JSON.stringify({ city: 'Paris', country: 'France' }),
           images: JSON.stringify(['paris1.jpg']),
           status: 'PUBLISHED',
         },
@@ -104,7 +104,7 @@ describe('Trips API (public)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
-    expect(res.body[0].location).toContain('Italy');
+    expect(res.body[0].location.country).toBe('Italy');
   });
 
   it('TC-TRIP-004: should return complete trip details', async () => {
@@ -115,7 +115,7 @@ describe('Trips API (public)', () => {
         description: 'Immerse yourself in Renaissance masterpieces',
         priceFrom: 2500,
         priceTo: 5000,
-        location: 'Florence, Italy',
+        location: JSON.stringify({ city: 'Florence', country: 'Italy' }),
         images: JSON.stringify(['florence1.jpg', 'florence2.jpg']),
         status: 'PUBLISHED',
       },
@@ -141,7 +141,7 @@ describe('Trips API (public)', () => {
         description: 'Not yet published',
         priceFrom: 1000,
         priceTo: 2000,
-        location: 'Unknown',
+        location: JSON.stringify({ city: 'Unknown', country: '' }),
         images: JSON.stringify(['draft.jpg']),
         status: 'DRAFT',
       },
