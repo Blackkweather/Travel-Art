@@ -26,9 +26,9 @@ async function createUserWithRole(role: 'HOTEL' | 'ARTIST' | 'ADMIN', email: str
 }
 
 describe('Bookings API', () => {
-  const hotelEmail = `hotel-${Date.now()}@example.com`;
-  const artistEmail = `artist-${Date.now()}@example.com`;
-  const adminEmail = `admin-${Date.now()}@example.com`;
+  const hotelEmail = `hotel-${Date.now()}@suite.test`;
+  const artistEmail = `artist-${Date.now()}@suite.test`;
+  const adminEmail = `admin-${Date.now()}@suite.test`;
   const password = 'SecureP@ss123';
 
   beforeAll(async () => {
@@ -36,11 +36,8 @@ describe('Bookings API', () => {
     await initializeDatabase();
 
     // Clean any leftover test data
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
     // Create hotel, artist, admin users and profiles
@@ -107,11 +104,8 @@ describe('Bookings API', () => {
   });
 
   afterAll(async () => {
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
     await prisma.$disconnect().catch(() => undefined);
   });
@@ -237,7 +231,7 @@ describe('Bookings API', () => {
 
   it('TC-BOOK-005: should only return bookings for current hotel', async () => {
     // Create second hotel + user
-    const secondHotelUser = await createUserWithRole('HOTEL', `hotel2-${Date.now()}@example.com`, password);
+    const secondHotelUser = await createUserWithRole('HOTEL', `hotel2-${Date.now()}@suite.test`, password);
     const secondHotel = await prisma.hotel.create({
       data: {
         userId: secondHotelUser.id,

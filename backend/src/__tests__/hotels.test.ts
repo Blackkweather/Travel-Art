@@ -24,9 +24,9 @@ async function createUserWithRole(role: 'HOTEL' | 'ARTIST' | 'ADMIN', email: str
 }
 
 describe('Hotels API', () => {
-  const hotelEmail = `hotel-test-${Date.now()}@example.com`;
-  const artistEmail = `artist-hotel-${Date.now()}@example.com`;
-  const adminEmail = `admin-hotel-${Date.now()}@example.com`;
+  const hotelEmail = `hotel-test-${Date.now()}@suite.test`;
+  const artistEmail = `artist-hotel-${Date.now()}@suite.test`;
+  const adminEmail = `admin-hotel-${Date.now()}@suite.test`;
   const password = 'SecureP@ss123';
 
   beforeAll(async () => {
@@ -34,12 +34,8 @@ describe('Hotels API', () => {
     await initializeDatabase();
 
     // Clean test data
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.credit.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
     // Create hotel, artist, admin users and profiles
@@ -76,12 +72,8 @@ describe('Hotels API', () => {
   });
 
   afterAll(async () => {
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.credit.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
     await prisma.$disconnect().catch(() => undefined);
   });

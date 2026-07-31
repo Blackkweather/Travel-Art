@@ -17,18 +17,15 @@ async function createAdmin(email: string, password: string) {
 }
 
 describe('Admin API - bookings overview', () => {
-  const adminEmail = `admin-${Date.now()}@example.com`;
+  const adminEmail = `admin-${Date.now()}@suite.test`;
   const password = 'AdminP@ss123';
 
   beforeAll(async () => {
     process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./prisma/dev.db';
     await initializeDatabase();
 
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
     const admin = await createAdmin(adminEmail, password);
@@ -37,7 +34,7 @@ describe('Admin API - bookings overview', () => {
     const passwordHash = await bcrypt.hash('SecureP@ss123', 10);
     const hotelUser = await prisma.user.create({
       data: {
-        email: `hotel-admin-${Date.now()}@example.com`,
+        email: `hotel-admin-${Date.now()}@suite.test`,
         name: 'Hotel Admin',
         passwordHash,
         role: 'HOTEL',
@@ -45,7 +42,7 @@ describe('Admin API - bookings overview', () => {
     });
     const artistUser = await prisma.user.create({
       data: {
-        email: `artist-admin-${Date.now()}@example.com`,
+        email: `artist-admin-${Date.now()}@suite.test`,
         name: 'Artist Admin',
         passwordHash,
         role: 'ARTIST',
@@ -98,11 +95,8 @@ describe('Admin API - bookings overview', () => {
   });
 
   afterAll(async () => {
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
     await prisma.$disconnect().catch(() => undefined);
   });

@@ -9,11 +9,19 @@ describe('Trips API (public)', () => {
   });
 
   beforeEach(async () => {
-    await prisma.trip.deleteMany().catch(() => undefined);
+    // Scoped to this suite's fixtures. An unfiltered deleteMany() here
+    // emptied the whole experiences catalogue.
+    await prisma.trip.deleteMany({
+      where: { slug: { startsWith: 'suite-' } },
+    }).catch(() => undefined);
   });
 
   afterAll(async () => {
-    await prisma.trip.deleteMany().catch(() => undefined);
+    // Scoped to this suite's fixtures. An unfiltered deleteMany() here
+    // emptied the whole experiences catalogue.
+    await prisma.trip.deleteMany({
+      where: { slug: { startsWith: 'suite-' } },
+    }).catch(() => undefined);
     await prisma.$disconnect().catch(() => undefined);
   });
 
@@ -22,7 +30,7 @@ describe('Trips API (public)', () => {
       data: [
         {
           title: 'Italy Experience',
-          slug: 'italy-experience',
+          slug: 'suite-italy-experience',
           description: 'Art in Italy',
           priceFrom: 2000,
           priceTo: 4000,
@@ -32,7 +40,7 @@ describe('Trips API (public)', () => {
         },
         {
           title: 'France Experience',
-          slug: 'france-experience',
+          slug: 'suite-france-experience',
           description: 'Art in France',
           priceFrom: 2500,
           priceTo: 4500,
@@ -42,7 +50,7 @@ describe('Trips API (public)', () => {
         },
         {
           title: 'Spain Draft',
-          slug: 'spain-draft',
+          slug: 'suite-spain-draft',
           description: 'Draft trip',
           priceFrom: 1500,
           priceTo: 3000,
@@ -52,7 +60,7 @@ describe('Trips API (public)', () => {
         },
         {
           title: 'Japan Archived',
-          slug: 'japan-archived',
+          slug: 'suite-japan-archived',
           description: 'Archived trip',
           priceFrom: 3000,
           priceTo: 6000,
@@ -66,10 +74,17 @@ describe('Trips API (public)', () => {
     const res = await request(app).get('/api/trips');
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(2);
+    // The catalogue holds seeded experiences as well, so assert on this
+    // suite's own fixtures rather than the total row count.
+    const slugs = res.body.map((t: any) => t.slug);
+    expect(slugs).toContain('suite-italy-experience');
+    expect(slugs).toContain('suite-france-experience');
+    expect(slugs).not.toContain('suite-spain-draft');
+    expect(slugs).not.toContain('suite-japan-archived');
     expect(res.body.every((t: any) => t.status === 'PUBLISHED')).toBe(true);
 
-    const trip = res.body[0];
+    const trip = res.body.find((t: any) => t.slug === 'suite-italy-experience');
+    expect(trip).toBeDefined();
     expect(trip).not.toHaveProperty('createdAt');
     expect(trip).not.toHaveProperty('updatedAt');
   });
@@ -79,7 +94,7 @@ describe('Trips API (public)', () => {
       data: [
         {
           title: 'Florence Art Tour',
-          slug: 'florence-art',
+          slug: 'suite-florence-art',
           description: 'Florence trip',
           priceFrom: 2500,
           priceTo: 5000,
@@ -89,7 +104,7 @@ describe('Trips API (public)', () => {
         },
         {
           title: 'Paris Art Tour',
-          slug: 'paris-art',
+          slug: 'suite-paris-art',
           description: 'Paris trip',
           priceFrom: 2200,
           priceTo: 4200,
@@ -103,15 +118,17 @@ describe('Trips API (public)', () => {
     const res = await request(app).get('/api/trips?destination=Italy');
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].location.country).toBe('Italy');
+    const suiteTrips = res.body.filter((t: any) => t.slug.startsWith('suite-'));
+    expect(suiteTrips).toHaveLength(1);
+    expect(suiteTrips[0].slug).toBe('suite-florence-art');
+    expect(suiteTrips[0].location.country).toBe('Italy');
   });
 
   it('TC-TRIP-004: should return complete trip details', async () => {
     const trip = await prisma.trip.create({
       data: {
         title: 'Florence Art Experience',
-        slug: 'florence-art-experience',
+        slug: 'suite-florence-art-experience',
         description: 'Immerse yourself in Renaissance masterpieces',
         priceFrom: 2500,
         priceTo: 5000,
@@ -137,7 +154,7 @@ describe('Trips API (public)', () => {
     const draft = await prisma.trip.create({
       data: {
         title: 'Secret Draft Trip',
-        slug: 'secret-draft-trip',
+        slug: 'suite-secret-draft-trip',
         description: 'Not yet published',
         priceFrom: 1000,
         priceTo: 2000,

@@ -17,7 +17,7 @@ describe('API Integration Tests', () => {
     const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
     const user = await prisma.user.create({
       data: {
-        email: 'test@example.com',
+        email: 'test@suite.test',
         passwordHash: hashedPassword,
         name: 'Test User',
         role: 'ARTIST',
@@ -29,7 +29,7 @@ describe('API Integration Tests', () => {
     const loginResponse = await request(app)
       .post('/api/auth/login')
       .send({
-        email: 'test@example.com',
+        email: 'test@suite.test',
         password: 'TestPassword123!',
       });
 
@@ -56,7 +56,7 @@ describe('API Integration Tests', () => {
       const response = await request(app)
         .post('/api/auth/register')
         .send({
-          email: 'newuser@example.com',
+          email: 'newuser@suite.test',
           password: 'Password123!',
           name: 'New User',
           role: 'ARTIST',
@@ -68,7 +68,7 @@ describe('API Integration Tests', () => {
 
       // Clean up
       await prisma.user.delete({
-        where: { email: 'newuser@example.com' },
+        where: { email: 'newuser@suite.test' },
       });
     });
 
@@ -76,7 +76,7 @@ describe('API Integration Tests', () => {
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'test@example.com',
+          email: 'test@suite.test',
           password: 'TestPassword123!',
         });
 
@@ -88,7 +88,7 @@ describe('API Integration Tests', () => {
       const response = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'test@example.com',
+          email: 'test@suite.test',
           password: 'WrongPassword',
         });
 

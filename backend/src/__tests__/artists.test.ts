@@ -24,7 +24,7 @@ async function createUserWithRole(role: 'HOTEL' | 'ARTIST' | 'ADMIN', email: str
 }
 
 describe('Artists API', () => {
-  const artistEmail = `artist-test-${Date.now()}@example.com`;
+  const artistEmail = `artist-test-${Date.now()}@suite.test`;
   const password = 'SecureP@ss123';
 
   beforeAll(async () => {
@@ -32,10 +32,8 @@ describe('Artists API', () => {
     await initializeDatabase();
 
     // Clean test data
-    await prisma.artistAvailability.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
     // Create artist user and profile
@@ -53,10 +51,8 @@ describe('Artists API', () => {
   });
 
   afterAll(async () => {
-    await prisma.artistAvailability.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
     await prisma.$disconnect().catch(() => undefined);
   });
@@ -170,7 +166,7 @@ describe('Artists API', () => {
 
   it('TC-ART-007: should require ARTIST role for profile update', async () => {
     // Create hotel user
-    const hotelEmail = `hotel-${Date.now()}@example.com`;
+    const hotelEmail = `hotel-${Date.now()}@suite.test`;
     const hotelUser = await createUserWithRole('HOTEL', hotelEmail, password);
     
     const loginRes = await request(app)

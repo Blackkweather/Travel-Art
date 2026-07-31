@@ -24,7 +24,7 @@ async function createUserWithRole(role: 'HOTEL' | 'ARTIST' | 'ADMIN', email: str
 }
 
 describe('Common API', () => {
-  const artistEmail = `artist-common-${Date.now()}@example.com`;
+  const artistEmail = `artist-common-${Date.now()}@suite.test`;
   const password = 'SecureP@ss123';
 
   beforeAll(async () => {
@@ -32,10 +32,8 @@ describe('Common API', () => {
     await initializeDatabase();
 
     // Clean test data
-    await prisma.referral.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
     // Create artist user and profile
@@ -53,10 +51,8 @@ describe('Common API', () => {
   });
 
   afterAll(async () => {
-    await prisma.referral.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
     await prisma.$disconnect().catch(() => undefined);
   });

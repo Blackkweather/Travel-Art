@@ -24,7 +24,7 @@ async function createUserWithRole(role: 'HOTEL' | 'ARTIST' | 'ADMIN', email: str
 }
 
 describe('Payments API', () => {
-  const hotelEmail = `hotel-payments-${Date.now()}@example.com`;
+  const hotelEmail = `hotel-payments-${Date.now()}@suite.test`;
   const password = 'SecureP@ss123';
 
   beforeAll(async () => {
@@ -32,11 +32,8 @@ describe('Payments API', () => {
     await initializeDatabase();
 
     // Clean test data
-    await prisma.transaction.deleteMany().catch(() => undefined);
-    await prisma.credit.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
     // Create hotel user and profile
@@ -52,11 +49,8 @@ describe('Payments API', () => {
   });
 
   afterAll(async () => {
-    await prisma.transaction.deleteMany().catch(() => undefined);
-    await prisma.credit.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
     await prisma.$disconnect().catch(() => undefined);
   });
