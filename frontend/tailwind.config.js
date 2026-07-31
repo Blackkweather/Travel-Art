@@ -49,7 +49,28 @@ module.exports = {
           800: '#4f4745',
           900: '#251c20',
         },
-        'off-black': '#111111'
+        'off-black': '#111111',
+
+        // Semantic surfaces and text, resolved from the CSS custom properties
+        // in index.css. Using these instead of bg-white / text-gray-900 is what
+        // lets a screen follow the theme: the .dark class swaps the underlying
+        // variables and every surface moves with it. Pages that hardcode grey
+        // scales are frozen in the light theme no matter what the toggle says.
+        surface: {
+          DEFAULT: 'var(--surface)',
+          raised: 'var(--surface-raised)',
+          sunken: 'var(--surface-sunken)',
+          inverse: 'var(--surface-inverse)',
+        },
+        content: {
+          DEFAULT: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          inverse: 'var(--text-on-inverse)',
+        },
+        line: {
+          DEFAULT: 'var(--border-subtle)',
+          strong: 'var(--border-strong)',
+        },
       },
       // Cormorant Garamond echoes the engraved serif of the wordmark and earns
       // its place on a heritage/luxury brief. Outfit replaces Inter for UI text.

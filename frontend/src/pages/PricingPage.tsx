@@ -292,7 +292,7 @@ const PricingPage: React.FC = () => {
                     <div className="text-2xl font-bold text-gold">{plan.price}</div>
                     <div className="text-sm text-white/45">
                       <span className="line-through">€{parseInt(plan.price.replace('€', '').replace(',', '')) * 2}</span>
-                      <span className="ml-2 text-green-600 font-semibold">50% OFF First Purchase</span>
+                      <span className="ml-2 text-green-600 dark:text-green-400 font-semibold">50% OFF First Purchase</span>
                     </div>
                     <div className="text-xs text-white/45">
                       Next purchase: €300 per credit

@@ -114,9 +114,9 @@ const AdminUsers: React.FC = () => {
     const colors = {
       ARTIST: 'bg-purple-100 text-purple-800',
       HOTEL: 'bg-blue-100 text-blue-800',
-      ADMIN: 'bg-red-100 text-red-800'
+      ADMIN: 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
     }
-    return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+    return colors[role as keyof typeof colors] || 'bg-surface-sunken text-content'
   }
 
   if (loading && users.length === 0) {
@@ -134,7 +134,7 @@ const AdminUsers: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
         User Management
       </h1>
-          <p className="text-gray-600">
+          <p className="text-content-secondary">
             Manage users, verify accounts, and handle support requests.
           </p>
         </div>
@@ -167,7 +167,7 @@ const AdminUsers: React.FC = () => {
           </form>
           
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
+            <Filter className="w-5 h-5 text-content-secondary flex-shrink-0" />
             <select
               value={selectedRole}
               onChange={(e) => {
@@ -186,7 +186,7 @@ const AdminUsers: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded">
           {error}
         </div>
       )}
@@ -195,31 +195,31 @@ const AdminUsers: React.FC = () => {
       <div className="card-luxury overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-surface border-b border-line">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                   Details
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                   Joined
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-content-secondary uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-surface-raised divide-y divide-gray-200">
               {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+                <tr key={user.id} className="hover:bg-surface">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
@@ -227,7 +227,7 @@ const AdminUsers: React.FC = () => {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-navy">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-sm text-content-secondary">{user.email}</div>
                       </div>
                     </div>
                   </td>
@@ -241,7 +241,7 @@ const AdminUsers: React.FC = () => {
                       <div className="text-sm">
                         <div className="text-navy font-medium">{user.artist.discipline}</div>
                         {user.artist.membershipStatus === 'ACTIVE' && (
-                          <div className="text-green-600 text-xs flex items-center mt-1">
+                          <div className="text-green-600 dark:text-green-400 text-xs flex items-center mt-1">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Active Member
                           </div>
@@ -251,7 +251,7 @@ const AdminUsers: React.FC = () => {
                     {user.role === 'HOTEL' && user.hotel && (
                       <div className="text-sm">
                         <div className="text-navy font-medium">{user.hotel.name}</div>
-                        <div className="text-gray-600 text-xs mt-1">
+                        <div className="text-content-secondary text-xs mt-1">
                           {(() => {
                             try {
                               const loc = JSON.parse(user.hotel.location)
@@ -264,25 +264,25 @@ const AdminUsers: React.FC = () => {
                       </div>
                     )}
                     {user.role === 'ADMIN' && (
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-content-secondary">
                         {user.country || 'N/A'}
                       </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {user.isActive ? (
-                      <span className="flex items-center text-green-600 text-sm">
+                      <span className="flex items-center text-green-600 dark:text-green-400 text-sm">
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Active
                       </span>
                     ) : (
-                      <span className="flex items-center text-red-600 text-sm">
+                      <span className="flex items-center text-red-600 dark:text-red-400 text-sm">
                         <XCircle className="w-4 h-4 mr-1" />
                         Suspended
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-content-secondary">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-1" />
                       {new Date(user.createdAt).toLocaleDateString()}
@@ -295,7 +295,7 @@ const AdminUsers: React.FC = () => {
                           <button
                             onClick={() => handleSuspendUser(user.id)}
                             disabled={processing === user.id}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                            className="text-red-600 dark:text-red-400 hover:text-red-900 dark:text-red-400 disabled:opacity-50"
                           >
                             {processing === user.id ? 'Processing...' : 'Suspend'}
                           </button>
@@ -303,7 +303,7 @@ const AdminUsers: React.FC = () => {
                           <button
                             onClick={() => handleActivateUser(user.id)}
                             disabled={processing === user.id}
-                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                            className="text-green-600 dark:text-green-400 hover:text-green-900 dark:text-green-400 disabled:opacity-50"
                           >
                             {processing === user.id ? 'Processing...' : 'Activate'}
                           </button>
@@ -319,8 +319,8 @@ const AdminUsers: React.FC = () => {
 
         {users.length === 0 && !loading && (
           <div className="text-center py-12">
-            <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No users found</p>
+            <User className="w-12 h-12 text-content-secondary mx-auto mb-4" />
+            <p className="text-content-secondary">No users found</p>
           </div>
         )}
       </div>
@@ -335,7 +335,7 @@ const AdminUsers: React.FC = () => {
           >
             Previous
           </button>
-          <span className="text-gray-600">
+          <span className="text-content-secondary">
             Page {currentPage} of {totalPages}
           </span>
           <button

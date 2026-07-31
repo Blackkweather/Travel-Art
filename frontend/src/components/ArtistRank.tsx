@@ -116,7 +116,7 @@ export const ArtistRank: React.FC<ArtistRankProps> = ({
           <span className={`font-semibold ${sizeConfig.fontSize}`} style={{ color: config.color }}>
             {config.label}
           </span>
-          <span className="text-xs text-gray-500">{config.description}</span>
+          <span className="text-xs text-content-secondary">{config.description}</span>
         </div>
       )}
     </div>

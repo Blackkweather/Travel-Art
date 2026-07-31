@@ -90,13 +90,13 @@ const ArtistReferrals: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
       case 'pending':
         return 'bg-amber-100 text-amber-800'
       case 'inactive':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-surface-sunken text-content'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-surface-sunken text-content'
     }
   }
 
@@ -112,7 +112,7 @@ const ArtistReferrals: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading referrals...</p>
+          <p className="text-content-secondary">Loading referrals...</p>
         </div>
       </div>
     )
@@ -125,7 +125,7 @@ const ArtistReferrals: React.FC = () => {
         <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
           Referral Program
         </h1>
-        <p className="text-gray-600">
+        <p className="text-content-secondary">
           Invite fellow artists and earn credits for each successful referral
         </p>
       </div>
@@ -146,7 +146,7 @@ const ArtistReferrals: React.FC = () => {
                 <Icon className="w-6 h-6 text-gold" />
               </div>
               <h3 className="text-2xl font-bold text-navy mb-2">{stat.value}</h3>
-              <p className="text-gray-600">{stat.label}</p>
+              <p className="text-content-secondary">{stat.label}</p>
             </motion.div>
           )
         })}
@@ -162,7 +162,7 @@ const ArtistReferrals: React.FC = () => {
             <h3 className="text-lg font-serif font-semibold text-navy mb-4">
               Share Your Code
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-content-secondary mb-6">
               Share your referral code with other artists. When they join and become active members, 
               you'll both earn credits!
             </p>
@@ -210,7 +210,7 @@ const ArtistReferrals: React.FC = () => {
                 )}
               </div>
             ) : (
-              <p className="text-gray-600">Create your artist profile first to get a referral code.</p>
+              <p className="text-content-secondary">Create your artist profile first to get a referral code.</p>
             )}
           </div>
           
@@ -225,7 +225,7 @@ const ArtistReferrals: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-medium text-navy">Share Your Code</p>
-                  <p className="text-sm text-gray-600">Send your referral code to fellow artists</p>
+                  <p className="text-sm text-content-secondary">Send your referral code to fellow artists</p>
                 </div>
               </div>
               
@@ -235,7 +235,7 @@ const ArtistReferrals: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-medium text-navy">They Join</p>
-                  <p className="text-sm text-gray-600">Artists register using your referral code</p>
+                  <p className="text-sm text-content-secondary">Artists register using your referral code</p>
                 </div>
               </div>
               
@@ -245,7 +245,7 @@ const ArtistReferrals: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-medium text-navy">Earn Credits</p>
-                  <p className="text-sm text-gray-600">Both of you receive credits when they become active</p>
+                  <p className="text-sm text-content-secondary">Both of you receive credits when they become active</p>
                 </div>
               </div>
             </div>
@@ -266,7 +266,7 @@ const ArtistReferrals: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-4 bg-surface rounded-lg"
               >
                 <div className="flex items-center space-x-4">
                   {referral.image ? (
@@ -286,8 +286,8 @@ const ArtistReferrals: React.FC = () => {
                   )}
                   <div>
                     <h3 className="font-semibold text-navy">{referral.name}</h3>
-                    <p className="text-sm text-gray-600">{referral.discipline}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-content-secondary">{referral.discipline}</p>
+                    <p className="text-xs text-content-secondary">
                       Joined {new Date(referral.joinedDate).toLocaleDateString()}
                     </p>
                   </div>
@@ -306,9 +306,9 @@ const ArtistReferrals: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 mb-2">No referrals yet</p>
-            <p className="text-sm text-gray-500">
+            <Users className="w-16 h-16 text-content-secondary mx-auto mb-4" />
+            <p className="text-content-secondary mb-2">No referrals yet</p>
+            <p className="text-sm text-content-secondary">
               Share your referral code to invite other artists and start earning credits!
             </p>
           </div>
@@ -328,7 +328,7 @@ const ArtistReferrals: React.FC = () => {
             <h3 className="text-lg font-serif font-semibold text-navy mb-2">
               Earn Credits
             </h3>
-            <p className="text-gray-600">
+            <p className="text-content-secondary">
               Get credits for each successful referral that becomes an active member
             </p>
           </div>
@@ -340,7 +340,7 @@ const ArtistReferrals: React.FC = () => {
             <h3 className="text-lg font-serif font-semibold text-navy mb-2">
               Grow Network
             </h3>
-            <p className="text-gray-600">
+            <p className="text-content-secondary">
               Build a network of talented artists and expand your professional connections
             </p>
           </div>
@@ -352,7 +352,7 @@ const ArtistReferrals: React.FC = () => {
             <h3 className="text-lg font-serif font-semibold text-navy mb-2">
               Help Others
             </h3>
-            <p className="text-gray-600">
+            <p className="text-content-secondary">
               Help fellow artists discover new opportunities and grow their careers
             </p>
           </div>

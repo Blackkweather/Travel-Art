@@ -37,7 +37,7 @@ export const BillingForm: React.FC<BillingFormProps> = ({ value, onChange, error
             aria-describedby={errors.fullName ? 'fullName-error' : undefined}
           />
           {errors.fullName && (
-            <p id="fullName-error" className="mt-1 text-sm text-red-600">{errors.fullName}</p>
+            <p id="fullName-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.fullName}</p>
           )}
         </div>
 
@@ -54,7 +54,7 @@ export const BillingForm: React.FC<BillingFormProps> = ({ value, onChange, error
             aria-describedby={errors.email ? 'email-error' : undefined}
           />
           {errors.email && (
-            <p id="email-error" className="mt-1 text-sm text-red-600">{errors.email}</p>
+            <p id="email-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
           )}
         </div>
 
@@ -71,7 +71,7 @@ export const BillingForm: React.FC<BillingFormProps> = ({ value, onChange, error
             aria-describedby={errors.phone ? 'phone-error' : undefined}
           />
           {errors.phone && (
-            <p id="phone-error" className="mt-1 text-sm text-red-600">{errors.phone}</p>
+            <p id="phone-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.phone}</p>
           )}
         </div>
 
@@ -96,7 +96,7 @@ export const BillingForm: React.FC<BillingFormProps> = ({ value, onChange, error
             <option value="United States">United States</option>
           </select>
           {errors.country && (
-            <p id="country-error" className="mt-1 text-sm text-red-600">{errors.country}</p>
+            <p id="country-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.country}</p>
           )}
         </div>
 
@@ -113,7 +113,7 @@ export const BillingForm: React.FC<BillingFormProps> = ({ value, onChange, error
             aria-describedby={errors.address ? 'address-error' : undefined}
           />
           {errors.address && (
-            <p id="address-error" className="mt-1 text-sm text-red-600">{errors.address}</p>
+            <p id="address-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.address}</p>
           )}
         </div>
 
@@ -131,7 +131,7 @@ export const BillingForm: React.FC<BillingFormProps> = ({ value, onChange, error
               aria-describedby={errors.postalCode ? 'postalCode-error' : undefined}
             />
             {errors.postalCode && (
-              <p id="postalCode-error" className="mt-1 text-sm text-red-600">{errors.postalCode}</p>
+              <p id="postalCode-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.postalCode}</p>
             )}
           </div>
         </div>

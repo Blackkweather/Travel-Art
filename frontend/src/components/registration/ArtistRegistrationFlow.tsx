@@ -182,7 +182,7 @@ const ArtistRegistrationFlow: React.FC = () => {
     state.subcategory.domain;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
+    <div className="flex flex-col min-h-screen bg-surface">
       <SimpleNavbar />
 
       <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
@@ -201,7 +201,7 @@ const ArtistRegistrationFlow: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 md:p-10 border border-gray-100"
+          className="max-w-3xl mx-auto bg-surface-raised rounded-3xl shadow-2xl p-6 md:p-10 border border-line"
         >
           <AnimatePresence mode="wait">
             {/* Step 1: Basic Information */}
@@ -281,10 +281,10 @@ const ArtistRegistrationFlow: React.FC = () => {
           transition={{ delay: 0.3 }}
           className="max-w-3xl mx-auto mt-8 text-center"
         >
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-content-secondary">
             Vos informations sont sécurisées et ne seront jamais partagées.
             <br />
-            Avez besoin d'aide? <a href="/contact" className="text-teal-500 font-semibold hover:underline">Contactez-nous</a>
+            Avez besoin d'aide? <a href="/contact" className="text-gold font-semibold hover:underline">Contactez-nous</a>
           </p>
         </motion.div>
       </main>

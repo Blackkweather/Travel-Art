@@ -29,7 +29,7 @@ const LanguageSwitcher: React.FC = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-sunken transition-colors"
         aria-label="Change language"
         aria-expanded={isOpen}
       >
@@ -44,13 +44,13 @@ const LanguageSwitcher: React.FC = () => {
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+          <div className="absolute right-0 mt-2 w-48 bg-surface-raised rounded-lg shadow-lg border border-line z-20">
             <div className="py-1">
               {languages.map((lang) => (
                 <button
                   key={lang.code}
                   onClick={() => handleLanguageChange(lang.code)}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors ${
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-surface-sunken transition-colors ${
                     currentLang === lang.code ? 'bg-gold/10 text-gold font-semibold' : ''
                   }`}
                 >

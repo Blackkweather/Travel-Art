@@ -135,10 +135,10 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
             maxLength={10}
             className={`
               w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
-              ${error ? 'border-red-400' : 'border-gray-200'}
-              ${disabled ? 'bg-gray-50 opacity-60 cursor-not-allowed' : 'bg-white'}
+              ${error ? 'border-red-400' : 'border-line'}
+              ${disabled ? 'bg-surface opacity-60 cursor-not-allowed' : 'bg-surface-raised'}
               focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
-              ${inputValue ? 'text-gray-900' : 'text-gray-500'}
+              ${inputValue ? 'text-content' : 'text-content-secondary'}
             `}
           />
           <button
@@ -158,14 +158,14 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="absolute z-50 mt-2 w-full bg-white border-2 border-gold rounded-xl shadow-xl"
+              className="absolute z-50 mt-2 w-full bg-surface-raised border-2 border-gold rounded-xl shadow-xl"
             >
-              <div className="p-3 border-b border-gray-200">
+              <div className="p-3 border-b border-line">
                 <div className="flex items-center justify-between mb-2">
                   <button
                     type="button"
                     onClick={() => setCurrentMonth((m) => addMonths(m, -1))}
-                    className="p-2 rounded-lg hover:bg-gold/10 text-gray-900 transition-colors"
+                    className="p-2 rounded-lg hover:bg-gold/10 text-content transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
@@ -176,7 +176,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                         setShowMonthPicker(!showMonthPicker);
                         setShowYearPicker(false);
                       }}
-                      className="px-3 py-1 rounded-lg hover:bg-gold/10 text-sm font-semibold text-gray-900 transition-colors flex items-center gap-1"
+                      className="px-3 py-1 rounded-lg hover:bg-gold/10 text-sm font-semibold text-content transition-colors flex items-center gap-1"
                     >
                       {MONTHS_FR_FULL[getMonth(currentMonth)]}
                       <ChevronDown className="w-4 h-4" />
@@ -187,7 +187,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                         setShowYearPicker(!showYearPicker);
                         setShowMonthPicker(false);
                       }}
-                      className="px-3 py-1 rounded-lg hover:bg-gold/10 text-sm font-semibold text-gray-900 transition-colors flex items-center gap-1"
+                      className="px-3 py-1 rounded-lg hover:bg-gold/10 text-sm font-semibold text-content transition-colors flex items-center gap-1"
                     >
                       {format(currentMonth, 'yyyy')}
                       <ChevronDown className="w-4 h-4" />
@@ -196,7 +196,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                   <button
                     type="button"
                     onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-                    className="p-2 rounded-lg hover:bg-gold/10 text-gray-900 transition-colors"
+                    className="p-2 rounded-lg hover:bg-gold/10 text-content transition-colors"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -225,7 +225,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                             }}
                             className={`
                               py-2 px-3 rounded-lg text-sm font-medium transition-colors
-                              ${isSelected ? 'bg-gold text-white' : 'bg-gray-100 text-gray-700 hover:bg-gold/20'}
+                              ${isSelected ? 'bg-gold text-off-black' : 'bg-surface-sunken text-content-secondary hover:bg-gold/20'}
                             `}
                           >
                             {monthName}
@@ -258,7 +258,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                             }}
                             className={`
                               py-2 px-3 rounded-lg text-sm font-medium transition-colors
-                              ${isSelected ? 'bg-gold text-white' : 'bg-gray-100 text-gray-700 hover:bg-gold/20'}
+                              ${isSelected ? 'bg-gold text-off-black' : 'bg-surface-sunken text-content-secondary hover:bg-gold/20'}
                             `}
                           >
                             {year}
@@ -270,7 +270,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                 </AnimatePresence>
               </div>
 
-              <div className="grid grid-cols-7 gap-1 px-3 pt-3 text-xs font-medium text-gray-500">
+              <div className="grid grid-cols-7 gap-1 px-3 pt-3 text-xs font-medium text-content-secondary">
                 <div className="text-center">L</div>
                 <div className="text-center">M</div>
                 <div className="text-center">M</div>
@@ -291,8 +291,8 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                       onClick={() => selectDate(day)}
                       className={`
                         h-10 rounded-lg text-sm
-                        ${selected ? 'bg-gold text-white font-semibold' : inMonth ? 'text-gray-900' : 'text-gray-400'}
-                        hover:bg-gold/10 hover:text-gray-900 transition-colors
+                        ${selected ? 'bg-gold text-off-black font-semibold' : inMonth ? 'text-content' : 'text-content-secondary'}
+                        hover:bg-gold/10 hover:text-content transition-colors
                       `}
                     >
                       {format(day, 'd')}
@@ -306,7 +306,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
       </div>
 
       {error && (
-        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-2 text-sm text-red-600">
+        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-2 text-sm text-red-600 dark:text-red-400">
           {error}
         </motion.div>
       )}

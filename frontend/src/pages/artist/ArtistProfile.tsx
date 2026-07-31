@@ -310,7 +310,7 @@ const ArtistProfile: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-content-secondary">Loading profile...</p>
         </div>
       </div>
     )
@@ -324,7 +324,7 @@ const ArtistProfile: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
             Artist Profile
           </h1>
-          <p className="text-gray-600">
+          <p className="text-content-secondary">
             Manage your profile and showcase your talent to luxury hotels
           </p>
         </div>
@@ -364,7 +364,7 @@ const ArtistProfile: React.FC = () => {
                   <img
                     src={normalizeImageUrl(profileData.images[0])}
                     alt={profileData.name}
-                    className="w-full h-full rounded-xl object-cover bg-gray-200 ring-2 ring-gold/20"
+                    className="w-full h-full rounded-xl object-cover bg-surface-sunken ring-2 ring-gold/20"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
                       target.style.display = 'none'
@@ -424,7 +424,7 @@ const ArtistProfile: React.FC = () => {
                     className="form-input"
                   />
                 ) : (
-                  <p className="text-gray-600 flex items-center">
+                  <p className="text-content-secondary flex items-center">
                     <MapPin className="w-4 h-4 mr-2" />
                     {profileData.location || 'Not set'}
                   </p>
@@ -450,7 +450,7 @@ const ArtistProfile: React.FC = () => {
                   placeholder="Tell hotels about your artistic journey and specialties..."
                 />
               ) : (
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-content-secondary leading-relaxed">
                   {profileData.bio || 'No bio yet. Click "Edit Profile" to add your bio.'}
                 </p>
               )}
@@ -458,26 +458,26 @@ const ArtistProfile: React.FC = () => {
 
             {/* Stats */}
             <div className="mt-6 grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <div className="text-center p-4 bg-surface rounded-lg">
                 <div className="flex items-center justify-center mb-2">
                   <span className="text-gold font-bold mr-1">◆</span>
                   <span className="text-lg font-bold text-navy">{profileData.rating > 0 ? profileData.rating.toFixed(1) : '0'}</span>
                 </div>
-                <p className="text-sm text-gray-600">Average Rating</p>
+                <p className="text-sm text-content-secondary">Average Rating</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <div className="text-center p-4 bg-surface rounded-lg">
                 <div className="flex items-center justify-center mb-2">
                   <Calendar className="w-5 h-5 text-gold mr-1" />
                   <span className="text-lg font-bold text-navy">{profileData.totalBookings}</span>
                 </div>
-                <p className="text-sm text-gray-600">Total Bookings</p>
+                <p className="text-sm text-content-secondary">Total Bookings</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <div className="text-center p-4 bg-surface rounded-lg">
                 <div className="flex items-center justify-center mb-2">
                   <Music className="w-5 h-5 text-gold mr-1" />
                   <span className="text-lg font-bold text-navy">Member</span>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-content-secondary">
                   Since {profileData.memberSince ? new Date(profileData.memberSince).toLocaleDateString() : 'Recently'}
                 </p>
               </div>
@@ -647,7 +647,7 @@ const ArtistProfile: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p className="text-gray-600">No portfolio images yet. Click &quot;Edit Profile&quot; to add images.</p>
+          <p className="text-content-secondary">No portfolio images yet. Click &quot;Edit Profile&quot; to add images.</p>
         )}
       </div>
 
@@ -658,7 +658,7 @@ const ArtistProfile: React.FC = () => {
             <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
               Availability Calendar
             </h2>
-            <p className="text-sm text-gray-600 mt-2">Set your available dates for hotel bookings</p>
+            <p className="text-sm text-content-secondary mt-2">Set your available dates for hotel bookings</p>
           </div>
         </div>
 
@@ -695,7 +695,7 @@ const ArtistProfile: React.FC = () => {
               .map((avail: any) => (
                 <div
                   key={avail.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  className="flex items-center justify-between p-4 bg-surface rounded-lg border border-line"
                 >
                   <div className="flex items-center gap-4">
                     <Calendar className="w-5 h-5 text-gold" />
@@ -703,14 +703,14 @@ const ArtistProfile: React.FC = () => {
                       <p className="font-medium text-navy">
                         {new Date(avail.dateFrom).toLocaleDateString()} - {new Date(avail.dateTo).toLocaleDateString()}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-content-secondary">
                         {Math.ceil((new Date(avail.dateTo).getTime() - new Date(avail.dateFrom).getTime()) / (1000 * 60 * 60 * 24))} days
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleRemoveAvailability(avail.id)}
-                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+                    className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
                     Remove
@@ -719,10 +719,10 @@ const ArtistProfile: React.FC = () => {
               ))}
           </div>
         ) : (
-          <div className="text-center py-12 px-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <div className="text-center py-12 px-4 bg-surface rounded-lg border-2 border-dashed border-line-strong">
+            <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-navy mb-2">No availability set</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-content-secondary mb-4">
               Add your available dates above so hotels can book you for performances
             </p>
           </div>
@@ -736,7 +736,7 @@ const ArtistProfile: React.FC = () => {
             <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
               Performance Videos
             </h2>
-            <p className="text-sm text-gray-600 mt-2">Add YouTube or video URLs to showcase your performances</p>
+            <p className="text-sm text-content-secondary mt-2">Add YouTube or video URLs to showcase your performances</p>
           </div>
         </div>
         
@@ -765,7 +765,7 @@ const ArtistProfile: React.FC = () => {
                 Add Video
               </button>
             </div>
-            <p className="text-xs text-gray-600 mt-2">
+            <p className="text-xs text-content-secondary mt-2">
               💡 Tip: Paste a YouTube URL (e.g., https://www.youtube.com/watch?v=...) or direct video link
             </p>
           </div>
@@ -789,7 +789,7 @@ const ArtistProfile: React.FC = () => {
               }
               
               return (
-                <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div key={index} className="border border-line rounded-lg overflow-hidden">
                   {/* Video Preview */}
                   {isYouTube && videoId ? (
                     <div className="aspect-video bg-gray-900">
@@ -802,24 +802,24 @@ const ArtistProfile: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                    <div className="aspect-video bg-surface-sunken flex items-center justify-center">
                       <div className="text-center">
-                        <Music className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Video Preview</p>
+                        <Music className="w-12 h-12 text-content-secondary mx-auto mb-2" />
+                        <p className="text-sm text-content-secondary">Video Preview</p>
                       </div>
                     </div>
                   )}
                   
                   {/* Video Info */}
-                  <div className="p-4 bg-gray-50 flex items-center justify-between">
+                  <div className="p-4 bg-surface flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-navy mb-1">Performance Video {index + 1}</p>
-                      <p className="text-sm text-gray-600 truncate">{video}</p>
+                      <p className="text-sm text-content-secondary truncate">{video}</p>
                     </div>
                     {isEditing && (
                       <button 
                         onClick={() => handleRemoveVideo(index)}
-                        className="ml-4 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+                        className="ml-4 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
                       >
                         <X className="w-4 h-4" />
                         Remove
@@ -831,14 +831,14 @@ const ArtistProfile: React.FC = () => {
             })}
           </div>
         ) : (
-          <div className="text-center py-12 px-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+          <div className="text-center py-12 px-4 bg-surface rounded-lg border-2 border-dashed border-line-strong">
+            <div className="w-16 h-16 rounded-full bg-surface-sunken flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-content-secondary" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-navy mb-2">No videos yet</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-content-secondary mb-4">
               {isEditing 
                 ? 'Add your first performance video using the form above' 
                 : 'Click "Edit Profile" to add performance videos from YouTube or other sources'}

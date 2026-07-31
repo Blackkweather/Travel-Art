@@ -39,7 +39,7 @@ const RegisterPage: React.FC = () => {
 
   // Show role selection screen with enhanced UI
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
+    <div className="flex flex-col min-h-screen bg-surface">
       <SimpleNavbar />
       <main className="flex-1 container mx-auto px-4 py-12 md:py-16">
         <div className="max-w-5xl mx-auto">

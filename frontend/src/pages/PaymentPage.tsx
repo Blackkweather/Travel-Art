@@ -199,7 +199,7 @@ const PaymentPage: React.FC = () => {
 
               {errors.method && (
                 <div className="-mt-4">
-                  <p className="text-sm text-red-600">{errors.method}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">{errors.method}</p>
                 </div>
               )}
 
@@ -233,7 +233,7 @@ const PaymentPage: React.FC = () => {
                           aria-describedby={errors.cardNumber ? 'cardNumber-error' : undefined}
                         />
                         {errors.cardNumber && (
-                          <p id="cardNumber-error" className="mt-1 text-sm text-red-600">{errors.cardNumber}</p>
+                          <p id="cardNumber-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.cardNumber}</p>
                         )}
                       </div>
                       <div>
@@ -250,7 +250,7 @@ const PaymentPage: React.FC = () => {
                           aria-describedby={errors.cardExpiry ? 'cardExpiry-error' : undefined}
                         />
                         {errors.cardExpiry && (
-                          <p id="cardExpiry-error" className="mt-1 text-sm text-red-600">{errors.cardExpiry}</p>
+                          <p id="cardExpiry-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.cardExpiry}</p>
                         )}
                       </div>
                       <div>
@@ -267,7 +267,7 @@ const PaymentPage: React.FC = () => {
                           aria-describedby={errors.cardCvv ? 'cardCvv-error' : undefined}
                         />
                         {errors.cardCvv && (
-                          <p id="cardCvv-error" className="mt-1 text-sm text-red-600">{errors.cardCvv}</p>
+                          <p id="cardCvv-error" className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.cardCvv}</p>
                         )}
                       </div>
                     </div>
@@ -316,7 +316,7 @@ const PaymentPage: React.FC = () => {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
-                      className="mt-4 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2"
+                      className="mt-4 flex items-center gap-2 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded px-3 py-2"
                       role="status"
                     >
                       <CheckCircle className="w-4 h-4" />

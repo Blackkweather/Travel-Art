@@ -391,7 +391,7 @@ const HotelDetailsPage: React.FC = () => {
                       toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites!')
                     }}
                     className={`w-full btn-secondary flex items-center justify-center gap-2 ${
-                      isFavorite ? 'bg-red-50 border-red-500 text-red-600 hover:bg-red-100' : ''
+                      isFavorite ? 'bg-red-50 dark:bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 hover:bg-red-100 dark:bg-red-500/10' : ''
                     }`}
                   >
                     <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />

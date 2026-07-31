@@ -41,7 +41,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
           >
             <span>{label}</span>
             {hint && (
-              <span className="text-xs text-gray-400 font-normal ml-auto" title={hint}>
+              <span className="text-xs text-content-secondary font-normal ml-auto" title={hint}>
                 ℹ️
               </span>
             )}
@@ -70,7 +70,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
                 ${icon ? 'has-left-icon' : ''}
                 ${isPasswordField && showPasswordToggle ? 'has-right-icon' : ''}
                 ${error ? 'border-red-400 focus:ring-red-500 focus:border-red-500' : ''}
-                ${disabled || isLoading ? 'bg-gray-50 opacity-60 cursor-not-allowed' : 'bg-white'}
+                ${disabled || isLoading ? 'bg-surface opacity-60 cursor-not-allowed' : 'bg-surface-raised'}
                 ${className}
               `}
               {...props}
@@ -99,7 +99,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-2 flex items-center gap-2 text-sm text-red-600 bg-red-50 p-2 rounded"
+              className="mt-2 flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 p-2 rounded"
             >
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>

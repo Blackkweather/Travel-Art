@@ -14,7 +14,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
   return (
     <div className="w-full mb-10">
       {/* Animated Progress Bar */}
-      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden mb-8">
+      <div className="relative h-2 bg-surface-sunken rounded-full overflow-hidden mb-8">
         <motion.div
           className="absolute top-0 left-0 h-full bg-gradient-to-r from-gold via-gold/90 to-gold rounded-full shadow-lg"
           initial={{ width: 0 }}
@@ -32,7 +32,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
       {/* Step Labels with Enhanced Animations */}
       <div className="flex justify-between relative">
         {/* Connection Lines */}
-        <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 -z-10">
+        <div className="absolute top-5 left-0 right-0 h-0.5 bg-surface-sunken -z-10">
           <motion.div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-gold to-gold/50"
             initial={{ width: 0 }}
@@ -68,10 +68,10 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
                   relative w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold
                   transition-all duration-300 shadow-lg
                   ${isCompleted 
-                    ? 'bg-gold text-white' 
+                    ? 'bg-gold text-off-black' 
                     : isCurrent 
-                    ? 'bg-gold text-white ring-4 ring-gold/30' 
-                    : 'bg-gray-200 text-gray-500'
+                    ? 'bg-gold text-off-black ring-4 ring-gold/30' 
+                    : 'bg-surface-sunken text-content-secondary'
                   }
                 `}
                 whileHover={{ scale: 1.15 }}
@@ -117,7 +117,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
                   transition-colors duration-300
                   ${isCompleted || isCurrent 
                     ? 'text-gold font-semibold' 
-                    : 'text-gray-500'
+                    : 'text-content-secondary'
                   }
                 `}
                 animate={{
@@ -138,7 +138,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
         animate={{ opacity: 1, y: 0 }}
         className="text-center mt-8"
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-content-secondary">
           Step{' '}
           <motion.span
             key={currentStep}

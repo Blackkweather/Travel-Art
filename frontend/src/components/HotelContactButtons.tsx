@@ -71,7 +71,7 @@ const HotelContactButtons: React.FC<HotelContactButtonsProps> = ({
         {email && (
           <a
             href={getEmailUrl()}
-            className="flex-1 flex items-center justify-center px-4 py-3.5 border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:border-navy hover:text-navy transition"
+            className="flex-1 flex items-center justify-center px-4 py-3.5 border-2 border-line-strong text-content-secondary rounded-lg font-medium hover:border-navy hover:text-navy transition"
           >
             <Mail className="w-5 h-5 mr-2" />
             <span>Email</span>
@@ -80,7 +80,7 @@ const HotelContactButtons: React.FC<HotelContactButtonsProps> = ({
       </div>
 
       {/* Contact Info Display */}
-      <div className="text-sm text-gray-600 space-y-1 pt-2">
+      <div className="text-sm text-content-secondary space-y-1 pt-2">
         {phoneNumber && (
           <p className="flex items-center gap-2">
             <span className="text-gold font-medium">Phone:</span>

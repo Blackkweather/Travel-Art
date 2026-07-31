@@ -142,7 +142,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
     >
       <div>
         <h2 className="text-3xl font-bold text-navy-900 mb-2">Catégorie artistique</h2>
-        <p className="text-gray-600">Décrivez votre domaine artistique</p>
+        <p className="text-content-secondary">Décrivez votre domaine artistique</p>
       </div>
 
       {/* Section 1: Main Category */}
@@ -269,7 +269,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           exit={{ opacity: 0, height: 0 }}
         >
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-900">
+            <label className="block text-sm font-medium text-content">
               Autres langues (précisez)
             </label>
             <input
@@ -280,10 +280,10 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
               disabled={isLoading}
               className={`
                 w-full h-12 px-4 rounded-xl border-2 transition-all
-                border-gray-200
-                ${isLoading ? 'bg-gray-50 opacity-60 cursor-not-allowed' : 'bg-white'}
-                focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500
-                text-gray-900 placeholder:text-gray-400
+                border-line
+                ${isLoading ? 'bg-surface opacity-60 cursor-not-allowed' : 'bg-surface-raised'}
+                focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
+                text-content placeholder:text-content-secondary
               `}
             />
           </div>
@@ -297,7 +297,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           disabled={isLoading}
           className={`
             flex-1 h-14 rounded-xl font-bold text-lg transition-all
-            bg-gray-200 hover:bg-gray-300 text-navy-900
+            bg-surface-sunken hover:bg-white/10 text-navy-900
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]
           `}
@@ -309,7 +309,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           disabled={isLoading}
           className={`
             flex-1 h-14 rounded-xl font-bold text-lg transition-all
-            bg-teal-500 hover:bg-teal-600 text-white
+            bg-gold hover:bg-gold-600 text-white
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]
           `}

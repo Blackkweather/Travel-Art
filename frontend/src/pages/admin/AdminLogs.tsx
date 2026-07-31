@@ -137,15 +137,15 @@ const AdminLogs: React.FC = () => {
       case 'USER_REGISTRATION':
         return 'bg-blue-100 text-blue-700 border-blue-200'
       case 'BOOKING':
-        return 'bg-green-100 text-green-700 border-green-200'
+        return 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30'
       case 'TRANSACTION':
         return 'bg-purple-100 text-purple-700 border-purple-200'
       case 'RATING':
         return 'bg-amber-100 text-amber-700 border-amber-200'
       case 'ADMIN_ACTION':
-        return 'bg-red-100 text-red-700 border-red-200'
+        return 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30'
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200'
+        return 'bg-surface-sunken text-content-secondary border-line'
     }
   }
 
@@ -217,7 +217,7 @@ const AdminLogs: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
             Activity Logs
           </h1>
-          <p className="text-gray-600">
+          <p className="text-content-secondary">
             Monitor all platform activities, user actions, and system events
           </p>
         </div>
@@ -259,16 +259,16 @@ const AdminLogs: React.FC = () => {
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   selectedType === type.value
-                    ? 'bg-gold text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                    ? 'bg-gold text-off-black shadow-md'
+                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken border border-line'
                 }`}
               >
                 {type.label}
                 {type.count !== undefined && (
                   <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
                     selectedType === type.value
-                      ? 'bg-white/20 text-white'
-                      : 'bg-gray-200 text-gray-700'
+                      ? 'bg-surface-raised/20 text-white'
+                      : 'bg-surface-sunken text-content-secondary'
                   }`}>
                     {type.count}
                   </span>
@@ -282,13 +282,13 @@ const AdminLogs: React.FC = () => {
         <div>
           <label className="block text-sm font-medium text-navy mb-2">Search</label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-content-secondary" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by user, action, or details..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+              className="w-full pl-10 pr-4 py-3 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
             />
           </div>
         </div>
@@ -300,7 +300,7 @@ const AdminLogs: React.FC = () => {
           <h2 className="text-xl font-serif font-semibold text-navy">
             Activity Timeline
           </h2>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-content-secondary">
             Showing {filteredActivities.length} of {activities.length} activities
           </span>
         </div>
@@ -311,9 +311,9 @@ const AdminLogs: React.FC = () => {
           </div>
         ) : filteredActivities.length === 0 ? (
           <div className="text-center py-20">
-            <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No activities found</p>
-            <p className="text-gray-400 text-sm mt-2">
+            <Activity className="w-16 h-16 text-content-secondary mx-auto mb-4" />
+            <p className="text-content-secondary text-lg">No activities found</p>
+            <p className="text-content-secondary text-sm mt-2">
               {searchTerm || selectedType !== 'ALL' 
                 ? 'Try adjusting your filters' 
                 : 'Activity logs will appear here as users interact with the platform'}
@@ -324,7 +324,7 @@ const AdminLogs: React.FC = () => {
             {filteredActivities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex items-start gap-4 p-5 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-gold/30 hover:shadow-md transition-all"
+                className="flex items-start gap-4 p-5 bg-surface-sunken rounded-xl border border-line hover:border-gold/30 hover:shadow-md transition-all"
               >
                 {/* Icon */}
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 ${getActivityColor(activity.type)} flex-shrink-0`}>
@@ -344,13 +344,13 @@ const AdminLogs: React.FC = () => {
                       
                       {/* Actor */}
                       {activity.actor && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                        <div className="flex items-center gap-2 text-sm text-content-secondary mb-1">
                           {getRoleIcon(activity.actor.role)}
                           <span className="font-medium">{activity.actor.name}</span>
-                          <span className="text-gray-400">({activity.actor.email})</span>
+                          <span className="text-content-secondary">({activity.actor.email})</span>
                           {activity.target && (
                             <>
-                              <span className="text-gray-300">→</span>
+                              <span className="text-content-secondary">→</span>
                               {getRoleIcon(activity.target.role)}
                               <span className="font-medium">{activity.target.name || activity.target.email}</span>
                             </>
@@ -360,12 +360,12 @@ const AdminLogs: React.FC = () => {
 
                       {/* Details */}
                       {activity.details && Object.keys(activity.details).length > 0 && (
-                        <div className="mt-2 p-3 bg-white rounded-lg border border-gray-100 text-xs">
+                        <div className="mt-2 p-3 bg-surface-raised rounded-lg border border-line text-xs">
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {Object.entries(activity.details).map(([key, value]) => (
                               <div key={key} className="flex items-center gap-1">
-                                <span className="font-semibold text-gray-600">{key}:</span>
-                                <span className="text-gray-700">
+                                <span className="font-semibold text-content-secondary">{key}:</span>
+                                <span className="text-content-secondary">
                                   {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                                 </span>
                               </div>
@@ -376,7 +376,7 @@ const AdminLogs: React.FC = () => {
                     </div>
 
                     {/* Timestamp */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
+                    <div className="flex items-center gap-2 text-xs text-content-secondary flex-shrink-0">
                       <Clock className="w-4 h-4" />
                       <span>{formatTimestamp(activity.timestamp)}</span>
                     </div>
@@ -389,7 +389,7 @@ const AdminLogs: React.FC = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+          <div className="flex items-center justify-between mt-6 pt-6 border-t border-line">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
@@ -397,7 +397,7 @@ const AdminLogs: React.FC = () => {
             >
               Previous
             </button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-content-secondary">
               Page {page} of {totalPages}
             </span>
             <button

@@ -1,7 +1,3 @@
-# Orphaned microservice scaffolding. Nothing imports or deploys these, but
-# Vercel's service auto-detection picks them up and derails the build.
-services/
-
 # Local artifacts and reference material that never need uploading.
 registring form/
 docs/

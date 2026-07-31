@@ -99,13 +99,13 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           <h3 className="text-2xl font-serif font-bold text-navy mb-3">
             Message Ready!
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-content-secondary mb-6">
             Your email client should open shortly. If it doesn't, please contact us directly at{' '}
             <a href="mailto:hello@travelart.com" className="text-gold hover:underline font-semibold">
               hello@travelart.com
             </a>
           </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center justify-center gap-2 text-sm text-content-secondary">
             <Sparkles className="w-4 h-4 text-gold" />
             <span>We typically respond within 24 hours</span>
           </div>
@@ -129,14 +129,14 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
             <h2 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
               Contact Support
             </h2>
-            <p className="text-gray-600 leading-relaxed">
+            <p className="text-content-secondary leading-relaxed">
               Have a question or need assistance? Our support team is here to help you. We're committed to providing exceptional service.
             </p>
           </div>
         </div>
 
         {/* Quick Contact Options */}
-        <div className="mb-8 p-6 bg-gradient-to-br from-cream to-white rounded-xl border border-gold/20">
+        <div className="mb-8 p-6 bg-surface-sunken rounded-xl border border-gold/20">
           <div className="flex items-center gap-2 mb-4">
             <HelpCircle className="w-5 h-5 text-gold" />
             <h3 className="text-lg font-semibold text-navy">Quick Contact</h3>
@@ -144,28 +144,28 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
               href="mailto:hello@travelart.com"
-              className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-gold hover:shadow-md transition-all group"
+              className="flex items-center gap-3 p-4 bg-surface-raised rounded-lg border border-line hover:border-gold hover:shadow-md transition-all group"
             >
               <div className="w-10 h-10 bg-navy/10 rounded-lg flex items-center justify-center group-hover:bg-navy group-hover:text-white transition-colors">
                 <Mail className="w-5 h-5 text-navy group-hover:text-white" />
               </div>
               <div>
                 <p className="font-semibold text-navy text-sm">Email</p>
-                <p className="text-xs text-gray-500">hello@travelart.com</p>
+                <p className="text-xs text-content-secondary">hello@travelart.com</p>
               </div>
             </a>
             <a
               href="https://wa.me/212764998286"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-green-500 hover:shadow-md transition-all group"
+              className="flex items-center gap-3 p-4 bg-surface-raised rounded-lg border border-line hover:border-green-500 hover:shadow-md transition-all group"
             >
-              <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-500 transition-colors">
-                <MessageCircle className="w-5 h-5 text-green-600 group-hover:text-white" />
+              <div className="w-10 h-10 bg-green-50 dark:bg-green-500/10 rounded-lg flex items-center justify-center group-hover:bg-green-500 transition-colors">
+                <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400 group-hover:text-white" />
               </div>
               <div>
                 <p className="font-semibold text-navy text-sm">WhatsApp</p>
-                <p className="text-xs text-gray-500">+212 764 998 286</p>
+                <p className="text-xs text-content-secondary">+212 764 998 286</p>
               </div>
             </a>
           </div>
@@ -186,8 +186,8 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
                   onClick={() => handleCategorySelect(category.value)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     selectedCategory === category.value
-                      ? 'bg-gold text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                      ? 'bg-gold text-off-black shadow-md'
+                      : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken border border-line'
                   }`}
                 >
                   {category.label}
@@ -207,7 +207,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Brief description of your inquiry..."
-              className="w-full px-4 py-3.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all bg-white text-navy placeholder-gray-400"
+              className="w-full px-4 py-3.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all bg-surface-raised text-navy placeholder-gray-400"
               required
             />
           </div>
@@ -218,7 +218,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               <label htmlFor="message" className="block text-sm font-semibold text-navy">
                 Message <span className="text-red-500">*</span>
               </label>
-              <span className={`text-xs ${message.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+              <span className={`text-xs ${message.length < 10 ? 'text-red-500' : 'text-content-secondary'}`}>
                 {message.length} / 500 {message.length < 10 && '(min 10 characters)'}
               </span>
             </div>
@@ -232,7 +232,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               }}
               placeholder="Please provide as much detail as possible so we can assist you better..."
               rows={6}
-              className="w-full px-4 py-3.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all resize-none bg-white text-navy placeholder-gray-400"
+              className="w-full px-4 py-3.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all resize-none bg-surface-raised text-navy placeholder-gray-400"
               required
               maxLength={500}
             />
@@ -268,8 +268,8 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           </div>
 
           {/* Info Footer */}
-          <div className="pt-4 border-t border-gray-100">
-            <div className="flex items-start gap-3 text-sm text-gray-600">
+          <div className="pt-4 border-t border-line">
+            <div className="flex items-start gap-3 text-sm text-content-secondary">
               <div className="w-5 h-5 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Sparkles className="w-3 h-3 text-gold" />
               </div>

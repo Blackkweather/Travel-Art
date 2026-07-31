@@ -12,7 +12,17 @@ export class RegistrationValidator {
    * Validate phone number format
    */
   static validatePhone(phone: string): boolean {
-    return VALIDATION.phone.test(phone);
+    if (!phone) return false;
+
+    // The pattern alone accepts "123": its three digit groups are each 1-4
+    // wide with optional separators, so any run of three digits satisfies it.
+    // The shape check still runs first (it rejects letters and stray
+    // punctuation), then the digit count enforces a real number. E.164 puts
+    // that between 7 and 15 digits, country code included.
+    if (!VALIDATION.phone.test(phone)) return false;
+
+    const digitCount = phone.replace(/\D/g, '').length;
+    return digitCount >= 7 && digitCount <= 15;
   }
 
   /**
@@ -302,6 +312,13 @@ export function calculateAge(dateString: string): number {
 
   const [day, month, year] = dateString.split('/').map(Number);
   const birthDate = new Date(year, month - 1, day);
+
+  // Anything that is not DD/MM/YYYY parses to NaN and produced an Invalid
+  // Date, which then propagated NaN out of this function into age checks and
+  // into the UI. An unparseable date is treated as "no age known", matching
+  // the empty-string case above.
+  if (Number.isNaN(birthDate.getTime())) return 0;
+
   const today = new Date();
 
   let age = today.getFullYear() - birthDate.getFullYear();

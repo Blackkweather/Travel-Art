@@ -1,950 +1,1106 @@
-import React, { useRef, useState, useEffect } from 'react'
+﻿import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, useScroll, useTransform, useInView } from 'framer-motion'
-import { 
-  ArrowRight, 
-  Users, 
-  MapPin, 
-  Compass,
-  ChevronRight,
-  Heart,
-  Award,
-  Globe
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
-import { ArtistRank, getQuickRank } from '@/components/ArtistRank'
-import Footer from '@/components/Footer'
-import NewsletterSignup from '@/components/NewsletterSignup'
-import { commonApi, tripsApi } from '@/utils/api'
+import { tripsApi } from '@/utils/api'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import AmbientAudio from '@/components/AmbientAudio'
+import GalleryPan from '@/components/GalleryPan'
 
-const LandingPage: React.FC = () => {
-  const { scrollY } = useScroll()
-  const heroRef = useRef<HTMLDivElement>(null)
-  const aboutRef = useRef<HTMLDivElement>(null)
-  const experienceRef = useRef<HTMLDivElement>(null)
-  const stepsRef = useRef<HTMLDivElement>(null)
-  const showcaseRef = useRef<HTMLDivElement>(null)
-  const journalRef = useRef<HTMLDivElement>(null)
-  const topArtistsRef = useRef<HTMLDivElement>(null)
-  const topHotelsRef = useRef<HTMLDivElement>(null)
-  
-  // Scroll-based animations - Transparent header
-  const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
-  
-  // Hero parallax effects
-  const heroY = useTransform(scrollY, [0, 500], [0, -150])
-  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0])
+// Register GSAP plugins
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
-  // Typing animation state
-  const [currentWord, setCurrentWord] = useState(0)
-  const [currentText, setCurrentText] = useState('')
-  const [isDeleting, setIsDeleting] = useState(false)
-  const words = ['Hospitality', 'Luxury', 'Excellence', 'Perfection']
+interface Slide {
+  id: string
+  image: string
+  title: string
+  subtitle: string
+  category?: string
+}
 
-  // Typing effect
-  useEffect(() => {
-    const typeSpeed = 100
-    const deleteSpeed = 50
-    const pauseTime = 2000
+const NEXT = 1
+const PREV = -1
+const SLIDE_DURATION = 1.5
 
-    const timeout = setTimeout(() => {
-      if (!isDeleting) {
-        if (currentText.length < words[currentWord].length) {
-          setCurrentText(words[currentWord].slice(0, currentText.length + 1))
-        } else {
-          setTimeout(() => setIsDeleting(true), pauseTime)
-        }
-      } else {
-        if (currentText.length > 0) {
-          setCurrentText(currentText.slice(0, -1))
-        } else {
-          setIsDeleting(false)
-          setCurrentWord((prev) => (prev + 1) % words.length)
-        }
-      }
-    }, isDeleting ? deleteSpeed : typeSpeed)
-
-    return () => clearTimeout(timeout)
-  }, [currentText, currentWord, isDeleting, words])
-
-
-  // In view animations
-  const aboutInView = useInView(aboutRef, { once: true, margin: "-100px" })
-  const experienceInView = useInView(experienceRef, { once: true, margin: "-100px" })
-  const stepsInView = useInView(stepsRef, { once: true, margin: "-100px" })
-  const showcaseInView = useInView(showcaseRef, { once: true, margin: "-100px" })
-  const journalInView = useInView(journalRef, { once: true, margin: "-100px" })
-  const topArtistsInView = useInView(topArtistsRef, { once: true, margin: "-100px" })
-  const topHotelsInView = useInView(topHotelsRef, { once: true, margin: "-100px" })
-
-  // Helper function to infer category from trip title/description
-  const inferCategory = (title: string, description: string): string => {
-    const text = `${title} ${description}`.toLowerCase()
-    
-    if (text.match(/\b(jazz|music|saxophone|piano|guitar|dj|concert|performance|live music|rooftop jazz|musical|song|singer)\b/)) {
-      return "Music"
-    }
-    if (text.match(/\b(art|gallery|visual|painting|sculpture|exhibition|artwork|canvas|artist)\b/)) {
-      return "Visual Arts"
-    }
-    if (text.match(/\b(photography|photo|camera|sunset|capture|photographer|shoot|portrait)\b/)) {
-      return "Photography"
-    }
-    if (text.match(/\b(theater|dance|performance|show|theatre|ballet|acting|drama)\b/)) {
-      return "Performance"
-    }
-    if (text.match(/\b(culinary|cooking|chef|food|cuisine|kitchen|dining|gastronomy)\b/)) {
-      return "Culinary"
-    }
-    if (text.match(/\b(wellness|spa|yoga|meditation|relaxation|mindfulness|massage|therapy)\b/)) {
-      return "Wellness"
-    }
-    
-    // Default to Music if no match
-    return "Music"
-  }
-
-  // Experience grid data - fetched from database only (no fallback)
+export default function LandingPage() {
+  // States
+  const [headerScrolled, setHeaderScrolled] = useState(false)
   const [experiences, setExperiences] = useState<any[]>([])
+  const [isLoadingExperiences, setIsLoadingExperiences] = useState(true)
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+  const [slides, setSlides] = useState<Slide[]>([])
+  const [showSlideshowCursor, setShowSlideshowCursor] = useState(true)
+  
+  // Refs
+  const heroRef = useRef<HTMLElement>(null)
+  const slideshowRef = useRef<HTMLDivElement>(null)
+  const counterStripRef = useRef<HTMLDivElement>(null)
+  const cursorRef = useRef<HTMLDivElement>(null)
+  const isAnimatingRef = useRef(false)
+  const mouseXRef = useRef(0)
+  const weLoveSectionRef = useRef<HTMLElement>(null)
+  const descriptionRef = useRef<HTMLElement>(null)
+  const experienceImagesSectionRef = useRef<HTMLElement>(null)
+  const experiencesSectionRef = useRef<HTMLElement>(null)
+  
+  const weLovetags = ['MUSIC', 'ART', 'TRAVEL', 'LUXURY', 'CULTURE', 'EXPERIENCE', 'CREATIVITY', 'PERFORMANCE']
 
-  // Steps data
-  const steps = [
+  // The hero is a full-viewport section, so an empty slide list renders as a
+  // black void. These fallbacks keep the landing page presentable whenever the
+  // API is unreachable or the catalogue is still too small to fill the
+  // slideshow. Imagery is served from the Unsplash CDN, which the backend CSP
+  // already allows.
+  const defaultSlides: Slide[] = [
     {
-      id: 1,
-      icon: <Users className="w-8 h-8 text-gold" />,
-      title: "Join Our Community",
-      description: "Sign up as an artist or hotel partner and create your profile"
+      id: 'fallback-1',
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=80&fit=crop',
+      title: 'BETWEEN SHADOW',
+      subtitle: 'AND LIGHT',
+      category: 'Experience'
     },
     {
-      id: 2,
-      icon: <MapPin className="w-8 h-8 text-gold" />,
-      title: "Discover & Connect",
-      description: "Browse opportunities and connect with like-minded professionals"
+      id: 'fallback-2',
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=80&fit=crop',
+      title: 'WHERE ART',
+      subtitle: 'MEETS LUXURY',
+      category: 'Performance'
     },
     {
-      id: 3,
-      icon: <Award className="w-8 h-8 text-gold" />,
-      title: "Create Magic",
-      description: "Book experiences and create unforgettable moments together"
+      id: 'fallback-3',
+      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&q=80&fit=crop',
+      title: 'STAGES WITHOUT',
+      subtitle: 'BORDERS',
+      category: 'Travel'
     }
   ]
 
-  // Showcase data - fetch from API only (no fallback)
-  const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
-  
-  const [artists, setArtists] = useState<any[]>([])
+  // Header scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setHeaderScrolled(window.scrollY > 50)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
-  const hotelPlaceholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3Crect x="170" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="170" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="175" y="190" width="50" height="30" rx="3"/%3E%3C/g%3E%3C/svg%3E'
-  
-  const [hotels, setHotels] = useState<any[]>([])
-
-  // Fetch artists and hotels from API
+  // Fetch experiences and create slides
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [artistsRes, hotelsRes] = await Promise.all([
-          commonApi.getTopArtists({ limit: 4 }).catch(() => null),
-          commonApi.getTopHotels({ limit: 4 }).catch(() => null)
-        ])
-
-        if (artistsRes?.data?.success && artistsRes.data.data) {
-          const apiArtists = Array.isArray(artistsRes.data.data) 
-            ? artistsRes.data.data.slice(0, 4)
-            : []
-          
-          if (apiArtists.length > 0) {
-            const formattedArtists = apiArtists.map((artist: any) => {
-              // Parse images if they're a string, otherwise use array directly
-              let images: string[] = []
-              if (artist.images) {
-                try {
-                  images = Array.isArray(artist.images) 
-                    ? artist.images 
-                    : (typeof artist.images === 'string' ? JSON.parse(artist.images) : [])
-                } catch (e) {
-                  images = []
-                }
-              }
-              
-              return {
-                id: artist.id || artist.artistId || Math.random(),
-                name: artist.user?.name || artist.name || 'Unknown Artist',
-                specialty: artist.discipline || artist.specialty || 'Artist',
-                image: images && images.length > 0 
-                  ? images[0] 
-                  : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E',
-                rating: artist.averageRating || artist.rating || 4.5,
-                bookings: artist.bookingCount || artist.totalBookings || 0,
-                location: artist.user?.country || artist.location || 'Unknown'
-              }
-            })
-            setArtists(formattedArtists)
-          }
+        const tripsRes = await tripsApi.getAll()
+        
+        let trips: any[] = []
+        if (Array.isArray(tripsRes.data)) {
+          trips = tripsRes.data
+        } else if (tripsRes.data && Array.isArray(tripsRes.data.data)) {
+          trips = tripsRes.data.data
+        } else if (tripsRes.data && tripsRes.data.success && Array.isArray(tripsRes.data.data)) {
+          trips = tripsRes.data.data
         }
 
-        if (hotelsRes?.data?.success && hotelsRes.data.data) {
-          const apiHotels = Array.isArray(hotelsRes.data.data)
-            ? hotelsRes.data.data.slice(0, 4)
-            : []
-          
-          if (apiHotels.length > 0) {
-            const formattedHotels = apiHotels.map((hotel: any) => {
-              // Parse location safely
-              let location: any = {}
-              if (hotel.location) {
-                try {
-                  location = typeof hotel.location === 'string' 
-                    ? JSON.parse(hotel.location) 
-                    : hotel.location
-                } catch (e) {
-                  location = {}
-                }
-              }
-              
-              // Parse images if they're a string, otherwise use array directly
-              let images: string[] = []
-              if (hotel.images) {
-                try {
-                  images = Array.isArray(hotel.images) 
-                    ? hotel.images 
-                    : (typeof hotel.images === 'string' ? JSON.parse(hotel.images) : [])
-                } catch (e) {
-                  images = []
-                }
-              }
-              
-              return {
-                id: hotel.id || Math.random(),
-                name: hotel.name || 'Hotel',
-                location: location.city 
-                  ? `${location.city}, ${location.country || ''}`.trim()
-                  : (location.country || hotel.user?.country || 'Unknown'),
-                image: images && images.length > 0
-                  ? images[0]
-                  : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3Crect x="170" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="170" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="175" y="190" width="50" height="30" rx="3"/%3E%3C/g%3E%3C/svg%3E',
-                rating: hotel.averageRating || hotel.rating || 4.5,
-                features: Array.isArray(hotel.performanceSpots) && hotel.performanceSpots.length > 0
-                  ? hotel.performanceSpots.slice(0, 3).map((spot: any) => spot.name || spot)
-                  : []
-              }
-            })
-            setHotels(formattedHotels)
+        const formatted = trips.map((trip: any) => {
+          let images: string[] = []
+          try {
+            images = Array.isArray(trip.images) ? trip.images : 
+              (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
+          } catch (e) { 
+            images = [] 
           }
+          
+          return {
+            id: trip.id,
+            title: trip.title || 'Experience',
+            description: trip.description?.substring(0, 100) || '',
+            image: images[0] || trip.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
+            category: trip.type || trip.category || 'Experience'
+          }
+        })
+        
+        setExperiences(formatted)
+
+        if (formatted.length >= 3) {
+          const experienceSlides: Slide[] = formatted.slice(0, 5).map((exp: any) => {
+            const words = (exp.title || 'Experience').split(' ')
+            const midPoint = Math.floor(words.length / 2)
+            return {
+              id: exp.id,
+              image: exp.image,
+              title: words.slice(0, midPoint).join(' ') || 'BETWEEN SHADOW',
+              subtitle: words.slice(midPoint).join(' ') || 'AND LIGHT',
+              category: exp.category
+            }
+          })
+          setSlides(experienceSlides)
+        } else {
+          // Too few experiences to fill the slideshow - fall back rather than
+          // leaving the hero blank.
+          setSlides(defaultSlides)
         }
-        } catch (error) {
-        // Silently fail - no fallback data
-        console.warn('Failed to fetch landing page data:', error)
+      } catch (error: any) {
+        console.error('Failed to fetch experiences:', error)
+        setExperiences([])
+        setSlides(defaultSlides)
+      } finally {
+        setIsLoadingExperiences(false)
       }
     }
-
     fetchData()
   }, [])
 
-  // Fetch experiences from trips API
+  // Format number with leading zero
+  const formatNumber = (num: number): string => {
+    return num < 10 ? `0${num}` : `${num}`
+  }
+
+  // Initialize counter strip
+  const initCounterStrip = () => {
+    if (!counterStripRef.current || slides.length === 0) return
+    
+    counterStripRef.current.innerHTML = ''
+    
+    for (let i = 0; i < slides.length; i++) {
+      const numberDiv = document.createElement('div')
+      numberDiv.className = 'counter-number'
+      numberDiv.textContent = formatNumber(i + 1)
+      counterStripRef.current.appendChild(numberDiv)
+    }
+    
+    gsap.set(counterStripRef.current, { y: 0 })
+  }
+
+  // Animate counter
+  const animateCounter = (targetIndex: number, timeline: gsap.core.Timeline) => {
+    if (!counterStripRef.current) return
+    
+    const targetY = -targetIndex * 1.2
+    
+    timeline.to(
+      counterStripRef.current,
+      {
+        y: `${targetY}rem`,
+        duration: SLIDE_DURATION,
+        ease: 'power2.inOut'
+      },
+      0.2
+    )
+  }
+
+  // Navigation function
+  const navigate = (direction: number) => {
+    if (isAnimatingRef.current || slides.length === 0 || !slideshowRef.current) return
+
+    const prevIndex = currentSlideIndex
+    const nextIndex = direction === NEXT
+      ? currentSlideIndex < slides.length - 1 ? currentSlideIndex + 1 : 0
+      : currentSlideIndex > 0 ? currentSlideIndex - 1 : slides.length - 1
+
+    performNavigation(prevIndex, nextIndex, direction)
+  }
+
+  // Perform navigation animation
+  const performNavigation = (prevIndex: number, nextIndex: number, direction: number) => {
+    if (!slideshowRef.current) return
+
+    isAnimatingRef.current = true
+
+    const slideElements = slideshowRef.current.querySelectorAll('.slide')
+    const slideImages = slideshowRef.current.querySelectorAll('.slide__img')
+
+    const currentSlide = slideElements[prevIndex] as HTMLElement
+    const currentImage = slideImages[prevIndex] as HTMLElement
+    const currentTextLines = currentSlide.querySelectorAll('.slide__text-line')
+
+    const nextSlide = slideElements[nextIndex] as HTMLElement
+    const nextImage = slideImages[nextIndex] as HTMLElement
+    const nextTextLines = nextSlide.querySelectorAll('.slide__text-line')
+
+    // Make sure next slide is ready
+    gsap.set(nextSlide, {
+      visibility: 'visible',
+      y: direction * 100 + '%'
+    })
+
+    // Enhanced image setup
+    gsap.set(nextImage, {
+      y: -direction * 40 + '%',
+      scale: 1.4,
+      scaleY: 1.8,
+      rotation: -direction * 8,
+      transformOrigin: direction === NEXT ? '0% 0%' : '100% 100%'
+    })
+
+    // Reset next text lines
+    gsap.set(nextTextLines, {
+      y: '100%',
+      opacity: 0
+    })
+
+    // Create animation timeline
+    const tl = gsap.timeline({
+      defaults: { duration: SLIDE_DURATION, ease: 'power2.inOut' },
+      onComplete: () => {
+        gsap.set(currentSlide, { visibility: 'hidden' })
+        currentSlide.classList.remove('active')
+        nextSlide.classList.add('active')
+        isAnimatingRef.current = false
+        setCurrentSlideIndex(nextIndex)
+      }
+    })
+
+    // Add counter animation
+    animateCounter(nextIndex, tl)
+
+    // Animate out current text
+    tl.to(
+      currentTextLines,
+      {
+        y: '-80%',
+        opacity: 0,
+        duration: 0.7,
+        stagger: 0.05,
+        ease: 'power2.in'
+      },
+      0
+    )
+
+    // Animate current slide out
+    tl.to(
+      currentSlide,
+      {
+        y: -direction * 100 + '%'
+      },
+      0.2
+    )
+
+    // Enhanced image animation for current slide
+    tl.to(
+      currentImage,
+      {
+        y: direction * 40 + '%',
+        scale: 1.4,
+        scaleY: 1.8,
+        rotation: direction * 8,
+        ease: 'power1.out',
+        transformOrigin: direction === NEXT ? '0% 100%' : '100% 0%'
+      },
+      0.2
+    )
+
+    // Animate in next slide
+    tl.to(
+      nextSlide,
+      {
+        y: '0%'
+      },
+      0.2
+    )
+
+    // Enhanced image animation for next slide
+    tl.to(
+      nextImage,
+      {
+        y: '0%',
+        scale: 1,
+        scaleY: 1,
+        rotation: 0,
+        ease: 'imageWarp'
+      },
+      0.2
+    )
+
+    // Animate in next text
+    tl.to(
+      nextTextLines,
+      {
+        y: 0,
+        opacity: 1,
+        duration: 1,
+        stagger: 0.1,
+        ease: 'power3.out',
+        delay: 0.6
+      },
+      0.9
+    )
+  }
+
+  // Initialize slideshow - CodePen style
   useEffect(() => {
-    const fetchExperiences = async () => {
-      try {
-        const res = await tripsApi.getAll({ status: 'PUBLISHED' })
+    if (slides.length === 0 || !slideshowRef.current) return
+
+    // Use standard GSAP eases that match the CodePen feel
+    // slideInOut: '0.25, 1, 0.5, 1' -> power2.inOut
+    // textReveal: '0.77, 0, 0.175, 1' -> power3.out
+    // imageWarp: '0.22, 1, 0.36, 1' -> power1.out
+
+    // Initialize counter strip
+    initCounterStrip()
+
+    // Initialize first slide
+    const slideElements = slideshowRef.current.querySelectorAll('.slide')
+    const firstSlide = slideElements[0] as HTMLElement
+    if (firstSlide) {
+      gsap.set(firstSlide, {
+        visibility: 'visible',
+        y: '0%'
+      })
+      firstSlide.classList.add('active')
+
+      // Animate in first slide text
+      const firstSlideTextLines = firstSlide.querySelectorAll('.slide__text-line')
+      gsap.to(firstSlideTextLines, {
+        y: 0,
+        opacity: 1,
+        duration: 1.2,
+        stagger: 0.1,
+        delay: 0.5,
+        ease: 'textReveal'
+      })
+    }
+
+    // Cursor position is still tracked for the wheel/drag direction logic, but
+    // the page no longer paints its own cursor: custom cursors hurt
+    // accessibility, cost a frame on every mouse move, and do not exist on
+    // touch. The hero exposes real prev/next buttons instead.
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseXRef.current = e.clientX
+    }
+
+    const handleMouseLeave = () => {}
+
+    const handleWheel = (e: WheelEvent) => {
+      // Only navigate slides if we're in the slideshow area and not at the edges
+      const slideshowElement = slideshowRef.current
+      if (!slideshowElement) return
+      
+      const rect = slideshowElement.getBoundingClientRect()
+      // More precise check: only intercept if slideshow is fully in viewport
+      const isInSlideshow = rect.top <= 0 && rect.bottom >= window.innerHeight && 
+                           rect.top >= -window.innerHeight && rect.bottom <= window.innerHeight * 2
+      
+      // Always allow normal scrolling - don't prevent default
+      // Only navigate slides on wheel if user is clearly in slideshow area
+      if (isInSlideshow) {
+        // Check if we're trying to scroll past the slideshow
+        if (e.deltaY > 0 && currentSlideIndex === slides.length - 1) {
+          // Allow normal scroll down after last slide
+          return
+        }
+        if (e.deltaY < 0 && currentSlideIndex === 0) {
+          // Allow normal scroll up at first slide
+          return
+        }
         
-        // The trips API returns an array directly (not wrapped in success/data)
-        const trips = Array.isArray(res.data) ? res.data : []
-        
-        if (trips.length > 0) {
-          // Map trips to experiences format
-          const formattedExperiences = trips.slice(0, 6).map((trip: any) => {
-            // Parse images array
-            let images: string[] = []
-            try {
-              images = Array.isArray(trip.images) 
-                ? trip.images 
-                : (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-            } catch (e) {
-              images = []
-            }
-            
-            const category = inferCategory(trip.title || '', trip.description || '')
-            
-            // Only use image if it exists in database
-            const image = images && images.length > 0 
-              ? images[0] 
-              : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3C/g%3E%3C/svg%3E'
-            
-            // Create short description from full description (first 50 chars)
-            const shortDescription = trip.description 
-              ? (trip.description.length > 50 ? trip.description.substring(0, 50) + '...' : trip.description)
-              : 'An amazing artistic experience'
-            
-            return {
-              id: trip.id || String(Math.random()),
-              title: trip.title || 'Experience',
-              description: shortDescription,
-              image: image,
-              category: category
-            }
-          })
-          
-          if (formattedExperiences.length > 0) {
-            setExperiences(formattedExperiences)
+        // Only navigate if scroll is significant and user is clearly in slideshow
+        // Don't prevent default - let page scroll naturally
+        if (Math.abs(e.deltaY) > 50) {
+          if (e.deltaY > 0) {
+            navigate(NEXT)
+          } else {
+            navigate(PREV)
           }
         }
-        } catch (error) {
-        // Silently fail - no fallback data
-        console.warn('Failed to fetch experiences from trips API:', error)
       }
     }
 
-    fetchExperiences()
+    let touchStartY = 0
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.changedTouches[0].screenY
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndY = e.changedTouches[0].screenY
+      if (touchStartY > touchEndY + 5) {
+        navigate(NEXT)
+      } else if (touchStartY < touchEndY - 5) {
+        navigate(PREV)
+      }
+    }
+
+    const handleClick = () => {
+      if (mouseXRef.current < window.innerWidth / 2) {
+        navigate(PREV)
+      } else {
+        navigate(NEXT)
+      }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        navigate(NEXT)
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        navigate(PREV)
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseleave', handleMouseLeave)
+    // Use passive: true to allow normal scrolling - we won't preventDefault
+    window.addEventListener('wheel', handleWheel, { passive: true })
+    document.addEventListener('touchstart', handleTouchStart)
+    document.addEventListener('touchend', handleTouchEnd)
+    document.addEventListener('click', handleClick)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseleave', handleMouseLeave)
+      window.removeEventListener('wheel', handleWheel)
+      document.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('touchend', handleTouchEnd)
+      document.removeEventListener('click', handleClick)
+      document.removeEventListener('keydown', handleKeyDown)
+      gsap.killTweensOf(slideElements)
+    }
+  }, [slides, currentSlideIndex])
+
+  // GSAP Animations for other sections
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) return
+
+    const sectionsToAnimate = [
+      { ref: weLoveSectionRef, delay: 0 },
+      { ref: descriptionRef, delay: 0.1 },
+      { ref: experienceImagesSectionRef, delay: 0.15 },
+      { ref: experiencesSectionRef, delay: 0.2 }
+    ]
+
+    sectionsToAnimate.forEach(({ ref, delay }) => {
+      if (ref.current) {
+        ref.current.style.opacity = '1'
+        ref.current.style.transform = 'translateY(0)'
+        ref.current.style.visibility = 'visible'
+        
+        try {
+          if (typeof ScrollTrigger !== 'undefined' && ScrollTrigger) {
+            gsap.fromTo(ref.current, 
+              { y: 20, opacity: 0.9 },
+              {
+                y: 0,
+                opacity: 1,
+                duration: 1,
+                ease: 'power3.out',
+                scrollTrigger: {
+                  trigger: ref.current,
+                  start: 'top 85%',
+                  toggleActions: 'play none none reverse',
+                  once: true,
+                  immediateRender: false
+                },
+                delay
+              }
+            )
+          }
+        } catch (e) {
+          if (ref.current) {
+            ref.current.style.opacity = '1'
+            ref.current.style.transform = 'translateY(0)'
+            ref.current.style.visibility = 'visible'
+          }
+        }
+      }
+    })
+
+    setTimeout(() => {
+      const experienceCards = document.querySelectorAll('.experience-card')
+      if (experienceCards.length > 0) {
+        experienceCards.forEach(card => {
+          const htmlCard = card as HTMLElement
+          if (htmlCard && htmlCard.style) {
+            htmlCard.style.opacity = '1'
+            htmlCard.style.transform = 'translateY(0)'
+            htmlCard.style.visibility = 'visible'
+          }
+        })
+        
+        try {
+          if (typeof ScrollTrigger !== 'undefined') {
+            gsap.from(experienceCards, {
+              y: 30,
+              opacity: 0.7,
+              duration: 0.8,
+              stagger: 0.1,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: experiencesSectionRef.current,
+                start: 'top 70%',
+                toggleActions: 'play none none reverse',
+                once: true
+              }
+            })
+          }
+        } catch (e) {
+          experienceCards.forEach((card) => {
+            const htmlCard = card as HTMLElement
+            if (htmlCard && htmlCard.style) {
+              htmlCard.style.opacity = '1'
+              htmlCard.style.transform = 'translateY(0)'
+              htmlCard.style.visibility = 'visible'
+            }
+          })
+        }
+      }
+    }, 100)
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+    }
+  }, [experiences])
+
+  // Hide slideshow cursor and counter when scrolled past slideshow
+  useEffect(() => {
+    const handleScroll = () => {
+      const slideshowElement = slideshowRef.current
+      if (!slideshowElement) return
+      
+      const rect = slideshowElement.getBoundingClientRect()
+      // If slideshow is completely scrolled past (bottom is above viewport top)
+      // Or if we're on the last slide and scrolled down significantly
+      const isPastSlideshow = rect.bottom < window.innerHeight * 0.5
+      
+      if (isPastSlideshow) {
+        setShowSlideshowCursor(false)
+      } else {
+        setShowSlideshowCursor(true)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Check initial state
+    
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Journal stories data - no static fallback (will be fetched from DB in future)
-  const stories: any[] = []
-
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Transparent Navigation */}
-      {/* Header */}
-      <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm border-b border-white/10 px-5 md:px-20 h-[55px]"
-        style={{
-          background: 'transparent',
-          overflow: 'visible'
-        }}
-      >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <img 
-              src={getLogoUrl('transparent')} 
-              alt="Travel Art" 
-              className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain"
-            />
-          </Link>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4 lg:space-x-6 xl:space-x-8 flex-wrap justify-center">
-            <motion.div style={{ color: textColor }}>
-              <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
-                How it Works
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/partners" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
-                Partners
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
-                Pricing
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
-                Top Artists
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
-                Top Hotels
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/experiences" className="hover:text-gold transition-colors font-medium text-xs lg:text-sm whitespace-nowrap">
-                Experiences
-              </Link>
-            </motion.div>
+    <div className="overflow-x-hidden relative bg-[var(--surface)]">
+      {/* Ambient Audio */}
+      <AmbientAudio 
+        src="https://www.youtube.com/watch?v=LCQSGDqWIEY" 
+        initialVolume={0.5}
+        maxScrollForFade={1000}
+      />
+
+      {/* Fixed header. Total height stays at 72px: the logo was previously
+          scaling to h-24, which pushed the bar past 120px. */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
+        headerScrolled
+          ? 'bg-[var(--surface)]/90 backdrop-blur-md border-b border-[var(--border-subtle)]'
+          : 'bg-transparent'
+      }`}>
+        <div className="shell h-[72px] flex items-center justify-between">
+          <div className="flex items-center gap-10">
+            <Link to="/" className="shrink-0" aria-label="Travel Art home">
+              <img
+                src={getLogoUrl('transparent')}
+                alt="Travel Art"
+                className={`h-8 md:h-9 w-auto object-contain transition-all duration-500 ${
+                  headerScrolled ? 'dark:invert dark:brightness-0 dark:contrast-200' : 'brightness-0 invert'
+                }`}
+              />
+            </Link>
+            <nav className="hidden md:flex gap-8" aria-label="Main">
+              {[
+                { to: '/experiences', label: 'Experiences' },
+                { to: '/how-it-works', label: 'How it works' },
+                { to: '/pricing', label: 'Pricing' },
+              ].map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`text-sm font-medium whitespace-nowrap transition-colors duration-300 relative group ${
+                    headerScrolled ? 'text-[var(--text-primary)]' : 'text-white'
+                  }`}
+                >
+                  {item.label}
+                  <span className="absolute -bottom-1 left-0 w-0 h-px bg-gold transition-all duration-300 group-hover:w-full" />
+                </Link>
+              ))}
+            </nav>
           </div>
-          
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-3">
-            <motion.div style={{ color: textColor }}>
-              <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
-                Sign In
-              </Link>
-            </motion.div>
-            <Link to="/register" className="bg-gold text-navy px-6 py-2 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
-              Join
+          <div className="flex items-center gap-5">
+            <Link
+              to="/login"
+              className={`text-sm font-medium whitespace-nowrap transition-colors duration-300 hidden sm:block ${
+                headerScrolled ? 'text-[var(--text-primary)]' : 'text-white'
+              }`}
+            >
+              Sign in
+            </Link>
+            <Link to="/register" className="btn-gold !px-6 !py-2.5">
+              Join now
             </Link>
           </div>
         </div>
-      </motion.nav>
+      </header>
 
-      {/* Hero Section - Full Screen with Parallax */}
-      <section ref={heroRef} className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Parallax Background */}
-        <motion.div 
-          className="absolute inset-0 z-0"
-          style={{ y: heroY }}
-        >
-          {/* Background Image - Optimized size and preloaded */}
-          <img 
-            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=75"
-            alt="Luxury hotel rooftop"
-            className="w-full h-full object-cover"
-            style={{ minHeight: '100vh' }}
-            fetchPriority="high"
-            onError={(e) => {
-              // Fallback to gradient if image fails
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              const gradientDiv = target.nextElementSibling as HTMLElement
-              if (gradientDiv) gradientDiv.style.display = 'block'
-            }}
-          />
-          <div 
-            className="w-full h-full bg-gradient-to-br from-navy via-navy/90 to-gold/20"
-            style={{ 
-              minHeight: '100vh',
-              display: 'none'
-            }}
-          />
-          {/* Gradient Overlay - Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-br from-navy/70 via-navy/60 to-gold/20"></div>
-          {/* Additional subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-navy/20 via-transparent to-gold/10"></div>
-        </motion.div>
-
-        {/* Hero Content */}
-        <motion.div 
-          className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"
-          style={{ opacity: heroOpacity }}
-        >
-          {/* Floating Elements */}
-          <div className="absolute inset-0 pointer-events-none">
-            <motion.div
-              className="absolute top-20 left-10 w-4 h-4 bg-gold/30 rounded-full"
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0.3, 0.8, 0.3],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-            <motion.div
-              className="absolute top-40 right-20 w-6 h-6 bg-white/20 rounded-full"
-              animate={{
-                y: [0, 15, 0],
-                opacity: [0.2, 0.6, 0.2],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 1
-              }}
-            />
-            <motion.div
-              className="absolute bottom-40 left-20 w-3 h-3 bg-gold/40 rounded-full"
-              animate={{
-                y: [0, -25, 0],
-                opacity: [0.4, 0.9, 0.4],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 2
-              }}
-            />
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif font-bold text-white mb-4 sm:mb-6 leading-tight">
-              Where Creativity Meets
-              <span className="block text-gold mt-2 sm:mt-4">
-                {currentText}
-                <span className="animate-pulse text-gold">|</span>
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed px-4">
-              Connect luxury hotels with talented artists for unforgettable rooftop performances, 
-              intimate concerts, and magical experiences that inspire and delight.
-            </p>
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link to="/register?role=artist" className="w-full sm:w-auto bg-gold text-navy px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold hover:bg-gold/90 transition-all duration-300 text-base sm:text-lg shadow-lg flex items-center justify-center group">
-                  Join as Artist
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                </Link>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link to="/register?role=hotel" className="w-full sm:w-auto border-2 border-gold text-gold px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-semibold hover:bg-gold hover:text-navy transition-all duration-300 text-base sm:text-lg flex items-center justify-center group">
-                  Join as Hotel
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                </Link>
-              </motion.div>
-            </div>
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* About/Story Section - 60/40 Split */}
-      <section ref={aboutRef} className="py-12 sm:py-16 md:py-20 lg:py-24 bg-cream relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-5 gap-8 sm:gap-12 items-center">
-            {/* Text Content - 60% */}
-            <motion.div 
-              className="lg:col-span-3 order-2 lg:order-1"
-              initial={{ opacity: 0, x: -50 }}
-              animate={aboutInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.8 }}
+      {/* Hero. min-h-[100dvh] rather than h-screen so the iOS address bar does
+          not crop it. */}
+      <section ref={heroRef} className="slideshow-section relative min-h-[100dvh] flex items-center overflow-hidden">
+        <div ref={slideshowRef} className="slideshow">
+          {slides.map((slide, index) => (
+            <div
+              key={slide.id}
+              className={`slide ${index === 0 ? 'active' : ''}`}
             >
-              <div className="gold-underline mb-4 sm:mb-6">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-navy mb-2 sm:mb-4">
-                  We Celebrate Artists
-                </h2>
+              <div
+                className="slide__img"
+                style={{
+                  backgroundImage: `url(${slide.image})`
+                }}
+              />
+              {/* Scrim keeps the headline above AA contrast whatever the photo. */}
+              <div className="slide__scrim" aria-hidden="true" />
+              <div className="slide__text">
+                <h1 className="slide__text-line">{slide.title}</h1>
+                <h2 className="slide__text-line">{slide.subtitle}</h2>
               </div>
-              <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4 sm:mb-6 md:mb-8 leading-relaxed">
-                At Travel Art, we believe that exceptional hospitality and artistic talent create 
-                the most memorable experiences. Our platform connects talented hearts with 
-                luxury hotels to create moments that guests will treasure forever.
-              </p>
-              <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-                From intimate jazz sessions on Parisian rooftops to sunset photography workshops 
-                in Tokyo, we curate experiences that celebrate creativity and bring communities together.
-              </p>
-              <Link to="/how-it-works" className="btn-primary inline-flex items-center text-sm sm:text-base px-4 sm:px-6 py-2 sm:py-3">
-                Learn More
-                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
-              </Link>
-            </motion.div>
+            </div>
+          ))}
+        </div>
 
-            {/* Image Content - 40% */}
-            <motion.div 
-              className="lg:col-span-2 order-1 lg:order-2"
-              initial={{ opacity: 0, x: 50 }}
-              animate={aboutInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.2 }}
+        {/* Real buttons instead of a custom cursor: keyboard reachable and
+            visible on touch, where a cursor affordance does not exist. */}
+        {slides.length > 1 && (
+          <div className="absolute bottom-10 right-5 sm:right-8 lg:right-12 z-20 flex gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(PREV)}
+              aria-label="Previous experience"
+              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-navy transition-colors duration-300 active:translate-y-px"
             >
-              <div className="relative w-full h-64 sm:h-80 md:h-96 rounded-xl shadow-luxury overflow-hidden">
-                {artists.length > 0 && artists[0]?.image ? (
-                  <img 
-                    src={artists[0].image} 
-                    alt="Featured Artist"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-navy/20 to-gold/10 flex items-center justify-center">
-                    <img 
-                      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%23f3f4f6' width='400' height='400'/%3E%3Cg transform='translate(200 200)'%3E%3Ccircle fill='%239ca3af' opacity='0.2' r='80'/%3E%3Cpath fill='%239ca3af' d='M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z'/%3E%3C/g%3E%3C/svg%3E"
-                      alt="Artist Placeholder"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-            </motion.div>
+              <ArrowLeft size={18} strokeWidth={1.5} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(NEXT)}
+              aria-label="Next experience"
+              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-navy transition-colors duration-300 active:translate-y-px"
+            >
+              <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
+            </button>
           </div>
-        </div>
+        )}
       </section>
 
-      {/* Experience Grid - 3x2 */}
-      <section ref={experienceRef} className="py-24 bg-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={experienceInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="section-title">Immersive Experiences</h2>
-            <p className="section-subtitle">
-              Discover the diverse range of artistic experiences we create with our partner hotels
+      {/* The page is dark end to end: a hotel hosting artists is a gallery
+          after hours, and gold is the only warm light in the room. No section
+          inverts to a light theme. */}
+      <div className="bg-[#08101D]">
+        {/* Manifesto. A drop cap and a hanging measure make this read as
+            editorial opening copy rather than a hero subtitle. */}
+        <section ref={descriptionRef} className="section-y" style={{ opacity: 1 }}>
+          <div className="shell grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8">
+            <p className="lg:col-span-7 lg:col-start-2 text-2xl md:text-3xl lg:text-[2.6rem] font-serif
+                          leading-[1.3] text-white
+                          [&>span:first-child]:float-left [&>span:first-child]:font-serif
+                          [&>span:first-child]:text-gold [&>span:first-child]:text-[5.5rem]
+                          [&>span:first-child]:leading-[0.78] [&>span:first-child]:pr-4
+                          [&>span:first-child]:pt-1">
+              <span>T</span>ravel and cultural immersion are where the work starts. We put
+              artists inside hotels worth staying in, and let what happens there be the point.
             </p>
-          </motion.div>
 
-          {experiences.length > 0 ? (
-            <div className="experience-grid" data-testid="feature-grid">
-              {experiences.map((experience, index) => (
-              <Link
-                key={experience.id}
-                to={`/experience/${experience.id}`}
-                className="block"
-              >
-                <motion.div
-                  className="card-experience group"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={experienceInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                  <div className="relative h-64 overflow-hidden">
-                    <img 
-                      src={experience.image} 
-                      alt={experience.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="absolute top-4 left-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-bold">
-                      {experience.category}
-                    </div>
-                    <div className="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <h3 className="text-xl font-serif font-bold mb-2">{experience.title}</h3>
-                      <p className="text-sm opacity-90">{experience.description}</p>
-                      <button 
-                        className="mt-3 bg-gold text-navy px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gold/90 transition-colors"
-                      >
-                        Discover More
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Check back soon to discover our immersive experiences.</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* How It Works - Three Steps */}
-      <section ref={stepsRef} className="py-24 bg-cream relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={stepsInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="section-title">How It Works</h2>
-            <p className="section-subtitle">
-              Three simple steps to start creating extraordinary experiences
-            </p>
-          </motion.div>
-
-          <div className="relative">
-            <div className="grid md:grid-cols-3 gap-8">
-              {steps.map((step, index) => (
-              <motion.div
-                  key={step.id}
-                  className="relative"
-                initial={{ opacity: 0, y: 30 }}
-                  animate={stepsInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ duration: 0.6, delay: index * 0.2 }}
-                >
-                  <div className="card-luxury text-center group hover:scale-105 transition-all duration-300">
-                    <div className="mb-6 flex justify-center">
-                      <div className="p-4 rounded-full bg-gradient-to-br from-gold/20 to-gold/5 group-hover:from-gold/30 group-hover:to-gold/10 transition-all duration-300">
-                        {step.icon}
-                      </div>
-                    </div>
-                    <h3 className="text-2xl font-serif font-semibold text-navy mb-4 group-hover:text-gold transition-colors duration-300">
-                      {step.title}
-                </h3>
-                    <p className="text-gray-600 group-hover:text-gray-700 transition-colors duration-300">
-                      {step.description}
-                    </p>
-                  </div>
-                  
-                  {/* Step Connector */}
-                  {index < steps.length - 1 && (
-                    <div className="hidden md:block step-connector"></div>
-                  )}
-              </motion.div>
-            ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Showcase Carousel - Artists */}
-      <section ref={showcaseRef} className="py-24 bg-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={showcaseInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="section-title">Featured Artists</h2>
-            <p className="section-subtitle">
-              Meet the talented artists creating unforgettable experiences
-            </p>
-          </motion.div>
-
-          {artists.length > 0 ? (
-            <div className="carousel-container">
-              <div className="carousel-track carousel-auto-scroll">
-                {[...artists, ...artists].map((artist, index) => (
-                <div key={`${artist.id}-${index}`} className="carousel-item w-80">
-                  <div className="card-showcase">
-                    <div className="relative mb-4">
-                      <img 
-                        src={artist.image} 
-                        alt={artist.name}
-                        className="w-full h-48 object-cover rounded-lg"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
-                        }}
-                      />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
-                        <ArtistRank tier={getQuickRank(artist.rating, artist.bookings)} size="sm" />
-                        <span className="text-sm font-semibold text-navy">{artist.rating}</span>
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-serif font-bold text-navy mb-2">{artist.name}</h3>
-                    <p className="text-gold font-semibold mb-2">{artist.specialty}</p>
-                    <p className="text-gray-600 text-sm">{artist.location}</p>
-                  </div>
-                </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Check back soon to discover our featured artists.</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Showcase Carousel - Hotels */}
-      <section className="py-24 bg-cream relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={showcaseInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="section-title">Partner Hotels</h2>
-            <p className="section-subtitle">
-              Luxury hotels creating extraordinary guest experiences
-            </p>
-          </motion.div>
-
-          {hotels.length > 0 ? (
-            <div className="carousel-container">
-              <div className="carousel-track carousel-auto-scroll" style={{ animationDirection: 'reverse' }}>
-                {[...hotels, ...hotels].map((hotel, index) => (
-                <div key={`${hotel.id}-${index}`} className="carousel-item w-64 flex-shrink-0">
-                  <div className="card-showcase h-full flex flex-col">
-                    <div className="relative mb-4">
-                      <img 
-                        src={hotel.image} 
-                        alt={hotel.name}
-                        className="w-full h-48 object-cover rounded-lg"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Cg fill="%239ca3af"%3E%3Crect x="150" y="80" width="100" height="140" rx="5"/%3E%3Crect x="170" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="100" width="20" height="30" fill="%23fff"/%3E%3Crect x="170" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="210" y="150" width="20" height="30" fill="%23fff"/%3E%3Crect x="175" y="190" width="50" height="30" rx="3"/%3E%3C/g%3E%3C/svg%3E'
-                        }}
-                      />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
-                        <span className="text-gold font-bold">◆</span>
-                        <span>{hotel.rating}</span>
-                      </div>
-                    </div>
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <h3 className="text-xl font-serif font-bold text-navy mb-2">{hotel.name}</h3>
-                        <p className="text-gold font-semibold mb-3">{hotel.location}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {hotel.features.map((feature, idx) => (
-                          <span key={idx} className="bg-gold/20 text-navy px-2 py-1 rounded text-xs font-medium">
-                            {feature}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Check back soon to discover our partner hotels.</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Journal/Stories Section */}
-      {stories.length > 0 && (
-        <section ref={journalRef} className="py-24 bg-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={journalInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="section-title">Backstage Stories</h2>
-            <p className="section-subtitle">
-              Behind the scenes of our most memorable experiences
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {stories.map((story, index) => (
-              <motion.div
-                key={story.id}
-                className="card-experience group"
-                initial={{ opacity: 0, y: 30 }}
-                animate={journalInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-              >
-                <div className="relative h-64 overflow-hidden">
-                  <img 
-                    src={story.image} 
-                    alt={story.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent"></div>
-                  <div className="absolute top-4 left-4 bg-gold text-navy px-3 py-1 rounded-full text-sm font-bold">
-                    {story.category}
-                  </div>
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <p className="text-xs opacity-80 mb-2">{story.date}</p>
-                    <h3 className="text-lg font-serif font-bold mb-2 group-hover:text-gold transition-colors">
-                      {story.title}
-                    </h3>
-                    <p className="text-sm opacity-90">{story.excerpt}</p>
-                  </div>
-                </div>
-              </motion.div>
-              ))}
+            <div className="lg:col-span-3 lg:col-start-10 self-end">
+              <p className="text-white/50 leading-relaxed">
+                Musicians, visual artists and performers, across more than thirty
+                destinations.
+              </p>
+              <div className="mt-8 h-px w-full bg-gold/30" />
+              <p className="mt-8 font-serif text-5xl text-gold">30+</p>
+              <p className="text-white/40 text-sm mt-1">Destinations</p>
             </div>
           </div>
         </section>
-      )}
 
-      {/* Top Artists Section */}
-      <section ref={topArtistsRef} className="py-24 bg-cream relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={topArtistsInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="section-title">Top Artists</h2>
-            <p className="section-subtitle">
-              Our most booked and highly rated artists
-            </p>
-          </motion.div>
+        {/* Kinetic marquee. The only marquee on the page: it carries the
+            disciplines at a glance, where a static list would bury them. */}
+        <section ref={weLoveSectionRef} className="pb-24 md:pb-32 relative overflow-hidden" style={{ opacity: 1 }}>
+          <div aria-hidden="true" className="space-y-4 select-none">
+            <div className="flex animate-scroll-right" style={{ willChange: 'transform', width: 'fit-content' }}>
+              {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
+                <span
+                  key={i}
+                  className="flex-shrink-0 text-6xl md:text-8xl lg:text-9xl font-serif italic text-white/[0.07] mx-8 md:mx-14 whitespace-nowrap"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
 
-          {artists.length > 0 ? (
-            <div className="carousel-container">
-              <div className="carousel-track carousel-auto-scroll">
-                {[...artists, ...artists].map((artist, index) => (
-                <div key={`top-${artist.id}-${index}`} className="carousel-item w-80">
-                  <div className="card-showcase relative">
-                    <div className="relative mb-4">
-                      <img 
-                        src={artist.image} 
-                        alt={artist.name}
-                        className="w-full h-48 object-cover rounded-lg"
-                        loading="lazy"
-                      />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-full flex items-center space-x-2">
-                        <ArtistRank tier={getQuickRank(artist.rating, artist.bookings)} size="sm" />
-                        <span className="text-sm font-semibold text-navy">{artist.rating}</span>
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-serif font-bold text-navy mb-2">{artist.name}</h3>
-                    <p className="text-gold font-semibold mb-2">{artist.specialty}</p>
-                    <p className="text-gray-600 text-sm">{artist.location}</p>
-                  </div>
-                </div>
-                ))}
+            <div className="flex animate-scroll-left" style={{ willChange: 'transform', width: 'fit-content' }}>
+              {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
+                <span
+                  key={i}
+                  className="flex-shrink-0 text-6xl md:text-8xl lg:text-9xl font-serif italic text-gold/20 mx-8 md:mx-14 whitespace-nowrap"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Screen readers get the plain list the marquee decorates. */}
+          <ul className="sr-only">
+            {weLovetags.map((tag) => <li key={tag}>{tag}</li>)}
+          </ul>
+        </section>
+
+        {/* Signature moment: the work travels sideways while the page holds. */}
+        <GalleryPan items={experiences.slice(0, 6)} />
+
+        {/* Closing band. The one moment on the page where gold fills a surface
+            instead of accenting it, so the final action carries the most
+            contrast on the page. */}
+        <section ref={experienceImagesSectionRef} className="relative overflow-hidden" style={{ opacity: 1 }}>
+          <div className="shell">
+            <div className="border-t border-white/10 py-24 md:py-36 text-center">
+              <h2 className="font-serif text-white text-5xl md:text-7xl lg:text-8xl leading-[1.02]">
+                A residency,
+                <span className="block text-gold italic leading-[1.1] pb-1">not a booking.</span>
+              </h2>
+              <p className="mt-8 text-white/55 max-w-[46ch] mx-auto leading-relaxed">
+                Apply as an artist, or open your hotel to the programme.
+              </p>
+              <div className="mt-12 flex flex-wrap gap-4 justify-center">
+                <Link to="/register" className="btn-gold">
+                  Join now
+                </Link>
+                <Link
+                  to="/how-it-works"
+                  className="btn-base bg-transparent text-white border border-white/30 hover:bg-surface-raised hover:text-navy"
+                >
+                  How it works
+                </Link>
               </div>
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Check back soon to discover our top artists.</p>
-            </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* Top Hotels Section */}
-      <section ref={topHotelsRef} className="py-24 bg-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={topHotelsInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="section-title">Top Hotels</h2>
-            <p className="section-subtitle">
-              Luxury hotels creating exceptional guest experiences
-            </p>
-          </motion.div>
+        {/* The exchange, set as two facing columns. A different layout family
+            from the gallery above and the band below, and it states both sides
+            of the trade at once rather than as three identical cards. */}
+        <section ref={experiencesSectionRef} className="section-y" style={{ opacity: 1 }}>
+          <div className="shell">
+            <h2 className="font-serif text-white text-4xl md:text-5xl lg:text-6xl leading-[1.05] max-w-[16ch] mb-20">
+              One exchange, two sides.
+            </h2>
 
-          {hotels.length > 0 ? (
-            <div className="carousel-container">
-              <div className="carousel-track carousel-auto-scroll" style={{ animationDirection: 'reverse' }}>
-                {[...hotels, ...hotels].map((hotel, index) => (
-                <div key={`top-hotel-${hotel.id}-${index}`} className="carousel-item w-80">
-                  <div className="card-showcase relative">
-                    <div className="relative mb-4">
-                      <img 
-                        src={hotel.image} 
-                        alt={hotel.name}
-                        className="w-full h-48 object-cover rounded-lg"
-                        loading="lazy"
-                      />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
-                        <span className="text-gold font-bold">◆</span>
-                        <span>{hotel.rating}</span>
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-serif font-bold text-navy mb-2">{hotel.name}</h3>
-                    <p className="text-gold font-semibold mb-2">{hotel.location}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {hotel.features.map((feature, idx) => (
-                        <span key={idx} className="bg-gold/20 text-navy px-2 py-1 rounded text-xs font-medium">
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                ))}
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              <div className="lg:pr-16 lg:border-r border-white/10">
+                <p className="font-serif text-gold text-3xl md:text-4xl">For artists</p>
+                <p className="mt-6 text-white/60 leading-relaxed max-w-[42ch]">
+                  A room, a stage and the time to make something. You keep your fee and
+                  your work.
+                </p>
+                <ul className="mt-10 space-y-5">
+                  {[
+                    'Residencies in hotels that programme culture seriously',
+                    'No commission taken on the artist side',
+                    'Travel and accommodation settled before you arrive',
+                  ].map((line) => (
+                    <li key={line} className="flex gap-4 text-white/80">
+                      <span aria-hidden="true" className="mt-2.5 h-px w-6 shrink-0 bg-gold" />
+                      <span className="leading-relaxed">{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-16 lg:mt-0 lg:pl-16">
+                <p className="font-serif text-gold text-3xl md:text-4xl">For hotels</p>
+                <p className="mt-6 text-white/60 leading-relaxed max-w-[42ch]">
+                  A cultural programme without an agency, a producer or a season of
+                  planning.
+                </p>
+                <ul className="mt-10 space-y-5">
+                  {[
+                    'Vetted artists across music, visual art and performance',
+                    'One credit balance covers every booking',
+                    'Dates you control, cancelled or confirmed in a click',
+                  ].map((line) => (
+                    <li key={line} className="flex gap-4 text-white/80">
+                      <span aria-hidden="true" className="mt-2.5 h-px w-6 shrink-0 bg-gold" />
+                      <span className="leading-relaxed">{line}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Check back soon to discover our top hotels.</p>
+          </div>
+        </section>
+
+        <footer className="border-t border-white/10">
+          <div className="shell py-20">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-16">
+              <div className="col-span-2 md:col-span-1">
+                <img
+                  src={getLogoUrl('transparent')}
+                  alt="Travel Art"
+                  className="h-9 w-auto brightness-0 invert"
+                />
+                <p className="mt-5 text-sm text-white/50 max-w-[28ch]">
+                  Artist residencies inside luxury hotels.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-sans text-sm font-semibold text-white mb-5">
+                  Programme
+                </h3>
+                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/register" className="hover:text-gold transition-colors">Join now</Link></li>
+                  <li><Link to="/login" className="hover:text-gold transition-colors">Sign in</Link></li>
+                  <li><Link to="/pricing" className="hover:text-gold transition-colors">Pricing</Link></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-sans text-sm font-semibold text-white mb-5">
+                  Discover
+                </h3>
+                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/about" className="hover:text-gold transition-colors">About</Link></li>
+                  <li><Link to="/how-it-works" className="hover:text-gold transition-colors">How it works</Link></li>
+                  <li><Link to="/experiences" className="hover:text-gold transition-colors">Experiences</Link></li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-sans text-sm font-semibold text-white mb-5">
+                  Legal
+                </h3>
+                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/terms" className="hover:text-gold transition-colors">Terms</Link></li>
+                  <li><Link to="/privacy" className="hover:text-gold transition-colors">Privacy</Link></li>
+                  <li><Link to="/cookies" className="hover:text-gold transition-colors">Cookies</Link></li>
+                </ul>
+              </div>
             </div>
-          )}
-        </div>
-      </section>
 
-      {/* Newsletter Section */}
-      <section className="py-16 bg-cream">
-        <NewsletterSignup variant="banner" />
-      </section>
+            <p className="text-sm text-white/40 pt-8 border-t border-white/10">
+              &copy; {new Date().getFullYear()} Travel Art
+            </p>
+          </div>
+        </footer>
+      </div>
 
-      {/* Footer */}
-      <Footer />
+      <style>{`
+        /* The remote PP Neue Montreal @import was removed: it is a
+           render-blocking request to an unofficial font CDN, and the page now
+           uses the self-hosted brand fonts. */
+        body {
+          overflow-x: hidden;
+        }
+
+        /* Off-black rather than pure #000, which flattens the photography. */
+        .slideshow-section {
+          background-color: #08101D;
+          color: #fff;
+        }
+
+        .slideshow {
+          position: relative;
+          width: 100%;
+          min-height: 100dvh;
+          height: 100%;
+          overflow: hidden;
+        }
+
+        .slide__scrim {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          pointer-events: none;
+          background: linear-gradient(
+            to top,
+            rgba(8, 16, 29, 0.72) 0%,
+            rgba(8, 16, 29, 0.28) 45%,
+            rgba(8, 16, 29, 0.45) 100%
+          );
+        }
+        
+        .slide {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          visibility: hidden;
+          overflow: hidden;
+          transform: translateY(0);
+        }
+        
+        .slide.active {
+          visibility: visible;
+        }
+        
+        .slide__img {
+          position: absolute;
+          top: -10%;
+          left: -10%;
+          width: 120%;
+          height: 120%;
+          background-size: cover;
+          background-position: center;
+          will-change: transform;
+        }
+        
+        .slide__img::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.2) 0%,
+            rgba(0, 0, 0, 0) 40%
+          );
+        }
+        
+        .slide__text {
+          position: absolute;
+          bottom: 5rem;
+          left: 5rem;
+          max-width: 80%;
+          overflow: hidden;
+          z-index: 5;
+        }
+        
+        .slide__text-line {
+          display: block;
+          font-size: clamp(3rem, 8vw, 8rem);
+          line-height: 1;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: -0.02em;
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        
+        .slide-counter {
+          position: fixed;
+          bottom: 2rem;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: center;
+          font-size: 1.2rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          z-index: 10;
+          color: #fff;
+        }
+        
+        .counter-container {
+          position: relative;
+          min-width: 2rem;
+          height: 1.2rem;
+          overflow: hidden;
+          text-align: right;
+        }
+        
+        .counter-strip {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          text-align: right;
+        }
+        
+        .counter-number {
+          height: 1.2rem;
+          display: block;
+        }
+        
+        .counter-separator {
+          width: 40px;
+          height: 1px;
+          background-color: #fff;
+          margin: 0 1rem;
+        }
+        
+        .counter-total {
+          min-width: 2rem;
+          text-align: left;
+        }
+        
+        .cursor {
+          position: fixed;
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          margin-top: -30px;
+          margin-left: -30px;
+          z-index: 9999;
+          pointer-events: none;
+          transform: scale(0);
+          transition: transform 0.3s ease;
+        }
+        
+        .cursor-arrow {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          font-size: 1.2rem;
+          opacity: 0;
+        }
+        
+        .cursor.active {
+          transform: scale(1);
+        }
+        
+        .cursor.prev .cursor-arrow.prev,
+        .cursor.next .cursor-arrow.next {
+          opacity: 1;
+        }
+        
+        @keyframes scroll-right {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-33.333%); }
+        }
+        
+        @keyframes scroll-left {
+          0% { transform: translateX(-33.333%); }
+          100% { transform: translateX(0); }
+        }
+        
+        .animate-scroll-right {
+          animation: scroll-right 40s linear infinite;
+          display: flex;
+          width: fit-content;
+        }
+        
+        .animate-scroll-left {
+          animation: scroll-left 40s linear infinite;
+          display: flex;
+          width: fit-content;
+        }
+        
+        .experience-card {
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .experience-card:hover {
+          transform: translateY(-8px);
+        }
+        
+        @media (max-width: 768px) {
+          .slide__text {
+            bottom: 3rem;
+            left: 2rem;
+            max-width: 90%;
+          }
+
+          .slide__text-line {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+          }
+        }
+      `}</style>
     </div>
   )
 }
-
-export default LandingPage

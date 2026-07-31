@@ -15,12 +15,12 @@ export type PaymentReceiptProps = {
   onDownload?: () => void
 }
 
-const labelClass = 'block text-xs uppercase text-gray-500'
+const labelClass = 'block text-xs uppercase text-content-secondary'
 const valueClass = 'font-medium text-navy'
 
 export const PaymentReceipt: React.FC<PaymentReceiptProps> = ({ transaction, onDownload }) => {
   return (
-    <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4 text-sm text-gray-700 space-y-3">
+    <div className="mt-4 bg-surface-raised border border-line rounded-lg p-4 text-sm text-content-secondary space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-navy">Mock Receipt</h3>
         {onDownload && (
@@ -56,7 +56,7 @@ export const PaymentReceipt: React.FC<PaymentReceiptProps> = ({ transaction, onD
         </div>
         <div>
           <span className={labelClass}>Status</span>
-          <span className={`${valueClass} text-green-700`}>{transaction.status}</span>
+          <span className={`${valueClass} text-green-700 dark:text-green-400`}>{transaction.status}</span>
         </div>
         {transaction.cardLast4 && (
           <div>
@@ -71,7 +71,7 @@ export const PaymentReceipt: React.FC<PaymentReceiptProps> = ({ transaction, onD
           </div>
         )}
       </div>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-content-secondary">
         This is a mock payment record for demo purposes. Integrate with Stripe or PayPal server-side APIs before going live.
       </p>
     </div>

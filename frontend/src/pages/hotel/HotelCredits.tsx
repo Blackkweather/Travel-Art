@@ -52,26 +52,26 @@ const HotelCredits: React.FC = () => {
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'purchase':
-        return <ShoppingCart className="w-5 h-5 text-green-600" />
+        return <ShoppingCart className="w-5 h-5 text-green-600 dark:text-green-400" />
       case 'booking':
         return <Calendar className="w-5 h-5 text-blue-600" />
       case 'refund':
         return <Gift className="w-5 h-5 text-purple-600" />
       default:
-        return <CreditCard className="w-5 h-5 text-gray-600" />
+        return <CreditCard className="w-5 h-5 text-content-secondary" />
     }
   }
 
   const getTransactionColor = (type: string) => {
     switch (type) {
       case 'purchase':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
       case 'booking':
         return 'bg-blue-100 text-blue-800'
       case 'refund':
         return 'bg-purple-100 text-purple-800'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-surface-sunken text-content'
     }
   }
 
@@ -129,7 +129,7 @@ const HotelCredits: React.FC = () => {
           className="dashboard-stat-card text-center"
         >
           <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <TrendingUp className="w-8 h-8 text-green-600" />
+            <TrendingUp className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
           <h3 className="text-3xl font-bold text-navy mb-2 count-up">€{totalSpent.toLocaleString()}</h3>
           <p className="section-subtitle">Total Spent</p>
@@ -155,7 +155,7 @@ const HotelCredits: React.FC = () => {
           Purchase Credit Packages
         </h2>
         {error && (
-          <div className="mb-4 text-sm text-red-600">{error}</div>
+          <div className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {packages.map((pkg: any, index: number) => (
@@ -165,7 +165,7 @@ const HotelCredits: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               className={`border-2 rounded-xl p-6 relative transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                pkg.popular ? 'border-gold bg-gradient-to-br from-gold/10 to-gold/5 shadow-md' : 'border-gray-200 hover:border-gold/30'
+                pkg.popular ? 'border-gold bg-gradient-to-br from-gold/10 to-gold/5 shadow-md' : 'border-line hover:border-gold/30'
               }`}
             >
               {pkg.popular && (
@@ -182,16 +182,16 @@ const HotelCredits: React.FC = () => {
                 </h3>
                 <div className="mb-4">
                   <span className="text-4xl font-bold text-navy">{pkg.credits}</span>
-                  <span className="text-gray-600 ml-2">credits</span>
+                  <span className="text-content-secondary ml-2">credits</span>
                 </div>
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <span className="text-2xl font-bold text-gold">€{pkg.price.toLocaleString()}</span>
                   {pkg.originalPrice && (
-                    <span className="text-lg text-gray-500 line-through">€{pkg.originalPrice.toLocaleString()}</span>
+                    <span className="text-lg text-content-secondary line-through">€{pkg.originalPrice.toLocaleString()}</span>
                   )}
                 </div>
                 {pkg.savings ? (
-                  <div className="text-sm text-green-600 font-medium">Save €{pkg.savings.toLocaleString()}</div>
+                  <div className="text-sm text-green-600 dark:text-green-400 font-medium">Save €{pkg.savings.toLocaleString()}</div>
                 ) : null}
               </div>
 
@@ -200,7 +200,7 @@ const HotelCredits: React.FC = () => {
                   {pkg.features.map((feature: string, featureIndex: number) => (
                     <li key={featureIndex} className="flex items-start">
                       <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-gray-600">{feature}</span>
+                      <span className="text-sm text-content-secondary">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -234,16 +234,16 @@ const HotelCredits: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-gold/30 transition-all duration-300 hover:shadow-md"
+              className="flex items-center justify-between p-5 bg-surface-sunken rounded-xl border border-line hover:border-gold/30 transition-all duration-300 hover:shadow-md"
             >
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+                <div className="w-14 h-14 bg-surface-raised rounded-xl flex items-center justify-center shadow-sm border border-line">
                   {getTransactionIcon(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-navy text-lg mb-1">{transaction.type.replace('_', ' ')}</h3>
-                  <p className="text-sm text-gray-600 font-medium mb-1">{transaction.paymentMethod || '—'}</p>
-                  <p className="text-xs text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
+                  <p className="text-sm text-content-secondary font-medium mb-1">{transaction.paymentMethod || '—'}</p>
+                  <p className="text-xs text-content-secondary">{new Date(transaction.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
               
@@ -253,7 +253,7 @@ const HotelCredits: React.FC = () => {
                 </div>
                 <div className="mt-2">
                   {transaction.amount > 0 && (
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-content-secondary">
                       €{transaction.amount.toLocaleString()}
                     </div>
                   )}
@@ -277,19 +277,19 @@ const HotelCredits: React.FC = () => {
             <ul className="space-y-3">
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-content-secondary">
                   Each booking typically costs 1-3 credits depending on artist level and duration
                 </span>
               </li>
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-content-secondary">
                   Credits are deducted when you confirm a booking
                 </span>
               </li>
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-content-secondary">
                   Cancellations within 48 hours receive full credit refunds
                 </span>
               </li>
@@ -303,19 +303,19 @@ const HotelCredits: React.FC = () => {
             <ul className="space-y-3">
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-content-secondary">
                   Purchase larger packages for better value and savings
                 </span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-content-secondary">
                   Monitor your credit balance to avoid booking interruptions
                 </span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-content-secondary">
                   Use credits strategically for high-value performances
                 </span>
               </li>

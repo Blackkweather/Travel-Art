@@ -56,12 +56,12 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
           className={`
             w-full h-12 px-4 rounded-xl border-2 transition-all
             flex items-center justify-between text-left
-            ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-60' : 'bg-white hover:border-gold'}
-            ${error ? 'border-red-400' : isOpen ? 'border-gold' : 'border-gray-200'}
+            ${disabled ? 'bg-surface cursor-not-allowed opacity-60' : 'bg-surface-raised hover:border-gold'}
+            ${error ? 'border-red-400' : isOpen ? 'border-gold' : 'border-line'}
             ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
           `}
         >
-          <span className={selectedOption ? 'text-navy-900 font-medium' : 'text-gray-400'}>
+          <span className={selectedOption ? 'text-navy-900 font-medium' : 'text-content-secondary'}>
             {selectedOption?.label || placeholder}
           </span>
           <motion.div
@@ -78,18 +78,18 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gold rounded-xl shadow-lg z-50"
+            className="absolute top-full left-0 right-0 mt-2 bg-surface-raised border-2 border-gold rounded-xl shadow-lg z-50"
           >
             {/* Search Input */}
-            <div className="p-3 border-b border-gray-200">
+            <div className="p-3 border-b border-line">
               <div className="relative">
-                <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-content-secondary" />
                 <input
                   type="text"
                   placeholder="Rechercher..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+                  className="w-full pl-10 pr-4 py-2 border border-line rounded-lg focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold"
                   autoFocus
                 />
               </div>
@@ -106,14 +106,14 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
                     whileHover={{ backgroundColor: '#FAF8F5' }}
                     className={`
                       w-full text-left px-4 py-3 transition-colors
-                      ${value === option.value ? 'bg-gold/10 border-l-4 border-gold font-medium text-navy-900' : 'text-gray-700'}
+                      ${value === option.value ? 'bg-gold/10 border-l-4 border-gold font-medium text-navy-900' : 'text-content-secondary'}
                     `}
                   >
                     {option.label}
                   </motion.button>
                 ))
               ) : (
-                <div className="px-4 py-6 text-center text-gray-500">
+                <div className="px-4 py-6 text-center text-content-secondary">
                   Aucune option trouvée
                 </div>
               )}

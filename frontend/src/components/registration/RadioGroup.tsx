@@ -50,12 +50,12 @@ const RadioButton: React.FC<RadioButtonProps> = ({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="w-2.5 h-2.5 bg-white rounded-full"
+              className="w-2.5 h-2.5 bg-surface-raised rounded-full"
             />
           )}
         </motion.div>
       </div>
-      <span className={`text-base font-medium ${checked ? 'text-navy-900' : 'text-gray-700'}`}>
+      <span className={`text-base font-medium ${checked ? 'text-navy-900' : 'text-content-secondary'}`}>
         {label}
       </span>
     </motion.label>

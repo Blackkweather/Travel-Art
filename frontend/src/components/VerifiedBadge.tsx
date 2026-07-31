@@ -26,7 +26,7 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
 
   const colors = {
     artist: 'text-purple-600',
-    hotel: 'text-green-600',
+    hotel: 'text-green-600 dark:text-green-400',
     platform: 'text-gold'
   }
 

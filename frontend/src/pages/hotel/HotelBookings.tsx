@@ -179,30 +179,30 @@ const HotelBookings: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />
+        return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
       case 'pending':
         return <AlertCircle className="w-5 h-5 text-amber-600" />
       case 'completed':
         return <CheckCircle className="w-5 h-5 text-blue-600" />
       case 'cancelled':
-        return <XCircle className="w-5 h-5 text-red-600" />
+        return <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
       default:
-        return <AlertCircle className="w-5 h-5 text-gray-600" />
+        return <AlertCircle className="w-5 h-5 text-content-secondary" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
       case 'pending':
         return 'bg-amber-100 text-amber-800'
       case 'completed':
         return 'bg-blue-100 text-blue-800'
       case 'cancelled':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-surface-sunken text-content'
     }
   }
 
@@ -220,7 +220,7 @@ const HotelBookings: React.FC = () => {
         <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
           Hotel Bookings
         </h1>
-        <p className="text-gray-600">
+        <p className="text-content-secondary">
           Manage your artist bookings and performance schedules
         </p>
       </div>
@@ -241,7 +241,7 @@ const HotelBookings: React.FC = () => {
                 <Icon className="w-6 h-6 text-gold" />
               </div>
               <h3 className="text-2xl font-bold text-navy mb-2">{stat.value}</h3>
-              <p className="text-gray-600">{stat.label}</p>
+              <p className="text-content-secondary">{stat.label}</p>
             </motion.div>
           )
         })}
@@ -309,7 +309,7 @@ const HotelBookings: React.FC = () => {
                   {booking.artist.rating > 0 && (
                     <div className="flex items-center space-x-2 mb-2">
                       <Star className="w-4 h-4 text-gold" />
-                      <span className="text-sm text-gray-600">{booking.artist.rating.toFixed(1)}</span>
+                      <span className="text-sm text-content-secondary">{booking.artist.rating.toFixed(1)}</span>
                     </div>
                   )}
                 </div>
@@ -320,7 +320,7 @@ const HotelBookings: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <h4 className="text-sm font-medium text-navy mb-2">Performance Details</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
+                    <div className="space-y-1 text-sm text-content-secondary">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span>{new Date(booking.startDate).toLocaleDateString()}</span>
@@ -342,7 +342,7 @@ const HotelBookings: React.FC = () => {
                   
                   <div>
                     <h4 className="text-sm font-medium text-navy mb-2">Payment Info</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
+                    <div className="space-y-1 text-sm text-content-secondary">
                       {booking.totalPaymentAmount && (
                         <div className="flex items-center justify-between">
                           <span>Total Payment:</span>
@@ -358,16 +358,16 @@ const HotelBookings: React.FC = () => {
                         <div className="flex items-center justify-between mt-2">
                           <span>Status:</span>
                           <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
+                            booking.paymentStatus === 'PAID' ? 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400' :
                             booking.paymentStatus === 'PENDING' ? 'bg-amber-100 text-amber-800' :
                             booking.paymentStatus === 'REFUNDED' ? 'bg-blue-100 text-blue-800' :
-                            'bg-red-100 text-red-800'
+                            'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
                           }`}>
                             {booking.paymentStatus}
                           </span>
                         </div>
                       )}
-                      {booking.notes && <div className="mt-2 pt-2 border-t border-gray-200">Notes: {booking.notes}</div>}
+                      {booking.notes && <div className="mt-2 pt-2 border-t border-line">Notes: {booking.notes}</div>}
                     </div>
                   </div>
                 </div>
@@ -375,7 +375,7 @@ const HotelBookings: React.FC = () => {
                 {booking.notes && (
                   <div className="mb-4">
                     <h4 className="text-sm font-medium text-navy mb-2">Notes</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                    <p className="text-sm text-content-secondary bg-surface p-3 rounded-lg">
                       {booking.notes}
                     </p>
                   </div>
@@ -424,13 +424,13 @@ const HotelBookings: React.FC = () => {
       {/* No Results */}
       {filteredBookings.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Calendar className="w-12 h-12 text-gray-400" />
+          <div className="w-24 h-24 bg-surface-sunken rounded-full flex items-center justify-center mx-auto mb-6">
+            <Calendar className="w-12 h-12 text-content-secondary" />
           </div>
           <h3 className="text-xl font-serif font-semibold text-navy mb-2">
             No Bookings Found
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-content-secondary mb-6">
             {searchTerm || filter !== 'all' 
               ? 'Try adjusting your search criteria or filters'
               : 'You haven\'t made any bookings yet'

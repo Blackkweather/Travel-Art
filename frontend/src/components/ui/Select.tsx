@@ -16,7 +16,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex h-11 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-navy shadow-sm',
+      'flex h-11 w-full items-center justify-between rounded-lg border border-line-strong bg-surface-raised px-4 py-2.5 text-sm font-medium text-navy shadow-sm',
       'hover:border-gold/60 hover:shadow-md',
       'focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold',
       'data-[state=open]:border-gold data-[state=open]:ring-2 data-[state=open]:ring-gold/30',
@@ -28,7 +28,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 text-gray-500 transition-transform duration-200 data-[state=open]:rotate-180" />
+      <ChevronDown className="h-4 w-4 text-content-secondary transition-transform duration-200 data-[state=open]:rotate-180" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -76,7 +76,7 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl',
+        'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-line bg-surface-raised shadow-xl',
         'data-[state=open]:opacity-100 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=closed]:scale-95',
         'transition-all duration-200 ease-out',
         position === 'popper' &&
@@ -148,7 +148,7 @@ const SelectSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator
     ref={ref}
-    className={cn('-mx-1 my-1 h-px bg-gray-200', className)}
+    className={cn('-mx-1 my-1 h-px bg-surface-sunken', className)}
     {...props}
   />
 ))

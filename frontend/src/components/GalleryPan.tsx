@@ -89,7 +89,7 @@ export default function GalleryPan({ items }: GalleryPanProps) {
           >
             {/* Alternating heights keep the run from reading as a filmstrip. */}
             <div
-              className={`relative overflow-hidden bg-white/5 rounded-card ${
+              className={`relative overflow-hidden bg-surface-raised/5 rounded-card ${
                 i % 2 === 0 ? 'aspect-[3/4]' : 'aspect-[4/5] lg:mt-24'
               }`}
             >

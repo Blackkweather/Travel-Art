@@ -421,12 +421,12 @@ const HotelArtists: React.FC = () => {
   const getAvailabilityColor = (availability: string) => {
     switch (availability) {
       case 'Available':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
       case 'Pending':
         return 'bg-amber-100 text-amber-800'
       case 'Unavailable':
       default:
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
     }
   }
 
@@ -434,26 +434,26 @@ const HotelArtists: React.FC = () => {
     return (
       <div className="space-y-8">
         <div>
-          <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse" />
-          <div className="h-4 bg-gray-200 rounded w-96 animate-pulse" />
+          <div className="h-8 bg-surface-sunken rounded w-64 mb-2 animate-pulse" />
+          <div className="h-4 bg-surface-sunken rounded w-96 animate-pulse" />
         </div>
         <div className="card-luxury animate-pulse">
-          <div className="h-10 bg-gray-200 rounded mb-4" />
+          <div className="h-10 bg-surface-sunken rounded mb-4" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="h-10 bg-gray-200 rounded" />
-            <div className="h-10 bg-gray-200 rounded" />
-            <div className="h-10 bg-gray-200 rounded" />
-            <div className="h-10 bg-gray-200 rounded" />
+            <div className="h-10 bg-surface-sunken rounded" />
+            <div className="h-10 bg-surface-sunken rounded" />
+            <div className="h-10 bg-surface-sunken rounded" />
+            <div className="h-10 bg-surface-sunken rounded" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="card-luxury animate-pulse">
-              <div className="h-64 bg-gray-200 rounded-lg mb-4" />
+              <div className="h-64 bg-surface-sunken rounded-lg mb-4" />
               <div className="space-y-3">
-                <div className="h-6 bg-gray-200 rounded w-3/4" />
-                <div className="h-4 bg-gray-200 rounded w-1/2" />
-                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-6 bg-surface-sunken rounded w-3/4" />
+                <div className="h-4 bg-surface-sunken rounded w-1/2" />
+                <div className="h-4 bg-surface-sunken rounded w-full" />
               </div>
             </div>
           ))}
@@ -469,13 +469,13 @@ const HotelArtists: React.FC = () => {
         <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
           Browse Artists
         </h1>
-        <p className="text-gray-600">
+        <p className="text-content-secondary">
           Discover talented artists for your luxury hotel performances
         </p>
       </div>
 
       {error && (
-        <div className="card-luxury border border-red-200 bg-red-50 text-red-700">
+        <div className="card-luxury border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -531,7 +531,7 @@ const HotelArtists: React.FC = () => {
         
         <div className="flex items-center justify-between mt-6">
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">Sort by:</span>
+            <span className="text-sm text-content-secondary">Sort by:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -550,7 +550,7 @@ const HotelArtists: React.FC = () => {
             </button>
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-content-secondary">
             {sortedArtists.length} artist{sortedArtists.length !== 1 ? 's' : ''} found
           </div>
         </div>
@@ -568,7 +568,7 @@ const HotelArtists: React.FC = () => {
                   onChange={(e) => setPriceRangeFilter([Number(e.target.value) * 10, priceRangeFilter[1]])}
                   className="form-input w-24"
                 />
-                <span className="text-gray-500">-</span>
+                <span className="text-content-secondary">-</span>
                 <input
                   type="number"
                   min="0"
@@ -577,7 +577,7 @@ const HotelArtists: React.FC = () => {
                   onChange={(e) => setPriceRangeFilter([priceRangeFilter[0], Number(e.target.value) * 10])}
                   className="form-input w-24"
                 />
-                <span className="text-sm text-gray-500">credits</span>
+                <span className="text-sm text-content-secondary">credits</span>
               </div>
             </div>
             <div>
@@ -639,12 +639,12 @@ const HotelArtists: React.FC = () => {
                        className={`absolute top-4 right-4 p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 ${
                          artist.isFavorite
                            ? 'bg-red-500 text-white'
-                           : 'bg-white/80 text-gray-600 hover:bg-white'
+                           : 'bg-surface-raised/80 text-content-secondary hover:bg-surface-raised'
                        }`}
                      >
                        <Heart className={`w-4 h-4 ${artist.isFavorite ? 'fill-current' : ''}`} />
                      </button>
-              <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
+              <div className="absolute top-4 left-4 bg-surface-raised/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
                 <span className="text-gold font-bold">◆</span>
                 <span>{artist.rating}</span>
               </div>
@@ -660,17 +660,17 @@ const HotelArtists: React.FC = () => {
                        )}
                      </div>
                      <p className="text-gold font-medium mb-3">{artist.discipline}</p>
-              <p className="text-gray-600 text-sm mb-4 flex items-center">
+              <p className="text-content-secondary text-sm mb-4 flex items-center">
                 <MapPin className="w-4 h-4 mr-2" />
                 {artist.location}
               </p>
               
               {artist.notes ? (
-                <p className="text-gray-600 text-sm mb-4">
+                <p className="text-content-secondary text-sm mb-4">
                   {artist.notes}
                 </p>
               ) : (
-                <p className="text-gray-500 text-sm mb-4 italic">
+                <p className="text-content-secondary text-sm mb-4 italic">
                   Artist biography coming soon.
                 </p>
               )}
@@ -682,13 +682,13 @@ const HotelArtists: React.FC = () => {
                     artist.specialties.map((specialty, specIndex) => (
                       <span
                         key={specIndex}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                        className="px-2 py-1 bg-surface-sunken text-content-secondary text-xs rounded-full"
                       >
                         {specialty}
                       </span>
                     ))
                   ) : (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-surface-sunken text-content-secondary text-xs rounded-full">
                       Luxury Performances
                     </span>
                   )}
@@ -696,27 +696,27 @@ const HotelArtists: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-center p-3 bg-surface rounded-lg">
                   <div className="text-sm font-medium text-navy mb-1">{artist.rank || 'Standard'}</div>
-                  <p className="text-xs text-gray-600">Artist Rank</p>
+                  <p className="text-xs text-content-secondary">Artist Rank</p>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-center p-3 bg-surface rounded-lg">
                   <div className="text-sm font-medium text-navy mb-1">{convertPriceToCredits(artist.priceRange)}</div>
-                  <p className="text-xs text-gray-600">Credits</p>
+                  <p className="text-xs text-content-secondary">Credits</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-center p-3 bg-surface rounded-lg">
                   <div className="flex items-center justify-center mb-1">
                     <Calendar className="w-4 h-4 text-gold mr-1" />
                     <span className="text-sm font-medium text-navy">{artist.totalBookings}</span>
                   </div>
-                  <p className="text-xs text-gray-600">Total Bookings</p>
+                  <p className="text-xs text-content-secondary">Total Bookings</p>
                 </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-center p-3 bg-surface rounded-lg">
                   <div className="text-sm font-medium text-navy mb-1">{artist.loyaltyPoints ?? 0}</div>
-                  <p className="text-xs text-gray-600">Loyalty Points</p>
+                  <p className="text-xs text-content-secondary">Loyalty Points</p>
                 </div>
               </div>
 
@@ -724,7 +724,7 @@ const HotelArtists: React.FC = () => {
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(artist.availability)}`}>
                   {artist.availability}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-content-secondary">
                   Next: {artist.nextAvailable ? new Date(artist.nextAvailable).toLocaleDateString() : 'TBD'}
                 </span>
               </div>
@@ -745,7 +745,7 @@ const HotelArtists: React.FC = () => {
       {/* Booking Modal */}
       {bookingModal.open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-soft p-6 w-full max-w-md">
+          <div className="bg-surface-raised rounded-lg shadow-soft p-6 w-full max-w-md">
             <h3 className="text-xl font-serif font-semibold text-navy mb-4">Request Booking</h3>
             <div className="space-y-3">
               <div>
@@ -760,7 +760,7 @@ const HotelArtists: React.FC = () => {
                 <label className="form-label">Notes (optional)</label>
                 <input type="text" name="notes" className="form-input w-full" placeholder="Special requests or notes" onChange={(e)=>setBookingModal(m=>({...m,notes:e.target.value}))} />
               </div>
-              {bookingError && <div className="text-sm text-red-600">{bookingError}</div>}
+              {bookingError && <div className="text-sm text-red-600 dark:text-red-400">{bookingError}</div>}
               <div className="flex justify-end space-x-2 pt-2">
                 <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>Cancel</button>
                 <button className="btn-primary" disabled={processing} onClick={createBooking}>{processing? 'Sending…':'Send Request'}</button>
@@ -773,13 +773,13 @@ const HotelArtists: React.FC = () => {
       {/* No Results */}
       {sortedArtists.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Search className="w-12 h-12 text-gray-400" />
+          <div className="w-24 h-24 bg-surface-sunken rounded-full flex items-center justify-center mx-auto mb-6">
+            <Search className="w-12 h-12 text-content-secondary" />
           </div>
           <h3 className="text-xl font-serif font-semibold text-navy mb-2">
             No Artists Found
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-content-secondary mb-6">
             Try adjusting your search criteria or filters
           </p>
           <button

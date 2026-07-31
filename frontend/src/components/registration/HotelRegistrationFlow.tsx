@@ -311,7 +311,7 @@ const HotelRegistrationFlow: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
+    <div className="flex flex-col min-h-screen bg-surface">
       <SimpleNavbar />
       <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
         <motion.div
@@ -326,7 +326,7 @@ const HotelRegistrationFlow: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 md:p-10 border border-gray-100"
+          className="max-w-3xl mx-auto bg-surface-raised rounded-3xl shadow-2xl p-6 md:p-10 border border-line"
         >
           <AnimatePresence mode="wait">
             {state.step === 1 && (
@@ -340,7 +340,7 @@ const HotelRegistrationFlow: React.FC = () => {
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Informations générales sur l’hôtel</h2>
-                    <p className="text-gray-600">Ces informations permettent à l’artiste de comprendre le standing et l’ambiance.</p>
+                    <p className="text-content-secondary">Ces informations permettent à l’artiste de comprendre le standing et l’ambiance.</p>
                   </div>
                   <motion.div variants={itemVariants}>
                     <FormField label="Nom de l’hôtel" value={state.general.name} onChange={(e) => updateGeneral({ name: (e.target as HTMLInputElement).value })} disabled={isLoading} />
@@ -419,7 +419,7 @@ const HotelRegistrationFlow: React.FC = () => {
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Ambiance & identité artistique</h2>
-                    <p className="text-gray-600">Aidez l’artiste à comprendre ce qui colle ou non.</p>
+                    <p className="text-content-secondary">Aidez l’artiste à comprendre ce qui colle ou non.</p>
                   </div>
                   <motion.div variants={itemVariants}>
                     <CheckboxGroup
@@ -473,7 +473,7 @@ const HotelRegistrationFlow: React.FC = () => {
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Espace d’expression & équipement technique</h2>
-                    <p className="text-gray-600">Décrivez les espaces d’expression et les équipements mis à disposition.</p>
+                    <p className="text-content-secondary">Décrivez les espaces d’expression et les équipements mis à disposition.</p>
                   </div>
                   <div className="space-y-6">
                     {state.spaces.map((space, index) => (
@@ -543,7 +543,7 @@ const HotelRegistrationFlow: React.FC = () => {
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Conditions de collaboration</h2>
-                    <p className="text-gray-600">Définissez le cadre et laissez l’artiste proposer librement.</p>
+                    <p className="text-content-secondary">Définissez le cadre et laissez l’artiste proposer librement.</p>
                   </div>
                   <CheckboxGroup
                     name="collab-types"
@@ -577,7 +577,7 @@ const HotelRegistrationFlow: React.FC = () => {
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Logistique pour l’artiste</h2>
-                    <p className="text-gray-600">Précisez les éléments qui aident l’artiste à se projeter.</p>
+                    <p className="text-content-secondary">Précisez les éléments qui aident l’artiste à se projeter.</p>
                   </div>
                   <RadioGroup name="logistics-lodging" label="Hébergement fourni" options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.lodging ? 'true' : 'false'} onChange={(v) => updateLogistics({ lodging: v === 'true' })} />
                   <RadioGroup name="logistics-meals" label="Repas inclus" options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.meals ? 'true' : 'false'} onChange={(v) => updateLogistics({ meals: v === 'true' })} />
@@ -601,7 +601,7 @@ const HotelRegistrationFlow: React.FC = () => {
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Liberté artistique & attentes</h2>
-                    <p className="text-gray-600">Donnez le cadre pour que l’artiste se sente libre.</p>
+                    <p className="text-content-secondary">Donnez le cadre pour que l’artiste se sente libre.</p>
                   </div>
                   <RadioGroup name="freedom-level" label="Niveau de liberté artistique" options={[{ value: 'Totale', label: 'Totale' }, { value: 'Encadrée', label: 'Encadrée' }]} value={state.freedom.level} onChange={(v) => updateFreedom({ level: v as Freedom['level'] })} />
                   <CheckboxGroup name="freedom-expectations" label="Attentes spécifiques de l’hôtel" options={[{ value: 'Interaction avec les clients', label: 'Interaction avec les clients' }, { value: 'Image de marque à respecter', label: 'Image de marque à respecter' }]} values={state.freedom.expectations} onChange={(vals) => updateFreedom({ expectations: vals as Freedom['expectations'] })} />
@@ -636,7 +636,7 @@ const HotelRegistrationFlow: React.FC = () => {
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
                     <h2 className="text-3xl font-bold text-navy-900 mb-2">Validation & process</h2>
-                    <p className="text-gray-600">Fluidifiez la plateforme avec un process clair.</p>
+                    <p className="text-content-secondary">Fluidifiez la plateforme avec un process clair.</p>
                   </div>
                   <FormField label="Délai de réponse moyen" placeholder="Ex: 48h" value={state.validation.delay || ''} onChange={(e) => updateValidation({ delay: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <RadioGroup name="validation-process" label="Process de validation" options={[{ value: 'Validation simple', label: 'Validation simple' }, { value: 'Validation après échange', label: 'Validation après échange' }]} value={state.validation.process} onChange={(v) => updateValidation({ process: v as ValidationProcess['process'] })} />
@@ -651,7 +651,7 @@ const HotelRegistrationFlow: React.FC = () => {
           </AnimatePresence>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="max-w-3xl mx-auto mt-8 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-content-secondary">
             Vos informations sont sécurisées et ne seront jamais partagées.
           </p>
         </motion.div>

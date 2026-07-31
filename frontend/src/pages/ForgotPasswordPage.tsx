@@ -99,8 +99,8 @@ const ForgotPasswordPage: React.FC = () => {
 
           {emailSent ? (
             <div className="text-center space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-card p-4">
-                <p className="text-green-800 text-sm">
+              <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-card p-4">
+                <p className="text-green-800 dark:text-green-400 text-sm">
                   If an account exists with that email, you'll receive password reset instructions shortly.
                 </p>
               </div>
@@ -130,7 +130,7 @@ const ForgotPasswordPage: React.FC = () => {
                   placeholder="Enter your email"
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
                 )}
               </div>
 

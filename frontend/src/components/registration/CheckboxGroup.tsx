@@ -64,7 +64,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
           )}
         </motion.div>
       </div>
-      <span className={`text-base font-medium ${checked ? 'text-navy-900' : 'text-gray-700'}`}>
+      <span className={`text-base font-medium ${checked ? 'text-navy-900' : 'text-content-secondary'}`}>
         {label}
       </span>
     </motion.label>

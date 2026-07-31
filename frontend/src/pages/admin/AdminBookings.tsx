@@ -97,8 +97,8 @@ const AdminBookings: React.FC = () => {
     const configs = {
       PENDING: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'Pending' },
       CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Confirmed' },
-      COMPLETED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
-      CANCELLED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' }
+      COMPLETED: { bg: 'bg-green-100 dark:bg-green-500/10', text: 'text-green-800 dark:text-green-400', label: 'Completed' },
+      CANCELLED: { bg: 'bg-red-100 dark:bg-red-500/10', text: 'text-red-800 dark:text-red-400', label: 'Cancelled' }
     }
     const config = configs[status as keyof typeof configs] || configs.PENDING
     return (
@@ -147,7 +147,7 @@ const AdminBookings: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
             Booking Management
           </h1>
-          <p className="text-gray-600">
+          <p className="text-content-secondary">
             Monitor and manage all bookings across the platform.
           </p>
         </div>
@@ -174,7 +174,7 @@ const AdminBookings: React.FC = () => {
             label: 'Confirmed', 
             value: bookings.filter(b => b.status === 'CONFIRMED').length, 
             icon: Calendar, 
-            color: 'text-green-600' 
+            color: 'text-green-600 dark:text-green-400' 
           },
           { 
             label: 'Completed', 
@@ -188,7 +188,7 @@ const AdminBookings: React.FC = () => {
             <div key={index} className="card-luxury">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                  <p className="text-sm font-medium text-content-secondary">{stat.label}</p>
                   <p className="text-2xl font-bold text-navy">{stat.value}</p>
                 </div>
                 <Icon className={`w-8 h-8 ${stat.color}`} />
@@ -202,7 +202,7 @@ const AdminBookings: React.FC = () => {
       <div className="search-container">
         <div className="filters-row">
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
+            <Filter className="w-5 h-5 text-content-secondary flex-shrink-0" />
             <Select
               value={selectedStatus}
               onValueChange={(value) => {
@@ -226,7 +226,7 @@ const AdminBookings: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded">
           {error}
         </div>
       )}
@@ -247,7 +247,7 @@ const AdminBookings: React.FC = () => {
                       <h3 className="font-semibold text-navy text-lg">
                         Booking #{booking.id.slice(0, 8)}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-content-secondary">
                         Created {formatDate(booking.createdAt)}
                       </p>
                     </div>
@@ -257,25 +257,25 @@ const AdminBookings: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Artist Info */}
-                  <div className="flex items-start space-x-3 bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-start space-x-3 bg-surface p-3 rounded-lg">
                     <User className="w-5 h-5 text-purple-600 mt-1" />
                     <div className="flex-1">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Artist</p>
+                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Artist</p>
                       <p className="font-medium text-navy">{booking.artist.user.name}</p>
-                      <p className="text-sm text-gray-600">{booking.artist.discipline}</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-sm text-content-secondary">{booking.artist.discipline}</p>
+                      <p className="text-xs text-content-secondary mt-1">
                         {booking.artist.priceRange}
                       </p>
                     </div>
                   </div>
 
                   {/* Hotel Info */}
-                  <div className="flex items-start space-x-3 bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-start space-x-3 bg-surface p-3 rounded-lg">
                     <Building className="w-5 h-5 text-blue-600 mt-1" />
                     <div className="flex-1">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hotel</p>
+                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Hotel</p>
                       <p className="font-medium text-navy">{booking.hotel.name}</p>
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                      <div className="flex items-center text-sm text-content-secondary mt-1">
                         <MapPin className="w-3 h-3 mr-1" />
                         {parseLocation(booking.hotel.location)}
                       </div>
@@ -288,12 +288,12 @@ const AdminBookings: React.FC = () => {
               <div className="lg:w-64 space-y-3">
                 <div className="bg-navy/5 p-4 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Duration</span>
+                    <span className="text-sm text-content-secondary">Duration</span>
                     <span className="font-semibold text-navy">
                       {calculateDuration(booking.startDate, booking.endDate)}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-600 space-y-1">
+                  <div className="text-xs text-content-secondary space-y-1">
                     <div className="flex items-center justify-between">
                       <span>Start:</span>
                       <span>{formatDate(booking.startDate)}</span>
@@ -309,7 +309,7 @@ const AdminBookings: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <DollarSign className="w-4 h-4 text-gold" />
-                      <span className="text-sm text-gray-600">Credits Used</span>
+                      <span className="text-sm text-content-secondary">Credits Used</span>
                     </div>
                     <span className="font-bold text-gold text-lg">
                       {booking.creditsUsed}
@@ -324,8 +324,8 @@ const AdminBookings: React.FC = () => {
 
       {bookings.length === 0 && !loading && (
         <div className="card-luxury text-center py-12">
-          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No bookings found</p>
+          <Calendar className="w-12 h-12 text-content-secondary mx-auto mb-4" />
+          <p className="text-content-secondary">No bookings found</p>
         </div>
       )}
 
@@ -339,7 +339,7 @@ const AdminBookings: React.FC = () => {
           >
             Previous
           </button>
-          <span className="text-gray-600">
+          <span className="text-content-secondary">
             Page {currentPage} of {totalPages}
           </span>
           <button

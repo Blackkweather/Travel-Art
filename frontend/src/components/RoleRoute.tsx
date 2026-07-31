@@ -13,7 +13,7 @@ const RoleRoute: React.FC<RoleRouteProps> = ({ children, allowedRoles }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <LoadingSpinner />
       </div>
     )

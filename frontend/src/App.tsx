@@ -13,16 +13,10 @@ import Layout from '@/components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import RoleRoute from './components/RoleRoute'
 import RoleAwareRoute from './components/RoleAwareRoute'
-import PasswordPopup from './components/PasswordPopup'
 import PageTransition from './components/PageTransition'
-
-// Force import to ensure it loads
-console.log('🔒 PasswordPopup imported:', typeof PasswordPopup)
 
 // Lazy load pages for code splitting
 const LandingPage = lazy(() => import('@/pages/LandingPage'))
-const LandingPageNewV2 = lazy(() => import('@/pages/LandingPageNewV2'))
-const LandingPageNewV3 = lazy(() => import('@/pages/LandingPageNewV3'))
 const HowItWorksPage = lazy(() => import('@/pages/HowItWorksPage'))
 const PartnersPage = lazy(() => import('@/pages/PartnersPage'))
 const TopArtistsPage = lazy(() => import('@/pages/TopArtistsPage'))
@@ -47,7 +41,6 @@ const ArtistMembership = lazy(() => import('@/pages/artist/ArtistMembership'))
 const ArtistReferrals = lazy(() => import('@/pages/artist/ArtistReferrals'))
 
 const HotelDashboard = lazy(() => import('@/pages/hotel/HotelDashboard'))
-const HotelProfile = lazy(() => import('@/pages/hotel/HotelProfile'))
 const HotelArtists = lazy(() => import('@/pages/hotel/HotelArtists'))
 const HotelCredits = lazy(() => import('@/pages/hotel/HotelCredits'))
 
@@ -127,8 +120,6 @@ function App() {
     analytics.pageView(location.pathname, document.title)
   }, [location.pathname])
 
-  // console.log('🔒 App.tsx rendering - PasswordPopup should be visible')
-  
   // Show loading only on very first mount if we don't have cached auth
   const showInitialLoading = !initialAuthChecked && !user && !token
   
@@ -136,22 +127,19 @@ function App() {
     <ErrorBoundary>
       <SkipToContent />
       <SEOHead structuredData={getDefaultOrganizationSchema()} />
-      {/* PasswordPopup temporarily disabled - uncomment to activate */}
-      {/* <PasswordPopup /> */}
       {showInitialLoading ? (
-        <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="min-h-screen bg-surface flex items-center justify-center">
           <LoadingSpinner />
         </div>
       ) : (
         <Suspense fallback={
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="min-h-screen bg-surface flex items-center justify-center">
             <LoadingSpinner size="lg" />
           </div>
         }>
             <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
-        <Route path="/" element={<PageTransition><LandingPageNewV3 /></PageTransition>} />
-        <Route path="/v2" element={<PageTransition><LandingPageNewV2 /></PageTransition>} />
+        <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
       <Route path="/how-it-works" element={<PageTransition><HowItWorksPage /></PageTransition>} />
       <Route path="/partners" element={<PageTransition><PartnersPage /></PageTransition>} />
       <Route path="/top-artists" element={<PageTransition><TopArtistsPage /></PageTransition>} />
@@ -265,10 +253,7 @@ function App() {
 
       {/* Artist Public Profile */}
       <Route path="/artist/:id" element={<PageTransition><PublicArtistProfile /></PageTransition>} />
-      
-      {/* Hotel Public Profile */}
-      <Route path="/hotel/:id" element={<PageTransition><HotelProfile /></PageTransition>} />
-      
+
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

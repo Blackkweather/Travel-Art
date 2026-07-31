@@ -291,7 +291,7 @@ const AdminAnalytics: React.FC = () => {
 
   if (error) {
     return (
-      <div className="card-luxury text-red-700 bg-red-50">{error}</div>
+      <div className="card-luxury text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10">{error}</div>
     )
   }
 
@@ -299,7 +299,7 @@ const AdminAnalytics: React.FC = () => {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">Platform Analytics</h1>
-        <p className="text-gray-600">CHARTS ENABLED - Comprehensive metrics and visualizations for the Travel Art platform.</p>
+        <p className="text-content-secondary">CHARTS ENABLED - Comprehensive metrics and visualizations for the Travel Art platform.</p>
       </div>
 
       {/* Stats Grid */}
@@ -307,7 +307,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Users</p>
+              <p className="text-sm text-content-secondary">Total Users</p>
               <p className="text-2xl font-bold text-navy">{stats?.totalUsers ?? 0}</p>
             </div>
             <Users className="w-8 h-8 text-blue-600" />
@@ -316,7 +316,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Artists</p>
+              <p className="text-sm text-content-secondary">Artists</p>
               <p className="text-2xl font-bold text-navy">{stats?.totalArtists ?? 0}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-purple-600" />
@@ -325,16 +325,16 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Hotels</p>
+              <p className="text-sm text-content-secondary">Hotels</p>
               <p className="text-2xl font-bold text-navy">{stats?.totalHotels ?? 0}</p>
             </div>
-            <Building className="w-8 h-8 text-green-600" />
+            <Building className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
         </div>
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Bookings</p>
+              <p className="text-sm text-content-secondary">Bookings</p>
               <p className="text-2xl font-bold text-navy">{stats?.totalBookings ?? 0}</p>
             </div>
             <Calendar className="w-8 h-8 text-orange-600" />
@@ -343,7 +343,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Revenue</p>
+              <p className="text-sm text-content-secondary">Revenue</p>
               <p className="text-2xl font-bold text-navy">€{(stats?.totalRevenue ?? 0).toLocaleString()}</p>
             </div>
             <Euro className="w-8 h-8 text-gold" />
@@ -370,8 +370,8 @@ const AdminAnalytics: React.FC = () => {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="p-8 bg-red-100 border-2 border-red-500 rounded">
-            <p className="text-red-700 font-bold">❌ RECHARTS NOT LOADED!</p>
+          <div className="p-8 bg-red-100 dark:bg-red-500/10 border-2 border-red-500 rounded">
+            <p className="text-red-700 dark:text-red-400 font-bold">❌ RECHARTS NOT LOADED!</p>
             <p className="text-sm mt-2">ResponsiveContainer: {ResponsiveContainer ? '✅' : '❌'}</p>
             <p className="text-sm">BarChart: {BarChart ? '✅' : '❌'}</p>
             <p className="text-sm">Bar: {Bar ? '✅' : '❌'}</p>
@@ -388,7 +388,7 @@ const AdminAnalytics: React.FC = () => {
               <Activity className="w-5 h-5" />
               Revenue Trend (Last 6 Months)
             </h3>
-            <p className="text-sm text-gray-500">{revenueSubtitle}</p>
+            <p className="text-sm text-content-secondary">{revenueSubtitle}</p>
           </div>
           {revenueTrend.length > 0 && ResponsiveContainer && AreaChart ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -417,7 +417,7 @@ const AdminAnalytics: React.FC = () => {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+            <div className="flex items-center justify-center h-[300px] text-content-secondary border-2 border-dashed border-line-strong rounded-lg">
               <div className="text-center">
                 <p className="font-semibold mb-2">No revenue data available</p>
                 <p className="text-xs">Recharts: {ResponsiveContainer ? '✅ Loaded' : '❌ Not loaded'}</p>
@@ -433,7 +433,7 @@ const AdminAnalytics: React.FC = () => {
               <BarChart3 className="w-5 h-5" />
               Bookings Trend (Last 6 Months)
             </h3>
-            <p className="text-sm text-gray-500">{bookingSubtitle}</p>
+            <p className="text-sm text-content-secondary">{bookingSubtitle}</p>
           </div>
           {bookingTrend.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -449,7 +449,7 @@ const AdminAnalytics: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-content-secondary">
               <p>No booking data available</p>
             </div>
           )}
@@ -464,7 +464,7 @@ const AdminAnalytics: React.FC = () => {
               <TrendingUp className="w-5 h-5" />
               User Growth (Last 6 Months)
             </h3>
-            <p className="text-sm text-gray-500">Cumulative user registration over time</p>
+            <p className="text-sm text-content-secondary">Cumulative user registration over time</p>
           </div>
           {userGrowth.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -487,7 +487,7 @@ const AdminAnalytics: React.FC = () => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-content-secondary">
               <p>No user growth data available</p>
             </div>
           )}
@@ -499,7 +499,7 @@ const AdminAnalytics: React.FC = () => {
               <PieChart className="w-5 h-5" />
               Booking Status Distribution
             </h3>
-            <p className="text-sm text-gray-500">Breakdown of bookings by status</p>
+            <p className="text-sm text-content-secondary">Breakdown of bookings by status</p>
           </div>
           {bookingStatusData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -526,7 +526,7 @@ const AdminAnalytics: React.FC = () => {
               </RechartsPieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-content-secondary">
               <p>No booking status data available</p>
             </div>
           )}
@@ -541,7 +541,7 @@ const AdminAnalytics: React.FC = () => {
               <Users className="w-5 h-5" />
               Artist Growth (Last 6 Months)
             </h3>
-            <p className="text-sm text-gray-500">Cumulative artist registrations</p>
+            <p className="text-sm text-content-secondary">Cumulative artist registrations</p>
           </div>
           {artistGrowth.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -564,7 +564,7 @@ const AdminAnalytics: React.FC = () => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-content-secondary">
               <p>No artist growth data available</p>
             </div>
           )}
@@ -576,7 +576,7 @@ const AdminAnalytics: React.FC = () => {
               <Building className="w-5 h-5" />
               Hotel Growth (Last 6 Months)
             </h3>
-            <p className="text-sm text-gray-500">Cumulative hotel registrations</p>
+            <p className="text-sm text-content-secondary">Cumulative hotel registrations</p>
           </div>
           {hotelGrowth.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -599,7 +599,7 @@ const AdminAnalytics: React.FC = () => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-content-secondary">
               <p>No hotel growth data available</p>
             </div>
           )}
@@ -613,7 +613,7 @@ const AdminAnalytics: React.FC = () => {
             <BarChart3 className="w-5 h-5" />
             Revenue vs Bookings Comparison
           </h3>
-          <p className="text-sm text-gray-500">Monthly revenue and booking trends side by side</p>
+          <p className="text-sm text-content-secondary">Monthly revenue and booking trends side by side</p>
         </div>
         {bookingTrend.length > 0 || revenueTrend.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
@@ -657,7 +657,7 @@ const AdminAnalytics: React.FC = () => {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-[400px] text-gray-500">
+          <div className="flex items-center justify-center h-[400px] text-content-secondary">
             <p>No comparison data available</p>
           </div>
         )}

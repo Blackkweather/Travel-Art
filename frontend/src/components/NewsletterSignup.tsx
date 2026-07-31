@@ -88,14 +88,14 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
 
   if (variant === 'modal') {
     return (
-      <div className={`bg-white rounded-xl shadow-luxury p-8 max-w-md ${className}`}>
+      <div className={`bg-surface-raised rounded-xl shadow-luxury p-8 max-w-md ${className}`}>
         <div className="flex items-center gap-2 mb-3">
           <Mail className="w-6 h-6 text-gold" />
           <h3 className="text-2xl font-serif font-bold text-navy">
             Join Our Newsletter
           </h3>
         </div>
-        <p className="text-gray-600 mb-6">
+        <p className="text-content-secondary mb-6">
           Get exclusive access to new artist residencies and luxury hotel experiences.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">

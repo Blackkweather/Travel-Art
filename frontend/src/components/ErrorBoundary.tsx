@@ -101,10 +101,10 @@ class ErrorBoundary extends Component<Props, State> {
         
         // Show minimal error UI during recovery
         return (
-          <div className="min-h-screen bg-cream flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+          <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+            <div className="max-w-md w-full bg-surface-raised rounded-lg shadow-lg p-6 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy mx-auto mb-4"></div>
-              <p className="text-gray-600">Recovering from a temporary error...</p>
+              <p className="text-content-secondary">Recovering from a temporary error...</p>
             </div>
           </div>
         )
@@ -112,18 +112,18 @@ class ErrorBoundary extends Component<Props, State> {
       
       // For other errors, show full error UI
       return (
-        <div className="min-h-screen bg-cream flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+        <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-surface-raised rounded-lg shadow-lg p-6 text-center">
             <h1 className="text-2xl font-bold text-navy mb-4">Something went wrong</h1>
-            <p className="text-gray-600 mb-4">
+            <p className="text-content-secondary mb-4">
               We're sorry, but something unexpected happened. Please try refreshing the page.
             </p>
             {this.state.error && (
               <details className="mt-4 text-left">
-                <summary className="cursor-pointer text-sm text-gray-500 mb-2">
+                <summary className="cursor-pointer text-sm text-content-secondary mb-2">
                   Error details
                 </summary>
-                <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
+                <pre className="text-xs bg-surface-sunken p-2 rounded overflow-auto max-h-40">
                   {this.state.error.toString()}
                   {this.state.errorInfo && (
                     <>
@@ -137,7 +137,7 @@ class ErrorBoundary extends Component<Props, State> {
             <div className="flex gap-3 justify-center mt-4">
               <button
                 onClick={this.handleReset}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 bg-surface-sunken text-content-secondary rounded hover:bg-white/10 transition-colors"
               >
                 Try Again
               </button>

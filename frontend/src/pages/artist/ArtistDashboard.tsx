@@ -102,20 +102,20 @@ const ArtistDashboard: React.FC = () => {
 
   const statsData = [
     { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: 'text-blue-600' },
-    { label: 'Hotels Worked With', value: stats.hotelsWorkedWith, icon: Users, color: 'text-green-600' },
+    { label: 'Hotels Worked With', value: stats.hotelsWorkedWith, icon: Users, color: 'text-green-600 dark:text-green-400' },
     { label: 'Average Rating', value: stats.hotelRating > 0 ? stats.hotelRating.toFixed(1) : 'N/A', icon: Star, color: 'text-amber-600' },
     { label: 'Active Bookings', value: stats.activeBookings, icon: CreditCard, color: 'text-purple-600' }
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="dashboard">
+    <div className="min-h-screen bg-surface" data-testid="dashboard">
       <div className="max-w-[1600px] mx-auto px-6 py-8">
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-1">
+          <h1 className="text-3xl font-semibold text-content mb-1">
             Dashboard
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-content-secondary">
             Welcome back, {user?.name?.split(' ')[0] || 'Artist'}. Here's your performance overview.
           </p>
         </div>
@@ -130,7 +130,7 @@ const ArtistDashboard: React.FC = () => {
                 iconColor: 'text-blue-600',
                 border: 'border-blue-200'
               },
-              'text-green-600': {
+              'text-green-600 dark:text-green-400': {
                 bg: 'bg-emerald-50',
                 iconColor: 'text-emerald-600',
                 border: 'border-emerald-200'
@@ -151,7 +151,7 @@ const ArtistDashboard: React.FC = () => {
             return (
               <div 
                 key={index} 
-                className="bg-white rounded-lg border border-gray-200 p-6 hover:border-gray-300 transition-colors"
+                className="bg-surface-raised rounded-lg border border-line p-6 hover:border-line-strong transition-colors"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`p-2 rounded-lg ${colors.bg}`}>
@@ -159,8 +159,8 @@ const ArtistDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{stat.label}</p>
-                  <p className="text-2xl font-semibold text-gray-900">
+                  <p className="text-xs font-medium text-content-secondary uppercase tracking-wide mb-1">{stat.label}</p>
+                  <p className="text-2xl font-semibold text-content">
                     {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
                   </p>
                 </div>
@@ -170,13 +170,13 @@ const ArtistDashboard: React.FC = () => {
         </div>
 
         {/* Recent Bookings */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-surface-raised rounded-lg border border-line mb-8">
+          <div className="px-6 py-4 border-b border-line">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Bookings</h2>
+              <h2 className="text-lg font-semibold text-content">Recent Bookings</h2>
               <Link 
                 to="/dashboard/bookings" 
-                className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
               >
                 View all →
               </Link>
@@ -186,10 +186,10 @@ const ArtistDashboard: React.FC = () => {
             {recentBookings.length > 0 ? (
               recentBookings.map((booking) => {
                 const statusColor = booking.status === 'CONFIRMED' || booking.status === 'confirmed'
-                  ? 'bg-green-100 text-green-800 border-green-200'
+                  ? 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30'
                   : booking.status === 'PENDING' || booking.status === 'pending'
                   ? 'bg-amber-100 text-amber-800 border-amber-200'
-                  : 'bg-gray-100 text-gray-800 border-gray-200'
+                  : 'bg-surface-sunken text-content border-line'
                 
                 const statusText = booking.status === 'CONFIRMED' || booking.status === 'confirmed'
                   ? 'Confirmed'
@@ -200,18 +200,18 @@ const ArtistDashboard: React.FC = () => {
                 return (
                   <div 
                     key={booking.id} 
-                    className="px-6 py-4 hover:bg-gray-50 transition-colors"
+                    className="px-6 py-4 hover:bg-surface transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                          <Calendar className="w-5 h-5 text-gray-600" />
+                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-sunken flex items-center justify-center">
+                          <Calendar className="w-5 h-5 text-content-secondary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900 mb-1 truncate">
+                          <h3 className="text-sm font-medium text-content mb-1 truncate">
                             {booking.hotel?.name || 'Hotel'}
                           </h3>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-2 text-xs text-content-secondary">
                             <span>
                               {booking.hotel?.city && booking.hotel?.country 
                                 ? `${booking.hotel.city}, ${booking.hotel.country}`
@@ -224,7 +224,7 @@ const ArtistDashboard: React.FC = () => {
                               </>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-content-secondary mt-1">
                             {new Date(booking.startDate).toLocaleDateString('en-US', { 
                               month: 'short', 
                               day: 'numeric', 
@@ -242,9 +242,9 @@ const ArtistDashboard: React.FC = () => {
               })
             ) : (
               <div className="px-6 py-12 text-center">
-                <Calendar className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">No bookings yet</p>
-                <p className="text-xs text-gray-400 mt-1">Start connecting with hotels to see your bookings here</p>
+                <Calendar className="w-8 h-8 text-content-secondary mx-auto mb-2" />
+                <p className="text-sm text-content-secondary">No bookings yet</p>
+                <p className="text-xs text-content-secondary mt-1">Start connecting with hotels to see your bookings here</p>
               </div>
             )}
           </div>
@@ -254,20 +254,20 @@ const ArtistDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Link 
             to="/dashboard/profile" 
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-lg p-6 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
-            <Calendar className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
-            <div className="text-sm font-medium text-gray-900">Update Availability</div>
-            <div className="text-xs text-gray-500 mt-1">Manage your calendar and availability</div>
+            <Calendar className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
+            <div className="text-sm font-medium text-content">Update Availability</div>
+            <div className="text-xs text-content-secondary mt-1">Manage your calendar and availability</div>
           </Link>
 
           <Link 
             to="/dashboard/profile" 
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-lg p-6 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
-            <Star className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
-            <div className="text-sm font-medium text-gray-900">Performance Gallery</div>
-            <div className="text-xs text-gray-500 mt-1">Upload and manage your media</div>
+            <Star className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
+            <div className="text-sm font-medium text-content">Performance Gallery</div>
+            <div className="text-xs text-content-secondary mt-1">Upload and manage your media</div>
           </Link>
         </div>
 

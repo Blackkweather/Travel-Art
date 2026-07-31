@@ -194,8 +194,8 @@ const ArtistBookings: React.FC = () => {
       {
         label: 'Confirmed',
         value: stats.confirmed,
-        iconBg: 'bg-green-100',
-        iconColor: 'text-green-600',
+        iconBg: 'bg-green-100 dark:bg-green-500/10',
+        iconColor: 'text-green-600 dark:text-green-400',
         Icon: CheckCircle
       },
       {
@@ -212,32 +212,32 @@ const ArtistBookings: React.FC = () => {
   const getStatusIcon = (status: BookingStatus) => {
     switch (status) {
       case 'confirmed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />
+        return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
       case 'pending':
         return <AlertCircle className="w-5 h-5 text-amber-600" />
       case 'completed':
         return <CheckCircle className="w-5 h-5 text-blue-600" />
       case 'cancelled':
       case 'rejected':
-        return <XCircle className="w-5 h-5 text-red-600" />
+        return <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
       default:
-        return <AlertCircle className="w-5 h-5 text-gray-600" />
+        return <AlertCircle className="w-5 h-5 text-content-secondary" />
     }
   }
 
   const getStatusColor = (status: BookingStatus) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
       case 'pending':
         return 'bg-amber-100 text-amber-800'
       case 'completed':
         return 'bg-blue-100 text-blue-800'
       case 'cancelled':
       case 'rejected':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-surface-sunken text-content'
     }
   }
 
@@ -257,13 +257,13 @@ const ArtistBookings: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
             My Bookings
           </h1>
-          <p className="text-gray-600">
+          <p className="text-content-secondary">
             Manage your performance bookings and track your schedule
           </p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-600" />
+            <Filter className="w-4 h-4 text-content-secondary" />
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as BookingStatus | 'all')}
@@ -282,7 +282,7 @@ const ArtistBookings: React.FC = () => {
       </div>
 
       {error && (
-        <div className="card-luxury border border-red-200 bg-red-50 text-red-700">
+        <div className="card-luxury border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -295,7 +295,7 @@ const ArtistBookings: React.FC = () => {
               <Icon className={`w-6 h-6 ${iconColor}`} />
             </div>
             <h3 className="text-2xl font-bold text-navy mb-2">{value}</h3>
-            <p className="text-gray-600">{label}</p>
+            <p className="text-content-secondary">{label}</p>
           </div>
         ))}
       </div>
@@ -328,11 +328,11 @@ const ArtistBookings: React.FC = () => {
                     <h3 className="text-xl font-serif font-semibold text-navy mb-2">
                       {booking.hotelName}
                     </h3>
-                    <p className="text-gray-600 flex items-center mb-2">
+                    <p className="text-content-secondary flex items-center mb-2">
                       <MapPin className="w-4 h-4 mr-2" />
                       {booking.location}
                     </p>
-                    <p className="text-gray-600 flex items-center">
+                    <p className="text-content-secondary flex items-center">
                       <Calendar className="w-4 h-4 mr-2" />
                       {new Date(booking.startDate).toLocaleDateString()} at {booking.startTime}
                     </p>
@@ -347,28 +347,28 @@ const ArtistBookings: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Performance Spot</p>
+                    <p className="text-sm font-medium text-content-secondary">Performance Spot</p>
                     <p className="text-navy font-medium">{booking.performanceSpot}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Duration</p>
+                    <p className="text-sm font-medium text-content-secondary">Duration</p>
                     <p className="text-navy font-medium flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
                       {booking.duration}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Credits</p>
+                    <p className="text-sm font-medium text-content-secondary">Credits</p>
                     <p className="text-gold font-medium">{booking.creditsUsed} credits</p>
                   </div>
                 </div>
 
                 {booking.notes && (
-                  <p className="text-gray-600 mb-4">{booking.notes}</p>
+                  <p className="text-content-secondary mb-4">{booking.notes}</p>
                 )}
 
                 {!booking.notes && (
-                  <p className="text-gray-500 mb-4 italic">Awaiting additional notes from the hotel.</p>
+                  <p className="text-content-secondary mb-4 italic">Awaiting additional notes from the hotel.</p>
                 )}
 
                 {/* Action Buttons */}
@@ -419,11 +419,11 @@ const ArtistBookings: React.FC = () => {
       {/* Empty State */}
       {filteredBookings.length === 0 && (
         <div className="card-luxury text-center py-12">
-          <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
           <h3 className="text-xl font-serif font-semibold text-navy mb-2">
             No bookings found
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-content-secondary mb-6">
             {filter === 'all'
               ? "You don't have any bookings yet. Update your availability to get started!"
               : `No ${filter} bookings found.`}
@@ -445,14 +445,14 @@ const ArtistBookings: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-surface-raised rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-serif font-bold text-navy">Booking Details</h2>
                 <button
                   onClick={() => setSelectedBooking(null)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                  className="text-content-secondary hover:text-content-secondary text-2xl font-bold"
                 >
                   ×
                 </button>
@@ -462,7 +462,7 @@ const ArtistBookings: React.FC = () => {
                 {/* Hotel Info */}
                 <div>
                   <h3 className="text-xl font-semibold text-navy mb-2">{selectedBooking.hotelName}</h3>
-                  <p className="text-gray-600 flex items-center mb-2">
+                  <p className="text-content-secondary flex items-center mb-2">
                     <MapPin className="w-4 h-4 mr-2" />
                     {selectedBooking.location}
                   </p>
@@ -471,36 +471,36 @@ const ArtistBookings: React.FC = () => {
                 {/* Booking Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Start Date & Time</p>
+                    <p className="text-sm font-medium text-content-secondary">Start Date & Time</p>
                     <p className="text-navy font-medium">
                       {new Date(selectedBooking.startDate).toLocaleDateString()} at {selectedBooking.startTime}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">End Date</p>
+                    <p className="text-sm font-medium text-content-secondary">End Date</p>
                     <p className="text-navy font-medium">
                       {new Date(selectedBooking.endDate).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Duration</p>
+                    <p className="text-sm font-medium text-content-secondary">Duration</p>
                     <p className="text-navy font-medium flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
                       {selectedBooking.duration}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Performance Spot</p>
+                    <p className="text-sm font-medium text-content-secondary">Performance Spot</p>
                     <p className="text-navy font-medium">{selectedBooking.performanceSpot}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Status</p>
+                    <p className="text-sm font-medium text-content-secondary">Status</p>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${getStatusColor(selectedBooking.status)}`}>
                       {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Credits Used</p>
+                    <p className="text-sm font-medium text-content-secondary">Credits Used</p>
                     <p className="text-gold font-medium">{selectedBooking.creditsUsed} credits</p>
                   </div>
                 </div>
@@ -508,8 +508,8 @@ const ArtistBookings: React.FC = () => {
                 {/* Notes */}
                 {selectedBooking.notes && (
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-2">Notes</p>
-                    <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{selectedBooking.notes}</p>
+                    <p className="text-sm font-medium text-content-secondary mb-2">Notes</p>
+                    <p className="text-content-secondary bg-surface p-4 rounded-lg">{selectedBooking.notes}</p>
                   </div>
                 )}
 
@@ -517,7 +517,7 @@ const ArtistBookings: React.FC = () => {
                 <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
                     onClick={() => setSelectedBooking(null)}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                    className="px-4 py-2 bg-surface-sunken text-content-secondary rounded-lg hover:bg-white/10 transition-colors"
                   >
                     Close
                   </button>

@@ -16,9 +16,17 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     lg: 'w-12 h-12'
   }
 
+  // This is the Suspense fallback for every lazy route, so for a screen reader
+  // it was previously an unannounced blank page. role="status" makes the wait
+  // audible and the visually hidden label gives it something to announce.
   return (
-    <div className={`flex items-center justify-center ${className}`}>
+    <div
+      role="status"
+      aria-label="Loading"
+      className={`flex items-center justify-center ${className}`}
+    >
       <motion.div
+        aria-hidden="true"
         className={`${sizeClasses[size]} border-2 border-gold/30 border-t-gold rounded-full`}
         animate={{ rotate: 360 }}
         transition={{
@@ -27,6 +35,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           ease: "linear"
         }}
       />
+      <span className="sr-only">Loading…</span>
     </div>
   )
 }

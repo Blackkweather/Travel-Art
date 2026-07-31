@@ -101,7 +101,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
     >
       <div>
         <h2 className="text-3xl font-bold text-navy-900 mb-2">Informations de base</h2>
-        <p className="text-gray-600">Commencez par nous dire qui vous êtes</p>
+        <p className="text-content-secondary">Commencez par nous dire qui vous êtes</p>
       </div>
 
       {/* Two-column grid for desktop, single for mobile */}
@@ -209,21 +209,21 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
                 disabled={isLoading}
                 className={`
                   w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
-                  ${errors.password ? 'border-red-400' : isPasswordStrong ? 'border-green-400' : 'border-gray-200'}
-                  ${isLoading ? 'bg-gray-50 opacity-60' : 'bg-white'}
+                  ${errors.password ? 'border-red-400' : isPasswordStrong ? 'border-green-400' : 'border-line'}
+                  ${isLoading ? 'bg-surface opacity-60' : 'bg-surface-raised'}
                   focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
                 `}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gold"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-content-secondary hover:text-gold"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
             {isPasswordStrong && (
-              <div className="flex items-center gap-2 text-green-600 text-sm">
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
                 <CheckCircle2 size={16} /> Strong password
               </div>
             )}
@@ -250,21 +250,21 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
                 disabled={isLoading}
                 className={`
                   w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
-                  ${errors.confirmPassword ? 'border-red-400' : data.confirmPassword && data.password === data.confirmPassword ? 'border-green-400' : 'border-gray-200'}
-                  ${isLoading ? 'bg-gray-50 opacity-60' : 'bg-white'}
+                  ${errors.confirmPassword ? 'border-red-400' : data.confirmPassword && data.password === data.confirmPassword ? 'border-green-400' : 'border-line'}
+                  ${isLoading ? 'bg-surface opacity-60' : 'bg-surface-raised'}
                   focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
                 `}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gold"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-content-secondary hover:text-gold"
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
             {data.confirmPassword && data.password === data.confirmPassword && !errors.confirmPassword && (
-              <div className="flex items-center gap-2 text-green-600 text-sm">
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
                 <CheckCircle2 size={16} /> Passwords match
               </div>
             )}
@@ -285,9 +285,9 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
             checked={data.agreeToTerms}
             onChange={(e) => onChange({ ...data, agreeToTerms: e.target.checked })}
             disabled={isLoading}
-            className="w-6 h-6 mt-1 rounded-lg border-2 border-gray-300 cursor-pointer accent-gold"
+            className="w-6 h-6 mt-1 rounded-lg border-2 border-line-strong cursor-pointer accent-gold"
           />
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-content-secondary">
             J'accepte les{' '}
             <a href="/terms" target="_blank" className="text-gold font-semibold hover:underline">
               Conditions d'utilisation

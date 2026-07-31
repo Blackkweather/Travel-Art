@@ -158,9 +158,14 @@ export const hotelsApi = {
   
   // Credits purchase moved to payments service (see paymentsApi)
   
-  getFavorites: (hotelId: string) => apiClient.get(`/hotels/${hotelId}/favorites`).catch(() => ({ data: { data: [] } })),
-  addFavorite: (hotelId: string, artistId: string) => apiClient.post(`/hotels/${hotelId}/favorites`, { artistId }).catch(() => ({ data: { success: true } })),
-  removeFavorite: (hotelId: string, artistId: string) => apiClient.delete(`/hotels/${hotelId}/favorites/${artistId}`).catch(() => ({ data: { success: true } })),
+  // These used to swallow every failure and resolve as though the call had
+  // succeeded — getFavorites returned an empty list, the writes returned
+  // { success: true }. HotelArtists already handles rejection properly (it
+  // falls back to localStorage on read and reverts the star on write), and
+  // that handling could never run while the errors were being masked.
+  getFavorites: (hotelId: string) => apiClient.get(`/hotels/${hotelId}/favorites`),
+  addFavorite: (hotelId: string, artistId: string) => apiClient.post(`/hotels/${hotelId}/favorites`, { artistId }),
+  removeFavorite: (hotelId: string, artistId: string) => apiClient.delete(`/hotels/${hotelId}/favorites/${artistId}`),
 }
 
 // Admin API
@@ -256,8 +261,9 @@ export const paymentsApi = {
   getPackages: () => apiClient.get('/payments/packages'),
   purchaseCredits: (hotelId: string, packageId: string, paymentMethod: string) =>
     apiClient.post('/payments/credits/purchase', { hotelId, packageId, paymentMethod }),
-  membership: (artistId: string, membershipType: 'PROFESSIONAL' | 'ENTERPRISE', paymentMethod: string) =>
+  // Tiers match the MembershipTier enum in the Prisma schema. This previously
+  // offered 'ENTERPRISE', which the schema has never had.
+  membership: (artistId: string, membershipType: 'ARTIST' | 'PROFESSIONAL', paymentMethod: string) =>
     apiClient.post('/payments/membership', { artistId, membershipType, paymentMethod }),
   transactions: (params?: any) => apiClient.get('/payments/transactions', params),
-  refund: (transactionId: string) => apiClient.post(`/payments/refund/${transactionId}`),
 }

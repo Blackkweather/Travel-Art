@@ -96,13 +96,13 @@ const AppContent = (
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#14b8a6',
-              color: '#ffffff',
+              background: '#B99851',
+              color: '#14161A',
             },
             success: {
               iconTheme: {
-                primary: '#ffffff',
-                secondary: '#14b8a6',
+                primary: '#14161A',
+                secondary: '#B99851',
               },
             },
             error: {

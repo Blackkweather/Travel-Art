@@ -138,8 +138,13 @@
            hover:bg-gold hover:text-off-black dark:text-gold-300;
   }
 
-  .card-luxury {
-    @apply bg-[var(--surface-raised)] rounded-card p-8 border border-[var(--border-subtle)] shadow-soft;
+  /* The registration flows mark their tertiary "add another" controls with
+     btn-outline. It had no definition in any loaded stylesheet, so those
+     buttons rendered as bare browser chrome inside a designed form. */
+  .btn-outline {
+    @apply btn-base bg-transparent text-[var(--text-primary)]
+           border border-[var(--border-strong)]
+           hover:border-gold hover:text-gold;
   }
 
   .card-experience {
@@ -174,15 +179,6 @@
     @apply bg-[var(--surface-raised)] rounded-card shadow-soft p-6 border border-[var(--border-subtle)] transition-all duration-300 hover:shadow-medium;
   }
   
-  .gold-underline {
-    @apply relative;
-  }
-  
-  .gold-underline::after {
-    content: '';
-    @apply absolute bottom-0 left-0 w-16 h-0.5 bg-gold;
-  }
-  
   /* Defer to the tokens so shadows change with the theme instead of staying
      tuned for a light background. */
   .shadow-soft {
@@ -212,6 +208,12 @@
     @apply block text-sm font-medium text-[var(--text-primary)] mb-2;
   }
 
+  /* Alias used by the registration steps. Same role as form-label; kept so the
+     existing markup resolves instead of falling back to unstyled text. */
+  .form-input-label {
+    @apply form-label;
+  }
+
   /* Error text must clear AA on the dark surface; red-600 does not. */
   .form-error {
     @apply mt-1 text-sm text-red-400;
@@ -223,14 +225,6 @@
   
   .hero-subtitle {
     @apply text-xl md:text-2xl text-white/90 mb-8 max-w-4xl mx-auto drop-shadow-md leading-relaxed;
-  }
-  
-  .section-title {
-    @apply text-4xl md:text-5xl font-serif text-[var(--text-primary)] mb-6;
-  }
-
-  .section-subtitle {
-    @apply text-xl text-[var(--text-secondary)] max-w-prose mb-12 leading-relaxed;
   }
   
   .compass-scroll {
@@ -329,7 +323,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--surface-sunken);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -406,70 +400,11 @@ h6 {
   width: 100%;
 }
 
-/* Button Styles */
-.btn-primary {
-  background-color: var(--primary-navy) !important;
-  color: white !important;
-  border: none !important;
-  padding: 12px 24px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-  text-align: center !important;
-  box-shadow: var(--shadow-soft) !important;
-}
-
-.btn-primary:hover {
-  background-color: #1a2f5f !important;
-  transform: translateY(-2px) !important;
-  box-shadow: var(--shadow-medium) !important;
-}
-
-.btn-secondary {
-  background-color: transparent !important;
-  color: var(--primary-navy) !important;
-  border: 2px solid var(--primary-navy) !important;
-  padding: 10px 22px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-  text-align: center !important;
-  box-shadow: var(--shadow-soft) !important;
-}
-
-.btn-secondary:hover {
-  background-color: var(--primary-navy) !important;
-  color: white !important;
-  transform: translateY(-2px) !important;
-  box-shadow: var(--shadow-medium) !important;
-}
-
-.btn-gold {
-  background-color: var(--gold-accent) !important;
-  color: white !important;
-  border: none !important;
-  padding: 12px 24px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-  text-align: center !important;
-  box-shadow: var(--shadow-soft) !important;
-}
-
-.btn-gold:hover {
-  background-color: #0d9488 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: var(--shadow-medium) !important;
-}
+/* The button rules that used to sit here were a second, older definition of
+   .btn-primary / .btn-secondary / .btn-gold. Being outside @layer and marked
+   !important, they beat the design-system versions above, so the whole site
+   rendered 8px-radius buttons with the pre-rebrand padding and a white label
+   on gold (which fails AA). The design system is now the only definition. */
 
 /* Card Styles */
 .card {
@@ -486,43 +421,13 @@ h6 {
   transform: translateY(-4px);
 }
 
-.card-luxury {
-  background: var(--surface-raised);
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-large);
-  transition: all 0.3s ease;
-  border: 1px solid var(--border-light);
-  position: relative;
-  overflow: hidden;
-}
-
-.card-luxury::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--gold-accent), var(--primary-navy));
-}
-
-.card-luxury:hover {
-  box-shadow: var(--shadow-large);
-  transform: translateY(-6px);
-}
-
 /* Form Styles */
 .form-group {
   margin-bottom: 24px;
 }
 
-.form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
+/* .form-label is defined once, in @layer components above. The copy that sat
+   here overrode it with a heavier weight and different spacing. */
 
 /* This rule sits outside @layer, so it overrides the component class above.
    It previously forced background-color: white, which on the dark theme meant
@@ -563,7 +468,7 @@ h6 {
 .form-textarea:focus {
   outline: none;
   border-color: var(--gold-accent);
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+  box-shadow: 0 0 0 3px rgba(185, 152, 81, 0.25);
 }
 
 /* Loading Animation */
@@ -659,85 +564,11 @@ h6 {
   }
 }
 
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-
-.mt-8 {
-  margin-top: 2rem;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.p-8 {
-  padding: 2rem;
-}
-
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-.gap-8 {
-  gap: 2rem;
-}
-
-.grid {
-  display: grid;
-}
-
-.grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-
-.grid-cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.grid-cols-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (min-width: 640px) {
-  .sm\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .lg\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
+/* Hand-written copies of .flex, .grid, .grid-cols-*, .gap-*, .mb-*, .mt-*,
+   .p-* and the sm:/lg: grid variants used to live here. Tailwind already
+   generates all of them, and because these sat outside @layer they took
+   precedence over Tailwind's utilities layer — so a one-off `gap-2` or
+   `grid-cols-4` in a component silently lost to the fixed value above. */
 
 /* Animation Classes */
 .fade-in {
@@ -941,19 +772,6 @@ h6 {
   animation-play-state: paused;
 }
 
-/* Enhanced Card Hover Effects */
-.card-luxury {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-style: preserve-3d;
-}
-
-.card-luxury:hover {
-  transform: translateY(-8px) rotateX(2deg) rotateY(2deg);
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(201, 166, 60, 0.1);
-}
-
 /* Particle Canvas Styling */
 #particles-js {
   background: transparent;
@@ -981,32 +799,9 @@ h6 {
   background: var(--navy) !important;
 }
 
-/* Enhanced Button Effects */
-.btn-primary,
-.btn-secondary,
-.btn-gold {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-primary::before,
-.btn-secondary::before,
-.btn-gold::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.btn-primary:hover::before,
-.btn-secondary:hover::before,
-.btn-gold:hover::before {
-  left: 100%;
-}
+/* The white sweep-on-hover pseudo-element that used to be layered onto every
+   button belonged to the pre-rebrand button set that has been removed. The
+   design system expresses press feedback with active:translate-y-px instead. */
 
 /* Typed.js Cursor Styling */
 .typed-cursor {
@@ -1042,7 +837,7 @@ h6 {
 
 /* Loading States */
 .loading-shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--surface-sunken) 25%, var(--border-subtle) 50%, var(--surface-sunken) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -1087,27 +882,23 @@ h6 {
     width: 280px !important;
   }
   
-  .btn-primary,
-  .btn-secondary,
-  .btn-gold,
-  .btn-gold-outline {
-    padding: 0.75rem 1.5rem !important;
-    font-size: 0.875rem !important;
-  }
-
   /* Mobile-specific improvements */
   .container {
     padding: 0 1rem !important;
   }
-  
-  /* Better touch targets */
-  button, 
-  .btn-primary, 
-  .btn-secondary, 
-  .btn-gold, 
-  .btn-gold-outline {
-    min-height: 44px !important;
-    min-width: 44px !important;
+
+  /* Better touch targets. The padding/font-size overrides that used to sit
+     alongside this are gone — they re-styled every button on mobile and beat
+     any per-instance sizing. The 44px floor is kept: it is an accessibility
+     minimum, not a visual preference. */
+  button,
+  .btn-primary,
+  .btn-secondary,
+  .btn-gold,
+  .btn-gold-outline,
+  .btn-outline {
+    min-height: 44px;
+    min-width: 44px;
   }
   
   /* Improved mobile navigation */
@@ -1212,34 +1003,38 @@ h6 {
   }
 }
 
-/* Enhanced Card Styling - Always Classy Colors */
-  .card-luxury {
-    background: var(--surface-raised) !important;
-    border: 1px solid rgba(201, 166, 60, 0.15) !important;
-    border-radius: 1rem !important;
-    padding: 1.5rem 2rem !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    position: relative !important;
-    overflow: hidden !important;
-  }
+/* The single .card-luxury definition. There were four, and this one — the
+   last and the only one marked !important — was the one actually rendering.
+   The !important flags are gone now that nothing competes with it. The top
+   accent no longer fades to teal, which was left over from a previous
+   palette and clashed with the navy and gold in use. */
+.card-luxury {
+  background: var(--surface-raised);
+  border: 1px solid rgba(185, 152, 81, 0.15);
+  border-radius: 1rem;
+  padding: 1.5rem 2rem;
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
 
-  .card-luxury::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--gold-accent) 0%, rgba(20, 184, 166, 0.3) 100%);
-    opacity: 0.6;
-  }
+.card-luxury::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold) 0%, rgba(185, 152, 81, 0.25) 100%);
+  opacity: 0.6;
+}
 
-  .card-luxury:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06) !important;
-    border-color: rgba(201, 166, 60, 0.3) !important;
-  }
+.card-luxury:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+  border-color: rgba(185, 152, 81, 0.3);
+}
 
 /* Logo styling - clean and transparent */
 img[src*="logo-transparent.png"] {
@@ -1287,7 +1082,7 @@ input[type="text"].search-input,
 .search-input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 3.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
@@ -1314,7 +1109,7 @@ input[type="text"].search-input:focus,
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--text-secondary);
   width: 1.25rem;
   height: 1.25rem;
   pointer-events: none;
@@ -1326,7 +1121,7 @@ input[type="text"].search-input:focus,
 select.form-input {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
@@ -1350,7 +1145,7 @@ select.form-input:focus {
 .advanced-filters {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -1432,7 +1227,7 @@ html {
 
 /* Dashboard Refinements */
 .dashboard-stat-card {
-  background: #ffffff;
+  background: var(--surface-raised);
   border: 1px solid rgba(201, 166, 60, 0.15);
   border-radius: 1rem;
   padding: 1.5rem;
@@ -1528,7 +1323,7 @@ html {
 .dashboard-subtitle {
   font-size: 1rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -1544,91 +1339,26 @@ html {
 .section-subtitle {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
 }
 
-/* Responsive Grid Improvements */
-@media (max-width: 640px) {
-  .grid {
-    gap: 1rem;
-  }
-}
+/* A blanket `.grid { gap }` at three breakpoints used to sit here. It applied
+   to every grid on the site and, being outside @layer, overrode whatever
+   gap-* a component asked for.
 
-@media (min-width: 641px) and (max-width: 1024px) {
-  .grid {
-    gap: 1.25rem;
-  }
-}
+   The navbar and logo-sizing overrides that followed it are gone too. They
+   targeted `.navbar-transparent`, `nav[class*="fixed"]`, `nav.bg-navy` and
+   `nav img[alt="Travel Art"]` — selectors that match nothing since the header
+   rebuild, where every bar is a <header class="fixed …"> that styles itself
+   and <nav> holds only the link list. They forced a 112px logo and a
+   transparent background on anything that did match. */
 
-@media (min-width: 1025px) {
-  .grid {
-    gap: 1.5rem;
-  }
-}
-
-/* Header/Navbar Styles - Transparent with subtle blur */
-.navbar-transparent,
-nav[class*="fixed"] {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  background: transparent !important;
-  backdrop-filter: blur(8px) !important;
-  z-index: 50 !important;
-  box-shadow: none !important;
-  transition: background 0.3s ease !important;
-}
-
-/* Hide any solid blue navbars */
-.navbar-blue,
-.topbar-blue,
-nav.bg-navy:not([class*="mobile"]) {
-  display: none !important;
-}
-
-/* Logo sizing - matches production LandingPage */
-.navbar-logo img,
-nav img[alt="Travel Art"] {
-  height: 48px !important;
-  width: auto !important;
-  max-width: 100%;
-  object-fit: contain;
-}
-
-@media (min-width: 768px) {
-  .navbar-logo img,
-  nav img[alt="Travel Art"] {
-    height: 80px !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .navbar-logo img,
-  nav img[alt="Travel Art"] {
-    height: 96px !important;
-  }
-}
-
-@media (min-width: 1280px) {
-  .navbar-logo img,
-  nav img[alt="Travel Art"] {
-    height: 112px !important;
-  }
-}
-
-@media (max-width: 767px) {
-  .navbar-logo img,
-  nav img[alt="Travel Art"] {
-    height: 48px !important;
-  }
-}
-
-/* Dashboard content spacing - prevent overlap with fixed navbar */
+/* Dashboard content spacing - clear the fixed header, which is 72px tall in
+   both Header and SimpleNavbar. This was 55px, tuned against an older bar. */
 .dashboard-content,
 main[class*="flex-1"] {
-  padding-top: 55px !important;
+  padding-top: 72px;
 }
 
 /* Ensure page content doesn't overlap navbar */

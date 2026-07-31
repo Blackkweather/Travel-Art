@@ -118,7 +118,7 @@ const ResetPasswordPage: React.FC = () => {
                   placeholder="Enter new password"
                 />
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
                 )}
               </div>
 
@@ -136,7 +136,7 @@ const ResetPasswordPage: React.FC = () => {
                   placeholder="Confirm new password"
                 />
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>
                 )}
               </div>
 

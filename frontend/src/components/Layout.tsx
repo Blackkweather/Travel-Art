@@ -14,7 +14,7 @@ const Layout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-surface">
       <Header />
       
       <div className="flex flex-col md:flex-row pt-[88px] md:pt-[88px]">

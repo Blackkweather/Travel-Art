@@ -18,7 +18,7 @@ const baseBtn =
   'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-gold'
 
 const brandBadge = (label: string) => (
-  <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-semibold">{label}</span>
+  <span className="px-2 py-0.5 rounded bg-surface-sunken text-content-secondary text-xs font-semibold">{label}</span>
 )
 
 export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ selected, onSelect }) => {
@@ -31,7 +31,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ selected, onSele
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           type="button"
-          className={`${baseBtn} ${isActive('visa') ? 'border-gold bg-gold/10' : 'border-gray-200 hover:bg-gray-50'}`}
+          className={`${baseBtn} ${isActive('visa') ? 'border-gold bg-gold/10' : 'border-line hover:bg-surface'}`}
           aria-pressed={isActive('visa')}
           onClick={() => onSelect('visa')}
         >
@@ -40,7 +40,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ selected, onSele
         </button>
         <button
           type="button"
-          className={`${baseBtn} ${isActive('mastercard') ? 'border-gold bg-gold/10' : 'border-gray-200 hover:bg-gray-50'}`}
+          className={`${baseBtn} ${isActive('mastercard') ? 'border-gold bg-gold/10' : 'border-line hover:bg-surface'}`}
           aria-pressed={isActive('mastercard')}
           onClick={() => onSelect('mastercard')}
         >
@@ -49,7 +49,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ selected, onSele
         </button>
         <button
           type="button"
-          className={`${baseBtn} ${isActive('maestro') ? 'border-gold bg-gold/10' : 'border-gray-200 hover:bg-gray-50'}`}
+          className={`${baseBtn} ${isActive('maestro') ? 'border-gold bg-gold/10' : 'border-line hover:bg-surface'}`}
           aria-pressed={isActive('maestro')}
           onClick={() => onSelect('maestro')}
         >
@@ -58,7 +58,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ selected, onSele
         </button>
         <button
           type="button"
-          className={`${baseBtn} ${isActive('amex') ? 'border-gold bg-gold/10' : 'border-gray-200 hover:bg-gray-50'}`}
+          className={`${baseBtn} ${isActive('amex') ? 'border-gold bg-gold/10' : 'border-line hover:bg-surface'}`}
           aria-pressed={isActive('amex')}
           onClick={() => onSelect('amex')}
         >
@@ -67,7 +67,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ selected, onSele
         </button>
         <button
           type="button"
-          className={`${baseBtn} ${isActive('paypal') ? 'border-gold bg-gold/10' : 'border-gray-200 hover:bg-gray-50'}`}
+          className={`${baseBtn} ${isActive('paypal') ? 'border-gold bg-gold/10' : 'border-line hover:bg-surface'}`}
           aria-pressed={isActive('paypal')}
           onClick={() => onSelect('paypal')}
         >
@@ -76,7 +76,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ selected, onSele
         </button>
         <button
           type="button"
-          className={`${baseBtn} ${isActive('other') ? 'border-gold bg-gold/10' : 'border-gray-200 hover:bg-gray-50'}`}
+          className={`${baseBtn} ${isActive('other') ? 'border-gold bg-gold/10' : 'border-line hover:bg-surface'}`}
           aria-pressed={isActive('other')}
           onClick={() => onSelect('other')}
         >

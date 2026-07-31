@@ -303,7 +303,7 @@ const TravelerExperiencesPage: React.FC = () => {
               className={`px-4 py-2 rounded-control transition-colors ${
                 !selectedLocation
                   ? 'bg-gold text-off-black font-semibold'
-                  : 'bg-gray-200 text-white/75 hover:bg-gray-300'
+                  : 'bg-surface-sunken text-white/75 hover:bg-white/10'
               }`}
             >
               All Locations
@@ -315,7 +315,7 @@ const TravelerExperiencesPage: React.FC = () => {
                 className={`px-4 py-2 rounded-control transition-colors ${
                   selectedLocation === loc
                     ? 'bg-gold text-off-black font-semibold'
-                    : 'bg-gray-200 text-white/75 hover:bg-gray-300'
+                    : 'bg-surface-sunken text-white/75 hover:bg-white/10'
                 }`}
               >
                 {loc}
@@ -332,7 +332,7 @@ const TravelerExperiencesPage: React.FC = () => {
                 className={`px-4 py-2 rounded-control transition-colors capitalize ${
                   filterType === type
                     ? 'bg-navy text-white font-semibold'
-                    : 'bg-gray-200 text-white/75 hover:bg-gray-300'
+                    : 'bg-surface-sunken text-white/75 hover:bg-white/10'
                 }`}
               >
                 {type === 'all' ? 'All Types' : type}

@@ -136,7 +136,7 @@ const PublicArtistProfile: React.FC = () => {
                   <img
                     src={images[0]}
                     alt={artist.user?.name || 'Artist'}
-                    className="w-full h-full rounded-control object-cover bg-gray-200 ring-2 ring-gold/20"
+                    className="w-full h-full rounded-control object-cover bg-surface-sunken ring-2 ring-gold/20"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
                       target.style.display = 'none'
@@ -465,14 +465,14 @@ const PublicArtistProfile: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Placeholder Videos */}
-                  <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/15">
+                  <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-white/5 to-white/10 flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/15">
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
                       <Music className="w-8 h-8 text-gold" />
                     </div>
                     <p className="text-white/60 text-center font-medium mb-2">Performance Showcase</p>
                     <p className="text-white/45 text-sm text-center">Video coming soon</p>
                   </div>
-                  <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/15">
+                  <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-white/5 to-white/10 flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/15">
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
                       <svg className="w-8 h-8 text-gold" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
@@ -516,7 +516,7 @@ const PublicArtistProfile: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="relative aspect-square rounded-card overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center border-2 border-dashed border-white/15">
+                  <div key={i} className="relative aspect-square rounded-card overflow-hidden bg-gradient-to-br from-white/5 to-white/10 flex flex-col items-center justify-center border-2 border-dashed border-white/15">
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
                       <svg className="w-8 h-8 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -661,13 +661,13 @@ const PublicArtistProfile: React.FC = () => {
                 {artist.availability.map((avail: any, index: number) => (
                   <div key={index} className="p-5 bg-[var(--surface-raised)] border-2 border-white/10 rounded-card hover:border-gold hover:shadow-md transition-all duration-200">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-card bg-green-50 flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-6 h-6 text-green-600" />
+                      <div className="w-12 h-12 rounded-card bg-green-50 dark:bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-control bg-green-500"></div>
-                          <span className="text-sm font-semibold text-green-600">Available</span>
+                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">Available</span>
                         </div>
                         <p className="text-base font-semibold text-white mb-1">
                           {new Date(avail.dateFrom).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -682,7 +682,7 @@ const PublicArtistProfile: React.FC = () => {
               </div>
             ) : (
               <div className="p-8 bg-[#0C1526] rounded-card border-2 border-dashed border-white/15 text-center">
-                <div className="w-16 h-16 rounded-control bg-gray-200 flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-control bg-surface-sunken flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-8 h-8 text-white/40" />
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">Availability Coming Soon</h3>

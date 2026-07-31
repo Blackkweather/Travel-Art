@@ -19,7 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <LoadingSpinner />
       </div>
     )

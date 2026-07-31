@@ -182,7 +182,7 @@ const AdminDashboard: React.FC = () => {
     if (!stats) return []
     return [
       { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-600' },
-      { label: 'Active Hotels', value: stats.totalHotels, icon: Building, color: 'text-green-600' },
+      { label: 'Active Hotels', value: stats.totalHotels, icon: Building, color: 'text-green-600 dark:text-green-400' },
       { label: 'Registered Artists', value: stats.totalArtists, icon: Users, color: 'text-purple-600' },
       { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: 'text-orange-600' }
     ]
@@ -197,27 +197,27 @@ const AdminDashboard: React.FC = () => {
   }
 
   if (error) {
-    return <div className="card-luxury text-red-700 bg-red-50">{error}</div>
+    return <div className="card-luxury text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10">{error}</div>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="dashboard">
+    <div className="min-h-screen bg-surface" data-testid="dashboard">
       <div className="max-w-[1600px] mx-auto px-6 py-8">
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
       <div>
-              <h1 className="text-3xl font-semibold text-gray-900 mb-1">
+              <h1 className="text-3xl font-semibold text-content mb-1">
                 Dashboard
         </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-content-secondary">
                 Platform overview and analytics
               </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Revenue</div>
-                <div className="text-2xl font-semibold text-gray-900">{totalRevenueFormatted}</div>
+                <div className="text-xs text-content-secondary uppercase tracking-wide mb-1">Total Revenue</div>
+                <div className="text-2xl font-semibold text-content">{totalRevenueFormatted}</div>
               </div>
             </div>
           </div>
@@ -233,7 +233,7 @@ const AdminDashboard: React.FC = () => {
                 iconColor: 'text-blue-600',
                 border: 'border-blue-200'
               },
-              'text-green-600': {
+              'text-green-600 dark:text-green-400': {
                 bg: 'bg-emerald-50',
                 iconColor: 'text-emerald-600',
                 border: 'border-emerald-200'
@@ -254,7 +254,7 @@ const AdminDashboard: React.FC = () => {
           return (
               <div 
                 key={index} 
-                className="bg-white rounded-lg border border-gray-200 p-6 hover:border-gray-300 transition-colors"
+                className="bg-surface-raised rounded-lg border border-line p-6 hover:border-line-strong transition-colors"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`p-2 rounded-lg ${colors.bg}`}>
@@ -262,8 +262,8 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{stat.label}</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stat.value.toLocaleString()}</p>
+                  <p className="text-xs font-medium text-content-secondary uppercase tracking-wide mb-1">{stat.label}</p>
+                  <p className="text-2xl font-semibold text-content">{stat.value.toLocaleString()}</p>
               </div>
             </div>
           )
@@ -272,13 +272,13 @@ const AdminDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Recent Activity */}
-          <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
+          <div className="lg:col-span-2 bg-surface-raised rounded-lg border border-line">
+            <div className="px-6 py-4 border-b border-line">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+                <h2 className="text-lg font-semibold text-content">Recent Activity</h2>
                 <button 
                   onClick={() => navigate('/dashboard/logs')}
-                  className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                  className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
                 >
                   View all <ArrowUpRight className="w-4 h-4" />
                 </button>
@@ -289,61 +289,61 @@ const AdminDashboard: React.FC = () => {
                 activity.slice(0, 8).map((item) => (
                   <div 
                     key={item.id} 
-                    className="px-6 py-4 hover:bg-gray-50 transition-colors"
+                    className="px-6 py-4 hover:bg-surface transition-colors"
                   >
                     <div className="flex items-start gap-3">
                       <div className={`mt-0.5 flex-shrink-0 w-2 h-2 rounded-full ${
                         item.status === 'success' ? 'bg-green-500' : 'bg-amber-500'
                       }`}></div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 mb-1">{item.message}</p>
-                        <p className="text-xs text-gray-500">{item.time}</p>
+                        <p className="text-sm font-medium text-content mb-1">{item.message}</p>
+                        <p className="text-xs text-content-secondary">{item.time}</p>
             </div>
           </div>
                   </div>
                 ))
               ) : (
                 <div className="px-6 py-12 text-center">
-                  <Activity className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">No recent activity</p>
+                  <Activity className="w-8 h-8 text-content-secondary mx-auto mb-2" />
+                  <p className="text-sm text-content-secondary">No recent activity</p>
                 </div>
             )}
           </div>
         </div>
 
         {/* Top Artists */}
-          <div className="bg-white rounded-lg border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Top Artists</h2>
+          <div className="bg-surface-raised rounded-lg border border-line">
+            <div className="px-6 py-4 border-b border-line">
+              <h2 className="text-lg font-semibold text-content">Top Artists</h2>
             </div>
             <div className="divide-y divide-gray-200">
             {topArtists.length > 0 ? (
                 topArtists.map((artist, idx) => (
                   <div 
                     key={artist.id} 
-                    className="px-6 py-4 hover:bg-gray-50 transition-colors"
+                    className="px-6 py-4 hover:bg-surface transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0 w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-600">
+                        <div className="flex-shrink-0 w-8 h-8 rounded bg-surface-sunken flex items-center justify-center text-xs font-semibold text-content-secondary">
                           {idx + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{artist.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{artist.specialty || 'Artist'}</p>
+                          <p className="text-sm font-medium text-content truncate">{artist.name}</p>
+                          <p className="text-xs text-content-secondary truncate">{artist.specialty || 'Artist'}</p>
                         </div>
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-sm font-semibold text-gray-900">{artist.bookings}</p>
-                        <p className="text-xs text-gray-500">bookings</p>
+                        <p className="text-sm font-semibold text-content">{artist.bookings}</p>
+                        <p className="text-xs text-content-secondary">bookings</p>
                       </div>
                   </div>
                   </div>
                 ))
               ) : (
                 <div className="px-6 py-12 text-center">
-                  <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">No data available</p>
+                  <Users className="w-8 h-8 text-content-secondary mx-auto mb-2" />
+                  <p className="text-sm text-content-secondary">No data available</p>
                 </div>
             )}
           </div>
@@ -351,13 +351,13 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Top Hotels */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-surface-raised rounded-lg border border-line mb-8">
+          <div className="px-6 py-4 border-b border-line">
                 <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Active Hotels</h2>
+              <h2 className="text-lg font-semibold text-content">Active Hotels</h2>
               <button 
                 onClick={() => navigate('/dashboard/hotels')}
-                className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
               >
                 View all <ArrowUpRight className="w-4 h-4" />
               </button>
@@ -365,29 +365,29 @@ const AdminDashboard: React.FC = () => {
               </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-surface">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hotel</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bookings</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Hotel</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Location</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Bookings</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-surface-raised divide-y divide-gray-200">
                 {topHotels.length > 0 ? (
                   topHotels.map((hotel) => (
-                    <tr key={hotel.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={hotel.id} className="hover:bg-surface transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{hotel.name}</div>
+                        <div className="text-sm font-medium text-content">{hotel.name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{hotel.location || '—'}</div>
+                        <div className="text-sm text-content-secondary">{hotel.location || '—'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{hotel.bookings}</div>
+                        <div className="text-sm font-medium text-content">{hotel.bookings}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400">
                           Active
                         </span>
                       </td>
@@ -396,8 +396,8 @@ const AdminDashboard: React.FC = () => {
           ) : (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
-                      <Building className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">No hotel data available</p>
+                      <Building className="w-8 h-8 text-content-secondary mx-auto mb-2" />
+                      <p className="text-sm text-content-secondary">No hotel data available</p>
                     </td>
                   </tr>
           )}
@@ -410,56 +410,56 @@ const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <button 
             onClick={() => navigate('/dashboard/users')}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
-            <Users className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
-            <div className="text-sm font-medium text-gray-900">Users</div>
-            <div className="text-xs text-gray-500 mt-1">Manage accounts</div>
+            <Users className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
+            <div className="text-sm font-medium text-content">Users</div>
+            <div className="text-xs text-content-secondary mt-1">Manage accounts</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/bookings')}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
-            <Calendar className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
-            <div className="text-sm font-medium text-gray-900">Bookings</div>
-            <div className="text-xs text-gray-500 mt-1">View all</div>
+            <Calendar className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
+            <div className="text-sm font-medium text-content">Bookings</div>
+            <div className="text-xs text-content-secondary mt-1">View all</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/analytics')}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
-            <TrendingUp className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
-            <div className="text-sm font-medium text-gray-900">Analytics</div>
-            <div className="text-xs text-gray-500 mt-1">Platform metrics</div>
+            <TrendingUp className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
+            <div className="text-sm font-medium text-content">Analytics</div>
+            <div className="text-xs text-content-secondary mt-1">Platform metrics</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/logs')}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
-            <Activity className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
-            <div className="text-sm font-medium text-gray-900">Logs</div>
-            <div className="text-xs text-gray-500 mt-1">Activity history</div>
+            <Activity className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
+            <div className="text-sm font-medium text-content">Logs</div>
+            <div className="text-xs text-content-secondary mt-1">Activity history</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/moderation')}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
-            <AlertCircle className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
-            <div className="text-sm font-medium text-gray-900">Moderation</div>
-            <div className="text-xs text-gray-500 mt-1">Review content</div>
+            <AlertCircle className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
+            <div className="text-sm font-medium text-content">Moderation</div>
+            <div className="text-xs text-content-secondary mt-1">Review content</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/referrals')}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
-            <Gift className="w-5 h-5 text-gray-600 mb-2 group-hover:text-gray-900" />
-            <div className="text-sm font-medium text-gray-900">Referrals</div>
-            <div className="text-xs text-gray-500 mt-1">Track program</div>
+            <Gift className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
+            <div className="text-sm font-medium text-content">Referrals</div>
+            <div className="text-xs text-content-secondary mt-1">Track program</div>
           </button>
         </div>
       </div>
