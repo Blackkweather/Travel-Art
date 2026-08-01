@@ -113,10 +113,23 @@ describe('Payments API', () => {
         paymentMethod: 'card'
       });
 
-    expect(res.status).toBe(503);
-    expect(res.body.success).toBe(false);
+    // Two outcomes are legitimate, depending on the environment: with Stripe
+    // configured the request opens a Checkout Session (200), without it the
+    // route refuses (503). Asserting either one alone makes the suite depend
+    // on whether keys happen to be present.
+    //
+    // The property that must hold in both cases is the one worth testing:
+    // calling this endpoint never grants credits. They are granted only by
+    // the signature-verified webhook, after Stripe confirms the charge.
+    expect([200, 503]).toContain(res.status);
 
-    // The balance must be untouched.
+    if (res.status === 200) {
+      expect(res.body.data.checkoutUrl).toMatch(/^https:\/\/checkout\.stripe\.com\//);
+    } else {
+      expect(res.body.success).toBe(false);
+    }
+
+    // The balance must be untouched either way.
     const creditsAfter = await prisma.credit.findUnique({
       where: { hotelId: hotel.id }
     });

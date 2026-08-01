@@ -15,6 +15,7 @@ import { tripRoutes } from './routes/trips';
 import { paymentRoutes } from './routes/payments';
 import { bookingRoutes } from './routes/bookings';
 import { uploadRoutes } from './routes/upload';
+import { webhookRoutes } from './routes/webhooks';
 import { initializeDatabase, prisma } from './db';
 
 const app = express();
@@ -107,6 +108,11 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
+
+// The Stripe webhook must see the exact bytes Stripe signed, so it is mounted
+// with the raw parser ahead of express.json(). Parsing first would re-serialise
+// the body and every signature check would fail.
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

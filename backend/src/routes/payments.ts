@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { prisma } from '../db';
+import { config } from '../config';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { stripe, isStripeConfigured, stripeUnavailableReason } from '../stripe';
 
 const router = Router();
 
@@ -69,32 +71,77 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
     throw new CustomError('Unknown credit package', 400);
   }
 
-  // DISABLED: credits must never be created by a request the client controls.
+  // Credits are never created by a request the client controls. This endpoint
+  // only opens a Stripe Checkout Session; the balance moves in the webhook,
+  // after Stripe confirms the charge and the signature is verified.
   //
-  // What this code used to do: accept a `paymentMethod` field, never use it,
-  // increment the hotel's balance, then write a Transaction row recording
-  // revenue that was never collected. Any authenticated hotel could call it
-  // repeatedly for unlimited free inventory, and the transaction log made the
-  // books look settled.
-  //
-  // The replacement flow is:
-  //   1. create a Stripe Checkout Session for the chosen CreditPackage
+  //   1. create a Checkout Session for the chosen CreditPackage  (here)
   //   2. Stripe charges the card
-  //   3. the checkout.session.completed webhook, after signature verification,
-  //      writes an append-only CreditLedger entry inside one transaction
-  //   4. balance is derived from the ledger, never incremented in place
+  //   3. checkout.session.completed arrives at /payments/webhook
+  //   4. that handler writes an append-only CreditLedger entry and the
+  //      matching balance update inside one transaction
   //
-  // A hotel seeing an honest error costs far less than a hotel quietly taking
-  // free stock while finance believes it was paid for.
-  console.warn(
-    `Blocked credit purchase: no payment processor configured (hotel ${hotelId}, package ${packageId})`
-  );
+  // The price comes from the packages table, never from the request body.
+  if (!isStripeConfigured() || !stripe) {
+    console.warn(
+      `Blocked credit purchase: ${stripeUnavailableReason()} (hotel ${hotelId}, package ${packageId})`
+    );
+    throw new CustomError(
+      'Credit purchases are temporarily unavailable while payment processing is being set up. ' +
+      'No card has been charged and no credits have been added. Please contact us to arrange a purchase.',
+      503
+    );
+  }
 
-  throw new CustomError(
-    'Credit purchases are temporarily unavailable while payment processing is being set up. ' +
-    'No card has been charged and no credits have been added. Please contact us to arrange a purchase.',
-    503
-  );
+  // Recorded as PENDING before the redirect, so a completed charge always has
+  // a row to attach to even if the customer closes the tab.
+  const payment = await prisma.payment.create({
+    data: {
+      actorUserId: req.user!.id,
+      amountCents: selectedPackage.priceCents,
+      currency: selectedPackage.currency,
+      status: 'PENDING',
+      packageId: selectedPackage.id,
+    },
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    // client_reference_id and metadata are echoed back on the webhook, which
+    // is the only place the credits are actually granted.
+    client_reference_id: payment.id,
+    metadata: {
+      paymentId: payment.id,
+      hotelId: hotel.id,
+      packageId: selectedPackage.id,
+      credits: String(selectedPackage.credits + selectedPackage.bonusCredits),
+    },
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: selectedPackage.currency.toLowerCase(),
+          unit_amount: selectedPackage.priceCents,
+          product_data: {
+            name: selectedPackage.name,
+            description: `${selectedPackage.credits + selectedPackage.bonusCredits} booking credits`,
+          },
+        },
+      },
+    ],
+    success_url: `${config.frontendUrl}/dashboard/credits?checkout=success`,
+    cancel_url: `${config.frontendUrl}/dashboard/credits?checkout=cancelled`,
+  });
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { stripeSessionId: session.id },
+  });
+
+  res.json({
+    success: true,
+    data: { checkoutUrl: session.url, sessionId: session.id, paymentId: payment.id },
+  });
 }));
 
 /**

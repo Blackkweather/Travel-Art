@@ -81,15 +81,23 @@ const HotelCredits: React.FC = () => {
     if (!hotelId) return
     try {
       setProcessing(packageId)
-      await paymentsApi.purchaseCredits(hotelId, packageId, 'CARD')
-      const [creditsRes, txRes] = await Promise.all([
-        hotelsApi.getCredits(hotelId),
-        paymentsApi.transactions({ limit: 20 })
-      ])
-      setCredits(creditsRes.data.data)
-      setTransactions(txRes.data.data.transactions || [])
-    } catch (e) {
-      setError('Failed to complete purchase')
+      const res = await paymentsApi.purchaseCredits(hotelId, packageId, 'CARD')
+
+      // The balance is never granted here. This opens a Stripe Checkout
+      // Session and hands off to Stripe; the credits arrive when the
+      // signature-verified webhook confirms the charge, and the page reloads
+      // them on return via ?checkout=success.
+      const checkoutUrl = res.data?.data?.checkoutUrl
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl
+        return
+      }
+
+      setError('Could not start checkout. Please try again.')
+    } catch (e: any) {
+      // The server says why it refused — for example that payment processing
+      // is not configured yet, in which case retrying will not help.
+      setError(e?.response?.data?.error?.message || 'Failed to start checkout')
     } finally {
       setProcessing(null)
     }
