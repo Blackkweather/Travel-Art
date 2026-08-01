@@ -6,6 +6,9 @@ import { stripe } from '../stripe';
 
 const router = Router();
 
+/** Event types this handler acts on. Everything else is acknowledged and dropped. */
+const HANDLED_EVENTS = new Set<string>(['checkout.session.completed']);
+
 /**
  * Stripe webhook. This is the only place credits are ever granted.
  *
@@ -47,6 +50,14 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (err: any) {
     console.warn('Rejected Stripe webhook with an invalid signature:', err?.message);
     return res.status(400).json({ received: false, error: 'Invalid signature' });
+  }
+
+  // Ignore event types this handler does not act on, before recording
+  // anything. The configured endpoint subscribes to the full Stripe event
+  // catalogue, so claiming every delivery would fill webhook_events with
+  // hundreds of rows that exist only to be ignored.
+  if (!HANDLED_EVENTS.has(event.type)) {
+    return res.status(200).json({ received: true, ignored: event.type });
   }
 
   // Claim the event before doing any work. The unique constraint on
