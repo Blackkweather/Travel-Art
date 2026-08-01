@@ -298,7 +298,7 @@ const AdminAnalytics: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">Platform Analytics</h1>
+        <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">Platform Analytics</h1>
         <p className="text-content-secondary">CHARTS ENABLED - Comprehensive metrics and visualizations for the Travel Art platform.</p>
       </div>
 
@@ -308,7 +308,7 @@ const AdminAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-content-secondary">Total Users</p>
-              <p className="text-2xl font-bold text-navy">{stats?.totalUsers ?? 0}</p>
+              <p className="text-2xl font-bold text-content">{stats?.totalUsers ?? 0}</p>
             </div>
             <Users className="w-8 h-8 text-blue-600" />
           </div>
@@ -317,7 +317,7 @@ const AdminAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-content-secondary">Artists</p>
-              <p className="text-2xl font-bold text-navy">{stats?.totalArtists ?? 0}</p>
+              <p className="text-2xl font-bold text-content">{stats?.totalArtists ?? 0}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-purple-600" />
           </div>
@@ -326,7 +326,7 @@ const AdminAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-content-secondary">Hotels</p>
-              <p className="text-2xl font-bold text-navy">{stats?.totalHotels ?? 0}</p>
+              <p className="text-2xl font-bold text-content">{stats?.totalHotels ?? 0}</p>
             </div>
             <Building className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
@@ -335,7 +335,7 @@ const AdminAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-content-secondary">Bookings</p>
-              <p className="text-2xl font-bold text-navy">{stats?.totalBookings ?? 0}</p>
+              <p className="text-2xl font-bold text-content">{stats?.totalBookings ?? 0}</p>
             </div>
             <Calendar className="w-8 h-8 text-orange-600" />
           </div>
@@ -344,7 +344,7 @@ const AdminAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-content-secondary">Revenue</p>
-              <p className="text-2xl font-bold text-navy">€{(stats?.totalRevenue ?? 0).toLocaleString()}</p>
+              <p className="text-2xl font-bold text-content">€{(stats?.totalRevenue ?? 0).toLocaleString()}</p>
             </div>
             <Euro className="w-8 h-8 text-gold" />
           </div>
@@ -353,7 +353,7 @@ const AdminAnalytics: React.FC = () => {
 
       {/* TEST CHART - Simple Bar Chart */}
       <div className="card-luxury p-6">
-        <h3 className="text-lg font-serif font-semibold text-navy mb-4">TEST CHART (Should Always Show)</h3>
+        <h3 className="text-lg font-serif font-semibold text-content mb-4">TEST CHART (Should Always Show)</h3>
         {ResponsiveContainer && BarChart && Bar ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={[
@@ -384,7 +384,7 @@ const AdminAnalytics: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card-luxury p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-serif font-semibold text-navy mb-1 flex items-center gap-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-1 flex items-center gap-2">
               <Activity className="w-5 h-5" />
               Revenue Trend (Last 6 Months)
             </h3>
@@ -429,7 +429,7 @@ const AdminAnalytics: React.FC = () => {
 
         <div className="card-luxury p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-serif font-semibold text-navy mb-1 flex items-center gap-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-1 flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
               Bookings Trend (Last 6 Months)
             </h3>
@@ -460,7 +460,7 @@ const AdminAnalytics: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card-luxury p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-serif font-semibold text-navy mb-1 flex items-center gap-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-1 flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
               User Growth (Last 6 Months)
             </h3>
@@ -495,7 +495,7 @@ const AdminAnalytics: React.FC = () => {
 
         <div className="card-luxury p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-serif font-semibold text-navy mb-1 flex items-center gap-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-1 flex items-center gap-2">
               <PieChart className="w-5 h-5" />
               Booking Status Distribution
             </h3>
@@ -537,7 +537,7 @@ const AdminAnalytics: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card-luxury p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-serif font-semibold text-navy mb-1 flex items-center gap-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-1 flex items-center gap-2">
               <Users className="w-5 h-5" />
               Artist Growth (Last 6 Months)
             </h3>
@@ -572,7 +572,7 @@ const AdminAnalytics: React.FC = () => {
 
         <div className="card-luxury p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-serif font-semibold text-navy mb-1 flex items-center gap-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-1 flex items-center gap-2">
               <Building className="w-5 h-5" />
               Hotel Growth (Last 6 Months)
             </h3>
@@ -609,7 +609,7 @@ const AdminAnalytics: React.FC = () => {
       {/* Combined Revenue and Bookings Line Chart */}
       <div className="card-luxury p-6">
         <div className="mb-4">
-          <h3 className="text-lg font-serif font-semibold text-navy mb-1 flex items-center gap-2">
+          <h3 className="text-lg font-serif font-semibold text-content mb-1 flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
             Revenue vs Bookings Comparison
           </h3>

@@ -122,7 +122,7 @@ const ArtistReferrals: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+        <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
           Referral Program
         </h1>
         <p className="text-content-secondary">
@@ -145,7 +145,7 @@ const ArtistReferrals: React.FC = () => {
               <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Icon className="w-6 h-6 text-gold" />
               </div>
-              <h3 className="text-2xl font-bold text-navy mb-2">{stat.value}</h3>
+              <h3 className="text-2xl font-bold text-content mb-2">{stat.value}</h3>
               <p className="text-content-secondary">{stat.label}</p>
             </motion.div>
           )
@@ -154,12 +154,12 @@ const ArtistReferrals: React.FC = () => {
 
       {/* Referral Code Section */}
       <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
+        <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
           Your Referral Code
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+            <h3 className="text-lg font-serif font-semibold text-content mb-4">
               Share Your Code
             </h3>
             <p className="text-content-secondary mb-6">
@@ -215,36 +215,36 @@ const ArtistReferrals: React.FC = () => {
           </div>
           
           <div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+            <h3 className="text-lg font-serif font-semibold text-content mb-4">
               How It Works
             </h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-navy font-bold text-sm">1</span>
+                  <span className="text-content font-bold text-sm">1</span>
                 </div>
                 <div>
-                  <p className="font-medium text-navy">Share Your Code</p>
+                  <p className="font-medium text-content">Share Your Code</p>
                   <p className="text-sm text-content-secondary">Send your referral code to fellow artists</p>
                 </div>
               </div>
               
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-navy font-bold text-sm">2</span>
+                  <span className="text-content font-bold text-sm">2</span>
                 </div>
                 <div>
-                  <p className="font-medium text-navy">They Join</p>
+                  <p className="font-medium text-content">They Join</p>
                   <p className="text-sm text-content-secondary">Artists register using your referral code</p>
                 </div>
               </div>
               
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-navy font-bold text-sm">3</span>
+                  <span className="text-content font-bold text-sm">3</span>
                 </div>
                 <div>
-                  <p className="font-medium text-navy">Earn Credits</p>
+                  <p className="font-medium text-content">Earn Credits</p>
                   <p className="text-sm text-content-secondary">Both of you receive credits when they become active</p>
                 </div>
               </div>
@@ -255,7 +255,7 @@ const ArtistReferrals: React.FC = () => {
 
       {/* Referred Artists */}
       <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
+        <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
           Referred Artists
         </h2>
         {referrals.length > 0 ? (
@@ -285,7 +285,7 @@ const ArtistReferrals: React.FC = () => {
                     </div>
                   )}
                   <div>
-                    <h3 className="font-semibold text-navy">{referral.name}</h3>
+                    <h3 className="font-semibold text-content">{referral.name}</h3>
                     <p className="text-sm text-content-secondary">{referral.discipline}</p>
                     <p className="text-xs text-content-secondary">
                       Joined {new Date(referral.joinedDate).toLocaleDateString()}
@@ -317,7 +317,7 @@ const ArtistReferrals: React.FC = () => {
 
       {/* Benefits */}
       <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
+        <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
           Referral Benefits
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -325,7 +325,7 @@ const ArtistReferrals: React.FC = () => {
             <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Gift className="w-8 h-8 text-gold" />
             </div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-2">
               Earn Credits
             </h3>
             <p className="text-content-secondary">
@@ -337,7 +337,7 @@ const ArtistReferrals: React.FC = () => {
             <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-gold" />
             </div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-2">
               Grow Network
             </h3>
             <p className="text-content-secondary">
@@ -349,7 +349,7 @@ const ArtistReferrals: React.FC = () => {
             <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Star className="w-8 h-8 text-gold" />
             </div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-2">
+            <h3 className="text-lg font-serif font-semibold text-content mb-2">
               Help Others
             </h3>
             <p className="text-content-secondary">

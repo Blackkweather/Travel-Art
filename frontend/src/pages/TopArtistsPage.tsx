@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Star, MapPin, Calendar, Users, AlertCircle } from 'lucide-react'
 import Footer from '../components/Footer'
-import { getLogoUrl } from '@/config/assets'
+import SimpleNavbar from '@/components/SimpleNavbar'
 import { ArtistRank, getQuickRank, RANK_CONFIG } from '@/components/ArtistRank'
 import { commonApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
@@ -22,7 +22,6 @@ interface TopArtist {
 }
 
 const TopArtistsPage: React.FC = () => {
-  const { scrollY } = useScroll()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,8 +34,6 @@ const TopArtistsPage: React.FC = () => {
   })
   
   // Scroll-based animations for header
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
-  const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,72 +86,7 @@ const TopArtistsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#08101D]">
-      {/* Header */}
-      <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
-        style={{
-          background: headerBackground,
-          padding: '10px 80px',
-          height: '55px',
-          overflow: 'visible'
-        }}
-      >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity -ml-4">
-            <img 
-              src={getLogoUrl('transparent')} 
-              alt="Travel Art" 
-              style={{
-                height: '150px',
-                width: 'auto',
-                objectFit: 'contain'
-              }}
-            />
-          </Link>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <motion.div style={{ color: textColor }}>
-              <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
-                How it Works
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
-                Partners
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-sm">
-                Pricing
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
-                Top Artists
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-sm">
-                Top Hotels
-              </Link>
-            </motion.div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-3">
-            <motion.div style={{ color: textColor }}>
-              <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
-                Sign In
-              </Link>
-            </motion.div>
-            <Link to="/register" className="bg-gold text-off-black px-6 py-2 rounded-card font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
-              Join
-            </Link>
-          </div>
-        </div>
-      </motion.nav>
+      <SimpleNavbar />
 
       {/* Hero Section */}
       <div className="relative py-20 pt-32 overflow-hidden">

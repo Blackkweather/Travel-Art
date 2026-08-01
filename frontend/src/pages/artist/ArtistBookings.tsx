@@ -254,7 +254,7 @@ const ArtistBookings: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+          <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
             My Bookings
           </h1>
           <p className="text-content-secondary">
@@ -294,7 +294,7 @@ const ArtistBookings: React.FC = () => {
             <div className={`w-12 h-12 ${iconBg} rounded-full flex items-center justify-center mx-auto mb-4`}>
               <Icon className={`w-6 h-6 ${iconColor}`} />
             </div>
-            <h3 className="text-2xl font-bold text-navy mb-2">{value}</h3>
+            <h3 className="text-2xl font-bold text-content mb-2">{value}</h3>
             <p className="text-content-secondary">{label}</p>
           </div>
         ))}
@@ -325,7 +325,7 @@ const ArtistBookings: React.FC = () => {
               <div className="flex-1" data-testid="booking-details">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+                    <h3 className="text-xl font-serif font-semibold text-content mb-2">
                       {booking.hotelName}
                     </h3>
                     <p className="text-content-secondary flex items-center mb-2">
@@ -348,11 +348,11 @@ const ArtistBookings: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
                     <p className="text-sm font-medium text-content-secondary">Performance Spot</p>
-                    <p className="text-navy font-medium">{booking.performanceSpot}</p>
+                    <p className="text-content font-medium">{booking.performanceSpot}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-content-secondary">Duration</p>
-                    <p className="text-navy font-medium flex items-center">
+                    <p className="text-content font-medium flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
                       {booking.duration}
                     </p>
@@ -420,7 +420,7 @@ const ArtistBookings: React.FC = () => {
       {filteredBookings.length === 0 && (
         <div className="card-luxury text-center py-12">
           <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-          <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+          <h3 className="text-xl font-serif font-semibold text-content mb-2">
             No bookings found
           </h3>
           <p className="text-content-secondary mb-6">
@@ -449,7 +449,7 @@ const ArtistBookings: React.FC = () => {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-serif font-bold text-navy">Booking Details</h2>
+                <h2 className="text-2xl font-serif font-bold text-content">Booking Details</h2>
                 <button
                   onClick={() => setSelectedBooking(null)}
                   className="text-content-secondary hover:text-content-secondary text-2xl font-bold"
@@ -461,7 +461,7 @@ const ArtistBookings: React.FC = () => {
               <div className="space-y-6">
                 {/* Hotel Info */}
                 <div>
-                  <h3 className="text-xl font-semibold text-navy mb-2">{selectedBooking.hotelName}</h3>
+                  <h3 className="text-xl font-semibold text-content mb-2">{selectedBooking.hotelName}</h3>
                   <p className="text-content-secondary flex items-center mb-2">
                     <MapPin className="w-4 h-4 mr-2" />
                     {selectedBooking.location}
@@ -472,26 +472,26 @@ const ArtistBookings: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-content-secondary">Start Date & Time</p>
-                    <p className="text-navy font-medium">
+                    <p className="text-content font-medium">
                       {new Date(selectedBooking.startDate).toLocaleDateString()} at {selectedBooking.startTime}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-content-secondary">End Date</p>
-                    <p className="text-navy font-medium">
+                    <p className="text-content font-medium">
                       {new Date(selectedBooking.endDate).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-content-secondary">Duration</p>
-                    <p className="text-navy font-medium flex items-center">
+                    <p className="text-content font-medium flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
                       {selectedBooking.duration}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-content-secondary">Performance Spot</p>
-                    <p className="text-navy font-medium">{selectedBooking.performanceSpot}</p>
+                    <p className="text-content font-medium">{selectedBooking.performanceSpot}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-content-secondary">Status</p>

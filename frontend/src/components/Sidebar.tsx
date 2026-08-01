@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                   isActive ? 'text-white' : 'text-content-secondary group-hover:text-gold'
                 } ${isActive ? '' : 'group-hover:scale-110'}`} />
                 <span className={`font-medium text-sm ${
-                  isActive ? 'text-white' : 'text-content-secondary group-hover:text-navy'
+                  isActive ? 'text-white' : 'text-content-secondary group-hover:text-content'
                 }`}>{item.label}</span>
               </Link>
             )

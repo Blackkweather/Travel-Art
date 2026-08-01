@@ -182,7 +182,7 @@ const ArtistMembership: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold text-navy mb-2">
+        <h1 className="text-3xl font-semibold text-content mb-2">
           Membership & Billing
         </h1>
         <p className="text-sm text-content-secondary">
@@ -194,7 +194,7 @@ const ArtistMembership: React.FC = () => {
       <div className="bg-surface-raised rounded-lg border border-line p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold text-navy mb-2">
+            <h2 className="text-lg font-semibold text-content mb-2">
               Current Membership
             </h2>
             <p className="text-sm text-content-secondary">
@@ -205,7 +205,7 @@ const ArtistMembership: React.FC = () => {
           </div>
           {membershipStatus === 'ACTIVE' && (
             <div className="text-right">
-              <p className="text-2xl font-bold text-navy">
+              <p className="text-2xl font-bold text-content">
                 {currentPlan === 'PROFESSIONAL' ? '€100' : '€50'}/year
               </p>
               {artist?.membershipRenewal && (
@@ -229,7 +229,7 @@ const ArtistMembership: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-content-secondary uppercase tracking-wide mb-1">{stat.label}</p>
-                    <p className="text-lg font-semibold text-navy">{stat.value}</p>
+                    <p className="text-lg font-semibold text-content">{stat.value}</p>
                   </div>
                 </div>
               </div>
@@ -240,7 +240,7 @@ const ArtistMembership: React.FC = () => {
 
       {/* Membership Plans */}
       <div>
-        <h2 className="text-2xl font-semibold text-navy mb-6">
+        <h2 className="text-2xl font-semibold text-content mb-6">
           {membershipStatus === 'ACTIVE' ? 'Upgrade Your Membership' : 'Choose Your Membership Plan'}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
@@ -276,12 +276,12 @@ const ArtistMembership: React.FC = () => {
               
               <div className="p-6">
                 <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-navy mb-2">
+                  <h3 className="text-xl font-semibold text-content mb-2">
                     {plan.name}
                   </h3>
                   <p className="text-sm text-content-secondary mb-4">{plan.description}</p>
                   <div className="flex items-baseline">
-                    <span className="text-4xl font-bold text-navy">{plan.price}</span>
+                    <span className="text-4xl font-bold text-content">{plan.price}</span>
                     <span className="text-content-secondary ml-2 text-sm">{plan.period}</span>
                   </div>
                 </div>
@@ -322,7 +322,7 @@ const ArtistMembership: React.FC = () => {
 
       {/* Benefits Section */}
       <div className="bg-surface-raised rounded-lg border border-line p-6">
-        <h2 className="text-xl font-semibold text-navy mb-6">
+        <h2 className="text-xl font-semibold text-content mb-6">
           Membership Benefits
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -338,7 +338,7 @@ const ArtistMembership: React.FC = () => {
                 {React.cloneElement(benefit.icon, { className: "w-5 h-5 text-gold" })}
               </div>
               <div>
-                <h3 className="text-base font-semibold text-navy mb-1">
+                <h3 className="text-base font-semibold text-content mb-1">
                   {benefit.title}
                 </h3>
                 <p className="text-sm text-content-secondary">
@@ -352,7 +352,7 @@ const ArtistMembership: React.FC = () => {
 
       {/* Billing History */}
       <div className="bg-surface-raised rounded-lg border border-line p-6">
-        <h2 className="text-xl font-semibold text-navy mb-6">
+        <h2 className="text-xl font-semibold text-content mb-6">
           Billing History
         </h2>
         <div className="space-y-3">
@@ -360,13 +360,13 @@ const ArtistMembership: React.FC = () => {
             artist.transactions.map((transaction: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-4 bg-surface rounded-lg border border-line hover:bg-surface-sunken transition-colors">
                 <div>
-                  <p className="text-sm font-medium text-navy">{transaction.type || 'Membership'}</p>
+                  <p className="text-sm font-medium text-content">{transaction.type || 'Membership'}</p>
                   <p className="text-xs text-content-secondary mt-1">
                     {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString() : 'Unknown date'}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-navy">€{transaction.amount || 0}</p>
+                  <p className="text-sm font-semibold text-content">€{transaction.amount || 0}</p>
                   <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400 text-xs font-medium rounded">
                     Paid
                   </span>
@@ -382,12 +382,12 @@ const ArtistMembership: React.FC = () => {
       {/* Referral Program */}
       {referralCode && (
         <div className="bg-surface-raised rounded-lg border border-line p-6">
-          <h2 className="text-xl font-semibold text-navy mb-6">
+          <h2 className="text-xl font-semibold text-content mb-6">
             Referral Program
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-base font-semibold text-navy mb-3">
+              <h3 className="text-base font-semibold text-content mb-3">
                 Invite Fellow Artists
               </h3>
               <p className="text-sm text-content-secondary mb-4">
@@ -398,7 +398,7 @@ const ArtistMembership: React.FC = () => {
                   type="text"
                   value={referralCode}
                   readOnly
-                  className="flex-1 px-4 py-2 bg-surface border border-line rounded-lg text-sm font-mono text-navy"
+                  className="flex-1 px-4 py-2 bg-surface border border-line rounded-lg text-sm font-mono text-content"
                 />
                 <button 
                   className="px-4 py-2 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy/90 transition-colors"
@@ -415,17 +415,17 @@ const ArtistMembership: React.FC = () => {
               </p>
             </div>
             <div>
-              <h3 className="text-base font-semibold text-navy mb-4">
+              <h3 className="text-base font-semibold text-content mb-4">
                 Referral Stats
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
                   <span className="text-sm text-content-secondary">Loyalty Points</span>
-                  <span className="text-sm font-semibold text-navy">{artist?.loyaltyPoints || 0}</span>
+                  <span className="text-sm font-semibold text-content">{artist?.loyaltyPoints || 0}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
                   <span className="text-sm text-content-secondary">Total Bookings</span>
-                  <span className="text-sm font-semibold text-navy">{totalBookings}</span>
+                  <span className="text-sm font-semibold text-content">{totalBookings}</span>
                 </div>
               </div>
             </div>

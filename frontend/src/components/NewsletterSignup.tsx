@@ -59,7 +59,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email address"
-                className="w-full px-4 py-3 rounded-lg text-navy focus:outline-none focus:ring-2 focus:ring-gold"
+                className="w-full px-4 py-3 rounded-lg text-content focus:outline-none focus:ring-2 focus:ring-gold"
                 required
               />
             </div>
@@ -91,7 +91,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
       <div className={`bg-surface-raised rounded-xl shadow-luxury p-8 max-w-md ${className}`}>
         <div className="flex items-center gap-2 mb-3">
           <Mail className="w-6 h-6 text-gold" />
-          <h3 className="text-2xl font-serif font-bold text-navy">
+          <h3 className="text-2xl font-serif font-bold text-content">
             Join Our Newsletter
           </h3>
         </div>

@@ -321,7 +321,7 @@ const ArtistProfile: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+          <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
             Artist Profile
           </h1>
           <p className="text-content-secondary">
@@ -377,7 +377,7 @@ const ArtistProfile: React.FC = () => {
                   className={`absolute inset-0 w-full h-full rounded-xl bg-gradient-to-br from-navy/10 to-gold/10 ring-2 ring-gold/20 flex items-center justify-center ${profileData.images[0] ? 'hidden' : 'flex'}`}
                   style={{ display: profileData.images[0] ? 'none' : 'flex' }}
                 >
-                  <User className="w-24 h-24 text-navy/30" />
+                  <User className="w-24 h-24 text-content/30" />
                 </div>
               </div>
             )}
@@ -396,7 +396,7 @@ const ArtistProfile: React.FC = () => {
                     className="form-input"
                   />
                 ) : (
-                  <p className="text-xl font-serif font-semibold text-navy">{profileData.name || 'Not set'}</p>
+                  <p className="text-xl font-serif font-semibold text-content">{profileData.name || 'Not set'}</p>
                 )}
               </div>
 
@@ -433,7 +433,7 @@ const ArtistProfile: React.FC = () => {
 
               <div>
                 <label className="form-label">Average Rating</label>
-                <p className="text-lg font-semibold text-navy">
+                <p className="text-lg font-semibold text-content">
                   {profileData.rating > 0 ? profileData.rating.toFixed(1) : 'No ratings yet'}
                 </p>
               </div>
@@ -461,21 +461,21 @@ const ArtistProfile: React.FC = () => {
               <div className="text-center p-4 bg-surface rounded-lg">
                 <div className="flex items-center justify-center mb-2">
                   <span className="text-gold font-bold mr-1">◆</span>
-                  <span className="text-lg font-bold text-navy">{profileData.rating > 0 ? profileData.rating.toFixed(1) : '0'}</span>
+                  <span className="text-lg font-bold text-content">{profileData.rating > 0 ? profileData.rating.toFixed(1) : '0'}</span>
                 </div>
                 <p className="text-sm text-content-secondary">Average Rating</p>
               </div>
               <div className="text-center p-4 bg-surface rounded-lg">
                 <div className="flex items-center justify-center mb-2">
                   <Calendar className="w-5 h-5 text-gold mr-1" />
-                  <span className="text-lg font-bold text-navy">{profileData.totalBookings}</span>
+                  <span className="text-lg font-bold text-content">{profileData.totalBookings}</span>
                 </div>
                 <p className="text-sm text-content-secondary">Total Bookings</p>
               </div>
               <div className="text-center p-4 bg-surface rounded-lg">
                 <div className="flex items-center justify-center mb-2">
                   <Music className="w-5 h-5 text-gold mr-1" />
-                  <span className="text-lg font-bold text-navy">Member</span>
+                  <span className="text-lg font-bold text-content">Member</span>
                 </div>
                 <p className="text-sm text-content-secondary">
                   Since {profileData.memberSince ? new Date(profileData.memberSince).toLocaleDateString() : 'Recently'}
@@ -489,35 +489,35 @@ const ArtistProfile: React.FC = () => {
       {/* Registration Details */}
       {profile && (
         <div className="card-luxury">
-          <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
+          <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
             Registration Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {profile.stageName && (
               <div>
                 <label className="form-label">Stage Name</label>
-                <p className="text-navy font-medium">{profile.stageName}</p>
+                <p className="text-content font-medium">{profile.stageName}</p>
               </div>
             )}
             
             {profile.birthDate && (
               <div>
                 <label className="form-label">Birth Date</label>
-                <p className="text-navy font-medium">{profile.birthDate}</p>
+                <p className="text-content font-medium">{profile.birthDate}</p>
               </div>
             )}
             
             {profile.phone && (
               <div>
                 <label className="form-label">Phone</label>
-                <p className="text-navy font-medium">{profile.phone}</p>
+                <p className="text-content font-medium">{profile.phone}</p>
               </div>
             )}
             
             {profile.user?.email && (
               <div>
                 <label className="form-label">Email</label>
-                <p className="text-navy font-medium">{profile.user.email}</p>
+                <p className="text-content font-medium">{profile.user.email}</p>
               </div>
             )}
             
@@ -538,35 +538,35 @@ const ArtistProfile: React.FC = () => {
                   {artisticProfile.mainCategory && (
                     <div>
                       <label className="form-label">Main Category</label>
-                      <p className="text-navy font-medium">{artisticProfile.mainCategory}</p>
+                      <p className="text-content font-medium">{artisticProfile.mainCategory}</p>
                     </div>
                   )}
                   
                   {artisticProfile.secondaryCategory && (
                     <div>
                       <label className="form-label">Secondary Category</label>
-                      <p className="text-navy font-medium">{artisticProfile.secondaryCategory}</p>
+                      <p className="text-content font-medium">{artisticProfile.secondaryCategory}</p>
                     </div>
                   )}
                   
                   {artisticProfile.specificCategory && (
                     <div>
                       <label className="form-label">Specialty</label>
-                      <p className="text-navy font-medium">{artisticProfile.specificCategory}</p>
+                      <p className="text-content font-medium">{artisticProfile.specificCategory}</p>
                     </div>
                   )}
                   
                   {artisticProfile.domain && (
                     <div>
                       <label className="form-label">Domain</label>
-                      <p className="text-navy font-medium">{artisticProfile.domain}</p>
+                      <p className="text-content font-medium">{artisticProfile.domain}</p>
                     </div>
                   )}
                   
                   {artisticProfile.categoryType && (
                     <div>
                       <label className="form-label">Category Type</label>
-                      <p className="text-navy font-medium">{artisticProfile.categoryType}</p>
+                      <p className="text-content font-medium">{artisticProfile.categoryType}</p>
                     </div>
                   )}
                   
@@ -588,7 +588,7 @@ const ArtistProfile: React.FC = () => {
                       <label className="form-label">Target Audience</label>
                       <div className="flex flex-wrap gap-2">
                         {artisticProfile.audienceType.map((aud: string, idx: number) => (
-                          <span key={idx} className="px-3 py-1 bg-navy/10 text-navy rounded-full text-sm font-medium">
+                          <span key={idx} className="px-3 py-1 bg-navy/10 text-content rounded-full text-sm font-medium">
                             {aud}
                           </span>
                         ))}
@@ -604,7 +604,7 @@ const ArtistProfile: React.FC = () => {
                 <label className="form-label">Membership Status</label>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${profile.membershipStatus === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                  <p className="text-navy font-medium">
+                  <p className="text-content font-medium">
                     {profile.membershipStatus === 'ACTIVE' ? 'Active' : profile.membershipStatus}
                   </p>
                 </div>
@@ -617,7 +617,7 @@ const ArtistProfile: React.FC = () => {
       {/* Portfolio Images */}
       <div className="card-luxury">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
+          <h2 className="text-xl font-serif font-semibold text-content gold-underline">
             Portfolio Images
           </h2>
           {isEditing && (
@@ -655,7 +655,7 @@ const ArtistProfile: React.FC = () => {
       <div className="card-luxury">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
+            <h2 className="text-xl font-serif font-semibold text-content gold-underline">
               Availability Calendar
             </h2>
             <p className="text-sm text-content-secondary mt-2">Set your available dates for hotel bookings</p>
@@ -700,7 +700,7 @@ const ArtistProfile: React.FC = () => {
                   <div className="flex items-center gap-4">
                     <Calendar className="w-5 h-5 text-gold" />
                     <div>
-                      <p className="font-medium text-navy">
+                      <p className="font-medium text-content">
                         {new Date(avail.dateFrom).toLocaleDateString()} - {new Date(avail.dateTo).toLocaleDateString()}
                       </p>
                       <p className="text-sm text-content-secondary">
@@ -721,7 +721,7 @@ const ArtistProfile: React.FC = () => {
         ) : (
           <div className="text-center py-12 px-4 bg-surface rounded-lg border-2 border-dashed border-line-strong">
             <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-navy mb-2">No availability set</h3>
+            <h3 className="text-lg font-semibold text-content mb-2">No availability set</h3>
             <p className="text-content-secondary mb-4">
               Add your available dates above so hotels can book you for performances
             </p>
@@ -733,7 +733,7 @@ const ArtistProfile: React.FC = () => {
       <div className="card-luxury">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-serif font-semibold text-navy gold-underline">
+            <h2 className="text-xl font-serif font-semibold text-content gold-underline">
               Performance Videos
             </h2>
             <p className="text-sm text-content-secondary mt-2">Add YouTube or video URLs to showcase your performances</p>
@@ -813,7 +813,7 @@ const ArtistProfile: React.FC = () => {
                   {/* Video Info */}
                   <div className="p-4 bg-surface flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-navy mb-1">Performance Video {index + 1}</p>
+                      <p className="font-medium text-content mb-1">Performance Video {index + 1}</p>
                       <p className="text-sm text-content-secondary truncate">{video}</p>
                     </div>
                     {isEditing && (
@@ -837,7 +837,7 @@ const ArtistProfile: React.FC = () => {
                 <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-navy mb-2">No videos yet</h3>
+            <h3 className="text-lg font-semibold text-content mb-2">No videos yet</h3>
             <p className="text-content-secondary mb-4">
               {isEditing 
                 ? 'Add your first performance video using the form above' 

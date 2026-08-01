@@ -670,7 +670,7 @@ export default function LandingPage() {
               type="button"
               onClick={() => navigate(PREV)}
               aria-label="Previous experience"
-              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-navy transition-colors duration-300 active:translate-y-px"
+              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
             >
               <ArrowLeft size={18} strokeWidth={1.5} aria-hidden="true" />
             </button>
@@ -678,7 +678,7 @@ export default function LandingPage() {
               type="button"
               onClick={() => navigate(NEXT)}
               aria-label="Next experience"
-              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-navy transition-colors duration-300 active:translate-y-px"
+              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
             >
               <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
             </button>
@@ -771,7 +771,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   to="/how-it-works"
-                  className="btn-base bg-transparent text-white border border-white/30 hover:bg-surface-raised hover:text-navy"
+                  className="btn-base bg-transparent text-white border border-white/30 hover:bg-surface-raised hover:text-content"
                 >
                   How it works
                 </Link>

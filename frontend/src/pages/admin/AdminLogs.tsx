@@ -214,7 +214,7 @@ const AdminLogs: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+          <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
             Activity Logs
           </h1>
           <p className="text-content-secondary">
@@ -243,12 +243,12 @@ const AdminLogs: React.FC = () => {
       <div className="card-luxury">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gold" />
-          <h3 className="text-lg font-semibold text-navy">Filters</h3>
+          <h3 className="text-lg font-semibold text-content">Filters</h3>
         </div>
         
         {/* Activity Type Filter */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-navy mb-2">Activity Type</label>
+          <label className="block text-sm font-medium text-content mb-2">Activity Type</label>
           <div className="flex flex-wrap gap-2">
             {activityTypes.map((type) => (
               <button
@@ -280,7 +280,7 @@ const AdminLogs: React.FC = () => {
 
         {/* Search */}
         <div>
-          <label className="block text-sm font-medium text-navy mb-2">Search</label>
+          <label className="block text-sm font-medium text-content mb-2">Search</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-content-secondary" />
             <input
@@ -297,7 +297,7 @@ const AdminLogs: React.FC = () => {
       {/* Activity Logs */}
       <div className="card-luxury">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-serif font-semibold text-navy">
+          <h2 className="text-xl font-serif font-semibold text-content">
             Activity Timeline
           </h2>
           <span className="text-sm text-content-secondary">
@@ -339,7 +339,7 @@ const AdminLogs: React.FC = () => {
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${getActivityColor(activity.type)}`}>
                           {activity.type.replace('_', ' ')}
                         </span>
-                        <span className="font-semibold text-navy">{activity.action}</span>
+                        <span className="font-semibold text-content">{activity.action}</span>
                       </div>
                       
                       {/* Actor */}

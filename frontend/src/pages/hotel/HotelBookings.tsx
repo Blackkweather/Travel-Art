@@ -217,7 +217,7 @@ const HotelBookings: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+        <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
           Hotel Bookings
         </h1>
         <p className="text-content-secondary">
@@ -240,7 +240,7 @@ const HotelBookings: React.FC = () => {
               <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Icon className="w-6 h-6 text-gold" />
               </div>
-              <h3 className="text-2xl font-bold text-navy mb-2">{stat.value}</h3>
+              <h3 className="text-2xl font-bold text-content mb-2">{stat.value}</h3>
               <p className="text-content-secondary">{stat.label}</p>
             </motion.div>
           )
@@ -302,7 +302,7 @@ const HotelBookings: React.FC = () => {
                   className="w-16 h-16 rounded-full object-cover"
                 />
                 <div>
-                  <h3 className="text-xl font-serif font-semibold text-navy mb-1">
+                  <h3 className="text-xl font-serif font-semibold text-content mb-1">
                     {booking.artist.name}
                   </h3>
                   <p className="text-gold font-medium mb-2">{booking.artist.discipline}</p>
@@ -319,7 +319,7 @@ const HotelBookings: React.FC = () => {
               <div className="flex-1" data-testid="booking-details">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <h4 className="text-sm font-medium text-navy mb-2">Performance Details</h4>
+                    <h4 className="text-sm font-medium text-content mb-2">Performance Details</h4>
                     <div className="space-y-1 text-sm text-content-secondary">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -341,7 +341,7 @@ const HotelBookings: React.FC = () => {
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-navy mb-2">Payment Info</h4>
+                    <h4 className="text-sm font-medium text-content mb-2">Payment Info</h4>
                     <div className="space-y-1 text-sm text-content-secondary">
                       {booking.totalPaymentAmount && (
                         <div className="flex items-center justify-between">
@@ -374,7 +374,7 @@ const HotelBookings: React.FC = () => {
 
                 {booking.notes && (
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium text-navy mb-2">Notes</h4>
+                    <h4 className="text-sm font-medium text-content mb-2">Notes</h4>
                     <p className="text-sm text-content-secondary bg-surface p-3 rounded-lg">
                       {booking.notes}
                     </p>
@@ -427,7 +427,7 @@ const HotelBookings: React.FC = () => {
           <div className="w-24 h-24 bg-surface-sunken rounded-full flex items-center justify-center mx-auto mb-6">
             <Calendar className="w-12 h-12 text-content-secondary" />
           </div>
-          <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+          <h3 className="text-xl font-serif font-semibold text-content mb-2">
             No Bookings Found
           </h3>
           <p className="text-content-secondary mb-6">

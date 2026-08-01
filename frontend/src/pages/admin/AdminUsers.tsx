@@ -131,7 +131,7 @@ const AdminUsers: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
     <div>
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+          <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
         User Management
       </h1>
           <p className="text-content-secondary">
@@ -226,7 +226,7 @@ const AdminUsers: React.FC = () => {
                         <User className="w-5 h-5 text-gold" />
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-navy">{user.name}</div>
+                        <div className="text-sm font-medium text-content">{user.name}</div>
                         <div className="text-sm text-content-secondary">{user.email}</div>
                       </div>
                     </div>
@@ -239,7 +239,7 @@ const AdminUsers: React.FC = () => {
                   <td className="px-6 py-4">
                     {user.role === 'ARTIST' && user.artist && (
                       <div className="text-sm">
-                        <div className="text-navy font-medium">{user.artist.discipline}</div>
+                        <div className="text-content font-medium">{user.artist.discipline}</div>
                         {user.artist.membershipStatus === 'ACTIVE' && (
                           <div className="text-green-600 dark:text-green-400 text-xs flex items-center mt-1">
                             <CheckCircle className="w-3 h-3 mr-1" />
@@ -250,7 +250,7 @@ const AdminUsers: React.FC = () => {
                     )}
                     {user.role === 'HOTEL' && user.hotel && (
                       <div className="text-sm">
-                        <div className="text-navy font-medium">{user.hotel.name}</div>
+                        <div className="text-content font-medium">{user.hotel.name}</div>
                         <div className="text-content-secondary text-xs mt-1">
                           {(() => {
                             try {

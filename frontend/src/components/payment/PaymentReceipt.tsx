@@ -22,7 +22,7 @@ export const PaymentReceipt: React.FC<PaymentReceiptProps> = ({ transaction, onD
   return (
     <div className="mt-4 bg-surface-raised border border-line rounded-lg p-4 text-sm text-content-secondary space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-navy">Mock Receipt</h3>
+        <h3 className="text-base font-semibold text-content">Mock Receipt</h3>
         {onDownload && (
           <button
             type="button"

@@ -126,7 +126,7 @@ const HotelCredits: React.FC = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-gold/20 to-gold/10 rounded-xl flex items-center justify-center mx-auto mb-4">
             <CreditCard className="w-8 h-8 text-gold" />
           </div>
-          <h3 className="text-3xl font-bold text-navy mb-2 count-up">{credits ? credits.availableCredits : (loading ? '—' : 0)}</h3>
+          <h3 className="text-3xl font-bold text-content mb-2 count-up">{credits ? credits.availableCredits : (loading ? '—' : 0)}</h3>
           <p className="section-subtitle">Available Credits</p>
         </motion.div>
 
@@ -139,7 +139,7 @@ const HotelCredits: React.FC = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mx-auto mb-4">
             <TrendingUp className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h3 className="text-3xl font-bold text-navy mb-2 count-up">€{totalSpent.toLocaleString()}</h3>
+          <h3 className="text-3xl font-bold text-content mb-2 count-up">€{totalSpent.toLocaleString()}</h3>
           <p className="section-subtitle">Total Spent</p>
         </motion.div>
 
@@ -152,7 +152,7 @@ const HotelCredits: React.FC = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Calendar className="w-8 h-8 text-blue-600" />
           </div>
-          <h3 className="text-3xl font-bold text-navy mb-2 count-up">{totalBookings}</h3>
+          <h3 className="text-3xl font-bold text-content mb-2 count-up">{totalBookings}</h3>
           <p className="section-subtitle">Total Bookings</p>
         </motion.div>
       </div>
@@ -185,11 +185,11 @@ const HotelCredits: React.FC = () => {
               )}
               
               <div className="text-center mb-6">
-                <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+                <h3 className="text-xl font-serif font-semibold text-content mb-2">
                   {pkg.name}
                 </h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold text-navy">{pkg.credits}</span>
+                  <span className="text-4xl font-bold text-content">{pkg.credits}</span>
                   <span className="text-content-secondary ml-2">credits</span>
                 </div>
                 <div className="flex items-center justify-center space-x-2 mb-2">
@@ -249,7 +249,7 @@ const HotelCredits: React.FC = () => {
                   {getTransactionIcon(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-navy text-lg mb-1">{transaction.type.replace('_', ' ')}</h3>
+                  <h3 className="font-semibold text-content text-lg mb-1">{transaction.type.replace('_', ' ')}</h3>
                   <p className="text-sm text-content-secondary font-medium mb-1">{transaction.paymentMethod || '—'}</p>
                   <p className="text-xs text-content-secondary">{new Date(transaction.createdAt).toLocaleDateString()}</p>
                 </div>
@@ -274,12 +274,12 @@ const HotelCredits: React.FC = () => {
 
       {/* Credit Usage Tips */}
       <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
+        <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
           Credit Usage Tips
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+            <h3 className="text-lg font-serif font-semibold text-content mb-4">
               How Credits Work
             </h3>
             <ul className="space-y-3">
@@ -305,7 +305,7 @@ const HotelCredits: React.FC = () => {
           </div>
           
           <div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-4">
+            <h3 className="text-lg font-serif font-semibold text-content mb-4">
               Best Practices
             </h3>
             <ul className="space-y-3">

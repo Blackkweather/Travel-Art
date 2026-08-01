@@ -822,7 +822,7 @@ export default function AmbientAudio({
           </svg>
         )}
         {!hasStarted && (
-          <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs text-white bg-gold px-3 py-1.5 rounded shadow-lg font-medium">
+          <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs text-off-black bg-gold px-3 py-1.5 rounded shadow-lg font-medium">
             Click to Play
           </span>
         )}

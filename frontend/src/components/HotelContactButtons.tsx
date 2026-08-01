@@ -49,7 +49,7 @@ const HotelContactButtons: React.FC<HotelContactButtonsProps> = ({
 
   return (
     <div className={`space-y-3 ${className}`}>
-      <h4 className="text-lg font-serif font-semibold text-navy mb-4">
+      <h4 className="text-lg font-serif font-semibold text-content mb-4">
         {responsibleName ? `Contact ${responsibleName}` : 'Contact Hotel'}
       </h4>
       
@@ -71,7 +71,7 @@ const HotelContactButtons: React.FC<HotelContactButtonsProps> = ({
         {email && (
           <a
             href={getEmailUrl()}
-            className="flex-1 flex items-center justify-center px-4 py-3.5 border-2 border-line-strong text-content-secondary rounded-lg font-medium hover:border-navy hover:text-navy transition"
+            className="flex-1 flex items-center justify-center px-4 py-3.5 border-2 border-line-strong text-content-secondary rounded-lg font-medium hover:border-navy hover:text-content transition"
           >
             <Mail className="w-5 h-5 mr-2" />
             <span>Email</span>

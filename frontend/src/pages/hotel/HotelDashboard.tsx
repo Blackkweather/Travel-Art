@@ -200,7 +200,7 @@ const HotelDashboard: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="w-1 h-12 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
               <div>
-                <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-2 tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-serif font-bold text-content mb-2 tracking-tight">
                   Welcome back, <span className="text-gold">{user?.name?.split(' ')[0]}</span>!
                 </h1>
                 <p className="text-lg text-content-secondary font-medium">
@@ -266,7 +266,7 @@ const HotelDashboard: React.FC = () => {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-content-secondary uppercase tracking-wider mb-3">{stat.label}</p>
-                      <p className="text-4xl font-bold text-navy count-up leading-none mb-1">{stat.value}</p>
+                      <p className="text-4xl font-bold text-content count-up leading-none mb-1">{stat.value}</p>
                     </div>
                     <div className={`p-4 rounded-2xl bg-gradient-to-br ${colors.iconBg} shadow-lg shadow-gray-400/20 group-hover:scale-110 transition-transform duration-300`}>
                       <Icon className={`w-7 h-7 ${colors.iconColor}`} />
@@ -288,7 +288,7 @@ const HotelDashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
-              <h2 className="text-2xl font-serif font-bold text-navy">
+              <h2 className="text-2xl font-serif font-bold text-content">
                 Upcoming Performances
               </h2>
             </div>
@@ -316,7 +316,7 @@ const HotelDashboard: React.FC = () => {
                       <Music className="w-7 h-7 text-gold" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-navy text-lg mb-1.5 truncate">{performance.artist}</h3>
+                      <h3 className="font-bold text-content text-lg mb-1.5 truncate">{performance.artist}</h3>
                       <div className="flex items-center gap-2 text-sm text-content-secondary mb-1.5">
                         <span className="font-medium">{performance.discipline}</span>
                         <span className="text-content-secondary">•</span>
@@ -350,7 +350,7 @@ const HotelDashboard: React.FC = () => {
         <div className="bg-surface-raised/80 backdrop-blur-sm rounded-3xl border border-line/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-2">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
-            <h2 className="text-2xl font-serif font-bold text-navy">
+            <h2 className="text-2xl font-serif font-bold text-content">
               Your Performance Spots
             </h2>
           </div>
@@ -377,12 +377,12 @@ const HotelDashboard: React.FC = () => {
                     </div>
                   )}
                   <div className="p-6">
-                    <h3 className="font-bold text-navy text-xl mb-3">{spot.name}</h3>
+                    <h3 className="font-bold text-content text-xl mb-3">{spot.name}</h3>
                     <p className="text-sm text-content-secondary mb-4 leading-relaxed line-clamp-2">{spot.description || 'No description available'}</p>
                     <div className="flex items-center justify-between pt-4 border-t border-line">
                       <div>
                         <span className="text-xs text-content-secondary font-medium">Capacity</span>
-                        <p className="text-lg font-bold text-navy">{spot.capacity || 'N/A'}</p>
+                        <p className="text-lg font-bold text-content">{spot.capacity || 'N/A'}</p>
                       </div>
                       <div className="px-4 py-2 bg-gradient-to-r from-gold/20 to-gold/10 border border-gold/30 rounded-xl">
                         <span className="text-gold font-bold text-sm">{spot.type || 'N/A'}</span>
@@ -409,7 +409,7 @@ const HotelDashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
-                <h2 className="text-2xl font-serif font-bold text-navy">
+                <h2 className="text-2xl font-serif font-bold text-content">
                   Your Favorite Artists
                 </h2>
               </div>
@@ -432,7 +432,7 @@ const HotelDashboard: React.FC = () => {
                   <div className="relative">
                     <div className="flex items-center gap-2 mb-3">
                       <Heart className="w-5 h-5 text-red-500 fill-current flex-shrink-0 group-hover:scale-110 transition-transform" />
-                      <h3 className="font-bold text-navy text-sm truncate">{artist.user?.name || artist.name || 'Artist'}</h3>
+                      <h3 className="font-bold text-content text-sm truncate">{artist.user?.name || artist.name || 'Artist'}</h3>
                     </div>
                     <p className="text-xs text-content-secondary mb-3 font-medium">{artist.discipline || 'Performer'}</p>
                     {artist.averageRating && (
@@ -480,7 +480,7 @@ const HotelDashboard: React.FC = () => {
               <div className="w-14 h-14 mb-5 rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <CreditCard className="w-7 h-7 text-gold" />
               </div>
-              <h3 className="text-2xl font-serif font-bold text-navy mb-3 group-hover:text-gold transition-colors">
+              <h3 className="text-2xl font-serif font-bold text-content mb-3 group-hover:text-gold transition-colors">
                 Manage Bookings
               </h3>
               <p className="text-content-secondary mb-6 leading-relaxed text-base">

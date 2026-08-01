@@ -26,7 +26,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ selected, onSele
 
   return (
     <div className="card-luxury">
-      <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">Payment Method</h2>
+      <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">Payment Method</h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button

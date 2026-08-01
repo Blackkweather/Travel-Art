@@ -114,7 +114,7 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen bg-surface flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-surface-raised rounded-lg shadow-lg p-6 text-center">
-            <h1 className="text-2xl font-bold text-navy mb-4">Something went wrong</h1>
+            <h1 className="text-2xl font-bold text-content mb-4">Something went wrong</h1>
             <p className="text-content-secondary mb-4">
               We're sorry, but something unexpected happened. Please try refreshing the page.
             </p>

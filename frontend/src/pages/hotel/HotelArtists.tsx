@@ -466,7 +466,7 @@ const HotelArtists: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+        <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
           Browse Artists
         </h1>
         <p className="text-content-secondary">
@@ -644,7 +644,7 @@ const HotelArtists: React.FC = () => {
                      >
                        <Heart className={`w-4 h-4 ${artist.isFavorite ? 'fill-current' : ''}`} />
                      </button>
-              <div className="absolute top-4 left-4 bg-surface-raised/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-navy flex items-center space-x-1">
+              <div className="absolute top-4 left-4 bg-surface-raised/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-content flex items-center space-x-1">
                 <span className="text-gold font-bold">◆</span>
                 <span>{artist.rating}</span>
               </div>
@@ -652,7 +652,7 @@ const HotelArtists: React.FC = () => {
             
                    <div className="p-6">
                      <div className="flex items-center space-x-2 mb-2">
-                       <h3 className="text-xl font-serif font-semibold text-navy">
+                       <h3 className="text-xl font-serif font-semibold text-content">
                          {artist.name}
                        </h3>
                        {artist.membershipStatus === 'ENTERPRISE' && (
@@ -676,7 +676,7 @@ const HotelArtists: React.FC = () => {
               )}
 
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-navy mb-2">Specialties:</h4>
+                <h4 className="text-sm font-medium text-content mb-2">Specialties:</h4>
                 <div className="flex flex-wrap gap-2">
                   {artist.specialties.length > 0 ? (
                     artist.specialties.map((specialty, specIndex) => (
@@ -697,11 +697,11 @@ const HotelArtists: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="text-center p-3 bg-surface rounded-lg">
-                  <div className="text-sm font-medium text-navy mb-1">{artist.rank || 'Standard'}</div>
+                  <div className="text-sm font-medium text-content mb-1">{artist.rank || 'Standard'}</div>
                   <p className="text-xs text-content-secondary">Artist Rank</p>
                 </div>
                 <div className="text-center p-3 bg-surface rounded-lg">
-                  <div className="text-sm font-medium text-navy mb-1">{convertPriceToCredits(artist.priceRange)}</div>
+                  <div className="text-sm font-medium text-content mb-1">{convertPriceToCredits(artist.priceRange)}</div>
                   <p className="text-xs text-content-secondary">Credits</p>
                 </div>
               </div>
@@ -710,12 +710,12 @@ const HotelArtists: React.FC = () => {
                 <div className="text-center p-3 bg-surface rounded-lg">
                   <div className="flex items-center justify-center mb-1">
                     <Calendar className="w-4 h-4 text-gold mr-1" />
-                    <span className="text-sm font-medium text-navy">{artist.totalBookings}</span>
+                    <span className="text-sm font-medium text-content">{artist.totalBookings}</span>
                   </div>
                   <p className="text-xs text-content-secondary">Total Bookings</p>
                 </div>
                 <div className="text-center p-3 bg-surface rounded-lg">
-                  <div className="text-sm font-medium text-navy mb-1">{artist.loyaltyPoints ?? 0}</div>
+                  <div className="text-sm font-medium text-content mb-1">{artist.loyaltyPoints ?? 0}</div>
                   <p className="text-xs text-content-secondary">Loyalty Points</p>
                 </div>
               </div>
@@ -746,7 +746,7 @@ const HotelArtists: React.FC = () => {
       {bookingModal.open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-surface-raised rounded-lg shadow-soft p-6 w-full max-w-md">
-            <h3 className="text-xl font-serif font-semibold text-navy mb-4">Request Booking</h3>
+            <h3 className="text-xl font-serif font-semibold text-content mb-4">Request Booking</h3>
             <div className="space-y-3">
               <div>
                 <label className="form-label">Start date</label>
@@ -776,7 +776,7 @@ const HotelArtists: React.FC = () => {
           <div className="w-24 h-24 bg-surface-sunken rounded-full flex items-center justify-center mx-auto mb-6">
             <Search className="w-12 h-12 text-content-secondary" />
           </div>
-          <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+          <h3 className="text-xl font-serif font-semibold text-content mb-2">
             No Artists Found
           </h3>
           <p className="text-content-secondary mb-6">

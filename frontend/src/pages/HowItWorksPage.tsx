@@ -181,7 +181,7 @@ const HowItWorksPage: React.FC = () => {
             </Link>
             <Link
               to="/register"
-              className="btn-base bg-transparent text-white border border-white/30 hover:bg-surface-raised hover:text-navy"
+              className="btn-base bg-transparent text-white border border-white/30 hover:bg-surface-raised hover:text-content"
             >
               Join as Hotel
             </Link>

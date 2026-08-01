@@ -118,8 +118,15 @@
            active:translate-y-px;
   }
 
+  /* Primary sits on the inverse surface rather than a fixed navy. On the light
+     theme that resolves to navy with a near-white label, exactly as before; on
+     the dark theme it becomes a light button with a navy label. It was
+     bg-navy, which on the dark surfaces this product actually ships rendered
+     as a navy bar on a navy card — the "View Profile" buttons on the artist
+     cards were all but invisible. Gold remains the accent, via .btn-gold. */
   .btn-primary {
-    @apply btn-base bg-navy text-white hover:bg-navy-800 shadow-soft;
+    @apply btn-base bg-[var(--surface-inverse)] text-[var(--text-on-inverse)]
+           hover:opacity-90 shadow-soft;
   }
 
   .btn-secondary {
@@ -510,14 +517,19 @@ h6 {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  /* Horizontal only. The `padding: 0 20px` shorthand this replaces also zeroed
+     padding-top, and because this rule sits outside @layer it overrode any
+     vertical padding utility, pushing page content under the fixed header. */
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 /* (reverted readability block) */
 
 @media (max-width: 640px) {
   .container {
-    padding: 0 16px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   
   h1 {
@@ -535,13 +547,15 @@ h6 {
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .container {
-    padding: 0 24px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
 
 @media (min-width: 1025px) {
   .container {
-    padding: 0 32px;
+    padding-left: 32px;
+    padding-right: 32px;
   }
 }
 
@@ -884,7 +898,8 @@ h6 {
   
   /* Mobile-specific improvements */
   .container {
-    padding: 0 1rem !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
   /* Better touch targets. The padding/font-size overrides that used to sit
@@ -1315,7 +1330,10 @@ html {
   font-family: 'Playfair Display', serif;
   font-size: 2rem;
   font-weight: 700;
-  color: var(--primary-navy);
+  /* Was var(--primary-navy), a fixed dark navy. The product ships a dark
+     theme, so every dashboard heading rendered navy on navy and was
+     invisible. Follows the text token instead. */
+  color: var(--text-primary);
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
@@ -1331,7 +1349,7 @@ html {
   font-family: 'Playfair Display', serif;
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--primary-navy);
+  color: var(--text-primary);
   letter-spacing: -0.01em;
   margin-bottom: 1.5rem;
 }

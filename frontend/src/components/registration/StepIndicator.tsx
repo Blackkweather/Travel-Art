@@ -145,12 +145,12 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
             initial={{ scale: 1.5, color: '#C9A63C' }}
             animate={{ scale: 1, color: '#0B1F3F' }}
             transition={{ duration: 0.3 }}
-            className="font-bold text-navy"
+            className="font-bold text-content"
           >
             {currentStep}
           </motion.span>
           {' '}of{' '}
-          <span className="font-bold text-navy">{totalSteps}</span>
+          <span className="font-bold text-content">{totalSteps}</span>
         </p>
       </motion.div>
     </div>

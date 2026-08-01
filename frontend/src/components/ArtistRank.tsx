@@ -10,34 +10,48 @@ interface ArtistRankProps {
   animated?: boolean
 }
 
+/**
+ * Rank tiers, as a single ascending metal scale: grey, bronze, gold, bright
+ * gold, platinum, diamond.
+ *
+ * The previous palette was blue, purple, green, gold, grey and cyan — five
+ * hues foreign to a navy-and-gold brand, and they read as arbitrary rather
+ * than as a progression. Nothing indicated that "Skilled" outranked "Rising".
+ * Every value here is chosen to stay legible on the dark surface.
+ *
+ * The keys are historic tier ids and are deliberately left alone: they are
+ * persisted and matched by getQuickRank below. They have never described the
+ * colour anyway — `red` was blue and `blue` was purple. The label is what a
+ * visitor actually reads.
+ */
 export const RANK_CONFIG = {
   red: {
-    color: '#2563EB',
+    color: '#8A93A6',
     label: 'Rising',
     description: 'Starting tier - Welcome!'
   },
   blue: {
-    color: '#8B5CF6',
+    color: '#A8763C',
     label: 'Skilled',
     description: 'Building reputation'
   },
   green: {
-    color: '#059669',
+    color: '#B99851',
     label: 'Expert',
     description: 'Highly experienced'
   },
   gold: {
-    color: '#C9A63C',
+    color: '#DAC189',
     label: 'Artist',
     description: 'Top-tier professional'
   },
   platinum: {
-    color: '#9CA3AF',
+    color: '#D6DAE0',
     label: 'Master',
     description: 'Elite performer'
   },
   diamond: {
-    color: '#06B6D4',
+    color: '#F0F6FF',
     label: 'Superstar',
     description: 'On request only'
   }

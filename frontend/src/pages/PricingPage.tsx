@@ -374,16 +374,21 @@ const PricingPage: React.FC = () => {
           </div>
 
           <div className="mt-12 text-center space-y-4">
-            <div className="inline-flex items-center space-x-2 bg-blue-50 border-2 border-blue-500 px-6 py-4 rounded-card">
-              <Award className="w-6 h-6 text-blue-600" />
-              <p className="text-white font-medium">
-                All artists start as <span className="font-bold text-blue-600">Rising (Blue)</span> and can progress to <span className="font-bold text-white/60">Master (Platinum)</span> through excellent performance!
+            {/* These sat on bg-blue-50 and bg-cyan-50 with text-white — white
+                copy on a near-white panel, and two hues the brand does not
+                use. The parenthetical colour names are gone too: the rank
+                scale is now one metal progression, so "Rising (Blue)" no
+                longer described anything. */}
+            <div className="inline-flex items-center gap-3 bg-surface-raised border border-line px-6 py-4 rounded-card">
+              <Award className="w-6 h-6 text-gold shrink-0" />
+              <p className="text-content font-medium">
+                All artists start at <span className="font-bold text-gold">Rising</span> and can progress to <span className="font-bold text-gold">Master</span> through excellent performance.
               </p>
             </div>
-            <div className="inline-flex items-center space-x-2 bg-cyan-50 border-2 border-cyan-500 px-6 py-4 rounded-card">
-              <Star className="w-6 h-6 text-cyan-600" />
-              <p className="text-white font-medium">
-                <span className="font-bold text-cyan-500">Superstar (Diamond)</span> tier is exclusive and available on request only to exceptional artists!
+            <div className="inline-flex items-center gap-3 bg-surface-raised border border-gold/40 px-6 py-4 rounded-card">
+              <Star className="w-6 h-6 text-gold shrink-0" />
+              <p className="text-content font-medium">
+                <span className="font-bold text-gold">Superstar</span> tier is exclusive and available on request only to exceptional artists.
               </p>
             </div>
           </div>

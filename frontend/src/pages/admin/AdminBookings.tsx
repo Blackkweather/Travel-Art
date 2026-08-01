@@ -144,7 +144,7 @@ const AdminBookings: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+          <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
             Booking Management
           </h1>
           <p className="text-content-secondary">
@@ -189,7 +189,7 @@ const AdminBookings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-content-secondary">{stat.label}</p>
-                  <p className="text-2xl font-bold text-navy">{stat.value}</p>
+                  <p className="text-2xl font-bold text-content">{stat.value}</p>
                 </div>
                 <Icon className={`w-8 h-8 ${stat.color}`} />
               </div>
@@ -244,7 +244,7 @@ const AdminBookings: React.FC = () => {
                       <Calendar className="w-6 h-6 text-gold" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-navy text-lg">
+                      <h3 className="font-semibold text-content text-lg">
                         Booking #{booking.id.slice(0, 8)}
                       </h3>
                       <p className="text-sm text-content-secondary">
@@ -261,7 +261,7 @@ const AdminBookings: React.FC = () => {
                     <User className="w-5 h-5 text-purple-600 mt-1" />
                     <div className="flex-1">
                       <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Artist</p>
-                      <p className="font-medium text-navy">{booking.artist.user.name}</p>
+                      <p className="font-medium text-content">{booking.artist.user.name}</p>
                       <p className="text-sm text-content-secondary">{booking.artist.discipline}</p>
                       <p className="text-xs text-content-secondary mt-1">
                         {booking.artist.priceRange}
@@ -274,7 +274,7 @@ const AdminBookings: React.FC = () => {
                     <Building className="w-5 h-5 text-blue-600 mt-1" />
                     <div className="flex-1">
                       <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Hotel</p>
-                      <p className="font-medium text-navy">{booking.hotel.name}</p>
+                      <p className="font-medium text-content">{booking.hotel.name}</p>
                       <div className="flex items-center text-sm text-content-secondary mt-1">
                         <MapPin className="w-3 h-3 mr-1" />
                         {parseLocation(booking.hotel.location)}
@@ -289,7 +289,7 @@ const AdminBookings: React.FC = () => {
                 <div className="bg-navy/5 p-4 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-content-secondary">Duration</span>
-                    <span className="font-semibold text-navy">
+                    <span className="font-semibold text-content">
                       {calculateDuration(booking.startDate, booking.endDate)}
                     </span>
                   </div>

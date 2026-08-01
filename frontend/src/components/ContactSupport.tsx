@@ -96,7 +96,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           <div className="w-20 h-20 bg-gradient-to-br from-gold to-gold/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
             <CheckCircle2 className="w-10 h-10 text-white" />
           </div>
-          <h3 className="text-2xl font-serif font-bold text-navy mb-3">
+          <h3 className="text-2xl font-serif font-bold text-content mb-3">
             Message Ready!
           </h3>
           <p className="text-content-secondary mb-6">
@@ -126,7 +126,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
             <MessageCircle className="w-8 h-8 text-gold" />
           </div>
           <div className="flex-1">
-            <h2 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
+            <h2 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
               Contact Support
             </h2>
             <p className="text-content-secondary leading-relaxed">
@@ -139,7 +139,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
         <div className="mb-8 p-6 bg-surface-sunken rounded-xl border border-gold/20">
           <div className="flex items-center gap-2 mb-4">
             <HelpCircle className="w-5 h-5 text-gold" />
-            <h3 className="text-lg font-semibold text-navy">Quick Contact</h3>
+            <h3 className="text-lg font-semibold text-content">Quick Contact</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
@@ -147,10 +147,10 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               className="flex items-center gap-3 p-4 bg-surface-raised rounded-lg border border-line hover:border-gold hover:shadow-md transition-all group"
             >
               <div className="w-10 h-10 bg-navy/10 rounded-lg flex items-center justify-center group-hover:bg-navy group-hover:text-white transition-colors">
-                <Mail className="w-5 h-5 text-navy group-hover:text-white" />
+                <Mail className="w-5 h-5 text-content group-hover:text-white" />
               </div>
               <div>
-                <p className="font-semibold text-navy text-sm">Email</p>
+                <p className="font-semibold text-content text-sm">Email</p>
                 <p className="text-xs text-content-secondary">hello@travelart.com</p>
               </div>
             </a>
@@ -164,7 +164,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
                 <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400 group-hover:text-white" />
               </div>
               <div>
-                <p className="font-semibold text-navy text-sm">WhatsApp</p>
+                <p className="font-semibold text-content text-sm">WhatsApp</p>
                 <p className="text-xs text-content-secondary">+212 764 998 286</p>
               </div>
             </a>
@@ -175,7 +175,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Quick Categories */}
           <div>
-            <label className="block text-sm font-semibold text-navy mb-3">
+            <label className="block text-sm font-semibold text-content mb-3">
               What can we help you with?
             </label>
             <div className="flex flex-wrap gap-2">
@@ -198,7 +198,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
 
           {/* Subject */}
           <div>
-            <label htmlFor="subject" className="block text-sm font-semibold text-navy mb-2">
+            <label htmlFor="subject" className="block text-sm font-semibold text-content mb-2">
               Subject <span className="text-red-500">*</span>
             </label>
             <input
@@ -207,7 +207,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Brief description of your inquiry..."
-              className="w-full px-4 py-3.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all bg-surface-raised text-navy placeholder-gray-400"
+              className="w-full px-4 py-3.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all bg-surface-raised text-content placeholder-gray-400"
               required
             />
           </div>
@@ -215,7 +215,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           {/* Message */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label htmlFor="message" className="block text-sm font-semibold text-navy">
+              <label htmlFor="message" className="block text-sm font-semibold text-content">
                 Message <span className="text-red-500">*</span>
               </label>
               <span className={`text-xs ${message.length < 10 ? 'text-red-500' : 'text-content-secondary'}`}>
@@ -232,7 +232,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               }}
               placeholder="Please provide as much detail as possible so we can assist you better..."
               rows={6}
-              className="w-full px-4 py-3.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all resize-none bg-surface-raised text-navy placeholder-gray-400"
+              className="w-full px-4 py-3.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all resize-none bg-surface-raised text-content placeholder-gray-400"
               required
               maxLength={500}
             />
@@ -274,7 +274,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
                 <Sparkles className="w-3 h-3 text-gold" />
               </div>
               <div>
-                <p className="font-medium text-navy mb-1">Response Time</p>
+                <p className="font-medium text-content mb-1">Response Time</p>
                 <p>We typically respond within 24 hours during business days. For urgent matters, please use WhatsApp or phone.</p>
               </div>
             </div>

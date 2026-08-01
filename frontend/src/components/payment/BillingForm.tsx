@@ -21,7 +21,7 @@ const inputClass =
 export const BillingForm: React.FC<BillingFormProps> = ({ value, onChange, errors = {} }) => {
   return (
     <div className="card-luxury">
-      <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">Billing Information</h2>
+      <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">Billing Information</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

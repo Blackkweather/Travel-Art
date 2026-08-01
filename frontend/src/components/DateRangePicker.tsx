@@ -129,7 +129,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
               >
                 <ChevronLeft className="w-5 h-5 text-content-secondary" />
               </button>
-              <h3 className="font-semibold text-navy">
+              <h3 className="font-semibold text-content">
                 {format(currentMonth, 'MMMM yyyy')}
               </h3>
               <button
@@ -189,7 +189,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-sm text-content-secondary hover:text-navy transition-colors"
+                className="text-sm text-content-secondary hover:text-content transition-colors"
               >
                 Close
               </button>
