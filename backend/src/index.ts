@@ -140,8 +140,11 @@ app.get('/health', (req, res) => {
 // Detailed health check with database
 app.get('/health/detailed', async (req, res) => {
   try {
-    // Test database connection using Prisma
-    const { prisma } = await import('./db');
+    // prisma is imported statically at the top of this file. This used to be a
+    // dynamic await import('./db'), which a bundler cannot always trace into a
+    // serverless function: on Vercel the import itself threw, the catch below
+    // turned that into "database: disconnected", and the endpoint reported an
+    // outage while every real query in the app was succeeding.
     await prisma.$queryRaw`SELECT 1 as test`;
     res.json({ 
       status: 'OK', 
@@ -162,8 +165,7 @@ app.get('/health/detailed', async (req, res) => {
 
 app.get('/api/health', async (req, res) => {
   try {
-    // Test database connection using Prisma
-    const { prisma } = await import('./db');
+    // Statically imported for the same reason as /health/detailed above.
     await prisma.$queryRaw`SELECT 1 as test`;
     res.json({ 
       status: 'ok',

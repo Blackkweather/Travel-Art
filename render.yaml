@@ -17,7 +17,10 @@ services:
   - type: web
     name: travel-art
     runtime: node
-    plan: starter
+    # Free instances spin down after ~15 minutes idle; the next request pays a
+    # cold start of roughly 50 seconds. Worth knowing before a demo, and worth
+    # revisiting if the site starts taking real checkout traffic.
+    plan: free
     region: virginia
     healthCheckPath: /health
 
