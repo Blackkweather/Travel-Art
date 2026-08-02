@@ -47,7 +47,17 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://res.cloudinary.com"],
+      // This policy now applies to the app's own HTML, which it did not when a
+      // CDN served the SPA and Express only answered /api. Uploaded images come
+      // back from routes/upload.ts as absolute Blob URLs, so that host has to be
+      // named here or every avatar and artwork is blocked.
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://images.unsplash.com",
+        "https://res.cloudinary.com",
+        "https://*.public.blob.vercel-storage.com",
+      ],
       connectSrc: ["'self'"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
