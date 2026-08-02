@@ -52,7 +52,6 @@ const AdminReferrals = lazy(() => import('@/pages/admin/AdminReferrals'))
 const AdminLogs = lazy(() => import('@/pages/admin/AdminLogs'))
 const TravelerExperiencesPage = lazy(() => import('@/pages/TravelerExperiencesPage'))
 const ExperienceDetailsPage = lazy(() => import('@/pages/ExperienceDetailsPage'))
-const PaymentPage = lazy(() => import('@/pages/PaymentPage'))
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
@@ -148,7 +147,6 @@ function App() {
       <Route path="/pricing" element={<PageTransition><PricingPage /></PageTransition>} />
       <Route path="/experiences" element={<PageTransition><TravelerExperiencesPage /></PageTransition>} />
       <Route path="/experience/:id" element={<PageTransition><ExperienceDetailsPage /></PageTransition>} />
-      <Route path="/payment" element={<PageTransition><PaymentPage /></PageTransition>} />
       <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
       <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
       <Route path="/ref/:code" element={<PageTransition><ReferralRedirectPage /></PageTransition>} />
