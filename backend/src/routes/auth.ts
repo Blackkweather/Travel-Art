@@ -7,6 +7,12 @@ import { config } from '../config';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { getUserByEmail, createUser, initializeDatabase } from '../simple-db';
+// Imported statically. These three call sites each used `await import('../db')`,
+// which the serverless bundler does not trace, so on Vercel the import threw and
+// the surrounding catch reported "Database connection error" — registration,
+// referral attribution and /auth/me all failed against a perfectly healthy
+// database.
+import { prisma } from '../db';
 import { generateUniqueReferralCode } from '../utils/referralCode';
 
 const router = Router();
@@ -60,7 +66,6 @@ router.post('/register', asyncHandler(async (req, res) => {
     let existingUser;
     try {
       // Check with normalized email (case-insensitive)
-      const { prisma } = await import('../db');
       existingUser = await prisma.user.findFirst({
         where: {
           email: {
@@ -103,8 +108,6 @@ router.post('/register', asyncHandler(async (req, res) => {
     let inviterUserId: string | null = null;
     
     try {
-      const { prisma } = await import('../db');
-      
       // Handle referral code if provided
       const referralCode = req.body.referralCode as string | undefined;
       if (referralCode) {
@@ -343,9 +346,16 @@ router.get('/me', authenticate, asyncHandler(async (req: AuthRequest, res) => {
     throw new CustomError('User not found.', 404);
   }
 
+  // getUserByEmail returns the whole row, passwordHash included, and this
+  // handler used to serialise it straight to the client — so every session
+  // handed the browser the bcrypt hash of its own password, ready to be taken
+  // offline and attacked at leisure. Register and login already strip it; /me
+  // was the one that did not.
+  const { passwordHash: _passwordHash, ...safeUser } = user as typeof user & { passwordHash?: string };
+
   res.json({
     success: true,
-    data: { user }
+    data: { user: safeUser }
   });
 }));
 
@@ -428,7 +438,6 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
     await initializeDatabase();
     
     // Find user by ID using Prisma
-    const { prisma } = await import('../db');
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId }
     });
