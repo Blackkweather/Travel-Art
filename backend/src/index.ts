@@ -119,6 +119,25 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// The global limiter above is a capacity control, not a credential control: it
+// allows 100 requests per window across every endpoint, so an attacker can
+// spend the whole budget guessing one account's password and stay inside it.
+//
+// These three routes are the ones where a wrong answer is worth retrying, so
+// they get their own, much smaller budget. skipSuccessfulRequests means a
+// legitimate user who signs in normally never consumes it — only failures
+// count, which keeps a shared office IP from locking itself out.
+const credentialLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: 'Too many failed attempts from this IP, please try again in 15 minutes.',
+});
+app.use('/api/auth/login', credentialLimiter);
+app.use('/api/auth/register', credentialLimiter);
+app.use('/api/auth/forgot-password', credentialLimiter);
+app.use('/api/auth/reset-password', credentialLimiter);
+
 // The Stripe webhook must see the exact bytes Stripe signed, so it is mounted
 // with the raw parser ahead of express.json(). Parsing first would re-serialise
 // the body and every signature check would fail.
