@@ -2,9 +2,9 @@ name: Automated Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master, main, develop ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ master, main, develop ]
   workflow_dispatch:
 
 jobs:
@@ -43,7 +43,12 @@ jobs:
       - name: Setup test database
         working-directory: ./backend
         env:
+          # schema.prisma declares directUrl = env("DIRECT_URL"). Prisma fails
+          # validation with P1012 if it is unset, even against a database that
+          # needs no separate direct connection, so it is pointed at the same
+          # service.
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/test_db
         run: |
           npx prisma generate
           npx prisma migrate deploy
@@ -52,7 +57,10 @@ jobs:
         working-directory: ./backend
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-          JWT_SECRET: test-secret-key-for-ci
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          # Must be at least 32 characters or config.ts refuses to boot the app
+          # under NODE_ENV=production; the previous value was 22.
+          JWT_SECRET: ci-only-test-secret-not-used-anywhere-else-32plus
         run: npm test
       
       - name: Upload coverage reports
@@ -66,7 +74,26 @@ jobs:
   frontend-tests:
     name: Frontend E2E Tests
     runs-on: ubuntu-latest
-    
+
+    # The e2e job boots the real backend, which speaks to Postgres. It used to
+    # point DATABASE_URL at file:./test.db, a SQLite URL that schema.prisma's
+    # postgresql provider rejects outright, so the server could never have
+    # started. Nothing caught it because this workflow only triggered on main
+    # and develop, neither of which exists in this repository.
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v3
       
@@ -89,12 +116,14 @@ jobs:
         working-directory: ./backend
         run: |
           npm ci
+          npx prisma migrate deploy
           npm run build
           npm start &
           sleep 5
         env:
-          DATABASE_URL: file:./test.db
-          JWT_SECRET: test-secret-key-for-ci
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          JWT_SECRET: ci-only-test-secret-not-used-anywhere-else-32plus
           PORT: 4000
       
       - name: Run Cypress tests
