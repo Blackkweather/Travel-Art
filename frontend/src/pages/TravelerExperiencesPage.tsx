@@ -65,11 +65,12 @@ const TravelerExperiencesPage: React.FC = () => {
           trips = res.data
           console.log('✅ Using direct array format')
         } else if (res.data && Array.isArray(res.data.data)) {
+          // Also covers the { success: true, data: [...] } envelope: a third
+          // branch tested `data.success` as well, but any response reaching it
+          // had already matched this condition, so it could never run — and it
+          // assigned exactly the same value. Its log line never printed.
           trips = res.data.data
           console.log('✅ Using wrapped data format')
-        } else if (res.data && res.data.success && Array.isArray(res.data.data)) {
-          trips = res.data.data
-          console.log('✅ Using success.data format')
         } else {
           console.error('❌ Unknown response format:', res.data)
         }

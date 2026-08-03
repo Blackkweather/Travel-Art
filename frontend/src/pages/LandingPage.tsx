@@ -97,8 +97,10 @@ export default function LandingPage() {
         if (Array.isArray(tripsRes.data)) {
           trips = tripsRes.data
         } else if (tripsRes.data && Array.isArray(tripsRes.data.data)) {
-          trips = tripsRes.data.data
-        } else if (tripsRes.data && tripsRes.data.success && Array.isArray(tripsRes.data.data)) {
+          // Also covers the { success: true, data: [...] } envelope: a third
+          // branch tested `data.success` as well, but any response reaching it
+          // had already matched this condition, so it could never run — and it
+          // assigned exactly the same value.
           trips = tripsRes.data.data
         }
 

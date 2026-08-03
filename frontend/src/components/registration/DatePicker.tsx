@@ -73,7 +73,10 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
     
     // Format as DD/MM/YYYY
     if (newValue.length <= 2) {
-      newValue = newValue;
+      // Day-only input needs no separator yet, so the digits stand as typed.
+      // This branch previously read `newValue = newValue`, a self-assignment
+      // that did nothing; the branch itself is kept so the chain still reads
+      // as three explicit length cases.
     } else if (newValue.length <= 4) {
       newValue = newValue.slice(0, 2) + '/' + newValue.slice(2);
     } else {

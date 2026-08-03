@@ -21,7 +21,11 @@ export const errorHandler = (
   error: AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  // Express identifies an error handler by its arity: a four-argument function
+  // is an error handler, a three-argument one is ordinary middleware. The
+  // parameter is unused but must stay, or every error in the app would fall
+  // through to the default handler. Underscore-prefixed so lint accepts it.
+  _next: NextFunction
 ): void => {
   const { statusCode = 500, message } = error;
 
