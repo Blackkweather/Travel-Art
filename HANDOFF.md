@@ -45,7 +45,8 @@ system standardises price discovery so neither side negotiates cash per booking.
    €1,500), Professional (25+4 credits, €3,500), and a third package. Prices live in the
    `CreditPackage` table and are the single source of truth — never the request body.
 2. **Artist memberships** — `Membership` model with `MembershipTier`/`MembershipStatus` enums and a
-   `/api/payments/membership` endpoint. **Not wired to Stripe.** See Part 9.
+   `/api/payments/membership` endpoint. **Not wired to Stripe**: the endpoint refuses with 503 and
+   grants nothing, so there is no free-membership hole. See Part 9.
 
 **Maturity: late prototype / pre-beta.** It deploys, the database is real, auth works, and the
 credit purchase flow opens a genuine Stripe Checkout Session. But Stripe is in **test mode**, no
@@ -110,8 +111,10 @@ Travel Arts/
 - `backend/src/index.ts` skips `app.listen` when `process.env.VERCEL` is set.
 - `framework: null` overrides a stale dashboard setting of `services`.
 
-**Environments.** Vercel Production / Preview / Development. Preview lacks `JWT_SECRET`,
-`STRIPE_*`, `FRONTEND_URL` → **auth and payments do not work on preview deployments.** Known gap.
+**Environments.** Vercel Production / Preview / Development. Preview now has `JWT_SECRET` (added
+`eb64624`, distinct from production) and resolves its own URL via the `VERCEL_URL` fallback in
+`config.ts`. **Preview still has no `STRIPE_*`**, so payment flows cannot be exercised there — the
+endpoints refuse with 503 by design rather than misbehaving.
 
 **Storage.** Vercel Blob store `travel-art-uploads` (`store_QCS7VQ7IfK7JMtZo`, region `iad1`,
 public access). `upload.ts` switches on `BLOB_READ_WRITE_TOKEN`; without it, it writes to local disk,
@@ -224,8 +227,9 @@ class entirely.
 **Deprecated.** `simple-db.ts` overlaps `db.ts`; `auth.ts` uses both. `User.clerkId` survives a
 removed Clerk integration.
 
-**Dangerous.** `POST /api/payments/membership` — grants membership with no payment. `POST
-/api/admin/users/:id/suspend|activate` — no confirmation, no audit of *who* suspended.
+**Dangerous.** `POST /api/admin/users/:id/suspend|activate` — no confirmation, no audit of *who*
+suspended. (`POST /api/payments/membership` was listed here in the first draft as granting free
+membership. That was wrong — it refuses with 503 and writes nothing. Retracted, see Part 10.)
 
 ---
 
@@ -321,7 +325,7 @@ loyalty points to both sides. Wrapped in try/catch so failure does not break sig
 
 **Mocked / fake / inert**
 - ~~`/payment` mock card form~~ — **deleted** in `0de1335`.
-- Artist membership: sets status with no payment.
+- Artist membership: validates, then refuses with 503. Grants nothing. **[verified live]**
 - `Payout` model: no code writes it.
 - i18n: 258 lines, five languages, zero call sites.
 - `User.clerkId`: vestigial.
@@ -336,8 +340,7 @@ loyalty points to both sides. Wrapped in try/catch so failure does not break sig
 
 **Should never go to production as-is**
 1. Stripe **test** keys — payments cannot be taken.
-2. `POST /payments/membership` granting paid status for free.
-3. Vercel **Hobby plan forbids commercial use**; this site takes payments.
+2. Vercel **Hobby plan forbids commercial use**; this site takes payments.
 
 ---
 
@@ -348,17 +351,17 @@ Ranked. "None found" entries were actually checked.
 ### Critical
 | # | Finding | Evidence |
 |---|---|---|
-| C1 | **Free membership.** `POST /api/payments/membership` sets membership without charging. | `payments.ts:159` |
-| C2 | **Stripe in test mode on production.** No revenue possible; also means the webhook has never run for real. | `livemode:false` **[verified]** |
+| ~~C1~~ | ~~**Free membership.**~~ **RETRACTED — this was a false finding in the first draft of this document.** I inferred it from the route listing without reading the handler. `payments.ts:159` validates the tier and the caller's ownership, then throws 503 and writes nothing; its only Prisma call is a `findFirst`. Proven live: HTTP 503, `membershipStatus` unchanged at `INACTIVE`. **[verified]** |
+| C2 | **Stripe in test mode on production.** No revenue possible; also means the credit-granting webhook has never run for real. | `livemode:false` **[verified]** |
 
 ### High
 | # | Finding | Evidence |
 |---|---|---|
-| H1 | **No brute-force protection on `/auth/login`.** Only the global 100-req/15-min limiter, shared across all `/api/` traffic and keyed per IP. Credential stuffing is cheap. | `auth.ts`, `index.ts:120` |
+| ~~H1~~ | ~~No brute-force protection on `/auth/login`.~~ **FIXED** in `ce75f7e`: credential routes get 10/15min with `skipSuccessfulRequests`. Verified live — 10×401 then 429. |
 | H2 | **JWT in localStorage.** Any XSS = full account takeover; no HttpOnly cookie, no rotation, no revocation. Mitigating: **no `dangerouslySetInnerHTML` anywhere [verified]**, so no obvious XSS sink today. | `authStore.ts` |
-| H3 | **Preview environments lack `JWT_SECRET`/Stripe/`FRONTEND_URL`** — preview deploys silently misbehave, so testing there gives false signal. | `vercel env ls` **[verified]** |
-| H4 | **No CI gate.** Three workflows exist but the branch has never been merged and nothing blocks a bad push. | `.github/workflows/` |
-| H5 | **0 backend tests executable.** 10 suites, all refuse to run against the only configured DB. | **[verified]** |
+| H3 | **Partly fixed** in `eb64624`. `JWT_SECRET` added to Preview and Development; `config.ts` now falls back to `VERCEL_URL` so previews no longer resolve `FRONTEND_URL` to `localhost:5173`. **Still missing on Preview: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`** — payment flows cannot be exercised on a preview. |
+| H4 | **Fixed** in `eb64624`. Two of three workflows triggered only on `main`/`develop`, **neither of which exists in this repo** — they had never run once. All three now trigger on `master`, making a PR into the default branch a real gate. |
+| H5 | **Fixed in CI, still blocked locally.** `tests.yml` already provisioned a Postgres service, but set no `DIRECT_URL` — `schema.prisma:14` declares it, so Prisma aborted with P1012 before any test ran. The e2e job was worse: `DATABASE_URL: file:./test.db`, a SQLite URL the `postgresql` provider rejects. Both repaired in `eb64624`. **Locally still 0 tests** — no disposable database exists on this machine. |
 
 ### Medium
 | # | Finding |
@@ -391,12 +394,11 @@ HSTS via `upgrade-insecure-requests`) · **credentials in git** (scanned all 27 
 | Rank | Blocker | Effort |
 |---|---|---|
 | **Critical** | Swap Stripe to live keys; re-point webhook; complete one real purchase and confirm credits land | 2–4 h |
-| **Critical** | Gate or remove `POST /payments/membership` | 1 h |
 | **Critical** | Move off Vercel Hobby (commercial use) → Pro | 15 min + $20/mo |
-| **High** | Login rate limiting | 1 h ← *fixed today* |
-| **High** | Make backend tests runnable (disposable test DB in CI) | 4–6 h |
-| **High** | Add `JWT_SECRET`/Stripe/`FRONTEND_URL` to Preview | 30 min |
-| **High** | Turn on a CI gate; merge branch to `master` | 2–3 h |
+| ~~High~~ | ~~Login rate limiting~~ — **done** (`ce75f7e`) | — |
+| ~~High~~ | ~~Backend tests runnable in CI~~ — **done** (`eb64624`); local still blocked | — |
+| **High** | Add Stripe test keys to Preview | 15 min |
+| **High** | Merge branch to `master` so the CI gate applies | 1–2 h |
 | **Medium** | Transaction around signup | 2 h |
 | **Medium** | Delete `dbQuery`, i18n dead code, strip console logs | 3 h |
 | **Medium** | Error monitoring (Sentry) | 2 h |
