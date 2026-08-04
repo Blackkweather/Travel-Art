@@ -300,7 +300,11 @@ const TopHotelsPage: React.FC = () => {
                     scale: 1.03,
                     transition: { duration: 0.3 }
                   }}
-                  className="card-luxury overflow-hidden cursor-pointer"
+                  // flex column so the body can fill the grid row and pin its
+                  // button to the bottom. Description and performance spots are
+                  // both optional, so without this the "View Venues" buttons sat
+                  // at different heights across one row.
+                  className="card-luxury overflow-hidden cursor-pointer flex flex-col h-full"
                   onClick={() => handleHotelClick(hotel.id)}
                 >
                   <div className="relative">
@@ -315,7 +319,7 @@ const TopHotelsPage: React.FC = () => {
                     />
                   </div>
                   
-                  <div className="p-6">
+                  <div className="p-6 flex flex-col flex-1">
                     <h3 className="text-xl font-serif font-semibold text-white mb-2">
                       {hotel.name}
                     </h3>
@@ -362,7 +366,7 @@ const TopHotelsPage: React.FC = () => {
                         e.stopPropagation()
                         handleHotelClick(hotel.id)
                       }}
-                      className="w-full btn-primary text-center hover:scale-105 transition-transform"
+                      className="w-full btn-primary text-center hover:scale-105 transition-transform mt-auto"
                     >
                       View Venues
                     </button>

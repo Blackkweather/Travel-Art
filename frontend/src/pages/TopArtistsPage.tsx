@@ -219,7 +219,11 @@ const TopArtistsPage: React.FC = () => {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="card-luxury overflow-hidden"
+                  // flex column so the body below can fill the grid row and pin
+                  // its button to the bottom. Only artists with a ratingBadge
+                  // render the badge line, so without this the "View Profile"
+                  // buttons sat at different heights across one row.
+                  className="card-luxury overflow-hidden flex flex-col h-full"
                 >
                   <div className="relative">
                     <img
@@ -237,7 +241,7 @@ const TopArtistsPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="p-6">
+                  <div className="p-6 flex flex-col flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-xl font-serif font-semibold text-white">
                         {artist.user.name}
@@ -276,7 +280,7 @@ const TopArtistsPage: React.FC = () => {
 
                     <Link
                       to={`/artist/${artist.id}`}
-                      className="w-full btn-primary block text-center"
+                      className="w-full btn-primary block text-center mt-auto"
                     >
                       View Profile
                     </Link>
