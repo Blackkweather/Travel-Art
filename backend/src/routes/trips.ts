@@ -48,7 +48,7 @@ router.get(
       let images = [];
       try {
         images = typeof t.images === 'string' ? JSON.parse(t.images) : (t.images || []);
-      } catch (e) {
+      } catch {
         images = [];
       }
 
@@ -56,7 +56,7 @@ router.get(
       let location = null;
       try {
         location = typeof t.location === 'string' ? JSON.parse(t.location) : t.location;
-      } catch (e) {
+      } catch {
         location = { city: 'Unknown', country: '' };
       }
 
@@ -123,35 +123,35 @@ router.get(
     let images = [];
     try {
       images = typeof trip.images === 'string' ? JSON.parse(trip.images) : (trip.images || []);
-    } catch (e) {
+    } catch {
       images = [];
     }
 
     let location = null;
     try {
       location = typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location;
-    } catch (e) {
+    } catch {
       location = { city: 'Unknown', country: '' };
     }
 
     let schedule = [];
     try {
       schedule = trip.schedule ? (typeof trip.schedule === 'string' ? JSON.parse(trip.schedule) : trip.schedule) : [];
-    } catch (e) {
+    } catch {
       schedule = [];
     }
 
     let includes = [];
     try {
       includes = trip.includes ? (typeof trip.includes === 'string' ? JSON.parse(trip.includes) : trip.includes) : [];
-    } catch (e) {
+    } catch {
       includes = [];
     }
 
     let reviews = [];
     try {
       reviews = trip.reviews ? (typeof trip.reviews === 'string' ? JSON.parse(trip.reviews) : trip.reviews) : [];
-    } catch (e) {
+    } catch {
       reviews = [];
     }
 

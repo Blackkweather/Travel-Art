@@ -174,7 +174,7 @@ router.post('/media', authenticate, upload.array('media', 10), handleMulterError
     if (artist.mediaUrls) {
       try {
         existingUrls = JSON.parse(artist.mediaUrls);
-      } catch (e) {
+      } catch {
         existingUrls = [];
       }
     }

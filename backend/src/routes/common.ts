@@ -66,7 +66,7 @@ router.get('/referrals', authenticate, asyncHandler(async (req: AuthRequest, res
         images = typeof r.invitee.artist.images === 'string' 
           ? JSON.parse(r.invitee.artist.images) 
           : r.invitee.artist.images;
-      } catch (e) {
+      } catch {
         images = [];
       }
     }
@@ -235,7 +235,7 @@ router.get('/top', asyncHandler(async (req, res) => {
       if (artist.images) {
         try {
           images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-        } catch (e) {
+        } catch {
           images = [];
         }
       }
@@ -285,7 +285,7 @@ router.get('/top', asyncHandler(async (req, res) => {
       if (hotel.location) {
         try {
           location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-        } catch (e) {
+        } catch {
           location = null;
         }
       }
@@ -293,7 +293,7 @@ router.get('/top', asyncHandler(async (req, res) => {
       if (hotel.images) {
         try {
           images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-        } catch (e) {
+        } catch {
           images = [];
         }
       }
@@ -346,7 +346,7 @@ router.get('/stats', asyncHandler(async (req, res) => {
           ? JSON.parse(hotel.performanceSpots) 
           : hotel.performanceSpots
         totalVenues += Array.isArray(spots) ? spots.length : 0
-      } catch (e) {
+      } catch {
         // Ignore parse errors
       }
     }
@@ -417,7 +417,7 @@ router.get('/testimonials', asyncHandler(async (req, res) => {
         location = typeof rating.hotel.location === 'string' 
           ? JSON.parse(rating.hotel.location) 
           : rating.hotel.location
-      } catch (e) {
+      } catch {
         location = null
       }
     }

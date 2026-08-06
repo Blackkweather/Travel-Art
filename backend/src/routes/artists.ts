@@ -143,7 +143,7 @@ router.get('/', asyncHandler(async (req, res) => {
       if (artist.images) {
         try {
           images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-        } catch (e) {
+        } catch {
           images = [];
         }
       }
@@ -151,7 +151,7 @@ router.get('/', asyncHandler(async (req, res) => {
       if (artist.videos) {
         try {
           videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-        } catch (e) {
+        } catch {
           videos = [];
         }
       }
@@ -159,7 +159,7 @@ router.get('/', asyncHandler(async (req, res) => {
       if (artist.mediaUrls) {
         try {
           mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-        } catch (e) {
+        } catch {
           mediaUrls = [];
         }
       }
@@ -269,7 +269,7 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
   if (artist.images) {
     try {
       images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-    } catch (e) {
+    } catch {
       images = [];
     }
   }
@@ -277,7 +277,7 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
   if (artist.videos) {
     try {
       videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-    } catch (e) {
+    } catch {
       videos = [];
     }
   }
@@ -285,7 +285,7 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
   if (artist.mediaUrls) {
     try {
       mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-    } catch (e) {
+    } catch {
       mediaUrls = [];
     }
   }
@@ -357,7 +357,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (artist.images) {
     try {
       images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-    } catch (e) {
+    } catch {
       images = [];
     }
   }
@@ -365,7 +365,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (artist.videos) {
     try {
       videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-    } catch (e) {
+    } catch {
       videos = [];
     }
   }
@@ -373,7 +373,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (artist.mediaUrls) {
     try {
       mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-    } catch (e) {
+    } catch {
       mediaUrls = [];
     }
   }

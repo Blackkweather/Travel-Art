@@ -279,7 +279,7 @@ process.on('SIGINT', async () => {
   const { prisma } = await import('./db');
   try {
     await prisma.$disconnect();
-  } catch (e) {
+  } catch {
     // Ignore disconnect errors
   }
   process.exit(0);
@@ -290,7 +290,7 @@ process.on('SIGTERM', async () => {
   const { prisma } = await import('./db');
   try {
     await prisma.$disconnect();
-  } catch (e) {
+  } catch {
     // Ignore disconnect errors
   }
   process.exit(0);

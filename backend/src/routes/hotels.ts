@@ -39,7 +39,7 @@ router.get('/', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthR
       if (hotel.location) {
         try {
           location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-        } catch (e) {
+        } catch {
           // If parsing fails, use as string
           location = typeof hotel.location === 'string' ? hotel.location : null;
         }
@@ -223,7 +223,7 @@ router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, 
   if (hotel.location) {
     try {
       location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch (e) {
+    } catch {
       location = null;
     }
   }
@@ -231,7 +231,7 @@ router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, 
   if (hotel.images) {
     try {
       images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch (e) {
+    } catch {
       images = [];
     }
   }
@@ -239,7 +239,7 @@ router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, 
   if (hotel.performanceSpots) {
     try {
       performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch (e) {
+    } catch {
       performanceSpots = [];
     }
   }
@@ -247,7 +247,7 @@ router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, 
   if (hotel.rooms) {
     try {
       rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch (e) {
+    } catch {
       rooms = [];
     }
   }
@@ -304,7 +304,7 @@ router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: Aut
   if (hotel.location) {
     try {
       location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch (e) {
+    } catch {
       location = null;
     }
   }
@@ -312,7 +312,7 @@ router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: Aut
   if (hotel.images) {
     try {
       images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch (e) {
+    } catch {
       images = [];
     }
   }
@@ -320,7 +320,7 @@ router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: Aut
   if (hotel.performanceSpots) {
     try {
       performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch (e) {
+    } catch {
       performanceSpots = [];
     }
   }
@@ -328,7 +328,7 @@ router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: Aut
   if (hotel.rooms) {
     try {
       rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch (e) {
+    } catch {
       rooms = [];
     }
   }
@@ -381,7 +381,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (hotel.location) {
     try {
       location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch (e) {
+    } catch {
       location = null;
     }
   }
@@ -389,7 +389,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (hotel.images) {
     try {
       images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch (e) {
+    } catch {
       images = [];
     }
   }
@@ -397,7 +397,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (hotel.performanceSpots) {
     try {
       performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch (e) {
+    } catch {
       performanceSpots = [];
     }
   }
@@ -405,7 +405,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (hotel.rooms) {
     try {
       rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch (e) {
+    } catch {
       rooms = [];
     }
   }
@@ -658,7 +658,7 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
       if (artist.images) {
         try {
           images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-        } catch (e) {
+        } catch {
           images = [];
         }
       }
@@ -666,7 +666,7 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
       if (artist.videos) {
         try {
           videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-        } catch (e) {
+        } catch {
           videos = [];
         }
       }
@@ -674,7 +674,7 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
       if (artist.mediaUrls) {
         try {
           mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-        } catch (e) {
+        } catch {
           mediaUrls = [];
         }
       }
