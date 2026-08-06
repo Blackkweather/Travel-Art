@@ -1,5 +1,8 @@
 {
   "enabledPlugins": {
-    "ecc@ecc": true
+    "ecc@ecc": false
+  },
+  "env": {
+    "ECC_GATEGUARD": "off"
   }
 }
