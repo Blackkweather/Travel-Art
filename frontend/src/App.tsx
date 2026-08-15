@@ -22,7 +22,6 @@ const PartnersPage = lazy(() => import('@/pages/PartnersPage'))
 const TopArtistsPage = lazy(() => import('@/pages/TopArtistsPage'))
 const TopHotelsPage = lazy(() => import('@/pages/TopHotelsPage'))
 const HotelDetailsPage = lazy(() => import('@/pages/HotelDetailsPage'))
-const PricingPage = lazy(() => import('@/pages/PricingPage'))
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
 const ReferralRedirectPage = lazy(() => import('@/pages/ReferralRedirectPage'))
@@ -144,7 +143,6 @@ function App() {
       <Route path="/top-artists" element={<PageTransition><TopArtistsPage /></PageTransition>} />
       <Route path="/top-hotels" element={<PageTransition><TopHotelsPage /></PageTransition>} />
       <Route path="/hotel/:id" element={<PageTransition><HotelDetailsPage /></PageTransition>} />
-      <Route path="/pricing" element={<PageTransition><PricingPage /></PageTransition>} />
       <Route path="/experiences" element={<PageTransition><TravelerExperiencesPage /></PageTransition>} />
       <Route path="/experience/:id" element={<PageTransition><ExperienceDetailsPage /></PageTransition>} />
       <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />

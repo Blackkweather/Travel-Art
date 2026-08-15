@@ -8,47 +8,44 @@ const PrivacyPolicyPage: React.FC = () => {
       <SimpleNavbar />
 
       <main className="container mx-auto px-6 pt-28 pb-20 max-w-4xl">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Privacy Policy</h1>
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Politique de confidentialité</h1>
         <p className="text-white/60 mb-10">Last updated: {new Date().getFullYear()}</p>
 
         <section className="space-y-6 text-white/75">
           <p>
-            We value your privacy. This policy explains what personal information we collect, how we
-            use it, and the choices you have. By using our website and services, you agree to this policy.
+            Nous prenons votre vie privée au sérieux. Cette politique décrit les données personnelles que nous collectons, l’usage que nous en faisons et les choix dont vous disposez. En utilisant notre site et nos services, vous acceptez cette politique.
           </p>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Information We Collect</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Les données que nous collectons</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li>Account details such as name, email, role (artist or hotel), and profile content.</li>
-            <li>Usage data including pages visited, actions taken, and device/browser information.</li>
-            <li>Booking and payment-related metadata handled by our payment partners.</li>
+            <li>Les informations de compte : nom, adresse e-mail, rôle (artiste ou hôtel) et contenu du profil.</li>
+            <li>Les données d’usage : pages consultées, actions effectuées, appareil et navigateur utilisés.</li>
+            <li>Les données de réservation et de paiement traitées par nos prestataires.</li>
           </ul>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">How We Use Information</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">L’usage que nous en faisons</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li>Provide, maintain, and improve the platform experience.</li>
-            <li>Facilitate artist–hotel discovery, communications, and bookings.</li>
-            <li>Protect against fraud, abuse, and security incidents.</li>
-            <li>Send service-related communications. You can opt out of non-essential emails.</li>
+            <li>Fournir, maintenir et améliorer la plateforme.</li>
+            <li>Faciliter la mise en relation entre artistes et hôtels, les échanges et les réservations.</li>
+            <li>Prévenir la fraude, les abus et les incidents de sécurité.</li>
+            <li>Vous adresser les communications liées au service. Vous pouvez vous désabonner des e-mails non essentiels.</li>
           </ul>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Sharing</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Partage des données</h2>
           <p>
-            We do not sell personal data. We share limited data with service providers strictly to
-            operate the platform (hosting, analytics, payments). When legally required, we may share
-            information with authorities.
+            Nous ne vendons aucune donnée personnelle. Nous transmettons un minimum d’informations à nos prestataires, uniquement pour faire fonctionner la plateforme (hébergement, mesure d’audience, paiements). Lorsque la loi l’exige, nous pouvons communiquer des informations aux autorités.
           </p>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Your Choices</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Vos choix</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li>Access, update, or delete your profile information from your account.</li>
-            <li>Control marketing email preferences via unsubscribe links.</li>
-            <li>Browser settings allow you to manage cookies and local storage.</li>
+            <li>Consulter, modifier ou supprimer les informations de votre profil depuis votre compte.</li>
+            <li>Gérer vos préférences d’e-mails via les liens de désabonnement.</li>
+            <li>Régler la gestion des cookies et du stockage local depuis votre navigateur.</li>
           </ul>
 
           <h2 className="text-2xl font-serif font-semibold text-white mt-8">Contact</h2>
           <p>
-            For privacy questions or requests, contact us at <a className="text-gold" href="mailto:hello@travelart.com">hello@travelart.com</a>.
+            Pour toute question ou demande relative à vos données, écrivez-nous à <a className="text-gold" href="mailto:hello@travelart.com">hello@travelart.com</a>.
           </p>
         </section>
       </main>

@@ -110,7 +110,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             label="Nom de scène"
-            placeholder="Your stage name"
+            placeholder="Votre nom de scène"
             value={data.stageName}
             onChange={(e) => onChange({ ...data, stageName: e.target.value })}
             error={errors.stageName}
@@ -134,7 +134,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             label="Nom"
-            placeholder="Your last name"
+            placeholder="Votre nom"
             value={data.lastName}
             onChange={(e) => onChange({ ...data, lastName: e.target.value })}
             error={errors.lastName}
@@ -146,7 +146,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             label="Prénom"
-            placeholder="Your first name"
+            placeholder="Votre prénom"
             value={data.firstName}
             onChange={(e) => onChange({ ...data, firstName: e.target.value })}
             error={errors.firstName}
@@ -205,10 +205,10 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
                 type={showPassword ? 'text' : 'password'}
                 value={data.password}
                 onChange={(e) => onChange({ ...data, password: e.target.value })}
-                placeholder="Min 8 chars, uppercase, number, special"
+                placeholder="8 caractères minimum, avec majuscule, chiffre et caractère spécial"
                 disabled={isLoading}
                 className={`
-                  w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
+                  w-full h-12 px-4 pr-12 rounded-card border-2 transition-all
                   ${errors.password ? 'border-red-400' : isPasswordStrong ? 'border-green-400' : 'border-line'}
                   ${isLoading ? 'bg-surface opacity-60' : 'bg-surface-raised'}
                   focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
@@ -224,7 +224,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
             </div>
             {isPasswordStrong && (
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
-                <CheckCircle2 size={16} /> Strong password
+                <CheckCircle2 size={16} /> Mot de passe robuste
               </div>
             )}
             {errors.password && (
@@ -246,10 +246,10 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={data.confirmPassword}
                 onChange={(e) => onChange({ ...data, confirmPassword: e.target.value })}
-                placeholder="Confirm your password"
+                placeholder="Confirmez votre mot de passe"
                 disabled={isLoading}
                 className={`
-                  w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
+                  w-full h-12 px-4 pr-12 rounded-card border-2 transition-all
                   ${errors.confirmPassword ? 'border-red-400' : data.confirmPassword && data.password === data.confirmPassword ? 'border-green-400' : 'border-line'}
                   ${isLoading ? 'bg-surface opacity-60' : 'bg-surface-raised'}
                   focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
@@ -265,7 +265,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
             </div>
             {data.confirmPassword && data.password === data.confirmPassword && !errors.confirmPassword && (
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
-                <CheckCircle2 size={16} /> Passwords match
+                <CheckCircle2 size={16} /> Les mots de passe correspondent
               </div>
             )}
             {errors.confirmPassword && (
@@ -285,12 +285,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
             checked={data.agreeToTerms}
             onChange={(e) => onChange({ ...data, agreeToTerms: e.target.checked })}
             disabled={isLoading}
-            className="w-6 h-6 mt-1 rounded-lg border-2 border-line-strong cursor-pointer accent-gold"
+            className="w-6 h-6 mt-1 rounded-card border-2 border-line-strong cursor-pointer accent-gold"
           />
           <span className="text-sm text-content-secondary">
-            J'accepte les{' '}
+            J’accepte les{' '}
             <a href="/terms" target="_blank" className="text-gold font-semibold hover:underline">
-              Conditions d'utilisation
+              Conditions d’utilisation
             </a>{' '}
             et la{' '}
             <a href="/privacy" target="_blank" className="text-gold font-semibold hover:underline">
@@ -315,7 +315,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
           onClick={handleNext}
           disabled={isLoading}
           className={`
-            w-full h-14 rounded-xl font-bold text-lg transition-all
+            w-full h-14 rounded-card font-bold text-lg transition-all
             bg-gold hover:bg-gold/90 text-navy-900
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]

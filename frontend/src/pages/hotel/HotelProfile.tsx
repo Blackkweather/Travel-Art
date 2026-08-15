@@ -122,7 +122,7 @@ const HotelProfile: React.FC = () => {
       const detail =
         err?.response?.data?.message ??
         err?.response?.data?.error ??
-        'Your changes were not saved. Please try again.'
+        'Vos modifications n’ont pas été enregistrées. Veuillez réessayer.'
       setError(detail)
     } finally {
       setSaving(false)
@@ -149,9 +149,9 @@ const HotelProfile: React.FC = () => {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl font-serif text-[var(--text-primary)] mb-2">Hotel Profile</h1>
+            <h1 className="text-3xl font-serif text-[var(--text-primary)] mb-2">Profil de l’hôtel</h1>
             <p className="text-[var(--text-secondary)]">
-              This is what artists see when you invite them.
+              C’est ce que voient les artistes lorsque vous les sollicitez.
             </p>
           </div>
 
@@ -162,7 +162,7 @@ const HotelProfile: React.FC = () => {
                 disabled={saving}
                 className="btn-secondary"
               >
-                Cancel
+                Annuler
               </button>
               <button
                 onClick={handleSave}
@@ -211,7 +211,7 @@ const HotelProfile: React.FC = () => {
         >
           <h2 className="font-serif text-xl text-[var(--text-primary)] flex items-center gap-2">
             <Building size={18} strokeWidth={1.5} aria-hidden="true" />
-            Details
+            Détails
           </h2>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -271,7 +271,7 @@ const HotelProfile: React.FC = () => {
               onChange={(e) => setDescription(e.target.value)}
             />
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Between 10 and 1000 characters.
+              Entre 10 et 1000 caractères.
             </p>
           </div>
         </motion.section>
@@ -289,7 +289,7 @@ const HotelProfile: React.FC = () => {
 
           {spots.length === 0 && (
             <p className="text-[var(--text-secondary)]">
-              No spaces listed yet. Artists use these to judge whether your venue suits their work.
+              Aucun espace renseigné. Les artistes s’appuient dessus pour juger si votre lieu convient à leur travail.
             </p>
           )}
 
@@ -300,7 +300,7 @@ const HotelProfile: React.FC = () => {
                 className="grid gap-4 md:grid-cols-[2fr_1fr_auto] items-end border-t border-[var(--border-subtle)] pt-5 first:border-0 first:pt-0"
               >
                 <div>
-                  <label htmlFor={`spot-name-${index}`} className="form-label">Name</label>
+                  <label htmlFor={`spot-name-${index}`} className="form-label">Nom</label>
                   <input
                     id={`spot-name-${index}`}
                     className="form-input"
@@ -310,7 +310,7 @@ const HotelProfile: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor={`spot-capacity-${index}`} className="form-label">Capacity</label>
+                  <label htmlFor={`spot-capacity-${index}`} className="form-label">Capacité</label>
                   <input
                     id={`spot-capacity-${index}`}
                     type="number"
@@ -351,11 +351,11 @@ const HotelProfile: React.FC = () => {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="card-luxury space-y-6"
         >
-          <h2 className="font-serif text-xl text-[var(--text-primary)]">Main contact</h2>
+          <h2 className="font-serif text-xl text-[var(--text-primary)]">Contact principal</h2>
 
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <label htmlFor="rep-name" className="form-label">Name</label>
+              <label htmlFor="rep-name" className="form-label">Nom</label>
               <input
                 id="rep-name"
                 className="form-input"
@@ -365,7 +365,7 @@ const HotelProfile: React.FC = () => {
               />
             </div>
             <div>
-              <label htmlFor="rep-email" className="form-label">Email</label>
+              <label htmlFor="rep-email" className="form-label">E-mail</label>
               <input
                 id="rep-email"
                 type="email"

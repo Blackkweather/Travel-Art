@@ -80,7 +80,7 @@ const AdminLogs: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error fetching activities:', error)
-      toast.error('Failed to load activity logs')
+      toast.error('Impossible de charger le journal d’activité')
     } finally {
       setLoading(false)
     }
@@ -174,7 +174,7 @@ const AdminLogs: React.FC = () => {
     if (diffMinutes < 60) return `${diffMinutes}m ago`
     if (diffHours < 24) return `${diffHours}h ago`
     if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleString()
+    return date.toLocaleString('fr-FR')
   }
 
   const exportLogs = () => {
@@ -197,16 +197,16 @@ const AdminLogs: React.FC = () => {
     a.download = `activity-logs-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
-    toast.success('Activity logs exported')
+    toast.success('Journal d’activité exporté')
   }
 
   const activityTypes: { value: ActivityType; label: string; count?: number }[] = [
-    { value: 'ALL', label: 'All Activities', count: summary?.totalActivities },
-    { value: 'USER_REGISTRATION', label: 'Registrations', count: summary?.byType?.USER_REGISTRATION },
-    { value: 'BOOKING', label: 'Bookings', count: summary?.byType?.BOOKING },
+    { value: 'ALL', label: 'Toutes les activités', count: summary?.totalActivities },
+    { value: 'USER_REGISTRATION', label: 'Inscriptions', count: summary?.byType?.USER_REGISTRATION },
+    { value: 'BOOKING', label: 'Réservations', count: summary?.byType?.BOOKING },
     { value: 'TRANSACTION', label: 'Transactions', count: summary?.byType?.TRANSACTION },
-    { value: 'RATING', label: 'Ratings', count: summary?.byType?.RATING },
-    { value: 'ADMIN_ACTION', label: 'Admin Actions', count: summary?.byType?.ADMIN_ACTION }
+    { value: 'RATING', label: 'Évaluations', count: summary?.byType?.RATING },
+    { value: 'ADMIN_ACTION', label: 'Actions d’administration', count: summary?.byType?.ADMIN_ACTION }
   ]
 
   return (
@@ -215,10 +215,10 @@ const AdminLogs: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            Activity Logs
+            Journal d’activité
           </h1>
           <p className="text-content-secondary">
-            Monitor all platform activities, user actions, and system events
+            Suivre l’activité de la plateforme, les actions des utilisateurs et les événements système
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -234,7 +234,7 @@ const AdminLogs: React.FC = () => {
             className="btn-primary flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Export CSV
+            Exporter en CSV
           </button>
         </div>
       </div>
@@ -243,7 +243,7 @@ const AdminLogs: React.FC = () => {
       <div className="card-luxury">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gold" />
-          <h3 className="text-lg font-semibold text-content">Filters</h3>
+          <h3 className="text-lg font-semibold text-content">Filtres</h3>
         </div>
         
         {/* Activity Type Filter */}
@@ -257,7 +257,7 @@ const AdminLogs: React.FC = () => {
                   setSelectedType(type.value)
                   setPage(1)
                 }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                   selectedType === type.value
                     ? 'bg-gold text-off-black shadow-md'
                     : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken border border-line'
@@ -280,15 +280,15 @@ const AdminLogs: React.FC = () => {
 
         {/* Search */}
         <div>
-          <label className="block text-sm font-medium text-content mb-2">Search</label>
+          <label className="block text-sm font-medium text-content mb-2">Rechercher</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-content-secondary" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by user, action, or details..."
-              className="w-full pl-10 pr-4 py-3 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
+              placeholder="Rechercher par utilisateur, action ou détail…"
+              className="w-full pl-10 pr-4 py-3 border border-line rounded-card focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
             />
           </div>
         </div>
@@ -298,7 +298,7 @@ const AdminLogs: React.FC = () => {
       <div className="card-luxury">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-serif font-semibold text-content">
-            Activity Timeline
+            Chronologie d’activité
           </h2>
           <span className="text-sm text-content-secondary">
             Showing {filteredActivities.length} of {activities.length} activities
@@ -312,7 +312,7 @@ const AdminLogs: React.FC = () => {
         ) : filteredActivities.length === 0 ? (
           <div className="text-center py-20">
             <Activity className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-            <p className="text-content-secondary text-lg">No activities found</p>
+            <p className="text-content-secondary text-lg">Aucune activité</p>
             <p className="text-content-secondary text-sm mt-2">
               {searchTerm || selectedType !== 'ALL' 
                 ? 'Try adjusting your filters' 
@@ -324,10 +324,10 @@ const AdminLogs: React.FC = () => {
             {filteredActivities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex items-start gap-4 p-5 bg-surface-sunken rounded-xl border border-line hover:border-gold/30 hover:shadow-md transition-all"
+                className="flex items-start gap-4 p-5 bg-surface-sunken rounded-card border border-line hover:border-gold/30 hover:shadow-md transition-all"
               >
                 {/* Icon */}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 ${getActivityColor(activity.type)} flex-shrink-0`}>
+                <div className={`w-12 h-12 rounded-card flex items-center justify-center border-2 ${getActivityColor(activity.type)} flex-shrink-0`}>
                   {getActivityIcon(activity.type)}
                 </div>
 
@@ -336,7 +336,7 @@ const AdminLogs: React.FC = () => {
                   <div className="flex items-start justify-between gap-4 mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${getActivityColor(activity.type)}`}>
+                        <span className={`px-2 py-1 rounded-card text-xs font-semibold ${getActivityColor(activity.type)}`}>
                           {activity.type.replace('_', ' ')}
                         </span>
                         <span className="font-semibold text-content">{activity.action}</span>
@@ -360,7 +360,7 @@ const AdminLogs: React.FC = () => {
 
                       {/* Details */}
                       {activity.details && Object.keys(activity.details).length > 0 && (
-                        <div className="mt-2 p-3 bg-surface-raised rounded-lg border border-line text-xs">
+                        <div className="mt-2 p-3 bg-surface-raised rounded-card border border-line text-xs">
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {Object.entries(activity.details).map(([key, value]) => (
                               <div key={key} className="flex items-center gap-1">
@@ -395,7 +395,7 @@ const AdminLogs: React.FC = () => {
               disabled={page === 1}
               className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Previous
+              Précédent
             </button>
             <span className="text-sm text-content-secondary">
               Page {page} of {totalPages}
@@ -405,7 +405,7 @@ const AdminLogs: React.FC = () => {
               disabled={page === totalPages}
               className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next
+              Suivant
             </button>
           </div>
         )}

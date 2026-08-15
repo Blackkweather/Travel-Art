@@ -32,6 +32,17 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'warn',
   },
+  overrides: [
+    {
+      // Cypress specs assert through Chai's BDD chains (`expect(x).to.exist`),
+      // which are expressions by design. no-unused-expressions entered the
+      // typescript-eslint v8 recommended set and flags every one of them.
+      files: ['cypress/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-unused-expressions': 'off',
+      },
+    },
+  ],
   settings: {
     react: {
       version: 'detect',

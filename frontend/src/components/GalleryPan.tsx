@@ -60,7 +60,7 @@ export default function GalleryPan({ items }: GalleryPanProps) {
   return (
     <section
       ref={wrap}
-      aria-label="Selected residencies"
+      aria-label="Résidences sélectionnées"
       className="relative overflow-hidden bg-[#08101D]"
     >
       <div
@@ -72,12 +72,11 @@ export default function GalleryPan({ items }: GalleryPanProps) {
             it, so the pin starts on an image instead of dead space. */}
         <div className="shrink-0 w-[78vw] sm:w-[46vw] lg:w-[30vw] snap-start">
           <h2 className="font-serif text-white text-4xl md:text-5xl lg:text-6xl leading-[1.05]">
-            Between shadow
-            <span className="block text-gold italic">and light.</span>
+            Entre l’ombre
+            <span className="block text-gold italic">et la lumière.</span>
           </h2>
           <p className="mt-6 text-white/55 text-base leading-relaxed max-w-[34ch]">
-            Residencies staged in hotels that treat a lobby as a room worth
-            performing in.
+            Des résidences dans des hôtels où même un hall mérite qu’on y joue.
           </p>
         </div>
 

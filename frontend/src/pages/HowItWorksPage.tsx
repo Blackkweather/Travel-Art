@@ -11,63 +11,63 @@ import Footer from '../components/Footer'
  */
 const STEPS = [
   {
-    title: 'Join as Artist or Hotel',
-    lede: 'Create your profile and showcase your talent or luxury venue. Artists can upload their portfolio, set availability, and define their specialties. Hotels can list their performance spaces and accommodation.',
+    title: 'Rejoindre, comme artiste ou comme hôtel',
+    lede: "Créez votre profil et présentez votre travail ou votre lieu. Les artistes déposent leur portfolio, indiquent leurs disponibilités et précisent leur discipline. Les hôtels décrivent leurs espaces de représentation et leurs conditions d’accueil.",
     points: [
-      'Artists: Upload photos/videos of performances',
-      'Hotels: Showcase rooftop terraces and intimate venues',
-      'Set your availability calendar',
-      'Define your artistic discipline and price range',
+      'Artistes : photos et vidéos de vos performances',
+      'Hôtels : toits-terrasses, salons et lieux intimistes',
+      'Renseignez votre calendrier de disponibilités',
+      'Précisez votre discipline artistique',
     ],
   },
   {
-    title: 'Discover Perfect Matches',
-    lede: 'Our intelligent matching system connects artists with hotels based on location, availability, artistic style, and venue requirements. Browse profiles and find your ideal collaboration.',
+    title: 'Trouver la bonne rencontre',
+    lede: "Notre système de mise en relation rapproche artistes et hôtels selon le lieu, les dates, l’esthétique et les contraintes de la salle. Parcourez les profils et choisissez la collaboration qui vous ressemble.",
     points: [
-      'Smart matching algorithm',
-      'Filter by location, date, and style',
-      'View detailed profiles and portfolios',
-      'Read reviews and ratings',
+      'Mise en relation par affinités',
+      'Filtres par ville, date et style',
+      'Profils et portfolios détaillés',
+      'Avis et évaluations vérifiés',
     ],
   },
   {
-    title: 'Book Your Experience',
-    lede: 'Hotels use credits to book artists for their rooftop performances, intimate concerts, or special events. Artists receive accommodation and the opportunity to perform in luxury settings.',
+    title: 'Réserver la résidence',
+    lede: "Les hôtels invitent les artistes pour un concert sur les toits, un set intimiste ou un événement particulier. Les artistes reçoivent l’hébergement et une scène dans un cadre d’exception.",
     points: [
-      'Hotels purchase credit packages',
-      'Artists pay annual membership fee',
-      'Secure booking system',
-      'Flexible cancellation policies',
+      'Demande de dates en quelques clics',
+      'Adhésion annuelle pour les artistes',
+      'Réservation sécurisée',
+      'Conditions d’annulation souples',
     ],
   },
   {
-    title: 'Create Magic Together',
-    lede: 'Artists perform in stunning rooftop venues, intimate lounges, and luxury hotel spaces. Hotels provide accommodation and unforgettable experiences for their guests.',
+    title: 'Créer ensemble',
+    lede: "Les artistes jouent sur des toits-terrasses, dans des salons feutrés et des espaces hôteliers d’exception. Les hôtels offrent l’hébergement et des moments dont leurs clients se souviennent.",
     points: [
-      'Rooftop performances with city views',
-      'Intimate acoustic sets in luxury lounges',
-      'Jazz ensembles in elegant ballrooms',
-      'DJ sets at sunset beach clubs',
+      'Concerts sur les toits, face à la ville',
+      'Sets acoustiques dans des salons intimistes',
+      'Formations jazz en salle de bal',
+      'DJ sets au coucher du soleil',
     ],
   },
   {
-    title: 'Rate & Review',
-    lede: 'After each performance, hotels rate artists based on their performance quality, professionalism, and guest satisfaction. Artists see aggregated badges and feedback.',
+    title: 'Évaluer et commenter',
+    lede: "Après chaque représentation, l’hôtel évalue l’artiste sur la qualité de la prestation, le professionnalisme et l’accueil reçu par ses clients. L’artiste reçoit ses distinctions et les retours reçus.",
     points: [
-      'Hotels rate artists (1-5 stars)',
-      'Artists see performance badges',
-      'Detailed feedback system',
-      'Build reputation over time',
+      'Notation de 1 à 5 étoiles par les hôtels',
+      'Distinctions visibles sur le profil artiste',
+      'Retours détaillés après chaque date',
+      'Une réputation qui se construit dans la durée',
     ],
   },
   {
-    title: 'Earn & Grow',
-    lede: 'Artists earn accommodation credits and build their portfolio. Hotels enhance their guest experience and create memorable moments. Both parties grow their network.',
+    title: 'Grandir et rayonner',
+    lede: "Les artistes accumulent des nuits d’hébergement et étoffent leur portfolio. Les hôtels enrichissent l’expérience de leurs clients. Les deux élargissent leur réseau.",
     points: [
-      'Artists: Free accommodation + performance fees',
-      'Hotels: Enhanced guest experience',
-      'Referral rewards program',
-      'Loyalty points system',
+      'Artistes : hébergement offert pendant la résidence',
+      'Hôtels : une expérience client singulière',
+      'Programme de parrainage',
+      'Points de fidélité',
     ],
   },
 ]
@@ -102,8 +102,8 @@ const HowItWorksPage: React.FC = () => {
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-7 font-serif text-white text-5xl md:text-6xl lg:text-7xl leading-[1.03]"
           >
-            How Travel Art
-            <span className="block text-gold italic leading-[1.1] pb-1">Works</span>
+            Le principe
+            <span className="block text-gold italic leading-[1.1] pb-1">Travel Art</span>
           </motion.h1>
 
           <motion.p
@@ -112,9 +112,9 @@ const HowItWorksPage: React.FC = () => {
             transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-4 lg:col-start-9 text-white/65 leading-relaxed"
           >
-            Connect luxury hotels with talented hearts for unforgettable rooftop
-            performances and intimate experiences. From jazz saxophonists on Parisian
-            terraces to DJs spinning sunset sets in Ibiza.
+            Réunir les hôtels d’exception et les artistes, pour des concerts sur
+            les toits et des moments plus intimes. Du saxophone jazz sur une
+            terrasse parisienne au DJ set au coucher du soleil à Ibiza.
           </motion.p>
         </div>
       </section>
@@ -125,14 +125,14 @@ const HowItWorksPage: React.FC = () => {
           <div className="lg:col-span-4">
             <div className="lg:sticky lg:top-32">
               <h2 className="font-serif text-white text-3xl md:text-4xl leading-[1.1]">
-                Why Choose Travel Art?
+                Pourquoi Travel Art ?
               </h2>
               <p className="mt-5 text-white/50 leading-relaxed max-w-[34ch]">
-                Experience the perfect blend of luxury hospitality and artistic
-                excellence.
+                La rencontre juste entre l’hôtellerie d’exception et l’exigence
+                artistique.
               </p>
               <Link to="/register" className="btn-gold mt-10">
-                Join now
+                Nous rejoindre
               </Link>
             </div>
           </div>
@@ -169,21 +169,18 @@ const HowItWorksPage: React.FC = () => {
       <section className="shell">
         <div className="border-t border-white/10 py-24 md:py-32 text-center">
           <h2 className="font-serif text-white text-4xl md:text-6xl leading-[1.05]">
-            Ready to Create Magic?
+            Prêt à créer ?
           </h2>
           <p className="mt-6 text-white/55 max-w-[52ch] mx-auto leading-relaxed">
-            Join Travel Art today and start connecting luxury hotels with talented
-            hearts for unforgettable experiences.
+            Rejoignez Travel Art et commencez à faire dialoguer hôtels
+            d’exception et artistes.
           </p>
           <div className="mt-12 flex flex-wrap gap-4 justify-center">
             <Link to="/register" className="btn-gold">
-              Join as Artist
+              Je suis artiste
             </Link>
-            <Link
-              to="/register"
-              className="btn-base bg-transparent text-white border border-white/30 hover:bg-surface-raised hover:text-content"
-            >
-              Join as Hotel
+            <Link to="/register" className="btn-on-media">
+              Je suis hôtelier
             </Link>
           </div>
         </div>

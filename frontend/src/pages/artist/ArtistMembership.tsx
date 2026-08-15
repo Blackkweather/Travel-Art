@@ -88,18 +88,18 @@ const ArtistMembership: React.FC = () => {
 
   const plans = [
     {
-      name: 'Artist',
+      name: 'Artiste',
       price: '€50',
       period: '/year',
-      description: 'Perfect for emerging artists starting their journey',
+      description: 'Pensé pour les artistes qui se lancent',
       features: [
-        'Create detailed artist profile',
-        'Upload portfolio (up to 20 images)',
-        'Set availability calendar',
-        'Receive booking requests',
-        'Basic performance analytics',
-        'Email support',
-        'Free T-shirt included'
+        'Un profil d’artiste détaillé',
+        'Portfolio jusqu’à 20 images',
+        'Calendrier de disponibilités',
+        'Réception des demandes de réservation',
+        'Statistiques essentielles',
+        'Assistance par e-mail',
+        'T-shirt offert'
       ],
       tier: 'ARTIST' as const,
       popular: false,
@@ -109,16 +109,16 @@ const ArtistMembership: React.FC = () => {
       name: 'Professional Artist',
       price: '€100',
       period: '/year',
-      description: 'Ideal for established artists seeking more opportunities',
+      description: 'Pour les artistes confirmés qui veulent plus de dates',
       features: [
-        'Everything in Artist plan',
-        'Unlimited portfolio uploads',
-        'Priority in search results',
-        'Advanced analytics dashboard',
-        'Performance badges & ratings',
-        'Priority customer support',
-        'Referral rewards program',
-        'Free T-shirt included'
+        'Tout ce que comprend la formule Artiste',
+        'Portfolio illimité',
+        'Priorité dans les résultats',
+        'Tableau de bord statistique avancé',
+        'Distinctions et évaluations',
+        'Assistance prioritaire',
+        'Programme de parrainage',
+        'T-shirt offert'
       ],
       tier: 'PROFESSIONAL' as const,
       popular: true,
@@ -128,17 +128,17 @@ const ArtistMembership: React.FC = () => {
 
   const membershipStats = [
     { 
-      label: 'Member Since', 
-      value: memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently', 
+      label: 'Membre depuis', 
+      value: memberSince ? new Date(memberSince).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently', 
       icon: Calendar 
     },
     { 
-      label: 'Total Performances', 
+      label: 'Représentations', 
       value: totalBookings.toString(), 
       icon: Star 
     },
     { 
-      label: 'Membership Status', 
+      label: 'Statut de l’adhésion', 
       value: membershipStatus === 'ACTIVE' ? 'Active' : 'Inactive', 
       icon: Users 
     }
@@ -147,23 +147,23 @@ const ArtistMembership: React.FC = () => {
   const benefits = [
     {
       icon: <Crown className="w-6 h-6 text-gold" />,
-      title: 'Priority Placement',
-      description: 'Get featured in search results and receive more booking requests'
+      title: 'Mise en avant prioritaire',
+      description: 'Apparaissez en tête des résultats et recevez davantage de demandes'
     },
     {
       icon: <Star className="w-6 h-6 text-gold" />,
-      title: 'Performance Analytics',
-      description: 'Track your performance metrics and optimize your bookings'
+      title: 'Statistiques de performance',
+      description: 'Suivez vos indicateurs et optimisez vos dates'
     },
     {
       icon: <Gift className="w-6 h-6 text-gold" />,
-      title: 'Referral Rewards',
-      description: 'Earn credits for every successful artist referral'
+      title: 'Récompenses de parrainage',
+      description: 'Gagnez des crédits pour chaque artiste parrainé'
     },
     {
       icon: <Users className="w-6 h-6 text-gold" />,
-      title: 'Exclusive Access',
-      description: 'Access to premium venues and exclusive performance opportunities'
+      title: 'Accès exclusif',
+      description: 'Accès aux plus beaux lieux et à des dates exclusives'
     }
   ]
 
@@ -183,23 +183,23 @@ const ArtistMembership: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-semibold text-content mb-2">
-          Membership & Billing
+          Adhésion et facturation
         </h1>
         <p className="text-sm text-content-secondary">
-          Manage your membership plan and track your performance
+          Gérez votre adhésion et suivez votre activité
         </p>
       </div>
 
       {/* Current Membership Status */}
-      <div className="bg-surface-raised rounded-lg border border-line p-6">
+      <div className="bg-surface-raised rounded-card border border-line p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-lg font-semibold text-content mb-2">
-              Current Membership
+              Adhésion en cours
             </h2>
             <p className="text-sm text-content-secondary">
               {membershipStatus === 'ACTIVE' 
-                ? `${currentPlan === 'PROFESSIONAL' ? 'Professional' : 'Artist'} Plan • Active since ${memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Recently'}`
+                ? `${currentPlan === 'PROFESSIONAL' ? 'Professional' : 'Artist'} Plan • Active since ${memberSince ? new Date(memberSince).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Recently'}`
                 : 'No active membership • Choose a plan below to get started'}
             </p>
           </div>
@@ -210,7 +210,7 @@ const ArtistMembership: React.FC = () => {
               </p>
               {artist?.membershipRenewal && (
                 <p className="text-xs text-content-secondary mt-1">
-                  Next billing: {new Date(artist.membershipRenewal).toLocaleDateString()}
+                  Next billing: {new Date(artist.membershipRenewal).toLocaleDateString('fr-FR')}
                 </p>
               )}
             </div>
@@ -222,9 +222,9 @@ const ArtistMembership: React.FC = () => {
           {membershipStats.map((stat, index) => {
             const Icon = stat.icon
             return (
-              <div key={index} className="bg-surface rounded-lg p-4 border border-line">
+              <div key={index} className="bg-surface rounded-card p-4 border border-line">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gold/10">
+                  <div className="p-2 rounded-card bg-gold/10">
                     <Icon className="w-5 h-5 text-gold" />
                   </div>
                   <div>
@@ -250,7 +250,7 @@ const ArtistMembership: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
-              className={`relative bg-surface-raised rounded-lg border-2 transition-all hover:shadow-lg ${
+              className={`relative bg-surface-raised rounded-card border-2 transition-all hover:shadow-lg ${
                 plan.popular && !plan.current
                   ? 'border-gold shadow-md'
                   : plan.current
@@ -261,7 +261,7 @@ const ArtistMembership: React.FC = () => {
               {plan.popular && !plan.current && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="bg-gold text-navy px-4 py-1 rounded-full text-xs font-semibold shadow-md">
-                    Most Popular
+                    Le plus choisi
                   </span>
                 </div>
               )}
@@ -302,7 +302,7 @@ const ArtistMembership: React.FC = () => {
                 </ul>
 
                 <button 
-                  className={`w-full py-3 px-4 rounded-lg font-semibold text-sm transition-all ${
+                  className={`w-full py-3 px-4 rounded-card font-semibold text-sm transition-all ${
                     plan.current 
                       ? 'bg-surface-sunken text-content-secondary cursor-not-allowed' 
                       : plan.popular 
@@ -321,9 +321,9 @@ const ArtistMembership: React.FC = () => {
       </div>
 
       {/* Benefits Section */}
-      <div className="bg-surface-raised rounded-lg border border-line p-6">
+      <div className="bg-surface-raised rounded-card border border-line p-6">
         <h2 className="text-xl font-semibold text-content mb-6">
-          Membership Benefits
+          Les avantages de l’adhésion
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {benefits.map((benefit, index) => (
@@ -332,9 +332,9 @@ const ArtistMembership: React.FC = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="flex items-start gap-4 p-4 rounded-lg hover:bg-surface transition-colors"
+              className="flex items-start gap-4 p-4 rounded-card hover:bg-surface transition-colors"
             >
-              <div className="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-gold/10 rounded-card flex items-center justify-center flex-shrink-0">
                 {React.cloneElement(benefit.icon, { className: "w-5 h-5 text-gold" })}
               </div>
               <div>
@@ -351,80 +351,80 @@ const ArtistMembership: React.FC = () => {
       </div>
 
       {/* Billing History */}
-      <div className="bg-surface-raised rounded-lg border border-line p-6">
+      <div className="bg-surface-raised rounded-card border border-line p-6">
         <h2 className="text-xl font-semibold text-content mb-6">
-          Billing History
+          Historique de facturation
         </h2>
         <div className="space-y-3">
           {artist?.transactions && artist.transactions.length > 0 ? (
             artist.transactions.map((transaction: any, index: number) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-surface rounded-lg border border-line hover:bg-surface-sunken transition-colors">
+              <div key={index} className="flex items-center justify-between p-4 bg-surface rounded-card border border-line hover:bg-surface-sunken transition-colors">
                 <div>
                   <p className="text-sm font-medium text-content">{transaction.type || 'Membership'}</p>
                   <p className="text-xs text-content-secondary mt-1">
-                    {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString() : 'Unknown date'}
+                    {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('fr-FR') : 'Unknown date'}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-content">€{transaction.amount || 0}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400 text-xs font-medium rounded">
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400 text-xs font-medium rounded-card">
                     Paid
                   </span>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-sm text-content-secondary text-center py-8">No billing history yet</p>
+            <p className="text-sm text-content-secondary text-center py-8">Aucun historique de facturation</p>
           )}
         </div>
       </div>
 
       {/* Referral Program */}
       {referralCode && (
-        <div className="bg-surface-raised rounded-lg border border-line p-6">
+        <div className="bg-surface-raised rounded-card border border-line p-6">
           <h2 className="text-xl font-semibold text-content mb-6">
-            Referral Program
+            Programme de parrainage
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-base font-semibold text-content mb-3">
-                Invite Fellow Artists
+                Invitez d’autres artistes
               </h3>
               <p className="text-sm text-content-secondary mb-4">
-                Share your referral code and earn credits for each successful referral.
+                Partagez votre code de parrainage et gagnez des crédits à chaque parrainage abouti.
               </p>
               <div className="flex items-center gap-2 mb-3">
                 <input
                   type="text"
                   value={referralCode}
                   readOnly
-                  className="flex-1 px-4 py-2 bg-surface border border-line rounded-lg text-sm font-mono text-content"
+                  className="flex-1 px-4 py-2 bg-surface border border-line rounded-card text-sm font-mono text-content"
                 />
                 <button 
-                  className="px-4 py-2 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy/90 transition-colors"
+                  className="px-4 py-2 bg-navy text-white rounded-card text-sm font-medium hover:bg-navy/90 transition-colors"
                   onClick={() => {
                     navigator.clipboard.writeText(referralCode)
-                    toast.success('Referral code copied!')
+                    toast.success('Code de parrainage copié')
                   }}
                 >
                   Copy
                 </button>
               </div>
               <p className="text-xs text-content-secondary">
-                Share this code with other artists. You'll both benefit when they join!
+                Partagez ce code avec d’autres artistes : vous y gagnez tous les deux lorsqu’ils nous rejoignent.
               </p>
             </div>
             <div>
               <h3 className="text-base font-semibold text-content mb-4">
-                Referral Stats
+                Statistiques de parrainage
               </h3>
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
-                  <span className="text-sm text-content-secondary">Loyalty Points</span>
+                <div className="flex justify-between items-center p-3 bg-surface rounded-card">
+                  <span className="text-sm text-content-secondary">Points de fidélité</span>
                   <span className="text-sm font-semibold text-content">{artist?.loyaltyPoints || 0}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-surface rounded-lg">
-                  <span className="text-sm text-content-secondary">Total Bookings</span>
+                <div className="flex justify-between items-center p-3 bg-surface rounded-card">
+                  <span className="text-sm text-content-secondary">Réservations</span>
                   <span className="text-sm font-semibold text-content">{totalBookings}</span>
                 </div>
               </div>

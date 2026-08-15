@@ -5,21 +5,20 @@ import { getLogoUrl } from '@/config/assets'
 import NewsletterSignup from './NewsletterSignup'
 
 const DISCOVER_LINKS = [
-  { to: '/experiences', label: 'Experiences' },
-  { to: '/how-it-works', label: 'How it works' },
-  { to: '/top-artists', label: 'Artists' },
-  { to: '/top-hotels', label: 'Hotels' },
+  { to: '/experiences', label: 'Expériences' },
+  { to: '/how-it-works', label: 'Le principe' },
+  { to: '/top-artists', label: 'Artistes' },
+  { to: '/top-hotels', label: 'Hôtels' },
 ]
 
 const COMPANY_LINKS = [
-  { to: '/about', label: 'About' },
-  { to: '/partners', label: 'Partners' },
-  { to: '/pricing', label: 'Pricing' },
+  { to: '/about', label: 'À propos' },
+  { to: '/partners', label: 'Partenaires' },
 ]
 
 const LEGAL_LINKS = [
-  { to: '/privacy', label: 'Privacy' },
-  { to: '/terms', label: 'Terms' },
+  { to: '/privacy', label: 'Confidentialité' },
+  { to: '/terms', label: 'Conditions' },
   { to: '/cookies', label: 'Cookies' },
 ]
 
@@ -45,8 +44,9 @@ const Footer: React.FC = () => {
               className="h-9 w-auto object-contain brightness-0 invert"
             />
             <p className="mt-6 text-white/55 leading-relaxed max-w-[38ch]">
-              Artist residencies inside luxury hotels. Musicians, visual artists
-              and performers, hosted where their work belongs.
+              Des résidences d’artistes au cœur des hôtels d’exception.
+              Musiciens, plasticiens et interprètes, reçus là où leur travail
+              trouve sa place.
             </p>
 
             <div className="mt-8 max-w-sm">
@@ -54,8 +54,8 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          <nav className="lg:col-span-2 lg:col-start-6" aria-label="Discover">
-            <h3 className="font-sans text-sm font-semibold text-white mb-5">Discover</h3>
+          <nav className="lg:col-span-2 lg:col-start-6" aria-label="Découvrir">
+            <h3 className="font-sans text-sm font-semibold text-white mb-5">Découvrir</h3>
             <ul className="space-y-3">
               {DISCOVER_LINKS.map((link) => (
                 <li key={link.to}>
@@ -67,8 +67,8 @@ const Footer: React.FC = () => {
             </ul>
           </nav>
 
-          <nav className="lg:col-span-2" aria-label="Company">
-            <h3 className="font-sans text-sm font-semibold text-white mb-5">Company</h3>
+          <nav className="lg:col-span-2" aria-label="La maison">
+            <h3 className="font-sans text-sm font-semibold text-white mb-5">La maison</h3>
             <ul className="space-y-3">
               {COMPANY_LINKS.map((link) => (
                 <li key={link.to}>

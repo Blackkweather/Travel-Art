@@ -88,7 +88,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
     <div className="relative" ref={ref}>
       <div className="flex gap-2">
         <div className="flex-1">
-          <label className="form-label">Start Date</label>
+          <label className="form-label">Date de début</label>
           <div
             onClick={() => !disabled && setOpen(true)}
             className={`form-input cursor-pointer flex items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -100,7 +100,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
           </div>
         </div>
         <div className="flex-1">
-          <label className="form-label">End Date</label>
+          <label className="form-label">Date de fin</label>
           <div
             onClick={() => !disabled && setOpen(true)}
             className={`form-input cursor-pointer flex items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -119,13 +119,13 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute z-50 mt-2 bg-surface-raised rounded-lg shadow-xl border border-line p-4 w-full max-w-sm"
+            className="absolute z-50 mt-2 bg-surface-raised rounded-card shadow-xl border border-line p-4 w-full max-w-sm"
           >
             <div className="flex items-center justify-between mb-4">
               <button
                 type="button"
                 onClick={prevMonth}
-                className="p-1 hover:bg-surface-sunken rounded-lg transition-colors"
+                className="p-1 hover:bg-surface-sunken rounded-card transition-colors"
               >
                 <ChevronLeft className="w-5 h-5 text-content-secondary" />
               </button>
@@ -135,7 +135,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
               <button
                 type="button"
                 onClick={nextMonth}
-                className="p-1 hover:bg-surface-sunken rounded-lg transition-colors"
+                className="p-1 hover:bg-surface-sunken rounded-card transition-colors"
               >
                 <ChevronRight className="w-5 h-5 text-content-secondary" />
               </button>
@@ -164,7 +164,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
                     onClick={() => !disabled && selectDate(day)}
                     disabled={disabled}
                     className={`
-                      h-10 rounded-lg text-sm transition-colors
+                      h-10 rounded-card text-sm transition-colors
                       ${!inMonth ? 'text-content-secondary' : ''}
                       ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gold/10 cursor-pointer'}
                       ${isStart || isEnd
@@ -191,7 +191,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
                 onClick={() => setOpen(false)}
                 className="text-sm text-content-secondary hover:text-content transition-colors"
               >
-                Close
+                Fermer
               </button>
             </div>
           </motion.div>

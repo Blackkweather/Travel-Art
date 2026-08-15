@@ -58,7 +58,7 @@ const formatDateTimeRelative = (value: string | Date) => {
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
   const diffDays = Math.round(diffHours / 24)
   if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
-  return date.toLocaleString()
+  return date.toLocaleString('fr-FR')
 }
 
 const AdminDashboard: React.FC = () => {
@@ -72,7 +72,7 @@ const AdminDashboard: React.FC = () => {
 
   const totalRevenueFormatted = useMemo(() => {
     if (!stats?.totalRevenue) return '€0'
-    return `€${stats.totalRevenue.toLocaleString()}`
+    return `€${stats.totalRevenue.toLocaleString('fr-FR')}`
   }, [stats?.totalRevenue])
 
   useEffect(() => {
@@ -123,7 +123,7 @@ const AdminDashboard: React.FC = () => {
           const amount = Number(txn?.amount ?? 0)
           const hotel = txn?.hotel?.name || txn?.hotelId || 'Hotel'
           const label = amount >= 0 ? 'Payment captured' : 'Refund issued'
-          const message = `${label}: ${hotel} (${amount >= 0 ? '+' : '-'}€${Math.abs(amount).toLocaleString()})`
+          const message = `${label}: ${hotel} (${amount >= 0 ? '+' : '-'}€${Math.abs(amount).toLocaleString('fr-FR')})`
           const createdAt = txn?.createdAt
           const time = createdAt ? formatDateTimeRelative(createdAt) : 'Recently'
           const timestamp = createdAt ? new Date(createdAt).getTime() : 0
@@ -181,10 +181,10 @@ const AdminDashboard: React.FC = () => {
   const statsCards = useMemo(() => {
     if (!stats) return []
     return [
-      { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-600' },
-      { label: 'Active Hotels', value: stats.totalHotels, icon: Building, color: 'text-green-600 dark:text-green-400' },
-      { label: 'Registered Artists', value: stats.totalArtists, icon: Users, color: 'text-purple-600' },
-      { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: 'text-orange-600' }
+      { label: 'Utilisateurs', value: stats.totalUsers, icon: Users, color: 'text-blue-600' },
+      { label: 'Hôtels actifs', value: stats.totalHotels, icon: Building, color: 'text-green-600 dark:text-green-400' },
+      { label: 'Artistes inscrits', value: stats.totalArtists, icon: Users, color: 'text-purple-600' },
+      { label: 'Réservations', value: stats.totalBookings, icon: Calendar, color: 'text-orange-600' }
     ]
   }, [stats])
 
@@ -208,10 +208,10 @@ const AdminDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
       <div>
               <h1 className="text-3xl font-semibold text-content mb-1">
-                Dashboard
+                Tableau de bord
         </h1>
               <p className="text-sm text-content-secondary">
-                Platform overview and analytics
+                Vue d’ensemble et statistiques de la plateforme
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -254,16 +254,16 @@ const AdminDashboard: React.FC = () => {
           return (
               <div 
                 key={index} 
-                className="bg-surface-raised rounded-lg border border-line p-6 hover:border-line-strong transition-colors"
+                className="bg-surface-raised rounded-card border border-line p-6 hover:border-line-strong transition-colors"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2 rounded-lg ${colors.bg}`}>
+                  <div className={`p-2 rounded-card ${colors.bg}`}>
                     <Icon className={`w-5 h-5 ${colors.iconColor}`} />
                   </div>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-content-secondary uppercase tracking-wide mb-1">{stat.label}</p>
-                  <p className="text-2xl font-semibold text-content">{stat.value.toLocaleString()}</p>
+                  <p className="text-2xl font-semibold text-content">{stat.value.toLocaleString('fr-FR')}</p>
               </div>
             </div>
           )
@@ -272,15 +272,15 @@ const AdminDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Recent Activity */}
-          <div className="lg:col-span-2 bg-surface-raised rounded-lg border border-line">
+          <div className="lg:col-span-2 bg-surface-raised rounded-card border border-line">
             <div className="px-6 py-4 border-b border-line">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-content">Recent Activity</h2>
+                <h2 className="text-lg font-semibold text-content">Activité récente</h2>
                 <button 
                   onClick={() => navigate('/dashboard/logs')}
                   className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
                 >
-                  View all <ArrowUpRight className="w-4 h-4" />
+                  Tout voir <ArrowUpRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -305,16 +305,16 @@ const AdminDashboard: React.FC = () => {
               ) : (
                 <div className="px-6 py-12 text-center">
                   <Activity className="w-8 h-8 text-content-secondary mx-auto mb-2" />
-                  <p className="text-sm text-content-secondary">No recent activity</p>
+                  <p className="text-sm text-content-secondary">Aucune activité récente</p>
                 </div>
             )}
           </div>
         </div>
 
         {/* Top Artists */}
-          <div className="bg-surface-raised rounded-lg border border-line">
+          <div className="bg-surface-raised rounded-card border border-line">
             <div className="px-6 py-4 border-b border-line">
-              <h2 className="text-lg font-semibold text-content">Top Artists</h2>
+              <h2 className="text-lg font-semibold text-content">Artistes à l’honneur</h2>
             </div>
             <div className="divide-y divide-gray-200">
             {topArtists.length > 0 ? (
@@ -325,7 +325,7 @@ const AdminDashboard: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0 w-8 h-8 rounded bg-surface-sunken flex items-center justify-center text-xs font-semibold text-content-secondary">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-card bg-surface-sunken flex items-center justify-center text-xs font-semibold text-content-secondary">
                           {idx + 1}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -343,7 +343,7 @@ const AdminDashboard: React.FC = () => {
               ) : (
                 <div className="px-6 py-12 text-center">
                   <Users className="w-8 h-8 text-content-secondary mx-auto mb-2" />
-                  <p className="text-sm text-content-secondary">No data available</p>
+                  <p className="text-sm text-content-secondary">Aucune donnée</p>
                 </div>
             )}
           </div>
@@ -351,15 +351,15 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Top Hotels */}
-        <div className="bg-surface-raised rounded-lg border border-line mb-8">
+        <div className="bg-surface-raised rounded-card border border-line mb-8">
           <div className="px-6 py-4 border-b border-line">
                 <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-content">Active Hotels</h2>
+              <h2 className="text-lg font-semibold text-content">Hôtels actifs</h2>
               <button 
                 onClick={() => navigate('/dashboard/hotels')}
                 className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
               >
-                View all <ArrowUpRight className="w-4 h-4" />
+                Tout voir <ArrowUpRight className="w-4 h-4" />
               </button>
                 </div>
               </div>
@@ -367,10 +367,10 @@ const AdminDashboard: React.FC = () => {
             <table className="w-full">
               <thead className="bg-surface">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Hotel</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Bookings</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Hôtel</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Lieu</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Réservations</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Statut</th>
                 </tr>
               </thead>
               <tbody className="bg-surface-raised divide-y divide-gray-200">
@@ -388,7 +388,7 @@ const AdminDashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400">
-                          Active
+                          Actif
                         </span>
                       </td>
                     </tr>
@@ -397,7 +397,7 @@ const AdminDashboard: React.FC = () => {
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
                       <Building className="w-8 h-8 text-content-secondary mx-auto mb-2" />
-                      <p className="text-sm text-content-secondary">No hotel data available</p>
+                      <p className="text-sm text-content-secondary">Aucune donnée hôtelière</p>
                     </td>
                   </tr>
           )}
@@ -410,34 +410,34 @@ const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <button 
             onClick={() => navigate('/dashboard/users')}
-            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
             <Users className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Users</div>
-            <div className="text-xs text-content-secondary mt-1">Manage accounts</div>
+            <div className="text-sm font-medium text-content">Utilisateurs</div>
+            <div className="text-xs text-content-secondary mt-1">Gérer les comptes</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/bookings')}
-            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
             <Calendar className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Bookings</div>
-            <div className="text-xs text-content-secondary mt-1">View all</div>
+            <div className="text-sm font-medium text-content">Réservations</div>
+            <div className="text-xs text-content-secondary mt-1">Tout voir</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/analytics')}
-            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
             <TrendingUp className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Analytics</div>
+            <div className="text-sm font-medium text-content">Statistiques</div>
             <div className="text-xs text-content-secondary mt-1">Platform metrics</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/logs')}
-            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
             <Activity className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
             <div className="text-sm font-medium text-content">Logs</div>
@@ -446,19 +446,19 @@ const AdminDashboard: React.FC = () => {
 
           <button 
             onClick={() => navigate('/dashboard/moderation')}
-            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
             <AlertCircle className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Moderation</div>
+            <div className="text-sm font-medium text-content">Modération</div>
             <div className="text-xs text-content-secondary mt-1">Review content</div>
           </button>
 
           <button 
             onClick={() => navigate('/dashboard/referrals')}
-            className="bg-surface-raised border border-line rounded-lg p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
             <Gift className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Referrals</div>
+            <div className="text-sm font-medium text-content">Parrainage</div>
             <div className="text-xs text-content-secondary mt-1">Track program</div>
           </button>
         </div>

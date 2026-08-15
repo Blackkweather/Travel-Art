@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, MapPin, Calendar, Heart } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
+import { plural } from '@/utils/i18n'
 import { bookingsApi, hotelsApi, commonApi, artistsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
@@ -22,7 +23,6 @@ interface ArtistCardData {
   availability: AvailabilityBadge
   nextAvailable?: string | null
   totalBookings: number
-  priceRange?: string
   membershipStatus?: string
   loyaltyPoints?: number
   rank?: string
@@ -37,7 +37,6 @@ const HotelArtists: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState('all')
   const [sortBy, setSortBy] = useState('rating')
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [priceRangeFilter, setPriceRangeFilter] = useState<[number, number]>([0, 10000])
   const [loyaltyTierFilter, setLoyaltyTierFilter] = useState('all')
   const [availabilityWindow, setAvailabilityWindow] = useState<string>('')
   const [hotelId, setHotelId] = useState<string>('')
@@ -89,8 +88,6 @@ const HotelArtists: React.FC = () => {
     const rating = typeof artist.averageRating === 'number' ? artist.averageRating : artist.rating ?? 0
     const totalBookings = typeof artist.totalBookings === 'number' ? artist.totalBookings : artist.bookingCount ?? 0
 
-    const priceRange = artist.priceRange || undefined
-
     const specialties = specialtyList.length
       ? specialtyList.slice(0, 4)
       : [artist.discipline, artist.rank].filter(Boolean)
@@ -107,7 +104,6 @@ const HotelArtists: React.FC = () => {
       availability,
       nextAvailable,
       totalBookings,
-      priceRange,
       membershipStatus: artist.membershipStatus,
       loyaltyPoints: artist.loyaltyPoints,
       rank: artist.rank,
@@ -134,29 +130,6 @@ const HotelArtists: React.FC = () => {
       if (Array.isArray(payload.data)) return payload.data
     }
     return []
-  }, [])
-
-  const getPriceValue = useCallback((priceRange?: string) => {
-    if (!priceRange) return Number.MAX_SAFE_INTEGER
-    const match = priceRange.match(/\d+/)
-    return match ? parseInt(match[0], 10) : Number.MAX_SAFE_INTEGER
-  }, [])
-
-  // Convert price range (€) to credits (1 credit = 10 EUR)
-  const convertPriceToCredits = useCallback((priceRange?: string): string => {
-    if (!priceRange) return 'Custom Pricing'
-    const matches = priceRange.match(/(\d+)-(\d+)/)
-    if (matches) {
-      const min = Math.round(parseInt(matches[1], 10) / 10)
-      const max = Math.round(parseInt(matches[2], 10) / 10)
-      return `${min}-${max} credits`
-    }
-    const singleMatch = priceRange.match(/(\d+)/)
-    if (singleMatch) {
-      const credits = Math.round(parseInt(singleMatch[0], 10) / 10)
-      return `${credits} credits`
-    }
-    return 'Custom Pricing'
   }, [])
 
   useEffect(() => {
@@ -238,7 +211,7 @@ const HotelArtists: React.FC = () => {
         }))
       } catch (fallbackError) {
         console.error('Failed to load artists', fallbackError)
-        setError('We could not load artists right now. Please try again later.')
+        setError('Impossible de charger les artistes pour le moment. Réessayez plus tard.')
       } finally {
         setLoading(false)
       }
@@ -290,9 +263,6 @@ const HotelArtists: React.FC = () => {
       const matchesLocation = selectedLocation === 'all' || artist.location === selectedLocation
 
       // Advanced filters
-      const priceValue = getPriceValue(artist.priceRange)
-      const matchesPrice = priceValue >= priceRangeFilter[0] && priceValue <= priceRangeFilter[1]
-
       const matchesLoyalty = loyaltyTierFilter === 'all' || 
         (loyaltyTierFilter === 'high' && (artist.loyaltyPoints ?? 0) >= 100) ||
         (loyaltyTierFilter === 'medium' && (artist.loyaltyPoints ?? 0) >= 50 && (artist.loyaltyPoints ?? 0) < 100) ||
@@ -302,18 +272,15 @@ const HotelArtists: React.FC = () => {
         (availabilityWindow === 'available' && artist.availability === 'Available') ||
         (availabilityWindow === 'pending' && artist.availability === 'Pending')
 
-      return matchesSearch && matchesDiscipline && matchesLocation && matchesPrice && matchesLoyalty && matchesAvailability
+      return matchesSearch && matchesDiscipline && matchesLocation && matchesLoyalty && matchesAvailability
     })
-  }, [artists, searchTerm, selectedDiscipline, selectedLocation, priceRangeFilter, loyaltyTierFilter, availabilityWindow, getPriceValue])
+  }, [artists, searchTerm, selectedDiscipline, selectedLocation, loyaltyTierFilter, availabilityWindow])
 
   const sortedArtists = useMemo(() => {
     const copy = [...filteredArtists]
     switch (sortBy) {
       case 'rating':
         copy.sort((a, b) => b.rating - a.rating)
-        break
-      case 'price':
-        copy.sort((a, b) => getPriceValue(a.priceRange) - getPriceValue(b.priceRange))
         break
       case 'bookings':
         copy.sort((a, b) => b.totalBookings - a.totalBookings)
@@ -325,7 +292,7 @@ const HotelArtists: React.FC = () => {
         break
     }
     return copy
-  }, [filteredArtists, getPriceValue, sortBy])
+  }, [filteredArtists, sortBy])
 
   const toggleFavorite = async (artistId: string) => {
     if (!hotelId) return
@@ -434,26 +401,26 @@ const HotelArtists: React.FC = () => {
     return (
       <div className="space-y-8">
         <div>
-          <div className="h-8 bg-surface-sunken rounded w-64 mb-2 animate-pulse" />
-          <div className="h-4 bg-surface-sunken rounded w-96 animate-pulse" />
+          <div className="h-8 bg-surface-sunken rounded-card w-64 mb-2 animate-pulse" />
+          <div className="h-4 bg-surface-sunken rounded-card w-96 animate-pulse" />
         </div>
         <div className="card-luxury animate-pulse">
-          <div className="h-10 bg-surface-sunken rounded mb-4" />
+          <div className="h-10 bg-surface-sunken rounded-card mb-4" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="h-10 bg-surface-sunken rounded" />
-            <div className="h-10 bg-surface-sunken rounded" />
-            <div className="h-10 bg-surface-sunken rounded" />
-            <div className="h-10 bg-surface-sunken rounded" />
+            <div className="h-10 bg-surface-sunken rounded-card" />
+            <div className="h-10 bg-surface-sunken rounded-card" />
+            <div className="h-10 bg-surface-sunken rounded-card" />
+            <div className="h-10 bg-surface-sunken rounded-card" />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="card-luxury animate-pulse">
-              <div className="h-64 bg-surface-sunken rounded-lg mb-4" />
+              <div className="h-64 bg-surface-sunken rounded-card mb-4" />
               <div className="space-y-3">
-                <div className="h-6 bg-surface-sunken rounded w-3/4" />
-                <div className="h-4 bg-surface-sunken rounded w-1/2" />
-                <div className="h-4 bg-surface-sunken rounded w-full" />
+                <div className="h-6 bg-surface-sunken rounded-card w-3/4" />
+                <div className="h-4 bg-surface-sunken rounded-card w-1/2" />
+                <div className="h-4 bg-surface-sunken rounded-card w-full" />
               </div>
             </div>
           ))}
@@ -467,10 +434,10 @@ const HotelArtists: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-          Browse Artists
+          Parcourir les artistes
         </h1>
         <p className="text-content-secondary">
-          Discover talented artists for your luxury hotel performances
+          Découvrez les artistes à inviter dans votre établissement
         </p>
       </div>
 
@@ -489,7 +456,7 @@ const HotelArtists: React.FC = () => {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Search by name, discipline, or location..."
+                placeholder="Rechercher par nom, discipline ou ville…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -514,7 +481,7 @@ const HotelArtists: React.FC = () => {
           </div>
           
           <div>
-            <label className="form-label">Location</label>
+            <label className="form-label">Lieu</label>
             <select
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
@@ -537,10 +504,9 @@ const HotelArtists: React.FC = () => {
               onChange={(e) => setSortBy(e.target.value)}
               className="form-input w-40"
             >
-              <option value="rating">Rating</option>
-              <option value="price">Credits</option>
-              <option value="bookings">Bookings</option>
-              <option value="name">Name</option>
+              <option value="rating">Note</option>
+              <option value="bookings">Réservations</option>
+              <option value="name">Nom</option>
             </select>
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
@@ -551,35 +517,12 @@ const HotelArtists: React.FC = () => {
           </div>
           
           <div className="text-sm text-content-secondary">
-            {sortedArtists.length} artist{sortedArtists.length !== 1 ? 's' : ''} found
+            {plural(sortedArtists.length, 'artiste')} trouvé{sortedArtists.length >= 2 ? 's' : ''}
           </div>
         </div>
 
         {showAdvancedFilters && (
           <div className="advanced-filters">
-            <div>
-              <label className="form-label">Credits Range</label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="number"
-                  min="0"
-                  max="1000"
-                  value={Math.round(priceRangeFilter[0] / 10)}
-                  onChange={(e) => setPriceRangeFilter([Number(e.target.value) * 10, priceRangeFilter[1]])}
-                  className="form-input w-24"
-                />
-                <span className="text-content-secondary">-</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="1000"
-                  value={Math.round(priceRangeFilter[1] / 10)}
-                  onChange={(e) => setPriceRangeFilter([priceRangeFilter[0], Number(e.target.value) * 10])}
-                  className="form-input w-24"
-                />
-                <span className="text-sm text-content-secondary">credits</span>
-              </div>
-            </div>
             <div>
               <label className="form-label">Loyalty Tier</label>
               <select
@@ -587,10 +530,10 @@ const HotelArtists: React.FC = () => {
                 onChange={(e) => setLoyaltyTierFilter(e.target.value)}
                 className="form-input"
               >
-                <option value="all">All Tiers</option>
-                <option value="high">High (100+ points)</option>
-                <option value="medium">Medium (50-99 points)</option>
-                <option value="low">Low (&lt;50 points)</option>
+                <option value="all">Tous les niveaux</option>
+                <option value="high">Élevé (100 points et plus)</option>
+                <option value="medium">Intermédiaire (50 à 99 points)</option>
+                <option value="low">Débutant (moins de 50 points)</option>
               </select>
             </div>
             <div>
@@ -600,9 +543,9 @@ const HotelArtists: React.FC = () => {
                 onChange={(e) => setAvailabilityWindow(e.target.value)}
                 className="form-input"
               >
-                <option value="">All Availability</option>
-                <option value="available">Available Now</option>
-                <option value="pending">Pending</option>
+                <option value="">Toutes les disponibilités</option>
+                <option value="available">Disponible maintenant</option>
+                <option value="pending">En attente</option>
               </select>
             </div>
           </div>
@@ -676,7 +619,7 @@ const HotelArtists: React.FC = () => {
               )}
 
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-content mb-2">Specialties:</h4>
+                <h4 className="text-sm font-medium text-content mb-2">Spécialités :</h4>
                 <div className="flex flex-wrap gap-2">
                   {artist.specialties.length > 0 ? (
                     artist.specialties.map((specialty, specIndex) => (
@@ -696,27 +639,27 @@ const HotelArtists: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center p-3 bg-surface rounded-lg">
+                <div className="text-center p-3 bg-surface rounded-card">
                   <div className="text-sm font-medium text-content mb-1">{artist.rank || 'Standard'}</div>
                   <p className="text-xs text-content-secondary">Artist Rank</p>
                 </div>
-                <div className="text-center p-3 bg-surface rounded-lg">
-                  <div className="text-sm font-medium text-content mb-1">{convertPriceToCredits(artist.priceRange)}</div>
-                  <p className="text-xs text-content-secondary">Credits</p>
+                <div className="text-center p-3 bg-surface rounded-card">
+                  <div className="text-sm font-medium text-content mb-1">{artist.loyaltyPoints ?? 0}</div>
+                  <p className="text-xs text-content-secondary">Loyalty points</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center p-3 bg-surface rounded-lg">
+                <div className="text-center p-3 bg-surface rounded-card">
                   <div className="flex items-center justify-center mb-1">
                     <Calendar className="w-4 h-4 text-gold mr-1" />
                     <span className="text-sm font-medium text-content">{artist.totalBookings}</span>
                   </div>
-                  <p className="text-xs text-content-secondary">Total Bookings</p>
+                  <p className="text-xs text-content-secondary">Réservations</p>
                 </div>
-                <div className="text-center p-3 bg-surface rounded-lg">
+                <div className="text-center p-3 bg-surface rounded-card">
                   <div className="text-sm font-medium text-content mb-1">{artist.loyaltyPoints ?? 0}</div>
-                  <p className="text-xs text-content-secondary">Loyalty Points</p>
+                  <p className="text-xs text-content-secondary">Points de fidélité</p>
                 </div>
               </div>
 
@@ -725,16 +668,16 @@ const HotelArtists: React.FC = () => {
                   {artist.availability}
                 </span>
                 <span className="text-xs text-content-secondary">
-                  Next: {artist.nextAvailable ? new Date(artist.nextAvailable).toLocaleDateString() : 'TBD'}
+                  Next: {artist.nextAvailable ? new Date(artist.nextAvailable).toLocaleDateString('fr-FR') : 'TBD'}
                 </span>
               </div>
 
               <div className="flex space-x-2">
                 <a className="flex-1 btn-primary" href={`/artist/${artist.id}`}>
-                  View Profile
+                  Voir le profil
                 </a>
                 <button className="btn-secondary" onClick={() => openBooking(artist.id)} data-testid="book-button">
-                  Book Now
+                  Réserver
                 </button>
               </div>
             </div>
@@ -745,11 +688,11 @@ const HotelArtists: React.FC = () => {
       {/* Booking Modal */}
       {bookingModal.open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-surface-raised rounded-lg shadow-soft p-6 w-full max-w-md">
-            <h3 className="text-xl font-serif font-semibold text-content mb-4">Request Booking</h3>
+          <div className="bg-surface-raised rounded-card shadow-soft p-6 w-full max-w-md">
+            <h3 className="text-xl font-serif font-semibold text-content mb-4">Demander une date</h3>
             <div className="space-y-3">
               <div>
-                <label className="form-label">Start date</label>
+                <label className="form-label">Date de début</label>
                 <input type="date" name="startDate" className="form-input w-full" value={bookingModal.start || ''} onChange={(e)=>setBookingModal(m=>({...m,start:e.target.value}))} />
               </div>
               <div>
@@ -762,7 +705,7 @@ const HotelArtists: React.FC = () => {
               </div>
               {bookingError && <div className="text-sm text-red-600 dark:text-red-400">{bookingError}</div>}
               <div className="flex justify-end space-x-2 pt-2">
-                <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>Cancel</button>
+                <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>Annuler</button>
                 <button className="btn-primary" disabled={processing} onClick={createBooking}>{processing? 'Sending…':'Send Request'}</button>
               </div>
             </div>
@@ -777,10 +720,10 @@ const HotelArtists: React.FC = () => {
             <Search className="w-12 h-12 text-content-secondary" />
           </div>
           <h3 className="text-xl font-serif font-semibold text-content mb-2">
-            No Artists Found
+            Aucun artiste trouvé
           </h3>
           <p className="text-content-secondary mb-6">
-            Try adjusting your search criteria or filters
+            Essayez d’élargir votre recherche ou vos filtres
           </p>
           <button
             onClick={() => {
@@ -790,7 +733,7 @@ const HotelArtists: React.FC = () => {
             }}
             className="btn-primary"
           >
-            Clear Filters
+            Réinitialiser les filtres
           </button>
         </div>
       )}

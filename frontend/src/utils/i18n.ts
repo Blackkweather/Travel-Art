@@ -1,258 +1,87 @@
 /**
- * Internationalization (i18n) utilities
- * Basic i18n implementation ready for react-i18next integration
+ * Localisation.
+ *
+ * Travel Art ships in French only. The artists this product recruits are
+ * overwhelmingly French-speaking, and the site copy is written in French
+ * rather than translated into it, so there is no second locale to fall back
+ * to and no language switcher in the UI.
+ *
+ * This module previously carried five locales (en/fr/es/de/it) and a runtime
+ * key-lookup with an English fallback. That was misleading rather than useful:
+ * the dictionary only ever covered a dozen nav and button strings, every page
+ * in the app hardcoded its copy, and the switcher that drove it was not
+ * mounted anywhere. What survives is the part that is actually load-bearing -
+ * a single locale tag for `lang`, date and number formatting.
  */
 
-export type SupportedLanguage = 'en' | 'fr' | 'es' | 'de' | 'it';
+export const LOCALE = 'fr-FR' as const
 
-export interface Translations {
-  [key: string]: string | Translations;
+export type SupportedLanguage = 'fr'
+
+/** Formatters are built once; constructing Intl objects per call is costly. */
+const dateFormatter = new Intl.DateTimeFormat(LOCALE, {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+
+const shortDateFormatter = new Intl.DateTimeFormat(LOCALE, {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
+const timeFormatter = new Intl.DateTimeFormat(LOCALE, {
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+const numberFormatter = new Intl.NumberFormat(LOCALE)
+
+const toDate = (value: Date | string | number): Date | null => {
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
-// Basic translations structure
-const translations: Record<SupportedLanguage, Translations> = {
-  en: {
-    common: {
-      welcome: 'Welcome',
-      login: 'Login',
-      register: 'Register',
-      logout: 'Logout',
-      save: 'Save',
-      cancel: 'Cancel',
-      delete: 'Delete',
-      edit: 'Edit',
-      search: 'Search',
-      loading: 'Loading...',
-      error: 'Error',
-      success: 'Success',
-    },
-    nav: {
-      home: 'Home',
-      artists: 'Artists',
-      hotels: 'Hotels',
-      experiences: 'Experiences',
-      howItWorks: 'How It Works',
-    },
-  },
-  fr: {
-    common: {
-      welcome: 'Bienvenue',
-      login: 'Connexion',
-      register: "S'inscrire",
-      logout: 'Déconnexion',
-      save: 'Enregistrer',
-      cancel: 'Annuler',
-      delete: 'Supprimer',
-      edit: 'Modifier',
-      search: 'Rechercher',
-      loading: 'Chargement...',
-      error: 'Erreur',
-      success: 'Succès',
-    },
-    nav: {
-      home: 'Accueil',
-      artists: 'Artistes',
-      hotels: 'Hôtels',
-      experiences: 'Expériences',
-      howItWorks: 'Comment ça marche',
-    },
-  },
-  es: {
-    common: {
-      welcome: 'Bienvenido',
-      login: 'Iniciar sesión',
-      register: 'Registrarse',
-      logout: 'Cerrar sesión',
-      save: 'Guardar',
-      cancel: 'Cancelar',
-      delete: 'Eliminar',
-      edit: 'Editar',
-      search: 'Buscar',
-      loading: 'Cargando...',
-      error: 'Error',
-      success: 'Éxito',
-    },
-    nav: {
-      home: 'Inicio',
-      artists: 'Artistas',
-      hotels: 'Hoteles',
-      experiences: 'Experiencias',
-      howItWorks: 'Cómo funciona',
-    },
-  },
-  de: {
-    common: {
-      welcome: 'Willkommen',
-      login: 'Anmelden',
-      register: 'Registrieren',
-      logout: 'Abmelden',
-      save: 'Speichern',
-      cancel: 'Abbrechen',
-      delete: 'Löschen',
-      edit: 'Bearbeiten',
-      search: 'Suchen',
-      loading: 'Laden...',
-      error: 'Fehler',
-      success: 'Erfolg',
-    },
-    nav: {
-      home: 'Startseite',
-      artists: 'Künstler',
-      hotels: 'Hotels',
-      experiences: 'Erlebnisse',
-      howItWorks: 'Wie es funktioniert',
-    },
-  },
-  it: {
-    common: {
-      welcome: 'Benvenuto',
-      login: 'Accedi',
-      register: 'Registrati',
-      logout: 'Esci',
-      save: 'Salva',
-      cancel: 'Annulla',
-      delete: 'Elimina',
-      edit: 'Modifica',
-      search: 'Cerca',
-      loading: 'Caricamento...',
-      error: 'Errore',
-      success: 'Successo',
-    },
-    nav: {
-      home: 'Home',
-      artists: 'Artisti',
-      hotels: 'Hotel',
-      experiences: 'Esperienze',
-      howItWorks: 'Come funziona',
-    },
-  },
-};
+/** "14 mars 2026". Returns an em dash for values that are not a real date. */
+export const formatDate = (value: Date | string | number): string => {
+  const date = toDate(value)
+  return date ? dateFormatter.format(date) : '—'
+}
 
-class I18n {
-  private currentLanguage: SupportedLanguage = 'en';
-  private translations: Record<SupportedLanguage, Translations> = translations;
+/** "14/03/2026", for dense table cells. */
+export const formatShortDate = (value: Date | string | number): string => {
+  const date = toDate(value)
+  return date ? shortDateFormatter.format(date) : '—'
+}
 
-  /**
-   * Set current language
-   */
-  setLanguage(lang: SupportedLanguage) {
-    this.currentLanguage = lang;
-    // Store in localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('preferred-language', lang);
-      document.documentElement.lang = lang;
-    }
-  }
+/** "20:30". French uses a 24-hour clock. */
+export const formatTime = (value: Date | string | number): string => {
+  const date = toDate(value)
+  return date ? timeFormatter.format(date) : '—'
+}
 
-  /**
-   * Get current language
-   */
-  getLanguage(): SupportedLanguage {
-    return this.currentLanguage;
-  }
+/** "1 250" with a narrow no-break space, as French typography requires. */
+export const formatNumber = (value: number | null | undefined): string =>
+  typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : '0'
 
-  /**
-   * Detect user's preferred language
-   */
-  detectLanguage(): SupportedLanguage {
-    if (typeof window === 'undefined') return 'en';
+/**
+ * French pluralisation: unlike English, 0 takes the singular.
+ * `plural(0, 'artiste')` gives "0 artiste", `plural(2, 'artiste')` gives
+ * "2 artistes".
+ */
+export const plural = (count: number, singular: string, suffix = 's'): string =>
+  `${formatNumber(count)} ${singular}${Math.abs(count) >= 2 ? suffix : ''}`
 
-    // Check localStorage first
-    const stored = localStorage.getItem('preferred-language') as SupportedLanguage;
-    if (stored && this.isSupportedLanguage(stored)) {
-      return stored;
-    }
-
-    // Check browser language
-    const browserLang = navigator.language.split('-')[0] as SupportedLanguage;
-    if (this.isSupportedLanguage(browserLang)) {
-      return browserLang;
-    }
-
-    return 'en';
-  }
-
-  /**
-   * Check if language is supported
-   */
-  isSupportedLanguage(lang: string): lang is SupportedLanguage {
-    return ['en', 'fr', 'es', 'de', 'it'].includes(lang);
-  }
-
-  /**
-   * Get translation by key path (e.g., 'common.welcome')
-   */
-  t(key: string, params?: Record<string, string>): string {
-    const keys = key.split('.');
-    let value: any = this.translations[this.currentLanguage];
-
-    for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = value[k];
-      } else {
-        // Fallback to English
-        value = this.translations.en;
-        for (const k2 of keys) {
-          if (value && typeof value === 'object' && k2 in value) {
-            value = value[k2];
-          } else {
-            return key; // Return key if translation not found
-          }
-        }
-        break;
-      }
-    }
-
-    if (typeof value !== 'string') {
-      return key;
-    }
-
-    // Replace parameters
-    if (params) {
-      return value.replace(/\{\{(\w+)\}\}/g, (match, param) => {
-        return params[param] || match;
-      });
-    }
-
-    return value;
-  }
-
-  /**
-   * Initialize i18n
-   */
-  init() {
-    const detectedLang = this.detectLanguage();
-    this.setLanguage(detectedLang);
-  }
-
-  /**
-   * Get all supported languages
-   */
-  getSupportedLanguages(): Array<{ code: SupportedLanguage; name: string }> {
-    return [
-      { code: 'en', name: 'English' },
-      { code: 'fr', name: 'Français' },
-      { code: 'es', name: 'Español' },
-      { code: 'de', name: 'Deutsch' },
-      { code: 'it', name: 'Italiano' },
-    ];
+/** Applied once at startup so assistive tech and the browser agree on the language. */
+export const initLocale = (): void => {
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = 'fr'
   }
 }
 
-// Singleton instance
-export const i18n = new I18n();
-
-// Initialize on load
 if (typeof window !== 'undefined') {
-  i18n.init();
+  initLocale()
 }
 
-export default i18n;
-
-
-
-
-
-
-
-
+export default { LOCALE, formatDate, formatShortDate, formatTime, formatNumber, plural, initLocale }

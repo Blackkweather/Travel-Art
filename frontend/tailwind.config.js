@@ -81,10 +81,20 @@ module.exports = {
         'sans': ['"Outfit Variable"', 'Outfit', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        // Documented shape system: media and cards are near-sharp, controls are
-        // pill. Nothing else is allowed to invent its own radius.
+        // The shape system, and the only radii allowed on this site.
+        //
+        // Both are near-sharp. A 2px corner is the single strongest signal that
+        // a page belongs to a heritage brand rather than a SaaS dashboard: the
+        // luxury houses this product sits beside (Aman, Hermes, Dior) all set
+        // type and images to hard edges. `control` was 999px, which put pill
+        // buttons against square photography and read as consumer-app chrome.
+        //
+        // Circles and capsules keep Tailwind's own `rounded-full`, which stays
+        // correct for the things that are actually round: avatars, status dots,
+        // spinners, progress tracks and status chips. Those are objects, not
+        // controls, so they are outside this scale by design.
         'card': '2px',
-        'control': '999px',
+        'control': '2px',
       },
       maxWidth: {
         'shell': '1400px',
@@ -147,13 +157,16 @@ module.exports = {
           '50%': { transform: 'translateY(-25px) translateX(-5px)' },
           '75%': { transform: 'translateY(-10px) translateX(3px)' },
         },
+        // rgba(20, 184, 166) is teal - left over from the palette that shipped
+        // before gold became the single accent. An animation named goldGlow
+        // was pulsing teal against a navy-and-gold page.
         goldGlow: {
-          '0%, 100%': { boxShadow: '0 0 5px rgba(20, 184, 166, 0.3)' },
-          '50%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.6), 0 0 30px rgba(20, 184, 166, 0.4)' },
+          '0%, 100%': { boxShadow: '0 0 5px rgba(185, 152, 81, 0.3)' },
+          '50%': { boxShadow: '0 0 20px rgba(185, 152, 81, 0.6), 0 0 30px rgba(185, 152, 81, 0.4)' },
         },
         pulseGlow: {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.3)' },
-          '50%': { boxShadow: '0 0 30px rgba(20, 184, 166, 0.6)' },
+          '0%, 100%': { boxShadow: '0 0 20px rgba(185, 152, 81, 0.3)' },
+          '50%': { boxShadow: '0 0 30px rgba(185, 152, 81, 0.6)' },
         },
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
@@ -168,11 +181,18 @@ module.exports = {
           '100%': { transform: 'translateX(-100%)' },
         }
       },
+      // Resolved from the CSS custom properties in index.css so a shadow
+      // re-tints when the theme flips. These were four hardcoded pure-black
+      // values, and because Tailwind's utilities layer outranks the @layer
+      // components block where index.css defines the same four class names,
+      // these were the shadows that actually rendered - the navy-tinted,
+      // theme-aware ones in index.css never applied to anything. Pure black
+      // shadows on a navy surface are what made cards look muddy.
       boxShadow: {
-        'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'medium': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'large': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        'luxury': '0 25px 50px -12px rgba(11, 31, 63, 0.25)',
+        'soft': 'var(--shadow-soft)',
+        'medium': 'var(--shadow-medium)',
+        'large': 'var(--shadow-large)',
+        'luxury': 'var(--shadow-luxury)',
       }
     },
   },

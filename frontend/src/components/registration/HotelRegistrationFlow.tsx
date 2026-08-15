@@ -326,7 +326,7 @@ const HotelRegistrationFlow: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto bg-surface-raised rounded-3xl shadow-2xl p-6 md:p-10 border border-line"
+          className="max-w-3xl mx-auto bg-surface-raised rounded-card shadow-2xl p-6 md:p-10 border border-line"
         >
           <AnimatePresence mode="wait">
             {state.step === 1 && (
@@ -365,7 +365,7 @@ const HotelRegistrationFlow: React.FC = () => {
                           { value: 'Hôtel urbain', label: 'Hôtel urbain' },
                           { value: 'Hôtel de luxe', label: 'Hôtel de luxe' },
                           { value: 'Hôtel familial', label: 'Hôtel familial' },
-                          { value: 'Business', label: 'Business' }
+                          { value: 'Business', label: 'Affaires' }
                         ]}
                         value={state.general.hotelType}
                         onChange={(v) => updateGeneral({ hotelType: v as HotelGeneral['hotelType'] })}
@@ -382,7 +382,7 @@ const HotelRegistrationFlow: React.FC = () => {
                       options={[
                         { value: 'Familles', label: 'Familles' },
                         { value: 'Couples', label: 'Couples' },
-                        { value: 'Adult only', label: 'Adult only' },
+                        { value: 'Adult only', label: 'Adultes uniquement' },
                         { value: 'Corporate', label: 'Corporate / événements' }
                       ]}
                       values={state.general.publicPrimary}
@@ -440,9 +440,9 @@ const HotelRegistrationFlow: React.FC = () => {
                       name="ambiance-event-types"
                       label="Types d’événements habituels"
                       options={[
-                        { value: 'Live music', label: 'Live music' },
+                        { value: 'Live music', label: 'Musique live' },
                         { value: 'DJ sets', label: 'DJ sets' },
-                        { value: 'Shows', label: 'Shows' },
+                        { value: 'Shows', label: 'Spectacles' },
                         { value: 'Ateliers / performances artistiques', label: 'Ateliers / performances artistiques' }
                       ]}
                       values={state.ambiance.eventTypes}
@@ -477,7 +477,7 @@ const HotelRegistrationFlow: React.FC = () => {
                   </div>
                   <div className="space-y-6">
                     {state.spaces.map((space, index) => (
-                      <div key={index} className="p-4 border rounded-xl space-y-4">
+                      <div key={index} className="p-4 border rounded-card space-y-4">
                         <FormField label="Nom de l’espace" placeholder="Scène, plage, rooftop, salle, piscine…" value={space.name} onChange={(e) => updateSpace(index, { name: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                         <RadioGroup
                           name={`space-${index}-location-type`}
@@ -556,7 +556,7 @@ const HotelRegistrationFlow: React.FC = () => {
                     onChange={(vals) => updateCollab({ types: vals as Collaboration['types'] })}
                   />
                   <FormField label="Conditions pour l’artiste (à remplir)" placeholder="Décrivez les conditions précises pour l’artiste venant" value={state.collaboration.conditionsText || ''} onChange={(e) => updateCollab({ conditionsText: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <RadioGroup name="collab-duration" label="Durée des prestations" options={[{ value: 'One shot', label: 'One shot' }, { value: 'Résidence', label: 'Résidence' }]} value={state.collaboration.durationType} onChange={(v) => updateCollab({ durationType: v as Collaboration['durationType'] })} />
+                  <RadioGroup name="collab-duration" label="Durée des prestations" options={[{ value: 'One shot', label: 'Ponctuel' }, { value: 'Résidence', label: 'Résidence' }]} value={state.collaboration.durationType} onChange={(v) => updateCollab({ durationType: v as Collaboration['durationType'] })} />
                   <FormField label="Résidence (durée)" placeholder="1 semaine, 1 mois…" value={state.collaboration.residenceDuration || ''} onChange={(e) => updateCollab({ residenceDuration: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <FormField label="Dates ou périodes ouvertes" placeholder="Périodes ouvertes" value={state.collaboration.openDates || ''} onChange={(e) => updateCollab({ openDates: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <div className="flex justify-between pt-4">

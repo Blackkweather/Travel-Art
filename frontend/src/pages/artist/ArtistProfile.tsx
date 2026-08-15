@@ -112,7 +112,7 @@ const ArtistProfile: React.FC = () => {
           memberSince: user?.createdAt || new Date().toISOString()
         })
       } else {
-        toast.error('Failed to load profile')
+        toast.error('Impossible de charger le profil')
         console.error('Error fetching profile:', error)
       }
     } finally {
@@ -122,7 +122,7 @@ const ArtistProfile: React.FC = () => {
 
   const handleSave = async () => {
     if (!profile?.id) {
-      toast.error('Please create your profile first')
+      toast.error('Créez d’abord votre profil')
       return
     }
 
@@ -161,7 +161,7 @@ const ArtistProfile: React.FC = () => {
 
       await apiClient.put('/artists/me', updateData);
       
-      toast.success('Profile updated successfully!')
+      toast.success('Profil mis à jour')
       setIsEditing(false)
       await fetchProfile()
     } catch (error: any) {
@@ -172,7 +172,7 @@ const ArtistProfile: React.FC = () => {
 
   const handleAddVideo = () => {
     if (!newVideoUrl.trim()) {
-      toast.error('Please enter a video URL')
+      toast.error('Saisissez l’adresse d’une vidéo')
       return
     }
     
@@ -182,7 +182,7 @@ const ArtistProfile: React.FC = () => {
                        newVideoUrl.startsWith('http')
     
     if (!isValidUrl) {
-      toast.error('Please enter a valid YouTube or video URL')
+      toast.error('Saisissez une adresse YouTube ou vidéo valide')
       return
     }
     
@@ -191,7 +191,7 @@ const ArtistProfile: React.FC = () => {
       videos: [...profileData.videos, newVideoUrl]
     })
     setNewVideoUrl('')
-    toast.success('Video added! Click "Save Changes" to update your profile')
+    toast.success('Vidéo ajoutée. Utilisez « Enregistrer les modifications » pour mettre à jour votre profil')
   }
 
   const handleRemoveVideo = (index: number) => {
@@ -199,7 +199,7 @@ const ArtistProfile: React.FC = () => {
       ...profileData,
       videos: profileData.videos.filter((_, i) => i !== index)
     })
-    toast.success('Video removed! Click "Save Changes" to update your profile')
+    toast.success('Vidéo retirée. Utilisez « Enregistrer les modifications » pour mettre à jour votre profil')
   }
 
   const fetchAvailability = async () => {
@@ -220,17 +220,17 @@ const ArtistProfile: React.FC = () => {
 
   const handleAddAvailability = async () => {
     if (!profile?.id) {
-      toast.error('Please create your profile first')
+      toast.error('Créez d’abord votre profil')
       return
     }
 
     if (!newAvailability.dateFrom || !newAvailability.dateTo) {
-      toast.error('Please select both start and end dates')
+      toast.error('Sélectionnez une date de début et une date de fin')
       return
     }
 
     if (new Date(newAvailability.dateFrom) >= new Date(newAvailability.dateTo)) {
-      toast.error('End date must be after start date')
+      toast.error('La date de fin doit suivre la date de début')
       return
     }
 
@@ -240,7 +240,7 @@ const ArtistProfile: React.FC = () => {
         dateFrom: new Date(newAvailability.dateFrom).toISOString(),
         dateTo: new Date(newAvailability.dateTo).toISOString()
       })
-      toast.success('Availability added successfully!')
+      toast.success('Disponibilité ajoutée')
       setNewAvailability({ dateFrom: '', dateTo: '' })
       await fetchAvailability()
     } catch (error: any) {
@@ -258,9 +258,9 @@ const ArtistProfile: React.FC = () => {
       // Note: You may need to add a DELETE endpoint for availability
       // For now, we'll just remove it from the local state
       setAvailabilities(prev => prev.filter(a => a.id !== availabilityId))
-      toast.success('Availability removed')
+      toast.success('Disponibilité retirée')
     } catch (error: any) {
-      toast.error('Failed to remove availability')
+      toast.error('Impossible de retirer cette disponibilité')
       console.error('Error removing availability:', error)
     }
   }
@@ -286,12 +286,12 @@ const ArtistProfile: React.FC = () => {
       });
     }
     
-    toast.success('Profile picture saved to database!');
+    toast.success('Photo de profil enregistrée');
   }
 
   const handleDelete = async () => {
     if (!profile?.id) {
-      toast.error('No profile to delete')
+      toast.error('Aucun profil à supprimer')
       return
     }
     const confirmed = window.confirm('Supprimer votre profil artiste ?')
@@ -322,10 +322,10 @@ const ArtistProfile: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            Artist Profile
+            Profil de l’artiste
           </h1>
           <p className="text-content-secondary">
-            Manage your profile and showcase your talent to luxury hotels
+            Gérez votre profil et présentez votre travail aux hôtels d’exception
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -364,7 +364,7 @@ const ArtistProfile: React.FC = () => {
                   <img
                     src={normalizeImageUrl(profileData.images[0])}
                     alt={profileData.name}
-                    className="w-full h-full rounded-xl object-cover bg-surface-sunken ring-2 ring-gold/20"
+                    className="w-full h-full rounded-card object-cover bg-surface-sunken ring-2 ring-gold/20"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
                       target.style.display = 'none'
@@ -374,7 +374,7 @@ const ArtistProfile: React.FC = () => {
                   />
                 ) : null}
                 <div 
-                  className={`absolute inset-0 w-full h-full rounded-xl bg-gradient-to-br from-navy/10 to-gold/10 ring-2 ring-gold/20 flex items-center justify-center ${profileData.images[0] ? 'hidden' : 'flex'}`}
+                  className={`absolute inset-0 w-full h-full rounded-card bg-gradient-to-br from-navy/10 to-gold/10 ring-2 ring-gold/20 flex items-center justify-center ${profileData.images[0] ? 'hidden' : 'flex'}`}
                   style={{ display: profileData.images[0] ? 'none' : 'flex' }}
                 >
                   <User className="w-24 h-24 text-content/30" />
@@ -415,7 +415,7 @@ const ArtistProfile: React.FC = () => {
               </div>
 
               <div>
-                <label className="form-label">Location</label>
+                <label className="form-label">Lieu</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -432,7 +432,7 @@ const ArtistProfile: React.FC = () => {
               </div>
 
               <div>
-                <label className="form-label">Average Rating</label>
+                <label className="form-label">Note moyenne</label>
                 <p className="text-lg font-semibold text-content">
                   {profileData.rating > 0 ? profileData.rating.toFixed(1) : 'No ratings yet'}
                 </p>
@@ -447,7 +447,7 @@ const ArtistProfile: React.FC = () => {
                   value={profileData.bio}
                   onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
                   className="form-input h-32 resize-none"
-                  placeholder="Tell hotels about your artistic journey and specialties..."
+                  placeholder="Racontez aux hôtels votre parcours et vos spécialités…"
                 />
               ) : (
                 <p className="text-content-secondary leading-relaxed">
@@ -458,27 +458,27 @@ const ArtistProfile: React.FC = () => {
 
             {/* Stats */}
             <div className="mt-6 grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-surface rounded-lg">
+              <div className="text-center p-4 bg-surface rounded-card">
                 <div className="flex items-center justify-center mb-2">
                   <span className="text-gold font-bold mr-1">◆</span>
                   <span className="text-lg font-bold text-content">{profileData.rating > 0 ? profileData.rating.toFixed(1) : '0'}</span>
                 </div>
-                <p className="text-sm text-content-secondary">Average Rating</p>
+                <p className="text-sm text-content-secondary">Note moyenne</p>
               </div>
-              <div className="text-center p-4 bg-surface rounded-lg">
+              <div className="text-center p-4 bg-surface rounded-card">
                 <div className="flex items-center justify-center mb-2">
                   <Calendar className="w-5 h-5 text-gold mr-1" />
                   <span className="text-lg font-bold text-content">{profileData.totalBookings}</span>
                 </div>
-                <p className="text-sm text-content-secondary">Total Bookings</p>
+                <p className="text-sm text-content-secondary">Réservations</p>
               </div>
-              <div className="text-center p-4 bg-surface rounded-lg">
+              <div className="text-center p-4 bg-surface rounded-card">
                 <div className="flex items-center justify-center mb-2">
                   <Music className="w-5 h-5 text-gold mr-1" />
                   <span className="text-lg font-bold text-content">Member</span>
                 </div>
                 <p className="text-sm text-content-secondary">
-                  Since {profileData.memberSince ? new Date(profileData.memberSince).toLocaleDateString() : 'Recently'}
+                  Since {profileData.memberSince ? new Date(profileData.memberSince).toLocaleDateString('fr-FR') : 'Recently'}
                 </p>
               </div>
             </div>
@@ -490,19 +490,19 @@ const ArtistProfile: React.FC = () => {
       {profile && (
         <div className="card-luxury">
           <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
-            Registration Information
+            Informations d’inscription
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {profile.stageName && (
               <div>
-                <label className="form-label">Stage Name</label>
+                <label className="form-label">Nom de scène</label>
                 <p className="text-content font-medium">{profile.stageName}</p>
               </div>
             )}
             
             {profile.birthDate && (
               <div>
-                <label className="form-label">Birth Date</label>
+                <label className="form-label">Date de naissance</label>
                 <p className="text-content font-medium">{profile.birthDate}</p>
               </div>
             )}
@@ -516,7 +516,7 @@ const ArtistProfile: React.FC = () => {
             
             {profile.user?.email && (
               <div>
-                <label className="form-label">Email</label>
+                <label className="form-label">E-mail</label>
                 <p className="text-content font-medium">{profile.user.email}</p>
               </div>
             )}
@@ -528,7 +528,7 @@ const ArtistProfile: React.FC = () => {
                   artisticProfile = typeof profile.artisticProfile === 'string' 
                     ? JSON.parse(profile.artisticProfile) 
                     : profile.artisticProfile
-                } catch (e) {
+                } catch {
                   return null
                 }
               }
@@ -537,28 +537,28 @@ const ArtistProfile: React.FC = () => {
                 <>
                   {artisticProfile.mainCategory && (
                     <div>
-                      <label className="form-label">Main Category</label>
+                      <label className="form-label">Catégorie principale</label>
                       <p className="text-content font-medium">{artisticProfile.mainCategory}</p>
                     </div>
                   )}
                   
                   {artisticProfile.secondaryCategory && (
                     <div>
-                      <label className="form-label">Secondary Category</label>
+                      <label className="form-label">Catégorie secondaire</label>
                       <p className="text-content font-medium">{artisticProfile.secondaryCategory}</p>
                     </div>
                   )}
                   
                   {artisticProfile.specificCategory && (
                     <div>
-                      <label className="form-label">Specialty</label>
+                      <label className="form-label">Spécialité</label>
                       <p className="text-content font-medium">{artisticProfile.specificCategory}</p>
                     </div>
                   )}
                   
                   {artisticProfile.domain && (
                     <div>
-                      <label className="form-label">Domain</label>
+                      <label className="form-label">Domaine</label>
                       <p className="text-content font-medium">{artisticProfile.domain}</p>
                     </div>
                   )}
@@ -572,7 +572,7 @@ const ArtistProfile: React.FC = () => {
                   
                   {artisticProfile.languages && artisticProfile.languages.length > 0 && (
                     <div>
-                      <label className="form-label">Languages</label>
+                      <label className="form-label">Langues</label>
                       <div className="flex flex-wrap gap-2">
                         {artisticProfile.languages.map((lang: string, idx: number) => (
                           <span key={idx} className="px-3 py-1 bg-gold/20 text-gold rounded-full text-sm font-medium">
@@ -585,7 +585,7 @@ const ArtistProfile: React.FC = () => {
                   
                   {artisticProfile.audienceType && artisticProfile.audienceType.length > 0 && (
                     <div>
-                      <label className="form-label">Target Audience</label>
+                      <label className="form-label">Type de public</label>
                       <div className="flex flex-wrap gap-2">
                         {artisticProfile.audienceType.map((aud: string, idx: number) => (
                           <span key={idx} className="px-3 py-1 bg-navy/10 text-content rounded-full text-sm font-medium">
@@ -601,7 +601,7 @@ const ArtistProfile: React.FC = () => {
             
             {profile.membershipStatus && (
               <div>
-                <label className="form-label">Membership Status</label>
+                <label className="form-label">Statut de l’adhésion</label>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${profile.membershipStatus === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                   <p className="text-content font-medium">
@@ -618,7 +618,7 @@ const ArtistProfile: React.FC = () => {
       <div className="card-luxury">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-            Portfolio Images
+            Images du portfolio
           </h2>
           {isEditing && (
             <button className="btn-secondary flex items-center space-x-2">
@@ -634,10 +634,10 @@ const ArtistProfile: React.FC = () => {
                 <img
                   src={normalizeImageUrl(image)}
                   alt={`Portfolio ${index + 1}`}
-                  className="w-full h-48 object-cover rounded-lg"
+                  className="w-full h-48 object-cover rounded-card"
                 />
                 {isEditing && (
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-card flex items-center justify-center">
                     <button className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
                       ×
                     </button>
@@ -647,7 +647,7 @@ const ArtistProfile: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p className="text-content-secondary">No portfolio images yet. Click &quot;Edit Profile&quot; to add images.</p>
+          <p className="text-content-secondary">Aucune image dans le portfolio. Utilisez « Modifier le profil » pour en ajouter.</p>
         )}
       </div>
 
@@ -656,15 +656,15 @@ const ArtistProfile: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-              Availability Calendar
+              Calendrier de disponibilités
             </h2>
-            <p className="text-sm text-content-secondary mt-2">Set your available dates for hotel bookings</p>
+            <p className="text-sm text-content-secondary mt-2">Indiquez vos dates disponibles pour les réservations</p>
           </div>
         </div>
 
         {/* Add Availability Form */}
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="form-label mb-4">Add Available Period</h3>
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-card">
+          <h3 className="form-label mb-4">Ajouter une période de disponibilité</h3>
           <div className="space-y-4">
             <DateRangePicker
               startDate={newAvailability.dateFrom}
@@ -695,13 +695,13 @@ const ArtistProfile: React.FC = () => {
               .map((avail: any) => (
                 <div
                   key={avail.id}
-                  className="flex items-center justify-between p-4 bg-surface rounded-lg border border-line"
+                  className="flex items-center justify-between p-4 bg-surface rounded-card border border-line"
                 >
                   <div className="flex items-center gap-4">
                     <Calendar className="w-5 h-5 text-gold" />
                     <div>
                       <p className="font-medium text-content">
-                        {new Date(avail.dateFrom).toLocaleDateString()} - {new Date(avail.dateTo).toLocaleDateString()}
+                        {new Date(avail.dateFrom).toLocaleDateString('fr-FR')} - {new Date(avail.dateTo).toLocaleDateString('fr-FR')}
                       </p>
                       <p className="text-sm text-content-secondary">
                         {Math.ceil((new Date(avail.dateTo).getTime() - new Date(avail.dateFrom).getTime()) / (1000 * 60 * 60 * 24))} days
@@ -710,20 +710,20 @@ const ArtistProfile: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleRemoveAvailability(avail.id)}
-                    className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
+                    className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-card transition-colors flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Remove
+                    Retirer
                   </button>
                 </div>
               ))}
           </div>
         ) : (
-          <div className="text-center py-12 px-4 bg-surface rounded-lg border-2 border-dashed border-line-strong">
+          <div className="text-center py-12 px-4 bg-surface rounded-card border-2 border-dashed border-line-strong">
             <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-content mb-2">No availability set</h3>
+            <h3 className="text-lg font-semibold text-content mb-2">Aucune disponibilité renseignée</h3>
             <p className="text-content-secondary mb-4">
-              Add your available dates above so hotels can book you for performances
+              Ajoutez vos dates ci-dessus pour que les hôtels puissent vous solliciter
             </p>
           </div>
         )}
@@ -734,14 +734,14 @@ const ArtistProfile: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-              Performance Videos
+              Vidéos de performances
             </h2>
-            <p className="text-sm text-content-secondary mt-2">Add YouTube or video URLs to showcase your performances</p>
+            <p className="text-sm text-content-secondary mt-2">Ajoutez des liens YouTube ou vidéo pour présenter vos performances</p>
           </div>
         </div>
         
         {isEditing && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-card">
             <label className="form-label">Add YouTube or Video URL</label>
             <div className="flex gap-3">
               <input
@@ -789,7 +789,7 @@ const ArtistProfile: React.FC = () => {
               }
               
               return (
-                <div key={index} className="border border-line rounded-lg overflow-hidden">
+                <div key={index} className="border border-line rounded-card overflow-hidden">
                   {/* Video Preview */}
                   {isYouTube && videoId ? (
                     <div className="aspect-video bg-gray-900">
@@ -819,10 +819,10 @@ const ArtistProfile: React.FC = () => {
                     {isEditing && (
                       <button 
                         onClick={() => handleRemoveVideo(index)}
-                        className="ml-4 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
+                        className="ml-4 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-card transition-colors flex items-center gap-2"
                       >
                         <X className="w-4 h-4" />
-                        Remove
+                        Retirer
                       </button>
                     )}
                   </div>
@@ -831,13 +831,13 @@ const ArtistProfile: React.FC = () => {
             })}
           </div>
         ) : (
-          <div className="text-center py-12 px-4 bg-surface rounded-lg border-2 border-dashed border-line-strong">
+          <div className="text-center py-12 px-4 bg-surface rounded-card border-2 border-dashed border-line-strong">
             <div className="w-16 h-16 rounded-full bg-surface-sunken flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-content-secondary" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-content mb-2">No videos yet</h3>
+            <h3 className="text-lg font-semibold text-content mb-2">Aucune vidéo</h3>
             <p className="text-content-secondary mb-4">
               {isEditing 
                 ? 'Add your first performance video using the form above' 
@@ -852,7 +852,7 @@ const ArtistProfile: React.FC = () => {
         <div className="flex justify-end">
           <button onClick={handleSave} className="btn-primary flex items-center justify-center space-x-2">
             <Save className="w-4 h-4 flex-shrink-0" />
-            <span className="leading-none">Save Changes</span>
+            <span className="leading-none">Enregistrer les modifications</span>
           </button>
         </div>
       )}

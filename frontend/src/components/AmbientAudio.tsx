@@ -74,7 +74,7 @@ export default function AmbientAudio({
     interactionListenersRef.current.forEach(({ element, event, handler }) => {
       try {
         element.removeEventListener(event, handler)
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
     })
@@ -176,7 +176,7 @@ export default function AmbientAudio({
             try {
               (playerElement as any).__ytplayer?.destroy?.()
               delete (playerElement as any).__ytplayer
-            } catch (e) {
+            } catch {
               // Ignore destroy errors
             }
           }
@@ -221,7 +221,7 @@ export default function AmbientAudio({
                 if (!isMountedRef.current) {
                   try {
                     event.target.destroy()
-                  } catch (e) {
+                  } catch {
                     // Ignore destroy errors
                   }
                   return
@@ -231,7 +231,7 @@ export default function AmbientAudio({
                 if (!isMountedRef.current) {
                   try {
                     event.target.destroy()
-                  } catch (e) {
+                  } catch {
                     // Ignore destroy errors
                   }
                   isInitializingRef.current = false
@@ -243,7 +243,7 @@ export default function AmbientAudio({
                   console.log('⚠️ Player already initialized, destroying duplicate')
                   try {
                     event.target.destroy()
-                  } catch (e) {
+                  } catch {
                     // Ignore destroy errors
                   }
                   isInitializingRef.current = false
@@ -385,7 +385,7 @@ export default function AmbientAudio({
                 const newVolume = initialVolume * (1 - self.progress)
                 volumeRef.current = newVolume
                 youtubePlayer.setVolume(Math.max(newVolume * 100, 0))
-              } catch (error) {
+              } catch {
                 // Ignore volume update errors
               }
             }
@@ -455,7 +455,7 @@ export default function AmbientAudio({
         if (scrollTriggerRef.current) {
           try {
             scrollTriggerRef.current.kill()
-          } catch (error) {
+          } catch {
             // Ignore ScrollTrigger cleanup errors
           }
           scrollTriggerRef.current = null
@@ -581,7 +581,7 @@ export default function AmbientAudio({
               const newVolume = initialVolume * (1 - self.progress)
               volumeRef.current = newVolume
               ;(audioRef.current as HTMLAudioElement).volume = Math.max(newVolume, 0)
-            } catch (error) {
+            } catch {
               // Ignore volume update errors
             }
           }
@@ -613,7 +613,7 @@ export default function AmbientAudio({
           audioEl.pause()
           audioEl.src = ''
           audioEl.load()
-        } catch (error) {
+        } catch {
           // Ignore cleanup errors
         }
       }
@@ -628,7 +628,7 @@ export default function AmbientAudio({
       if (scrollTriggerRef.current) {
         try {
           scrollTriggerRef.current.kill()
-        } catch (error) {
+        } catch {
           // Ignore ScrollTrigger cleanup errors
         }
         scrollTriggerRef.current = null
@@ -720,7 +720,7 @@ export default function AmbientAudio({
         return
       } catch (error: any) {
         console.error('❌ Failed to start:', error)
-        alert(`Could not play audio: ${error.message}`)
+        alert(`Lecture audio impossible : ${error.message}`)
         return
       }
     }
@@ -822,7 +822,7 @@ export default function AmbientAudio({
           </svg>
         )}
         {!hasStarted && (
-          <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs text-off-black bg-gold px-3 py-1.5 rounded shadow-lg font-medium">
+          <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs text-off-black bg-gold px-3 py-1.5 rounded-card shadow-lg font-medium">
             Click to Play
           </span>
         )}

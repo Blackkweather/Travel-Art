@@ -89,7 +89,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="w-full"
     >
-      <div className="bg-beige-50 rounded-2xl p-6 border-2 border-beige-100">
+      <div className="bg-beige-50 rounded-card p-6 border-2 border-beige-100">
         {label && (
           <label className="block text-lg font-semibold text-navy-900 mb-4">
             {label}

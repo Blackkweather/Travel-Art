@@ -22,7 +22,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   return (
     <div
       role="status"
-      aria-label="Loading"
+      aria-label="Chargement"
       className={`flex items-center justify-center ${className}`}
     >
       <motion.div
@@ -35,7 +35,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           ease: "linear"
         }}
       />
-      <span className="sr-only">Loading…</span>
+      <span className="sr-only">Chargement…</span>
     </div>
   )
 }

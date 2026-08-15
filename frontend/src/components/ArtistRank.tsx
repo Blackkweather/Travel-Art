@@ -27,33 +27,33 @@ interface ArtistRankProps {
 export const RANK_CONFIG = {
   red: {
     color: '#8A93A6',
-    label: 'Rising',
-    description: 'Starting tier - Welcome!'
+    label: 'Révélation',
+    description: 'Premier palier — bienvenue'
   },
   blue: {
     color: '#A8763C',
-    label: 'Skilled',
-    description: 'Building reputation'
+    label: 'Confirmé',
+    description: 'Réputation en construction'
   },
   green: {
     color: '#B99851',
     label: 'Expert',
-    description: 'Highly experienced'
+    description: 'Grande expérience'
   },
   gold: {
     color: '#DAC189',
-    label: 'Artist',
-    description: 'Top-tier professional'
+    label: 'Artiste',
+    description: 'Professionnel de premier plan'
   },
   platinum: {
     color: '#D6DAE0',
-    label: 'Master',
-    description: 'Elite performer'
+    label: 'Maître',
+    description: 'Artiste d’élite'
   },
   diamond: {
     color: '#F0F6FF',
-    label: 'Superstar',
-    description: 'On request only'
+    label: 'Tête d’affiche',
+    description: 'Sur demande uniquement'
   }
 }
 

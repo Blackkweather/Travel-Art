@@ -20,11 +20,11 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('')
 
   const quickCategories = [
-    { value: 'booking', label: 'Booking Issue' },
-    { value: 'payment', label: 'Payment Question' },
-    { value: 'profile', label: 'Profile Help' },
-    { value: 'technical', label: 'Technical Issue' },
-    { value: 'other', label: 'Other' }
+    { value: 'booking', label: 'Problème de réservation' },
+    { value: 'payment', label: 'Question de facturation' },
+    { value: 'profile', label: 'Aide sur le profil' },
+    { value: 'technical', label: 'Problème technique' },
+    { value: 'other', label: 'Autre' }
   ]
 
   const handleCategorySelect = (category: string) => {
@@ -39,12 +39,12 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
     e.preventDefault()
     
     if (!subject.trim() || !message.trim()) {
-      toast.error('Please fill in both subject and message')
+      toast.error('Renseignez l’objet et le message')
       return
     }
 
     if (message.trim().length < 10) {
-      toast.error('Please provide more details in your message (at least 10 characters)')
+      toast.error('Détaillez un peu plus votre message (10 caractères minimum)')
       return
     }
 
@@ -71,7 +71,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
       // Open email client
       window.location.href = `mailto:${supportEmail}?subject=${emailSubject}&body=${emailBody}`
       
-      toast.success('Opening your email client...')
+      toast.success('Ouverture de votre messagerie…')
       setIsSuccess(true)
       
       // Reset form after a delay
@@ -84,7 +84,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
       }, 3000)
     } catch (error) {
       console.error('Error sending message:', error)
-      toast.error('Failed to open email client. Please contact us directly at hello@travelart.com')
+      toast.error('Impossible d’ouvrir votre messagerie. Écrivez-nous directement à hello@travelart.com')
       setIsSubmitting(false)
     }
   }
@@ -97,17 +97,17 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
             <CheckCircle2 className="w-10 h-10 text-white" />
           </div>
           <h3 className="text-2xl font-serif font-bold text-content mb-3">
-            Message Ready!
+            Message prêt
           </h3>
           <p className="text-content-secondary mb-6">
-            Your email client should open shortly. If it doesn't, please contact us directly at{' '}
+            Votre messagerie devrait s’ouvrir dans un instant. Si ce n’est pas le cas, écrivez-nous directement à{' '}
             <a href="mailto:hello@travelart.com" className="text-gold hover:underline font-semibold">
               hello@travelart.com
             </a>
           </p>
           <div className="flex items-center justify-center gap-2 text-sm text-content-secondary">
             <Sparkles className="w-4 h-4 text-gold" />
-            <span>We typically respond within 24 hours</span>
+            <span>Nous répondons généralement sous 24 heures</span>
           </div>
         </div>
       </div>
@@ -122,35 +122,35 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start gap-4 mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-navy via-navy/90 to-navy/80 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+          <div className="w-16 h-16 bg-gradient-to-br from-navy via-navy/90 to-navy/80 rounded-card flex items-center justify-center shadow-lg flex-shrink-0">
             <MessageCircle className="w-8 h-8 text-gold" />
           </div>
           <div className="flex-1">
             <h2 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-              Contact Support
+              Contacter l’assistance
             </h2>
             <p className="text-content-secondary leading-relaxed">
-              Have a question or need assistance? Our support team is here to help you. We're committed to providing exceptional service.
+              Une question, un besoin d’accompagnement ? Notre équipe est à votre disposition.
             </p>
           </div>
         </div>
 
         {/* Quick Contact Options */}
-        <div className="mb-8 p-6 bg-surface-sunken rounded-xl border border-gold/20">
+        <div className="mb-8 p-6 bg-surface-sunken rounded-card border border-gold/20">
           <div className="flex items-center gap-2 mb-4">
             <HelpCircle className="w-5 h-5 text-gold" />
-            <h3 className="text-lg font-semibold text-content">Quick Contact</h3>
+            <h3 className="text-lg font-semibold text-content">Contact rapide</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
               href="mailto:hello@travelart.com"
-              className="flex items-center gap-3 p-4 bg-surface-raised rounded-lg border border-line hover:border-gold hover:shadow-md transition-all group"
+              className="flex items-center gap-3 p-4 bg-surface-raised rounded-card border border-line hover:border-gold hover:shadow-md transition-all group"
             >
-              <div className="w-10 h-10 bg-navy/10 rounded-lg flex items-center justify-center group-hover:bg-navy group-hover:text-white transition-colors">
+              <div className="w-10 h-10 bg-navy/10 rounded-card flex items-center justify-center group-hover:bg-navy group-hover:text-white transition-colors">
                 <Mail className="w-5 h-5 text-content group-hover:text-white" />
               </div>
               <div>
-                <p className="font-semibold text-content text-sm">Email</p>
+                <p className="font-semibold text-content text-sm">E-mail</p>
                 <p className="text-xs text-content-secondary">hello@travelart.com</p>
               </div>
             </a>
@@ -158,9 +158,9 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               href="https://wa.me/212764998286"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 bg-surface-raised rounded-lg border border-line hover:border-green-500 hover:shadow-md transition-all group"
+              className="flex items-center gap-3 p-4 bg-surface-raised rounded-card border border-line hover:border-green-500 hover:shadow-md transition-all group"
             >
-              <div className="w-10 h-10 bg-green-50 dark:bg-green-500/10 rounded-lg flex items-center justify-center group-hover:bg-green-500 transition-colors">
+              <div className="w-10 h-10 bg-green-50 dark:bg-green-500/10 rounded-card flex items-center justify-center group-hover:bg-green-500 transition-colors">
                 <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400 group-hover:text-white" />
               </div>
               <div>
@@ -176,7 +176,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           {/* Quick Categories */}
           <div>
             <label className="block text-sm font-semibold text-content mb-3">
-              What can we help you with?
+              Comment pouvons-nous vous aider ?
             </label>
             <div className="flex flex-wrap gap-2">
               {quickCategories.map((category) => (
@@ -184,7 +184,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
                   key={category.value}
                   type="button"
                   onClick={() => handleCategorySelect(category.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                     selectedCategory === category.value
                       ? 'bg-gold text-off-black shadow-md'
                       : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken border border-line'
@@ -199,15 +199,15 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           {/* Subject */}
           <div>
             <label htmlFor="subject" className="block text-sm font-semibold text-content mb-2">
-              Subject <span className="text-red-500">*</span>
+              Objet <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Brief description of your inquiry..."
-              className="w-full px-4 py-3.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all bg-surface-raised text-content placeholder-gray-400"
+              placeholder="En quelques mots, l’objet de votre demande…"
+              className="w-full px-4 py-3.5 border border-line rounded-card focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all bg-surface-raised text-content placeholder-gray-400"
               required
             />
           </div>
@@ -230,9 +230,9 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
                   setMessage(e.target.value)
                 }
               }}
-              placeholder="Please provide as much detail as possible so we can assist you better..."
+              placeholder="Décrivez votre demande aussi précisément que possible…"
               rows={6}
-              className="w-full px-4 py-3.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all resize-none bg-surface-raised text-content placeholder-gray-400"
+              className="w-full px-4 py-3.5 border border-line rounded-card focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all resize-none bg-surface-raised text-content placeholder-gray-400"
               required
               maxLength={500}
             />
@@ -248,12 +248,12 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               {isSubmitting ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Preparing...</span>
+                  <span>Préparation…</span>
                 </>
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  <span>Send Message</span>
+                  <span>Envoyer le message</span>
                 </>
               )}
             </button>
@@ -263,7 +263,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               className="btn-secondary flex items-center justify-center gap-2 min-h-[48px]"
             >
               <Mail className="w-5 h-5" />
-              <span>Email Directly</span>
+              <span>Écrire directement</span>
             </a>
           </div>
 
@@ -274,8 +274,8 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
                 <Sparkles className="w-3 h-3 text-gold" />
               </div>
               <div>
-                <p className="font-medium text-content mb-1">Response Time</p>
-                <p>We typically respond within 24 hours during business days. For urgent matters, please use WhatsApp or phone.</p>
+                <p className="font-medium text-content mb-1">Délai de réponse</p>
+                <p>Nous répondons généralement sous 24 heures ouvrées. Pour une urgence, privilégiez WhatsApp ou le téléphone.</p>
               </div>
             </div>
           </div>

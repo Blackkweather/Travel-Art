@@ -31,10 +31,10 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   }
 
   return (
-    <div className={`inline-flex items-center space-x-1 ${className}`} title="Verified Account">
+    <div className={`inline-flex items-center space-x-1 ${className}`} title="Compte vérifié">
       <CheckCircle className={`${sizeClasses[size]} ${colors[type]} fill-current`} />
       <span className={`${textSizes[size]} font-semibold ${colors[type]}`}>
-        Verified
+        Vérifié
       </span>
     </div>
   )

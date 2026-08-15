@@ -56,7 +56,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
       </div>
 
       {/* Basic Info Section */}
-      <motion.div variants={itemVariants} className="bg-surface rounded-2xl p-6 border border-line">
+      <motion.div variants={itemVariants} className="bg-surface rounded-card p-6 border border-line">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold text-navy-900">Informations personnelles</h3>
           <button
@@ -86,7 +86,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             <p className="text-content font-medium">{formatDate(basicInfo.birthDate)}</p>
           </div>
           <div>
-            <p className="text-sm text-content-secondary mb-1">Email</p>
+            <p className="text-sm text-content-secondary mb-1">E-mail</p>
             <p className="text-content font-medium">{basicInfo.email || 'Non renseigné'}</p>
           </div>
           <div>
@@ -101,7 +101,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
       </motion.div>
 
       {/* Artistic Category Section */}
-      <motion.div variants={itemVariants} className="bg-surface rounded-2xl p-6 border border-line">
+      <motion.div variants={itemVariants} className="bg-surface rounded-card p-6 border border-line">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold text-navy-900">Catégorie artistique</h3>
           <button
@@ -182,12 +182,12 @@ const Step3Confirmation: React.FC<Step3Props> = ({
       </motion.div>
 
       {/* Terms Confirmation */}
-      <motion.div variants={itemVariants} className="flex items-start gap-3 p-4 bg-gold-50 rounded-xl border border-gold-200">
+      <motion.div variants={itemVariants} className="flex items-start gap-3 p-4 bg-gold-50 rounded-card border border-gold-200">
         <Check className="w-5 h-5 text-gold-600 mt-0.5 flex-shrink-0" />
         <p className="text-sm text-content-secondary">
-          J'ai lu et j'accepte les{' '}
+          J’ai lu et j’accepte les{' '}
           <a href="/terms" className="text-gold-600 hover:underline font-medium">
-            conditions générales d'utilisation
+            conditions générales d’utilisation
           </a>{' '}
           et la{' '}
           <a href="/privacy" className="text-gold-600 hover:underline font-medium">
@@ -202,7 +202,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           onClick={() => onEdit(2)}
           disabled={isLoading}
           className={`
-            flex-1 h-14 rounded-xl font-bold text-lg transition-all
+            flex-1 h-14 rounded-card font-bold text-lg transition-all
             bg-surface-sunken hover:bg-white/10 text-navy-900
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]
@@ -214,7 +214,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           onClick={onSubmit}
           disabled={isLoading || !basicInfo.agreeToTerms}
           className={`
-            flex-1 h-14 rounded-xl font-bold text-lg transition-all
+            flex-1 h-14 rounded-card font-bold text-lg transition-all
             bg-gold hover:bg-gold-600 text-white
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]
@@ -229,7 +229,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           ) : (
             <>
               <Check className="w-5 h-5" />
-              <span>Confirmer l'inscription</span>
+              <span>Confirmer l’inscription</span>
             </>
           )}
         </button>

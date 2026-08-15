@@ -134,9 +134,9 @@ const buildUserGrowthSeries = (users: any[], months: number): TrendPoint[] => {
 
 const trendValueFormatter = (value: number, currency?: string) => {
   if (currency) {
-    return `${currency}${value.toLocaleString()}`
+    return `${currency}${value.toLocaleString('fr-FR')}`
   }
-  return value.toLocaleString()
+  return value.toLocaleString('fr-FR')
 }
 
 const COLORS = {
@@ -167,8 +167,8 @@ const AdminAnalytics: React.FC = () => {
     const diff = latest.value - previous
     const directionText = diff === 0
       ? 'unchanged compared with the previous month'
-      : `${Math.abs(diff).toLocaleString()} ${diff > 0 ? 'more' : 'fewer'} than the previous month`
-    return `${latest.value.toLocaleString()} bookings in ${latest.label} • ${directionText}.`
+      : `${Math.abs(diff).toLocaleString('fr-FR')} ${diff > 0 ? 'more' : 'fewer'} than the previous month`
+    return `${latest.value.toLocaleString('fr-FR')} bookings in ${latest.label} • ${directionText}.`
   }, [bookingTrend])
 
   const revenueSubtitle = useMemo(() => {
@@ -258,11 +258,11 @@ const AdminAnalytics: React.FC = () => {
         })
 
         const statusData: BookingStatusData[] = [
-          { name: 'Pending', value: statusCounts['PENDING'] || 0, color: COLORS.pending },
-          { name: 'Confirmed', value: statusCounts['CONFIRMED'] || 0, color: COLORS.confirmed },
-          { name: 'Completed', value: statusCounts['COMPLETED'] || 0, color: COLORS.completed },
-          { name: 'Cancelled', value: statusCounts['CANCELLED'] || 0, color: COLORS.cancelled },
-          { name: 'Rejected', value: statusCounts['REJECTED'] || 0, color: COLORS.rejected }
+          { name: 'En attente', value: statusCounts['PENDING'] || 0, color: COLORS.pending },
+          { name: 'Confirmée', value: statusCounts['CONFIRMED'] || 0, color: COLORS.confirmed },
+          { name: 'Terminée', value: statusCounts['COMPLETED'] || 0, color: COLORS.completed },
+          { name: 'Annulée', value: statusCounts['CANCELLED'] || 0, color: COLORS.cancelled },
+          { name: 'Refusée', value: statusCounts['REJECTED'] || 0, color: COLORS.rejected }
         ].filter(item => item.value > 0)
 
         setBookingStatusData(statusData)
@@ -298,8 +298,8 @@ const AdminAnalytics: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">Platform Analytics</h1>
-        <p className="text-content-secondary">CHARTS ENABLED - Comprehensive metrics and visualizations for the Travel Art platform.</p>
+        <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">Statistiques de la plateforme</h1>
+        <p className="text-content-secondary">Indicateurs et visualisations de l’activité Travel Art.</p>
       </div>
 
       {/* Stats Grid */}
@@ -307,7 +307,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-content-secondary">Total Users</p>
+              <p className="text-sm text-content-secondary">Utilisateurs</p>
               <p className="text-2xl font-bold text-content">{stats?.totalUsers ?? 0}</p>
             </div>
             <Users className="w-8 h-8 text-blue-600" />
@@ -316,7 +316,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-content-secondary">Artists</p>
+              <p className="text-sm text-content-secondary">Artistes</p>
               <p className="text-2xl font-bold text-content">{stats?.totalArtists ?? 0}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-purple-600" />
@@ -325,7 +325,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-content-secondary">Hotels</p>
+              <p className="text-sm text-content-secondary">Hôtels</p>
               <p className="text-2xl font-bold text-content">{stats?.totalHotels ?? 0}</p>
             </div>
             <Building className="w-8 h-8 text-green-600 dark:text-green-400" />
@@ -334,7 +334,7 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-content-secondary">Bookings</p>
+              <p className="text-sm text-content-secondary">Réservations</p>
               <p className="text-2xl font-bold text-content">{stats?.totalBookings ?? 0}</p>
             </div>
             <Calendar className="w-8 h-8 text-orange-600" />
@@ -343,41 +343,12 @@ const AdminAnalytics: React.FC = () => {
         <div className="card-luxury">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-content-secondary">Revenue</p>
-              <p className="text-2xl font-bold text-content">€{(stats?.totalRevenue ?? 0).toLocaleString()}</p>
+              <p className="text-sm text-content-secondary">Chiffre d’affaires</p>
+              <p className="text-2xl font-bold text-content">€{(stats?.totalRevenue ?? 0).toLocaleString('fr-FR')}</p>
             </div>
             <Euro className="w-8 h-8 text-gold" />
           </div>
         </div>
-      </div>
-
-      {/* TEST CHART - Simple Bar Chart */}
-      <div className="card-luxury p-6">
-        <h3 className="text-lg font-serif font-semibold text-content mb-4">TEST CHART (Should Always Show)</h3>
-        {ResponsiveContainer && BarChart && Bar ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={[
-              { name: 'Jan', value: 10 },
-              { name: 'Feb', value: 20 },
-              { name: 'Mar', value: 15 },
-              { name: 'Apr', value: 25 },
-              { name: 'May', value: 30 }
-            ]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Bar dataKey="value" fill="#1f3c88" />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="p-8 bg-red-100 dark:bg-red-500/10 border-2 border-red-500 rounded">
-            <p className="text-red-700 dark:text-red-400 font-bold">❌ RECHARTS NOT LOADED!</p>
-            <p className="text-sm mt-2">ResponsiveContainer: {ResponsiveContainer ? '✅' : '❌'}</p>
-            <p className="text-sm">BarChart: {BarChart ? '✅' : '❌'}</p>
-            <p className="text-sm">Bar: {Bar ? '✅' : '❌'}</p>
-            <p className="text-xs mt-4">Check browser console for import errors</p>
-          </div>
-        )}
       </div>
 
       {/* Revenue and Bookings Trends */}
@@ -403,7 +374,7 @@ const AdminAnalytics: React.FC = () => {
                 <XAxis dataKey="label" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip 
-                  formatter={(value: number) => [`€${value.toLocaleString()}`, 'Revenue']}
+                  formatter={(value: number) => [`€${value.toLocaleString('fr-FR')}`, 'Revenue']}
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 />
                 <Area 
@@ -417,9 +388,9 @@ const AdminAnalytics: React.FC = () => {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-content-secondary border-2 border-dashed border-line-strong rounded-lg">
+            <div className="flex items-center justify-center h-[300px] text-content-secondary border-2 border-dashed border-line-strong rounded-card">
               <div className="text-center">
-                <p className="font-semibold mb-2">No revenue data available</p>
+                <p className="font-semibold mb-2">Aucune donnée de chiffre d’affaires</p>
                 <p className="text-xs">Recharts: {ResponsiveContainer ? '✅ Loaded' : '❌ Not loaded'}</p>
                 <p className="text-xs">Data points: {revenueTrend.length}</p>
               </div>
@@ -442,7 +413,7 @@ const AdminAnalytics: React.FC = () => {
                 <XAxis dataKey="label" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip 
-                  formatter={(value: number) => [value.toLocaleString(), 'Bookings']}
+                  formatter={(value: number) => [value.toLocaleString('fr-FR'), 'Bookings']}
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 />
                 <Bar dataKey="value" fill="#1f3c88" radius={[8, 8, 0, 0]} />
@@ -450,7 +421,7 @@ const AdminAnalytics: React.FC = () => {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-content-secondary">
-              <p>No booking data available</p>
+              <p>Aucune donnée de réservation</p>
             </div>
           )}
         </div>
@@ -473,7 +444,7 @@ const AdminAnalytics: React.FC = () => {
                 <XAxis dataKey="label" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip 
-                  formatter={(value: number) => [value.toLocaleString(), 'Total Users']}
+                  formatter={(value: number) => [value.toLocaleString('fr-FR'), 'Total Users']}
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 />
                 <Line 
@@ -488,7 +459,7 @@ const AdminAnalytics: React.FC = () => {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-content-secondary">
-              <p>No user growth data available</p>
+              <p>Aucune donnée de croissance des utilisateurs</p>
             </div>
           )}
         </div>
@@ -519,7 +490,7 @@ const AdminAnalytics: React.FC = () => {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => [value.toLocaleString(), 'Bookings']}
+                  formatter={(value: number) => [value.toLocaleString('fr-FR'), 'Bookings']}
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 />
                 <Legend />
@@ -527,7 +498,7 @@ const AdminAnalytics: React.FC = () => {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-content-secondary">
-              <p>No booking status data available</p>
+              <p>Aucune donnée de statut de réservation</p>
             </div>
           )}
         </div>
@@ -550,7 +521,7 @@ const AdminAnalytics: React.FC = () => {
                 <XAxis dataKey="label" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip 
-                  formatter={(value: number) => [value.toLocaleString(), 'Total Artists']}
+                  formatter={(value: number) => [value.toLocaleString('fr-FR'), 'Total Artists']}
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 />
                 <Line 
@@ -565,7 +536,7 @@ const AdminAnalytics: React.FC = () => {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-content-secondary">
-              <p>No artist growth data available</p>
+              <p>Aucune donnée de croissance des artistes</p>
             </div>
           )}
         </div>
@@ -585,7 +556,7 @@ const AdminAnalytics: React.FC = () => {
                 <XAxis dataKey="label" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip 
-                  formatter={(value: number) => [value.toLocaleString(), 'Total Hotels']}
+                  formatter={(value: number) => [value.toLocaleString('fr-FR'), 'Total Hotels']}
                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 />
                 <Line 
@@ -600,7 +571,7 @@ const AdminAnalytics: React.FC = () => {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-[300px] text-content-secondary">
-              <p>No hotel growth data available</p>
+              <p>Aucune donnée de croissance des hôtels</p>
             </div>
           )}
         </div>
@@ -613,7 +584,7 @@ const AdminAnalytics: React.FC = () => {
             <BarChart3 className="w-5 h-5" />
             Revenue vs Bookings Comparison
           </h3>
-          <p className="text-sm text-content-secondary">Monthly revenue and booking trends side by side</p>
+          <p className="text-sm text-content-secondary">Chiffre d’affaires et réservations mensuels, côte à côte</p>
         </div>
         {bookingTrend.length > 0 || revenueTrend.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
@@ -627,8 +598,8 @@ const AdminAnalytics: React.FC = () => {
               <YAxis yAxisId="right" orientation="right" stroke="#6b7280" fontSize={12} />
               <Tooltip 
                 formatter={(value: number, name: string) => {
-                  if (name === 'value') return [value.toLocaleString(), 'Bookings']
-                  if (name === 'revenue') return [`€${value.toLocaleString()}`, 'Revenue']
+                  if (name === 'value') return [value.toLocaleString('fr-FR'), 'Bookings']
+                  if (name === 'revenue') return [`€${value.toLocaleString('fr-FR')}`, 'Revenue']
                   return [value, name]
                 }}
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
@@ -658,7 +629,7 @@ const AdminAnalytics: React.FC = () => {
           </ResponsiveContainer>
         ) : (
           <div className="flex items-center justify-center h-[400px] text-content-secondary">
-            <p>No comparison data available</p>
+            <p>Aucune donnée de comparaison</p>
           </div>
         )}
       </div>

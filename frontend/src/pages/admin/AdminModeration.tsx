@@ -95,8 +95,8 @@ const AdminModeration: React.FC = () => {
       setProcessing(userId)
       await adminApi.suspendUser(userId, { reason: 'Suspicious content' })
       await load()
-    } catch (e) {
-      alert('Failed to suspend user')
+    } catch {
+      alert('Impossible de suspendre cet utilisateur')
     } finally {
       setProcessing(null)
     }
@@ -108,8 +108,8 @@ const AdminModeration: React.FC = () => {
       setProcessing(userId)
       await adminApi.activateUser(userId)
       await load()
-    } catch (e) {
-      alert('Failed to activate user')
+    } catch {
+      alert('Impossible de réactiver cet utilisateur')
     } finally {
       setProcessing(null)
     }
@@ -157,38 +157,38 @@ const AdminModeration: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
               <h1 className="text-3xl font-semibold text-content mb-1">
-                Content Moderation
+                Modération des contenus
               </h1>
               <p className="text-sm text-content-secondary">
-                Review artists and hotels; suspend or re-activate accounts.
+                Examiner les artistes et les hôtels ; suspendre ou réactiver un compte.
               </p>
         </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-surface-raised border border-line rounded-lg p-1">
+              <div className="flex items-center gap-2 bg-surface-raised border border-line rounded-card p-1">
             <button 
               onClick={() => setTab('artists')} 
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                 tab === 'artists' 
                   ? 'bg-gray-900 text-white shadow-sm' 
                   : 'text-content-secondary hover:text-content hover:bg-surface'
               }`}
             >
-              Artists
+              Artistes
             </button>
             <button 
               onClick={() => setTab('hotels')} 
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                 tab === 'hotels' 
                   ? 'bg-gray-900 text-white shadow-sm' 
                   : 'text-content-secondary hover:text-content hover:bg-surface'
               }`}
             >
-              Hotels
+              Hôtels
             </button>
           </div>
           <button
             onClick={() => exportToCSV(tab === 'artists' ? artists : hotels, tab)}
-            className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-lg text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
             title="Export to CSV"
           >
             <Download className="w-4 h-4" />
@@ -201,15 +201,15 @@ const AdminModeration: React.FC = () => {
       {loading ? (
         <div className="flex justify-center items-center min-h-[200px]"><LoadingSpinner /></div>
       ) : error ? (
-        <div className="bg-surface-raised rounded-lg border border-red-200 dark:border-red-500/30 p-4 text-red-700 dark:text-red-400">{error}</div>
+        <div className="bg-surface-raised rounded-card border border-red-200 dark:border-red-500/30 p-4 text-red-700 dark:text-red-400">{error}</div>
       ) : (
-        <div className="bg-surface-raised rounded-lg border border-line">
+        <div className="bg-surface-raised rounded-card border border-line">
           {tab === 'artists' ? (
             <div className="divide-y divide-gray-200">
               {artists.length === 0 ? (
                 <div className="text-center py-12 text-content-secondary">
                   <User className="w-12 h-12 mx-auto mb-4 text-content-secondary" />
-                  <p>No artists found</p>
+                  <p>Aucun artiste</p>
                 </div>
               ) : (
                 artists.map((a) => (
@@ -226,26 +226,26 @@ const AdminModeration: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <a 
                       href={`/artist/${a.id}`}
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-lg text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
                     >
                       <Eye className="w-4 h-4" />
-                      Review
+                      Examiner
                     </a>
                     <button 
                       onClick={() => suspendUser(a.userId || a.user?.id)} 
                       disabled={processing === (a.userId || a.user?.id)} 
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-red-300 dark:border-red-500/30 rounded-lg text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-red-300 dark:border-red-500/30 rounded-card text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <Ban className="w-4 h-4" />
-                      Suspend
+                      Suspendre
                     </button>
                     <button 
                       onClick={() => activateUser(a.userId || a.user?.id)} 
                       disabled={processing === (a.userId || a.user?.id)} 
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-green-300 dark:border-green-500/30 rounded-lg text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-green-300 dark:border-green-500/30 rounded-card text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <CheckCircle className="w-4 h-4" />
-                      Activate
+                      Réactiver
                     </button>
                   </div>
                 </div>
@@ -257,7 +257,7 @@ const AdminModeration: React.FC = () => {
               {hotels.length === 0 ? (
                 <div className="text-center py-12 text-content-secondary">
                   <Building className="w-12 h-12 mx-auto mb-4 text-content-secondary" />
-                  <p>No hotels found</p>
+                  <p>Aucun hôtel</p>
                 </div>
               ) : (
                 hotels.map((h) => (
@@ -276,26 +276,26 @@ const AdminModeration: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <a 
                       href={`/hotel/${h.id}`}
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-lg text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
                     >
                       <Eye className="w-4 h-4" />
-                      Review
+                      Examiner
                     </a>
                     <button 
                       onClick={() => suspendUser(h.userId || h.user?.id)} 
                       disabled={processing === (h.userId || h.user?.id)} 
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-red-300 dark:border-red-500/30 rounded-lg text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-red-300 dark:border-red-500/30 rounded-card text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <Ban className="w-4 h-4" />
-                      Suspend
+                      Suspendre
                     </button>
                     <button 
                       onClick={() => activateUser(h.userId || h.user?.id)} 
                       disabled={processing === (h.userId || h.user?.id)} 
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-green-300 dark:border-green-500/30 rounded-lg text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-green-300 dark:border-green-500/30 rounded-card text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <CheckCircle className="w-4 h-4" />
-                      Activate
+                      Réactiver
                     </button>
                   </div>
                 </div>

@@ -17,7 +17,7 @@ const ExperienceDetailsPage: React.FC = () => {
   useEffect(() => {
     const fetchExperience = async () => {
       if (!id) {
-        setError('Experience ID is required')
+        setError('Identifiant d’expérience manquant')
         setLoading(false)
         return
       }
@@ -29,7 +29,7 @@ const ExperienceDetailsPage: React.FC = () => {
         
         // The trips API returns data directly (not wrapped in success/data)
         // axios response structure: res.data is the actual response body
-        // Backend returns: { id, title, slug, description, priceFrom, priceTo, location, images, status }
+        // Backend returns: { id, title, slug, description, location, images, status }
         let trip: any = res.data
         
         // Handle case where backend might wrap it (though trips API doesn't)
@@ -44,7 +44,7 @@ const ExperienceDetailsPage: React.FC = () => {
         
         if (!trip || !trip.id) {
           console.error('ExperienceDetailsPage - Invalid trip data:', trip)
-          setError('Experience not found')
+          setError('Expérience introuvable')
           setLoading(false)
           return
         }
@@ -54,7 +54,7 @@ const ExperienceDetailsPage: React.FC = () => {
         if (trip.location) {
           try {
             location = typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location
-          } catch (e) {
+          } catch {
             // If location is a plain string, try to extract city/country
             if (typeof trip.location === 'string') {
               const parts = trip.location.split(',').map(s => s.trim())
@@ -73,16 +73,8 @@ const ExperienceDetailsPage: React.FC = () => {
         try {
           images = Array.isArray(trip.images) ? trip.images : 
             (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-        } catch (e) {
+        } catch {
           images = []
-        }
-        
-        // Format price from priceFrom/priceTo
-        let priceDisplay = '€150 per person'
-        if (trip.priceFrom && trip.priceTo) {
-          priceDisplay = `€${Number(trip.priceFrom)} - €${Number(trip.priceTo)} per person`
-        } else if (trip.priceFrom) {
-          priceDisplay = `From €${Number(trip.priceFrom)} per person`
         }
         
         setExperience({
@@ -106,12 +98,11 @@ const ExperienceDetailsPage: React.FC = () => {
           fullDescription: trip.description || 'An amazing experience awaits.',
           duration: trip.duration || '2 hours',
           capacity: trip.capacity || '50 guests',
-          price: priceDisplay,
           includes: trip.includes || [
-            'Welcome reception',
-            'Performance',
-            'Refreshments',
-            'Venue access'
+            'Accueil et cocktail',
+            'Représentation',
+            'Rafraîchissements',
+            'Accès au lieu'
           ],
           schedule: trip.schedule || [],
           artistBio: trip.artist?.bio || trip.artistBio || 'Talented artist with years of experience.',
@@ -120,7 +111,7 @@ const ExperienceDetailsPage: React.FC = () => {
         })
       } catch (err: any) {
         console.error('Error fetching experience:', err)
-        setError('Failed to load experience. Please try again later.')
+        setError('Impossible de charger l’expérience. Réessayez plus tard.')
       } finally {
         setLoading(false)
       }
@@ -136,7 +127,7 @@ const ExperienceDetailsPage: React.FC = () => {
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
           <LoadingSpinner />
-          <p className="mt-4 text-white/60">Loading experience...</p>
+          <p className="mt-4 text-white/60">Chargement de l’expérience…</p>
         </div>
         <Footer />
       </div>
@@ -148,10 +139,10 @@ const ExperienceDetailsPage: React.FC = () => {
       <div className="min-h-screen bg-[#08101D]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl font-serif font-bold text-white mb-4">Experience Not Found</h1>
-          <p className="text-white/60 mb-8">The experience you're looking for doesn't exist.</p>
+          <h1 className="text-4xl font-serif font-bold text-white mb-4">Expérience introuvable</h1>
+          <p className="text-white/60 mb-8">L’expérience demandée n’existe pas.</p>
           <Link to="/experiences" className="btn-primary">
-            Back to Experiences
+            Retour aux expériences
           </Link>
         </div>
         <Footer />
@@ -195,7 +186,7 @@ const ExperienceDetailsPage: React.FC = () => {
           className="absolute top-6 left-6 bg-[var(--surface-raised)]/20 backdrop-blur-sm text-white px-4 py-2 rounded-card hover:bg-[var(--surface-raised)]/30 transition-colors flex items-center gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Experiences
+          Retour aux expériences
         </Link>
       </div>
 
@@ -211,7 +202,7 @@ const ExperienceDetailsPage: React.FC = () => {
               className="card-luxury"
             >
               <h2 className="text-3xl font-serif font-bold text-white mb-4 gold-underline">
-                About This Experience
+                À propos de cette expérience
               </h2>
               <p className="text-white/60 text-lg leading-relaxed mb-6">
                 {experience.fullDescription}
@@ -222,21 +213,21 @@ const ExperienceDetailsPage: React.FC = () => {
                   <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Star className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-white/45">Rating</p>
+                  <p className="text-sm text-white/45">Note</p>
                   <p className="text-xl font-bold text-white">{experience.rating}</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Clock className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-white/45">Duration</p>
+                  <p className="text-sm text-white/45">Durée</p>
                   <p className="text-sm font-bold text-white">{experience.duration}</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Users className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-white/45">Capacity</p>
+                  <p className="text-sm text-white/45">Capacité</p>
                   <p className="text-sm font-bold text-white">{experience.capacity}</p>
                 </div>
               </div>
@@ -250,7 +241,7 @@ const ExperienceDetailsPage: React.FC = () => {
               className="card-luxury"
             >
               <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
-                Schedule
+                Programme
               </h2>
               <div className="space-y-4">
                 {experience.schedule.map((item: any, index: number) => (
@@ -277,7 +268,7 @@ const ExperienceDetailsPage: React.FC = () => {
               className="card-luxury"
             >
               <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
-                What's Included
+                Ce qui est compris
               </h2>
               <ul className="space-y-3">
                 {experience.includes.map((item: string, index: number) => (
@@ -299,7 +290,7 @@ const ExperienceDetailsPage: React.FC = () => {
               className="card-luxury"
             >
               <h2 className="text-3xl font-serif font-bold text-white mb-4 gold-underline">
-                About the Artist
+                À propos de l’artiste
               </h2>
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-16 h-16 bg-gold/20 rounded-control flex items-center justify-center flex-shrink-0">
@@ -322,7 +313,7 @@ const ExperienceDetailsPage: React.FC = () => {
               className="card-luxury"
             >
               <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
-                Guest Reviews
+                Avis des clients
               </h2>
               <div className="space-y-6">
                 {experience.reviews.map((review: any, index: number) => (
@@ -360,7 +351,7 @@ const ExperienceDetailsPage: React.FC = () => {
                   <Calendar className="w-10 h-10 text-gold" />
                 </div>
                 <div className="text-2xl font-bold text-white mb-2">
-                  {new Date(experience.date).toLocaleDateString('en-US', {
+                  {new Date(experience.date).toLocaleDateString('fr-FR', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -381,21 +372,21 @@ const ExperienceDetailsPage: React.FC = () => {
 
               <div className="space-y-4 mb-6">
                 <div className="p-4 bg-gold/10 rounded-card">
-                  <p className="text-sm text-white/60 mb-1">Duration</p>
+                  <p className="text-sm text-white/60 mb-1">Durée</p>
                   <p className="font-semibold text-white">{experience.duration}</p>
                 </div>
                 <div className="p-4 bg-gold/10 rounded-card">
-                  <p className="text-sm text-white/60 mb-1">Capacity</p>
+                  <p className="text-sm text-white/60 mb-1">Capacité</p>
                   <p className="font-semibold text-white">{experience.capacity}</p>
                 </div>
               </div>
 
               <button className="w-full btn-primary text-lg py-4">
-                Book This Experience
+                Réserver cette expérience
               </button>
 
               <div className="mt-6 pt-6 border-t border-white/10">
-                <h4 className="font-semibold text-white mb-3">Venue Details</h4>
+                <h4 className="font-semibold text-white mb-3">Le lieu</h4>
                 <div className="flex items-start gap-2 mb-2">
                   <Globe className="w-4 h-4 text-gold mt-1 flex-shrink-0" />
                   <p className="text-sm text-white/60">{experience.hotel}</p>

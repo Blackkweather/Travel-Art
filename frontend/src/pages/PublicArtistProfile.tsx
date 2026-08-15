@@ -30,9 +30,9 @@ const PublicArtistProfile: React.FC = () => {
     } catch (error: any) {
       console.error('Error fetching artist profile:', error)
       if (error.response?.status === 404) {
-        toast.error('Artist profile not found')
+        toast.error('Profil d’artiste introuvable')
       } else {
-        toast.error('Failed to load artist profile')
+        toast.error('Impossible de charger le profil de l’artiste')
       }
     } finally {
       setLoading(false)
@@ -46,7 +46,7 @@ const PublicArtistProfile: React.FC = () => {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-            <p className="text-white/60">Loading artist profile...</p>
+            <p className="text-white/60">Chargement du profil de l’artiste…</p>
           </div>
         </div>
         <Footer />
@@ -60,10 +60,10 @@ const PublicArtistProfile: React.FC = () => {
         <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">Artist Not Found</h2>
-            <p className="text-white/60 mb-6">The artist profile you're looking for doesn't exist.</p>
+            <h2 className="text-2xl font-serif font-bold text-white mb-4">Artiste introuvable</h2>
+            <p className="text-white/60 mb-6">Le profil d’artiste demandé n’existe pas.</p>
             <Link to="/top-artists" className="btn-primary">
-              Browse Artists
+              Parcourir les artistes
             </Link>
           </div>
         </div>
@@ -81,7 +81,7 @@ const PublicArtistProfile: React.FC = () => {
       images = Array.isArray(artist.images) 
         ? artist.images 
         : (typeof artist.images === 'string' ? JSON.parse(artist.images) : [])
-    } catch (e) {
+    } catch {
       images = []
     }
   }
@@ -91,7 +91,7 @@ const PublicArtistProfile: React.FC = () => {
       videos = Array.isArray(artist.videos) 
         ? artist.videos 
         : (typeof artist.videos === 'string' ? JSON.parse(artist.videos) : [])
-    } catch (e) {
+    } catch {
       videos = []
     }
   }
@@ -119,7 +119,7 @@ const PublicArtistProfile: React.FC = () => {
           className="inline-flex items-center text-white hover:text-gold mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Artists
+          Retour aux artistes
         </Link>
 
         {/* Artist Header */}
@@ -202,12 +202,12 @@ const PublicArtistProfile: React.FC = () => {
             <div className="mt-8 pt-6 border-t border-white/10 flex gap-3">
               <button
                 onClick={() => {
-                  toast.success('Contact request sent to artist!')
+                  toast.success('Demande de contact envoyée à l’artiste')
                 }}
                 className="flex-1 bg-navy hover:bg-navy/90 text-white px-6 py-3 rounded-card font-medium transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <MessageCircle className="w-5 h-5" />
-                Contact Artist
+                Contacter l’artiste
               </button>
               <button
                 onClick={() => {
@@ -233,17 +233,17 @@ const PublicArtistProfile: React.FC = () => {
             <h2 className="text-2xl font-serif font-bold text-white mb-4">About {artist.stageName || artist.user?.name}</h2>
             <div className="prose prose-lg max-w-none">
               <p className="text-white/75 leading-relaxed text-base mb-4">
-                {artist.bio || `${artist.stageName || artist.user?.name} is a professional ${artist.discipline || 'artist'} bringing exceptional talent and experience to luxury venues worldwide. With a passion for creating unforgettable moments, they specialize in delivering talented hearts performances tailored to sophisticated audiences.`}
+                {artist.bio || `${artist.stageName || artist.user?.name} est un artiste professionnel${artist.discipline ? ` — ${artist.discipline}` : ''} qui se produit dans les lieux d’exception du monde entier, avec le goût des moments dont on se souvient.`}
               </p>
               {!artist.bio && (
                 <>
                   <p className="text-white/75 leading-relaxed text-base mb-4">
-                    Their unique style and artistic vision have captivated audiences across {artist.user?.country || 'various locations'}, 
-                    making them a sought-after performer for luxury hotels and exclusive events.
+                    Son style et sa vision artistique ont conquis le public {artist.user?.country ? `en ${artist.user.country}` : 'de nombreuses scènes'},
+                    ce qui en fait un artiste recherché par les hôtels d’exception et les événements privés.
                   </p>
                   <p className="text-white/75 leading-relaxed text-base">
-                    Whether performing for intimate gatherings or grand celebrations, {artist.stageName || artist.user?.name} brings 
-                    professionalism, creativity, and an unmatched ability to connect with diverse audiences.
+                    Des réunions intimistes aux grandes célébrations, {artist.stageName || artist.user?.name} apporte
+                    rigueur, créativité et un vrai talent pour créer le lien avec tous les publics.
                   </p>
                 </>
               )}
@@ -254,7 +254,7 @@ const PublicArtistProfile: React.FC = () => {
         {/* Artist Details */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.15}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-6">Artist Information</h2>
+            <h2 className="text-2xl font-serif font-bold text-white mb-6">Informations sur l’artiste</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Main Category */}
               {(artist.discipline || artisticProfile.mainCategory) && (
@@ -263,7 +263,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Music className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Main Category</p>
+                    <p className="text-sm text-white/45 mb-1">Catégorie principale</p>
                     <p className="text-base font-medium text-white">{artist.discipline || artisticProfile.mainCategory}</p>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Music className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Secondary Category</p>
+                    <p className="text-sm text-white/45 mb-1">Catégorie secondaire</p>
                     <p className="text-base font-medium text-white">{artisticProfile.secondaryCategory}</p>
                   </div>
                 </div>
@@ -291,7 +291,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Specialty</p>
+                    <p className="text-sm text-white/45 mb-1">Spécialité</p>
                     <p className="text-base font-medium text-white">{artisticProfile.specificCategory}</p>
                   </div>
                 </div>
@@ -306,7 +306,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Domain</p>
+                    <p className="text-sm text-white/45 mb-1">Domaine</p>
                     <p className="text-base font-medium text-white">{artisticProfile.domain}</p>
                   </div>
                 </div>
@@ -319,7 +319,7 @@ const PublicArtistProfile: React.FC = () => {
                     <MapPin className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Based in</p>
+                    <p className="text-sm text-white/45 mb-1">Basé à</p>
                     <p className="text-base font-medium text-white">{artist.user.country}</p>
                   </div>
                 </div>
@@ -334,7 +334,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Stage Name</p>
+                    <p className="text-sm text-white/45 mb-1">Nom de scène</p>
                     <p className="text-base font-medium text-white">{artist.stageName}</p>
                   </div>
                 </div>
@@ -349,7 +349,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Contact Phone</p>
+                    <p className="text-sm text-white/45 mb-1">Téléphone</p>
                     <p className="text-base font-medium text-white">{artist.phone}</p>
                   </div>
                 </div>
@@ -362,7 +362,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Calendar className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Birth Date</p>
+                    <p className="text-sm text-white/45 mb-1">Date de naissance</p>
                     <p className="text-base font-medium text-white">{artist.birthDate}</p>
                   </div>
                 </div>
@@ -377,7 +377,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Languages</p>
+                    <p className="text-sm text-white/45 mb-1">Langues</p>
                     <p className="text-base font-medium text-white">{artisticProfile.languages.join(', ')}</p>
                   </div>
                 </div>
@@ -392,7 +392,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Target Audience</p>
+                    <p className="text-sm text-white/45 mb-1">Type de public</p>
                     <p className="text-base font-medium text-white">{artisticProfile.audienceType.join(', ')}</p>
                   </div>
                 </div>
@@ -405,7 +405,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Star className="w-5 h-5 text-gold fill-current" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Average Rating</p>
+                    <p className="text-sm text-white/45 mb-1">Note moyenne</p>
                     <p className="text-base font-medium text-white">{artist.avgRating.toFixed(1)} / 5.0</p>
                   </div>
                 </div>
@@ -418,8 +418,8 @@ const PublicArtistProfile: React.FC = () => {
         {(videos.length > 0 || !videos.length) && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.2}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-white mb-4">Performance Videos</h2>
-              <p className="text-white/60 mb-6">Experience the artistry and talent through live performances</p>
+              <h2 className="text-2xl font-serif font-bold text-white mb-4">Vidéos de performances</h2>
+              <p className="text-white/60 mb-6">Découvrez le travail de l’artiste à travers ses performances</p>
               
               {videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -455,7 +455,7 @@ const PublicArtistProfile: React.FC = () => {
                             controls
                             className="w-full h-full object-cover"
                           >
-                            Your browser does not support the video tag.
+                            Votre navigateur ne prend pas en charge la lecture vidéo.
                           </video>
                         )}
                       </div>
@@ -469,8 +469,8 @@ const PublicArtistProfile: React.FC = () => {
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
                       <Music className="w-8 h-8 text-gold" />
                     </div>
-                    <p className="text-white/60 text-center font-medium mb-2">Performance Showcase</p>
-                    <p className="text-white/45 text-sm text-center">Video coming soon</p>
+                    <p className="text-white/60 text-center font-medium mb-2">En représentation</p>
+                    <p className="text-white/45 text-sm text-center">Vidéo à venir</p>
                   </div>
                   <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-white/5 to-white/10 flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/15">
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
@@ -478,8 +478,8 @@ const PublicArtistProfile: React.FC = () => {
                         <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
                       </svg>
                     </div>
-                    <p className="text-white/60 text-center font-medium mb-2">Live Performance</p>
-                    <p className="text-white/45 text-sm text-center">Video coming soon</p>
+                    <p className="text-white/60 text-center font-medium mb-2">Performance live</p>
+                    <p className="text-white/45 text-sm text-center">Vidéo à venir</p>
                   </div>
                 </div>
               )}
@@ -490,8 +490,8 @@ const PublicArtistProfile: React.FC = () => {
         {/* Portfolio Images */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.3}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">Visual Portfolio</h2>
-            <p className="text-white/60 mb-6">A glimpse into past performances and artistic moments</p>
+            <h2 className="text-2xl font-serif font-bold text-white mb-4">Portfolio</h2>
+            <p className="text-white/60 mb-6">Un aperçu des performances passées et des moments de scène</p>
             
             {images.length > 1 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -508,7 +508,7 @@ const PublicArtistProfile: React.FC = () => {
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                      <p className="text-white font-medium">View Image</p>
+                      <p className="text-white font-medium">Voir l’image</p>
                     </div>
                   </div>
                 ))}
@@ -534,7 +534,7 @@ const PublicArtistProfile: React.FC = () => {
         {(artisticProfile.mainCategory || artisticProfile.languages?.length > 0 || artisticProfile.audienceType?.length > 0) && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.4}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-white mb-4">What I Offer</h2>
+              <h2 className="text-2xl font-serif font-bold text-white mb-4">Ce que je propose</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Main Discipline/Category */}
                 {(artisticProfile.mainCategory || artist.discipline) && (
@@ -544,9 +544,9 @@ const PublicArtistProfile: React.FC = () => {
                     </div>
                     <h3 className="text-lg font-semibold text-white mb-2">{artisticProfile.mainCategory || artist.discipline} Performances</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      {artisticProfile.specificCategory && `Specializing in ${artisticProfile.specificCategory}. `}
-                      Professional {(artisticProfile.mainCategory || artist.discipline).toLowerCase()} performances tailored to elevate your venue's atmosphere.
-                      {artisticProfile.domain && ` Expert in ${artisticProfile.domain}.`}
+                      {artisticProfile.specificCategory && `Spécialité : ${artisticProfile.specificCategory}. `}
+                      Des prestations pensées pour l’atmosphère de votre établissement.
+                      {artisticProfile.domain && ` Expertise : ${artisticProfile.domain}.`}
                     </p>
                   </div>
                 )}
@@ -559,7 +559,7 @@ const PublicArtistProfile: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Multilingual Performances</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">Performances multilingues</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
                       Fluent in {artisticProfile.languages.join(', ')}. Able to connect with international audiences and adapt performances to different cultural contexts.
                     </p>
@@ -574,7 +574,7 @@ const PublicArtistProfile: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Versatile Audience Appeal</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">Un jeu qui s’adapte au public</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
                       Experienced in performing for {artisticProfile.audienceType.join(', ').toLowerCase()}. Tailored performances that resonate with your specific clientele.
                     </p>
@@ -588,9 +588,9 @@ const PublicArtistProfile: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Professional Excellence</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">Excellence professionnelle</h3>
                   <p className="text-white/60 text-sm leading-relaxed">
-                    Based in {artist.user?.country || 'multiple locations'}. Committed to delivering exceptional quality with professional equipment and meticulous preparation.
+                    Basé {artist.user?.country ? `en ${artist.user.country}` : 'à l’international'}. Un matériel professionnel et une préparation méticuleuse, au service de la qualité.
                   </p>
                 </div>
               </div>
@@ -615,7 +615,7 @@ const PublicArtistProfile: React.FC = () => {
         {/* Experience & Achievements */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.5}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">Experience & Recognition</h2>
+            <h2 className="text-2xl font-serif font-bold text-white mb-4">Expérience et distinctions</h2>
             <div className="space-y-4">
               <div className="p-6 bg-gradient-to-r from-gold/5 to-transparent rounded-card border-l-4 border-gold">
                 <div className="flex items-start gap-4">
@@ -623,10 +623,10 @@ const PublicArtistProfile: React.FC = () => {
                     <Star className="w-6 h-6 text-gold fill-current" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Professional Excellence</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">Excellence professionnelle</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      With {artist.bookings?.length || 0} successful {(artist.bookings?.length || 0) === 1 ? 'engagement' : 'engagements'} and {artist.avgRating ? `a ${artist.avgRating.toFixed(1)}/5.0` : 'an excellent'} rating, 
-                      {artist.stageName || artist.user?.name} has established a reputation for reliability and outstanding performances.
+                      Avec {artist.bookings?.length || 0} {(artist.bookings?.length || 0) >= 2 ? 'engagements menés à bien' : 'engagement mené à bien'} et {artist.avgRating ? `une note de ${artist.avgRating.toFixed(1)}/5` : 'd’excellents retours'},
+                      {artist.stageName || artist.user?.name} s’est construit une réputation de fiabilité et d’exigence.
                     </p>
                   </div>
                 </div>
@@ -638,10 +638,10 @@ const PublicArtistProfile: React.FC = () => {
                     <MapPin className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Global Reach</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">Présence internationale</h3>
                     <p className="text-white/60 text-sm leading-relaxed">
-                      Based in {artist.user?.country || 'multiple locations'}, available for performances worldwide. 
-                      Experienced in adapting to different venues, cultures, and audience preferences.
+                      Basé {artist.user?.country ? `en ${artist.user.country}` : 'à l’international'}, disponible partout dans le monde.
+                      Habitué à s’adapter aux lieux, aux cultures et aux attentes de chaque public.
                     </p>
                   </div>
                 </div>
@@ -653,8 +653,8 @@ const PublicArtistProfile: React.FC = () => {
         {/* Availability */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.6}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">Booking Availability</h2>
-            <p className="text-white/60 mb-6">Current availability for upcoming engagements</p>
+            <h2 className="text-2xl font-serif font-bold text-white mb-4">Disponibilités</h2>
+            <p className="text-white/60 mb-6">Disponibilités pour les prochaines dates</p>
             
             {artist.availability && artist.availability.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -667,13 +667,13 @@ const PublicArtistProfile: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-control bg-green-500"></div>
-                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">Available</span>
+                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">Disponible</span>
                         </div>
                         <p className="text-base font-semibold text-white mb-1">
-                          {new Date(avail.dateFrom).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          {new Date(avail.dateFrom).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </p>
                         <p className="text-sm text-white/60">
-                          to {new Date(avail.dateTo).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          to {new Date(avail.dateTo).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </p>
                       </div>
                     </div>
@@ -685,16 +685,16 @@ const PublicArtistProfile: React.FC = () => {
                 <div className="w-16 h-16 rounded-control bg-surface-sunken flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-8 h-8 text-white/40" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Availability Coming Soon</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">Disponibilités bientôt publiées</h3>
                 <p className="text-white/60 mb-4">
-                  Contact {artist.stageName || artist.user?.name} directly to discuss booking opportunities and availability.
+                  Contactez {artist.stageName || artist.user?.name} directement pour échanger sur les dates et les disponibilités.
                 </p>
                 {user && user.role === 'HOTEL' && (
                   <button
-                    onClick={() => toast.success('Contact request sent!')}
+                    onClick={() => toast.success('Demande de contact envoyée')}
                     className="btn-primary mx-auto"
                   >
-                    Request Availability
+                    Demander les disponibilités
                   </button>
                 )}
               </div>
@@ -706,8 +706,8 @@ const PublicArtistProfile: React.FC = () => {
         {artist.bookings && artist.bookings.length > 0 && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.7}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-white mb-4">Client Testimonials</h2>
-              <p className="text-white/60 mb-6">What venues are saying about working with {artist.stageName || artist.user?.name}</p>
+              <h2 className="text-2xl font-serif font-bold text-white mb-4">Témoignages</h2>
+              <p className="text-white/60 mb-6">Ce que les lieux disent de leur collaboration avec {artist.stageName || artist.user?.name}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Placeholder testimonials */}
@@ -718,15 +718,15 @@ const PublicArtistProfile: React.FC = () => {
                     ))}
                   </div>
                   <p className="text-white/75 italic mb-4 leading-relaxed">
-                    "Exceptional talent and professionalism. Our guests were thoroughly impressed by the performance quality and engagement."
+                    «&nbsp;Un talent et un professionnalisme rares. Nos clients ont été conquis par la qualité de la prestation.&nbsp;»
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-control bg-gold/20 flex items-center justify-center">
                       <span className="text-gold font-semibold text-sm">H</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-sm">Luxury Hotel Partner</p>
-                      <p className="text-white/45 text-xs">Verified Booking</p>
+                      <p className="font-semibold text-white text-sm">Hôtel partenaire</p>
+                      <p className="text-white/45 text-xs">Réservation vérifiée</p>
                     </div>
                   </div>
                 </div>
@@ -738,15 +738,15 @@ const PublicArtistProfile: React.FC = () => {
                     ))}
                   </div>
                   <p className="text-white/75 italic mb-4 leading-relaxed">
-                    "A truly memorable experience for our guests. Professional, punctual, and incredibly talented. Highly recommended!"
+                    «&nbsp;Un moment vraiment mémorable pour nos clients. Professionnel, ponctuel et remarquablement doué. Nous recommandons sans réserve.&nbsp;»
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-control bg-gold/20 flex items-center justify-center">
                       <span className="text-gold font-semibold text-sm">V</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-sm">Venue Manager</p>
-                      <p className="text-white/45 text-xs">Verified Booking</p>
+                      <p className="font-semibold text-white text-sm">Responsable du lieu</p>
+                      <p className="text-white/45 text-xs">Réservation vérifiée</p>
                     </div>
                   </div>
                 </div>

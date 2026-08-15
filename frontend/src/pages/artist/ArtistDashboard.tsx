@@ -101,10 +101,10 @@ const ArtistDashboard: React.FC = () => {
   }
 
   const statsData = [
-    { label: 'Total Bookings', value: stats.totalBookings, icon: Calendar, color: 'text-blue-600' },
-    { label: 'Hotels Worked With', value: stats.hotelsWorkedWith, icon: Users, color: 'text-green-600 dark:text-green-400' },
-    { label: 'Average Rating', value: stats.hotelRating > 0 ? stats.hotelRating.toFixed(1) : 'N/A', icon: Star, color: 'text-amber-600' },
-    { label: 'Active Bookings', value: stats.activeBookings, icon: CreditCard, color: 'text-purple-600' }
+    { label: 'Réservations', value: stats.totalBookings, icon: Calendar, color: 'text-blue-600' },
+    { label: 'Hôtels collaborateurs', value: stats.hotelsWorkedWith, icon: Users, color: 'text-green-600 dark:text-green-400' },
+    { label: 'Note moyenne', value: stats.hotelRating > 0 ? stats.hotelRating.toFixed(1) : 'N/A', icon: Star, color: 'text-amber-600' },
+    { label: 'Réservations en cours', value: stats.activeBookings, icon: CreditCard, color: 'text-purple-600' }
   ]
 
   return (
@@ -113,10 +113,10 @@ const ArtistDashboard: React.FC = () => {
         {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-semibold text-content mb-1">
-            Dashboard
+            Tableau de bord
           </h1>
           <p className="text-sm text-content-secondary">
-            Welcome back, {user?.name?.split(' ')[0] || 'Artist'}. Here's your performance overview.
+            Bon retour, {user?.name?.split(' ')[0] || 'Artiste'}. Voici l’essentiel de votre activité.
           </p>
         </div>
 
@@ -151,17 +151,17 @@ const ArtistDashboard: React.FC = () => {
             return (
               <div 
                 key={index} 
-                className="bg-surface-raised rounded-lg border border-line p-6 hover:border-line-strong transition-colors"
+                className="bg-surface-raised rounded-card border border-line p-6 hover:border-line-strong transition-colors"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2 rounded-lg ${colors.bg}`}>
+                  <div className={`p-2 rounded-card ${colors.bg}`}>
                     <Icon className={`w-5 h-5 ${colors.iconColor}`} />
                   </div>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-content-secondary uppercase tracking-wide mb-1">{stat.label}</p>
                   <p className="text-2xl font-semibold text-content">
-                    {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
+                    {typeof stat.value === 'number' ? stat.value.toLocaleString('fr-FR') : stat.value}
                   </p>
                 </div>
               </div>
@@ -170,15 +170,15 @@ const ArtistDashboard: React.FC = () => {
         </div>
 
         {/* Recent Bookings */}
-        <div className="bg-surface-raised rounded-lg border border-line mb-8">
+        <div className="bg-surface-raised rounded-card border border-line mb-8">
           <div className="px-6 py-4 border-b border-line">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-content">Recent Bookings</h2>
+              <h2 className="text-lg font-semibold text-content">Réservations récentes</h2>
               <Link 
                 to="/dashboard/bookings" 
                 className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
               >
-                View all →
+                Tout voir →
               </Link>
             </div>
           </div>
@@ -204,7 +204,7 @@ const ArtistDashboard: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-sunken flex items-center justify-center">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-card bg-surface-sunken flex items-center justify-center">
                           <Calendar className="w-5 h-5 text-content-secondary" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ const ArtistDashboard: React.FC = () => {
                             )}
                           </div>
                           <p className="text-xs text-content-secondary mt-1">
-                            {new Date(booking.startDate).toLocaleDateString('en-US', { 
+                            {new Date(booking.startDate).toLocaleDateString('fr-FR', { 
                               month: 'short', 
                               day: 'numeric', 
                               year: 'numeric' 
@@ -233,7 +233,7 @@ const ArtistDashboard: React.FC = () => {
                           </p>
                         </div>
                       </div>
-                      <span className={`px-3 py-1 rounded-md text-xs font-medium border ${statusColor}`}>
+                      <span className={`px-3 py-1 rounded-card text-xs font-medium border ${statusColor}`}>
                         {statusText}
                       </span>
                     </div>
@@ -243,8 +243,8 @@ const ArtistDashboard: React.FC = () => {
             ) : (
               <div className="px-6 py-12 text-center">
                 <Calendar className="w-8 h-8 text-content-secondary mx-auto mb-2" />
-                <p className="text-sm text-content-secondary">No bookings yet</p>
-                <p className="text-xs text-content-secondary mt-1">Start connecting with hotels to see your bookings here</p>
+                <p className="text-sm text-content-secondary">Aucune réservation</p>
+                <p className="text-xs text-content-secondary mt-1">Entrez en relation avec des hôtels pour voir vos réservations ici</p>
               </div>
             )}
           </div>
@@ -254,20 +254,20 @@ const ArtistDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Link 
             to="/dashboard/profile" 
-            className="bg-surface-raised border border-line rounded-lg p-6 hover:border-line-strong hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-card p-6 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
             <Calendar className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Update Availability</div>
-            <div className="text-xs text-content-secondary mt-1">Manage your calendar and availability</div>
+            <div className="text-sm font-medium text-content">Mettre à jour les disponibilités</div>
+            <div className="text-xs text-content-secondary mt-1">Gérez votre calendrier et vos disponibilités</div>
           </Link>
 
           <Link 
             to="/dashboard/profile" 
-            className="bg-surface-raised border border-line rounded-lg p-6 hover:border-line-strong hover:shadow-sm transition-all text-left group"
+            className="bg-surface-raised border border-line rounded-card p-6 hover:border-line-strong hover:shadow-sm transition-all text-left group"
           >
             <Star className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
             <div className="text-sm font-medium text-content">Performance Gallery</div>
-            <div className="text-xs text-content-secondary mt-1">Upload and manage your media</div>
+            <div className="text-xs text-content-secondary mt-1">Déposez et gérez vos médias</div>
           </Link>
         </div>
 

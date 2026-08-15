@@ -107,7 +107,7 @@ const ArtistRegistrationFlow: React.FC = () => {
     try {
       // Validate all data before submission
       if (!state.basicInfo.stageName || !state.basicInfo.email || !state.basicInfo.password) {
-        toast.error('Please complete all required fields');
+        toast.error('Renseignez tous les champs obligatoires');
         setIsLoading(false);
         return;
       }
@@ -201,7 +201,7 @@ const ArtistRegistrationFlow: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto bg-surface-raised rounded-3xl shadow-2xl p-6 md:p-10 border border-line"
+          className="max-w-3xl mx-auto bg-surface-raised rounded-card shadow-2xl p-6 md:p-10 border border-line"
         >
           <AnimatePresence mode="wait">
             {/* Step 1: Basic Information */}
@@ -284,7 +284,7 @@ const ArtistRegistrationFlow: React.FC = () => {
           <p className="text-sm text-content-secondary">
             Vos informations sont sécurisées et ne seront jamais partagées.
             <br />
-            Avez besoin d'aide? <a href="/contact" className="text-gold font-semibold hover:underline">Contactez-nous</a>
+            Besoin d’aide ? <a href="/contact" className="text-gold font-semibold hover:underline">Contactez-nous</a>
           </p>
         </motion.div>
       </main>

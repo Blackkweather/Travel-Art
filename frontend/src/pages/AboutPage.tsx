@@ -8,52 +8,53 @@ const AboutPage: React.FC = () => {
       <SimpleNavbar />
 
       <main className="container mx-auto px-6 pt-28 pb-20 max-w-4xl">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">About Travel Art</h1>
-        <p className="text-white/60 mb-10">Connecting talented artists with luxury hotels worldwide.</p>
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">À propos de Travel Art</h1>
+        <p className="text-white/60 mb-10">Réunir les artistes et les hôtels d’exception, partout dans le monde.</p>
 
         <section className="space-y-6 text-white/75">
-          <h2 className="text-2xl font-serif font-semibold text-white">Our Mission</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white">Notre mission</h2>
           <p>
-            Travel Art is a platform that bridges the gap between talented performing artists and luxury hotels 
-            seeking to enhance their guest experiences. We believe that art and culture should be accessible 
-            everywhere, and that artists deserve opportunities to showcase their talents in unique settings around 
-            the world.
+            Travel Art fait le lien entre les artistes interprètes et les hôtels d’exception qui
+            souhaitent enrichir l’expérience de leurs clients. Nous croyons que l’art et la culture
+            doivent pouvoir se vivre partout, et que les artistes méritent des scènes à la hauteur
+            de leur travail.
           </p>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">What We Do</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Ce que nous faisons</h2>
           <p>
-            We provide a seamless booking platform where hotels can discover, book, and manage performances 
-            by verified artists. Our platform handles everything from artist verification and availability 
-            management to secure payment processing and booking confirmations.
+            Nous mettons à disposition une plateforme où les hôtels découvrent, invitent et
+            organisent les résidences d’artistes vérifiés. Nous prenons en charge l’ensemble du
+            parcours : vérification des profils, gestion des disponibilités et confirmation des
+            réservations.
           </p>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">For Artists</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Pour les artistes</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li>Create a professional profile showcasing your talent and availability</li>
-            <li>Connect with luxury hotels seeking performers</li>
-            <li>Manage bookings and availability through an intuitive dashboard</li>
-            <li>Build your reputation through verified reviews and ratings</li>
+            <li>Créez un profil professionnel qui présente votre travail et vos disponibilités</li>
+            <li>Entrez en relation avec des hôtels d’exception à la recherche d’artistes</li>
+            <li>Gérez vos dates et votre calendrier depuis un tableau de bord clair</li>
+            <li>Construisez votre réputation grâce aux avis vérifiés</li>
           </ul>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">For Hotels</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Pour les hôtels</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li>Browse a curated selection of verified performing artists</li>
-            <li>Filter by discipline, location, and availability</li>
-            <li>Book performances with a simple credit-based system</li>
-            <li>Enhance your guest experience with talented hearts entertainment</li>
+            <li>Parcourez une sélection d’artistes vérifiés</li>
+            <li>Filtrez par discipline, par ville et par disponibilité</li>
+            <li>Réservez vos dates avec un simple solde de crédits</li>
+            <li>Offrez à vos clients une expérience culturelle singulière</li>
           </ul>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Our Values</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Nos valeurs</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Excellence:</strong> We maintain high standards for both artists and hotels</li>
-            <li><strong>Transparency:</strong> Clear pricing, terms, and communication throughout</li>
-            <li><strong>Support:</strong> Dedicated support for both artists and hotels</li>
-            <li><strong>Innovation:</strong> Continuously improving our platform based on user feedback</li>
+            <li><strong>Exigence :</strong> un niveau élevé attendu des artistes comme des hôtels</li>
+            <li><strong>Clarté :</strong> des conditions et des échanges transparents à chaque étape</li>
+            <li><strong>Accompagnement :</strong> un interlocuteur dédié des deux côtés</li>
+            <li><strong>Amélioration continue :</strong> une plateforme qui évolue avec ses utilisateurs</li>
           </ul>
 
-          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Contact Us</h2>
+          <h2 className="text-2xl font-serif font-semibold text-white mt-8">Nous écrire</h2>
           <p>
-            Have questions or feedback? We'd love to hear from you. Reach out to us at{' '}
+            Une question, une remarque ? Écrivez-nous à{' '}
             <a className="text-gold hover:underline" href="mailto:hello@travelart.com">hello@travelart.com</a>.
           </p>
         </section>

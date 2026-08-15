@@ -62,7 +62,7 @@ const TopHotelsPage: React.FC = () => {
       } catch (err: any) {
         console.error('Error fetching top hotels:', err)
         setError(err.response?.data?.error?.message || 'Failed to load hotels')
-        toast.error('Failed to load top hotels. Please try again.')
+        toast.error('Impossible de charger les hôtels. Veuillez réessayer.')
       } finally {
         setLoading(false)
       }
@@ -172,11 +172,11 @@ const TopHotelsPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
-              Luxury Hotel
-              <span className="block text-gold">Partners</span>
+              Hôtel d’exception
+              <span className="block text-gold">Partenaires</span>
             </h1>
             <p className="text-xl text-white/65 mb-8 max-w-3xl mx-auto">
-              Discover the world's most prestigious hotels offering stunning rooftop venues and intimate performance spaces.
+              Découvrez les hôtels les plus prestigieux, leurs toits-terrasses et leurs espaces intimistes.
             </p>
           </motion.div>
         </div>
@@ -195,7 +195,7 @@ const TopHotelsPage: React.FC = () => {
                 <Building className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">{stats.totalHotels || 0}</h3>
-              <p className="text-white/60">Luxury Hotels</p>
+              <p className="text-white/60">Hôtels d’exception</p>
             </motion.div>
 
             <motion.div
@@ -207,7 +207,7 @@ const TopHotelsPage: React.FC = () => {
                 <Music className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">{stats.totalVenues || 0}</h3>
-              <p className="text-white/60">Performance Venues</p>
+              <p className="text-white/60">Lieux de représentation</p>
             </motion.div>
 
             <motion.div
@@ -219,7 +219,7 @@ const TopHotelsPage: React.FC = () => {
                 <Star className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">{stats.averageRating.toFixed(1)}</h3>
-              <p className="text-white/60">Average Rating</p>
+              <p className="text-white/60">Note moyenne</p>
             </motion.div>
 
             <motion.div
@@ -231,7 +231,7 @@ const TopHotelsPage: React.FC = () => {
                 <Calendar className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">{stats.totalEvents || 0}</h3>
-              <p className="text-white/60">Successful Events</p>
+              <p className="text-white/60">Événements réussis</p>
             </motion.div>
           </div>
         </div>
@@ -241,10 +241,10 @@ const TopHotelsPage: React.FC = () => {
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
-            Featured Hotels
+            Hôtels à l’honneur
           </h2>
           <p className="text-xl text-white/60 max-w-3xl mx-auto">
-            Experience the world's most luxurious hotels with stunning rooftop venues and intimate performance spaces
+            Les plus belles adresses du monde, leurs toits-terrasses et leurs scènes intimistes
           </p>
         </div>
 
@@ -255,21 +255,21 @@ const TopHotelsPage: React.FC = () => {
         ) : error ? (
           <div className="text-center py-20">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-white mb-2">Failed to Load Hotels</h3>
+            <h3 className="text-2xl font-semibold text-white mb-2">Impossible de charger les hôtels</h3>
             <p className="text-white/60 mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary"
             >
-              Try Again
+              Réessayer
             </button>
           </div>
         ) : topHotels.length === 0 ? (
           <div className="text-center py-20">
             <Building className="w-16 h-16 text-white/40 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-white mb-2">No Hotels Found</h3>
+            <h3 className="text-2xl font-semibold text-white mb-2">Aucun hôtel trouvé</h3>
             <p className="text-white/60 mb-6">
-              Check back soon to discover our luxury hotel partners.
+              Revenez bientôt pour découvrir nos hôtels partenaires.
             </p>
             <Link to="/register" className="btn-primary">
               Become a Hotel Partner
@@ -336,7 +336,7 @@ const TopHotelsPage: React.FC = () => {
 
                     {performanceSpots.length > 0 && (
                       <div className="mb-4">
-                        <h4 className="text-sm font-medium text-white mb-2">Performance Spots:</h4>
+                        <h4 className="text-sm font-medium text-white mb-2">Espaces de représentation :</h4>
                         <div className="flex flex-wrap gap-2">
                           {performanceSpots.slice(0, 3).map((spot, spotIndex) => (
                             <span
@@ -368,7 +368,7 @@ const TopHotelsPage: React.FC = () => {
                       }}
                       className="w-full btn-primary text-center hover:scale-105 transition-transform mt-auto"
                     >
-                      View Venues
+                      Voir les espaces
                     </button>
                   </div>
                 </motion.div>
@@ -383,10 +383,10 @@ const TopHotelsPage: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
-              Venue Types
+              Types de lieux
             </h2>
             <p className="text-xl text-white/60 max-w-3xl mx-auto">
-              From intimate rooftop terraces to grand ballrooms, our hotels offer diverse performance spaces
+              Du toit-terrasse intimiste à la grande salle de bal, nos hôtels offrent des scènes très différentes
             </p>
           </div>
 
@@ -401,10 +401,10 @@ const TopHotelsPage: React.FC = () => {
                 <Building className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-white mb-4">
-                Rooftop Terraces
+                Toits-terrasses
               </h3>
               <p className="text-white/60">
-                Intimate outdoor spaces with stunning city views, perfect for acoustic performances and sunset sets.
+                Des espaces en plein air face à la ville, parfaits pour l’acoustique et les sets au coucher du soleil.
               </p>
             </motion.div>
 
@@ -418,10 +418,10 @@ const TopHotelsPage: React.FC = () => {
                 <Music className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-white mb-4">
-                Jazz Lounges
+                Salons jazz
               </h3>
               <p className="text-white/60">
-                Sophisticated indoor venues with perfect acoustics for jazz ensembles and intimate concerts.
+                Des salles intérieures à l’acoustique soignée, pour les formations jazz et les concerts intimistes.
               </p>
             </motion.div>
 
@@ -435,10 +435,10 @@ const TopHotelsPage: React.FC = () => {
                 <Users className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-white mb-4">
-                Grand Ballrooms
+                Salles de bal
               </h3>
               <p className="text-white/60">
-                Elegant large spaces ideal for classical concerts, formal performances, and special events.
+                De grands volumes élégants, pour les concerts classiques et les événements d’exception.
               </p>
             </motion.div>
 
@@ -452,10 +452,10 @@ const TopHotelsPage: React.FC = () => {
                 <Star className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-white mb-4">
-                Beach Clubs
+                Clubs de plage
               </h3>
               <p className="text-white/60">
-                Open-air venues by the sea, perfect for DJ sets, electronic music, and sunset performances.
+                Des lieux en bord de mer, pour les DJ sets, les musiques électroniques et les fins de journée.
               </p>
             </motion.div>
           </div>
@@ -471,13 +471,13 @@ const TopHotelsPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl font-serif font-bold mb-6">
-              Ready to Partner?
+              Envie de devenir partenaire ?
             </h2>
             <p className="text-xl text-white/65 mb-8 max-w-2xl mx-auto">
-              Join our network of luxury hotels and start offering unforgettable artistic experiences to your guests.
+              Rejoignez notre réseau d’hôtels d’exception et offrez à vos clients des moments artistiques mémorables.
             </p>
             <a href="/register" className="btn-primary text-lg px-8 py-4">
-              Join as Hotel
+              Devenir hôtel partenaire
             </a>
           </motion.div>
         </div>

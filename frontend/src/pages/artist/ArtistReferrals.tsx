@@ -41,7 +41,7 @@ const ArtistReferrals: React.FC = () => {
           setReferralCode(artist.referralCode)
           setReferralLink(createReferralLink(artist.referralCode))
         }
-      } catch (error: any) {
+      } catch {
         // No artist profile yet
         console.log('No artist profile found')
       }
@@ -68,7 +68,7 @@ const ArtistReferrals: React.FC = () => {
     } catch (error: any) {
       console.error('Error fetching referrals:', error)
       if (error.response?.status !== 404) {
-        toast.error('Failed to load referrals')
+        toast.error('Impossible de charger les parrainages')
       }
     } finally {
       setLoading(false)
@@ -79,11 +79,11 @@ const ArtistReferrals: React.FC = () => {
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
-      toast.success('Copied to clipboard!')
+      toast.success('Copié dans le presse-papiers')
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error('Failed to copy: ', err)
-      toast.error('Failed to copy to clipboard')
+      toast.error('Impossible de copier dans le presse-papiers')
     }
   }
 
@@ -101,10 +101,10 @@ const ArtistReferrals: React.FC = () => {
   }
 
   const statsDisplay = [
-    { label: 'Total Referrals', value: stats.totalReferrals.toString(), icon: Users },
-    { label: 'Active Artists', value: stats.activeReferrals.toString(), icon: CheckCircle },
-    { label: 'Credits Earned', value: `€${stats.totalCreditsEarned}`, icon: Gift },
-    { label: 'Pending Approvals', value: stats.pendingReferrals.toString(), icon: Calendar }
+    { label: 'Parrainages', value: stats.totalReferrals.toString(), icon: Users },
+    { label: 'Artistes actifs', value: stats.activeReferrals.toString(), icon: CheckCircle },
+    { label: 'Crédits gagnés', value: `€${stats.totalCreditsEarned}`, icon: Gift },
+    { label: 'Validations en attente', value: stats.pendingReferrals.toString(), icon: Calendar }
   ]
 
   if (loading) {
@@ -123,10 +123,10 @@ const ArtistReferrals: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-          Referral Program
+          Programme de parrainage
         </h1>
         <p className="text-content-secondary">
-          Invite fellow artists and earn credits for each successful referral
+          Invitez d’autres artistes et gagnez des crédits à chaque parrainage abouti
         </p>
       </div>
 
@@ -155,16 +155,15 @@ const ArtistReferrals: React.FC = () => {
       {/* Referral Code Section */}
       <div className="card-luxury">
         <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
-          Your Referral Code
+          Votre code de parrainage
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h3 className="text-lg font-serif font-semibold text-content mb-4">
-              Share Your Code
+              Partagez votre code
             </h3>
             <p className="text-content-secondary mb-6">
-              Share your referral code with other artists. When they join and become active members, 
-              you'll both earn credits!
+              Partagez votre code avec d’autres artistes. Lorsqu’ils nous rejoignent et deviennent actifs, vous gagnez des crédits tous les deux.
             </p>
             
             {referralCode ? (
@@ -210,13 +209,13 @@ const ArtistReferrals: React.FC = () => {
                 )}
               </div>
             ) : (
-              <p className="text-content-secondary">Create your artist profile first to get a referral code.</p>
+              <p className="text-content-secondary">Créez d’abord votre profil d’artiste pour obtenir un code de parrainage.</p>
             )}
           </div>
           
           <div>
             <h3 className="text-lg font-serif font-semibold text-content mb-4">
-              How It Works
+              Comment ça marche
             </h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
@@ -224,8 +223,8 @@ const ArtistReferrals: React.FC = () => {
                   <span className="text-content font-bold text-sm">1</span>
                 </div>
                 <div>
-                  <p className="font-medium text-content">Share Your Code</p>
-                  <p className="text-sm text-content-secondary">Send your referral code to fellow artists</p>
+                  <p className="font-medium text-content">Partagez votre code</p>
+                  <p className="text-sm text-content-secondary">Envoyez votre code à d’autres artistes</p>
                 </div>
               </div>
               
@@ -234,8 +233,8 @@ const ArtistReferrals: React.FC = () => {
                   <span className="text-content font-bold text-sm">2</span>
                 </div>
                 <div>
-                  <p className="font-medium text-content">They Join</p>
-                  <p className="text-sm text-content-secondary">Artists register using your referral code</p>
+                  <p className="font-medium text-content">Ils nous rejoignent</p>
+                  <p className="text-sm text-content-secondary">Ils s’inscrivent avec votre code</p>
                 </div>
               </div>
               
@@ -244,8 +243,8 @@ const ArtistReferrals: React.FC = () => {
                   <span className="text-content font-bold text-sm">3</span>
                 </div>
                 <div>
-                  <p className="font-medium text-content">Earn Credits</p>
-                  <p className="text-sm text-content-secondary">Both of you receive credits when they become active</p>
+                  <p className="font-medium text-content">Gagnez des crédits</p>
+                  <p className="text-sm text-content-secondary">Vous recevez tous les deux des crédits dès qu’ils deviennent actifs</p>
                 </div>
               </div>
             </div>
@@ -256,7 +255,7 @@ const ArtistReferrals: React.FC = () => {
       {/* Referred Artists */}
       <div className="card-luxury">
         <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
-          Referred Artists
+          Artistes parrainés
         </h2>
         {referrals.length > 0 ? (
           <div className="space-y-4">
@@ -266,7 +265,7 @@ const ArtistReferrals: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="flex items-center justify-between p-4 bg-surface rounded-lg"
+                className="flex items-center justify-between p-4 bg-surface rounded-card"
               >
                 <div className="flex items-center space-x-4">
                   {referral.image ? (
@@ -288,7 +287,7 @@ const ArtistReferrals: React.FC = () => {
                     <h3 className="font-semibold text-content">{referral.name}</h3>
                     <p className="text-sm text-content-secondary">{referral.discipline}</p>
                     <p className="text-xs text-content-secondary">
-                      Joined {new Date(referral.joinedDate).toLocaleDateString()}
+                      Joined {new Date(referral.joinedDate).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
                 </div>
@@ -307,9 +306,9 @@ const ArtistReferrals: React.FC = () => {
         ) : (
           <div className="text-center py-12">
             <Users className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-            <p className="text-content-secondary mb-2">No referrals yet</p>
+            <p className="text-content-secondary mb-2">Aucun parrainage</p>
             <p className="text-sm text-content-secondary">
-              Share your referral code to invite other artists and start earning credits!
+              Partagez votre code pour inviter d’autres artistes et commencer à gagner des crédits.
             </p>
           </div>
         )}
@@ -318,7 +317,7 @@ const ArtistReferrals: React.FC = () => {
       {/* Benefits */}
       <div className="card-luxury">
         <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
-          Referral Benefits
+          Les avantages du parrainage
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
@@ -326,10 +325,10 @@ const ArtistReferrals: React.FC = () => {
               <Gift className="w-8 h-8 text-gold" />
             </div>
             <h3 className="text-lg font-serif font-semibold text-content mb-2">
-              Earn Credits
+              Gagnez des crédits
             </h3>
             <p className="text-content-secondary">
-              Get credits for each successful referral that becomes an active member
+              Des crédits pour chaque parrainage qui devient un membre actif
             </p>
           </div>
           
@@ -338,10 +337,10 @@ const ArtistReferrals: React.FC = () => {
               <Users className="w-8 h-8 text-gold" />
             </div>
             <h3 className="text-lg font-serif font-semibold text-content mb-2">
-              Grow Network
+              Développer son réseau
             </h3>
             <p className="text-content-secondary">
-              Build a network of talented artists and expand your professional connections
+              Construisez un réseau d’artistes et élargissez vos contacts professionnels
             </p>
           </div>
           
@@ -350,10 +349,10 @@ const ArtistReferrals: React.FC = () => {
               <Star className="w-8 h-8 text-gold" />
             </div>
             <h3 className="text-lg font-serif font-semibold text-content mb-2">
-              Help Others
+              Aider ses pairs
             </h3>
             <p className="text-content-secondary">
-              Help fellow artists discover new opportunities and grow their careers
+              Aidez d’autres artistes à trouver de nouvelles scènes et à faire grandir leur carrière
             </p>
           </div>
         </div>

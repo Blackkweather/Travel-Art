@@ -15,9 +15,9 @@ interface SEOHeadProps {
 }
 
 export default function SEOHead({
-  title = 'Travel Art - Luxury Hotel & Artist Exchange Platform',
-  description = 'Connect with luxury hotels and talented artists. Experience unique cultural exchanges and artistic collaborations.',
-  keywords = 'travel art, luxury hotels, artists, cultural exchange, hospitality',
+  title = 'Travel Art — Résidences d’artistes en hôtellerie d’exception',
+  description = 'Travel Art réunit les hôtels d’exception et les artistes : résidences, concerts et expositions, accueillis là où le travail trouve sa place.',
+  keywords = 'résidence artiste, hôtel de luxe, artistes, musiciens, concert privé, hôtellerie, art',
   ogImage = '/logo-1-final.png',
   structuredData,
 }: SEOHeadProps) {
@@ -49,6 +49,7 @@ export default function SEOHead({
       { property: 'og:description', content: description },
       { property: 'og:image', content: ogImage },
       { property: 'og:type', content: 'website' },
+      { property: 'og:locale', content: 'fr_FR' },
     ]
 
     ogTags.forEach(({ property, content }) => {

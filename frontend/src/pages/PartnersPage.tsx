@@ -50,7 +50,7 @@ const PartnersPage: React.FC = () => {
                 performanceSpots = Array.isArray(hotel.performanceSpots) 
                   ? hotel.performanceSpots 
                   : (typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : [])
-              } catch (e) {
+              } catch {
                 performanceSpots = []
               }
             }
@@ -135,31 +135,31 @@ const PartnersPage: React.FC = () => {
   const benefits = [
     {
       icon: <Building className="w-8 h-8 text-gold" />,
-      title: 'Exclusive Access',
+      title: 'Accès exclusif',
       description: 'Partner with the world\'s most prestigious hotels and luxury venues'
     },
     {
       icon: <Star className="w-8 h-8 text-gold" />,
-      title: 'Premium Quality',
-      description: 'Work with verified, professional artists who deliver exceptional performances'
+      title: 'Une exigence de qualité',
+      description: 'Travaillez avec des artistes vérifiés dont la prestation est à la hauteur du lieu'
     },
     {
       icon: <Users className="w-8 h-8 text-gold" />,
-      title: 'Dedicated Support',
-      description: 'Personal account managers and 24/7 support for all your needs'
+      title: 'Un accompagnement dédié',
+      description: 'Un interlocuteur attitré et une assistance disponible à tout moment'
     },
     {
       icon: <Award className="w-8 h-8 text-gold" />,
-      title: 'Brand Recognition',
+      title: 'Le rayonnement de votre maison',
       description: 'Enhance your hotel\'s reputation with curated artistic experiences'
     }
   ]
 
   const statsData = [
-    { label: 'Partner Hotels', value: stats.partnerHotels.toString(), icon: Building },
-    { label: 'Performance Venues', value: stats.performanceVenues.toString(), icon: MapPin },
-    { label: 'Successful Events', value: stats.successfulEvents.toString(), icon: Calendar },
-    { label: 'Average Rating', value: stats.averageRating.toFixed(1), icon: Star }
+    { label: 'Hôtels partenaires', value: stats.partnerHotels.toString(), icon: Building },
+    { label: 'Lieux de représentation', value: stats.performanceVenues.toString(), icon: MapPin },
+    { label: 'Événements réussis', value: stats.successfulEvents.toString(), icon: Calendar },
+    { label: 'Note moyenne', value: stats.averageRating.toFixed(1), icon: Star }
   ]
 
   return (
@@ -192,27 +192,22 @@ const PartnersPage: React.FC = () => {
           <div className="hidden md:flex items-center space-x-8">
             <motion.div style={{ color: textColor }}>
               <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
-                How it Works
+                Le principe
               </Link>
             </motion.div>
             <motion.div style={{ color: textColor }}>
               <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
-                Partners
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/pricing" className="hover:text-gold transition-colors font-medium text-sm">
-                Pricing
+                Partenaires
               </Link>
             </motion.div>
             <motion.div style={{ color: textColor }}>
               <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
-                Top Artists
+                Artistes à l’honneur
               </Link>
             </motion.div>
             <motion.div style={{ color: textColor }}>
               <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-sm">
-                Top Hotels
+                Hôtels à l’honneur
               </Link>
             </motion.div>
           </div>
@@ -221,11 +216,11 @@ const PartnersPage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <motion.div style={{ color: textColor }}>
               <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
-                Sign In
+                Connexion
               </Link>
             </motion.div>
             <Link to="/register" className="bg-gold text-off-black px-6 py-2 rounded-card font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
-              Join
+              Rejoindre
             </Link>
           </div>
         </div>
@@ -237,7 +232,7 @@ const PartnersPage: React.FC = () => {
         <div className="absolute inset-0 z-0">
           <img 
             src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
-            alt="Luxury hotel" 
+            alt="Hôtel d’exception" 
             className="w-full h-full object-cover"
           />
           {/* Dark overlay for text readability */}
@@ -251,11 +246,11 @@ const PartnersPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
-              Our Luxury Hotel
-              <span className="block text-gold">Partners</span>
+              Nos hôtels
+              <span className="block text-gold">Partenaires</span>
             </h1>
             <p className="text-xl text-white/65 mb-8 max-w-3xl mx-auto">
-              Discover the world's most prestigious hotels offering stunning rooftop venues and intimate performance spaces for unforgettable artistic experiences.
+              Découvrez les hôtels les plus prestigieux, leurs toits-terrasses et leurs espaces intimistes, pour des rencontres artistiques inoubliables.
             </p>
           </motion.div>
         </div>
@@ -290,22 +285,22 @@ const PartnersPage: React.FC = () => {
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
-            Featured Partners
+            Partenaires à l’honneur
           </h2>
           <p className="text-xl text-white/60 max-w-3xl mx-auto">
-            Experience the world's most luxurious hotels with stunning rooftop venues and intimate performance spaces
+            Les plus belles adresses du monde, leurs toits-terrasses et leurs scènes intimistes
           </p>
         </div>
 
         {loading ? (
           <div className="text-center py-20">
             <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
-            <p className="text-white/60 text-lg">Loading partners...</p>
+            <p className="text-white/60 text-lg">Chargement des partenaires…</p>
           </div>
         ) : partners.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-white/60 text-lg mb-4">No partner hotels found.</p>
-            <p className="text-white/45">Check back soon to discover our luxury hotel partners.</p>
+            <p className="text-white/60 text-lg mb-4">Aucun hôtel partenaire pour le moment.</p>
+            <p className="text-white/45">Revenez bientôt pour découvrir nos hôtels partenaires.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -349,7 +344,7 @@ const PartnersPage: React.FC = () => {
                 </p>
 
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-white mb-2">Specialties:</h4>
+                  <h4 className="text-sm font-medium text-white mb-2">Spécialités :</h4>
                   <div className="flex flex-wrap gap-2">
                     {partner.specialties.map((specialty, specIndex) => (
                       <span
@@ -363,7 +358,7 @@ const PartnersPage: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-white mb-2">Performance Spots:</h4>
+                  <h4 className="text-sm font-medium text-white mb-2">Espaces de représentation :</h4>
                   <div className="flex flex-wrap gap-2">
                     {partner.performanceSpots.map((spot, spotIndex) => (
                       <span
@@ -391,7 +386,7 @@ const PartnersPage: React.FC = () => {
                   onClick={() => navigate(`/hotel/${partner.id}`)}
                   className="w-full btn-primary"
                 >
-                  View Venues
+                  Voir les espaces
                 </button>
               </div>
             </motion.div>
@@ -405,10 +400,10 @@ const PartnersPage: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
-              Partnership Benefits
+              Les avantages du partenariat
             </h2>
             <p className="text-xl text-white/60 max-w-3xl mx-auto">
-              Why luxury hotels choose to partner with Travel Art
+              Pourquoi les hôtels d’exception choisissent Travel Art
             </p>
           </div>
 
@@ -440,14 +435,14 @@ const PartnersPage: React.FC = () => {
       <div className="container mx-auto px-6 py-20 pb-32">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
-            What Our Partners Say
+            La parole à nos partenaires
           </h2>
         </div>
 
         {testimonials.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-white/60 text-lg">No testimonials available yet.</p>
-            <p className="text-white/45 text-sm mt-2">Testimonials will appear here as hotels rate their experiences.</p>
+            <p className="text-white/60 text-lg">Aucun témoignage pour le moment.</p>
+            <p className="text-white/45 text-sm mt-2">Les témoignages apparaîtront ici à mesure que les hôtels partagent leur expérience.</p>
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -467,7 +462,7 @@ const PartnersPage: React.FC = () => {
               </div>
             </div>
             <p className="text-white/60 mb-4">
-                  "{testimonial.comment}"
+                  &laquo;&nbsp;{testimonial.comment}&nbsp;&raquo;
             </p>
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gold/15 rounded-control flex items-center justify-center mr-4">
@@ -493,13 +488,13 @@ const PartnersPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl font-serif font-bold mb-6">
-              Ready to Become a Partner?
+              Envie de devenir partenaire ?
             </h2>
             <p className="text-xl text-white/65 mb-8 max-w-2xl mx-auto">
-              Join our exclusive network of luxury hotels and start offering unforgettable artistic experiences to your guests.
+              Rejoignez notre réseau d’hôtels d’exception et offrez à vos clients des moments artistiques dont ils se souviendront.
             </p>
             <a href="/register" className="btn-primary text-lg px-8 py-4">
-              Join as Hotel Partner
+              Devenir hôtel partenaire
             </a>
           </motion.div>
         </div>

@@ -223,17 +223,17 @@ const TravelerExperiencesPage: React.FC = () => {
             className="text-center"
           >
             <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6">
-              Discover Artistic Experiences
+              Découvrir les expériences
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
-              Immerse yourself in talented hearts performances at luxury hotels around the globe
+              Vivez les performances d’artistes accueillis par les hôtels d’exception du monde entier
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/register" className="btn-gold">
-                Join as Talent
+                Rejoindre en tant qu’artiste
               </Link>
               <Link to="/top-artists" className="btn-gold-outline">
-                Browse Artists
+                Parcourir les artistes
               </Link>
             </div>
           </motion.div>
@@ -249,10 +249,10 @@ const TravelerExperiencesPage: React.FC = () => {
             className="text-center mb-12"
           >
             <h2 className="text-4xl font-serif font-bold text-white mb-4">
-              Explore Experiences Worldwide
+              Explorer les expériences dans le monde
             </h2>
             <p className="text-white/60 max-w-2xl mx-auto">
-              Click on locations to discover upcoming performances and artist residencies
+              Cliquez sur un lieu pour découvrir les prochaines dates et les résidences d’artistes
             </p>
           </motion.div>
 
@@ -287,7 +287,7 @@ const TravelerExperiencesPage: React.FC = () => {
                         <p className="text-xs text-white/60 mb-2">{exp.title}</p>
                         <p className="text-xs text-white/45">{exp.artist} at {exp.hotel}</p>
                         <p className="text-xs text-white/45 mt-1">
-                          {new Date(exp.date).toLocaleDateString()}
+                          {new Date(exp.date).toLocaleDateString('fr-FR')}
                         </p>
                       </div>
                     </Popup>
@@ -307,7 +307,7 @@ const TravelerExperiencesPage: React.FC = () => {
                   : 'bg-surface-sunken text-white/75 hover:bg-white/10'
               }`}
             >
-              All Locations
+              Toutes les villes
             </button>
             {locations.map(loc => (
               <button
@@ -353,10 +353,10 @@ const TravelerExperiencesPage: React.FC = () => {
             </div>
           ) : filteredExperiences.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-white/60 text-lg mb-4">No experiences found.</p>
+              <p className="text-white/60 text-lg mb-4">Aucune expérience.</p>
               <p className="text-white/45 mb-2">Total experiences in state: {experiences.length}</p>
               <p className="text-white/45 mb-2">Filtered experiences: {filteredExperiences.length}</p>
-              <p className="text-white/45">Check back soon to discover our immersive experiences.</p>
+              <p className="text-white/45">Revenez bientôt pour découvrir nos expériences.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -400,7 +400,7 @@ const TravelerExperiencesPage: React.FC = () => {
                     </span>
                     <div className="flex items-center text-white/60 text-sm">
                       <Calendar className="w-4 h-4 mr-1" />
-                      {new Date(exp.date).toLocaleDateString()}
+                      {new Date(exp.date).toLocaleDateString('fr-FR')}
                     </div>
                   </div>
                   <p className="text-white/60 text-sm mb-4 line-clamp-2">{exp.description}</p>
@@ -415,7 +415,7 @@ const TravelerExperiencesPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="inline-flex items-center text-gold font-semibold group-hover:text-white transition-colors">
-                    Learn More
+                    En savoir plus
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -436,14 +436,14 @@ const TravelerExperiencesPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
-              Ready to Experience Art in Luxury?
+              Envie de vivre l’art autrement ?
             </h2>
             <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-              Join our community of travelers, artists, and hotels creating unforgettable experiences together.
+              Rejoignez la communauté de voyageurs, d’artistes et d’hôtels qui créent ces moments ensemble.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/register" className="btn-gold text-lg px-8 py-4">
-                Get Started
+                Commencer
               </Link>
               <Link to="/top-artists" className="btn-gold-outline text-lg px-8 py-4 border-white text-white hover:bg-[var(--surface-raised)] hover:text-white">
                 Explore Artists

@@ -104,7 +104,7 @@ const HotelDashboard: React.FC = () => {
               ? JSON.parse(hotel.performanceSpots) 
               : hotel.performanceSpots
             spots = Array.isArray(spotsData) ? spotsData : []
-          } catch (e) {
+          } catch {
             // Invalid JSON, use empty array
           }
         }
@@ -120,8 +120,8 @@ const HotelDashboard: React.FC = () => {
             id: b.id,
             artist: b.artist?.name || 'Unknown Artist',
             discipline: b.artist?.discipline || '',
-            date: new Date(b.startDate).toLocaleDateString(),
-            time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            date: new Date(b.startDate).toLocaleDateString('fr-FR'),
+            time: new Date(b.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
             spot: b.performanceSpot || 'TBD',
             status: b.status.toLowerCase()
           }))
@@ -170,7 +170,7 @@ const HotelDashboard: React.FC = () => {
 
   const handleDeleteProfile = async () => {
     if (!hotelId) {
-      toast.error('No hotel profile to delete')
+      toast.error('Aucun profil d’hôtel à supprimer')
       return
     }
     const confirmed = window.confirm('Supprimer votre profil hôtel ?')
@@ -185,10 +185,10 @@ const HotelDashboard: React.FC = () => {
   }
 
   const statsData = [
-    { label: 'Active Bookings', value: stats.activeBookings.toString(), icon: Calendar, color: 'text-blue-600' },
-    { label: 'Total Spent', value: `€${stats.totalSpent.toFixed(0)}`, icon: CreditCard, color: 'text-green-600 dark:text-green-400' },
-    { label: 'Artists Booked', value: stats.artistsBooked.toString(), icon: Users, color: 'text-purple-600' },
-    { label: 'Performance Spots', value: stats.performanceSpots.toString(), icon: MapPin, color: 'text-orange-600' }
+    { label: 'Réservations en cours', value: stats.activeBookings.toString(), icon: Calendar, color: 'text-blue-600' },
+    { label: 'Total dépensé', value: `€${stats.totalSpent.toFixed(0)}`, icon: CreditCard, color: 'text-green-600 dark:text-green-400' },
+    { label: 'Artistes réservés', value: stats.artistsBooked.toString(), icon: Users, color: 'text-purple-600' },
+    { label: 'Espaces de représentation', value: stats.performanceSpots.toString(), icon: MapPin, color: 'text-orange-600' }
   ]
 
   return (
@@ -204,13 +204,13 @@ const HotelDashboard: React.FC = () => {
                   Welcome back, <span className="text-gold">{user?.name?.split(' ')[0]}</span>!
                 </h1>
                 <p className="text-lg text-content-secondary font-medium">
-                  Manage your hotel&apos;s artist bookings and rooftop performances.
+                  Gérez les résidences d’artistes et la programmation de votre établissement.
                 </p>
               </div>
             </div>
             {hotelId && (
               <button 
-                className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-card shadow-lg hover:shadow-xl transition-all duration-300"
                 onClick={handleDeleteProfile}
               >
                 Supprimer le profil
@@ -254,7 +254,7 @@ const HotelDashboard: React.FC = () => {
             return (
               <div 
                 key={index} 
-                className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${colors.bg} border border-line/80 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 transition-all duration-500 hover:-translate-y-2 ${index === 0 ? 'fade-in-up-delay-0' : index === 1 ? 'fade-in-up-delay-1' : index === 2 ? 'fade-in-up-delay-2' : 'fade-in-up-delay-3'}`}
+                className={`group relative overflow-hidden rounded-card bg-gradient-to-br ${colors.bg} border border-line/80 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50 transition-all duration-500 hover:-translate-y-2 ${index === 0 ? 'fade-in-up-delay-0' : index === 1 ? 'fade-in-up-delay-1' : index === 2 ? 'fade-in-up-delay-2' : 'fade-in-up-delay-3'}`}
               >
                 {/* Accent bar */}
                 <div className={`absolute top-0 left-0 right-0 h-1 ${colors.accent} opacity-80`}></div>
@@ -268,7 +268,7 @@ const HotelDashboard: React.FC = () => {
                       <p className="text-sm font-semibold text-content-secondary uppercase tracking-wider mb-3">{stat.label}</p>
                       <p className="text-4xl font-bold text-content count-up leading-none mb-1">{stat.value}</p>
                     </div>
-                    <div className={`p-4 rounded-2xl bg-gradient-to-br ${colors.iconBg} shadow-lg shadow-gray-400/20 group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`p-4 rounded-card bg-gradient-to-br ${colors.iconBg} shadow-lg shadow-gray-400/20 group-hover:scale-110 transition-transform duration-300`}>
                       <Icon className={`w-7 h-7 ${colors.iconColor}`} />
                     </div>
                   </div>
@@ -284,19 +284,19 @@ const HotelDashboard: React.FC = () => {
         </div>
 
         {/* Upcoming Performances - Enhanced */}
-        <div className="bg-surface-raised/80 backdrop-blur-sm rounded-3xl border border-line/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-1">
+        <div className="bg-surface-raised/80 backdrop-blur-sm rounded-card border border-line/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-1">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
               <h2 className="text-2xl font-serif font-bold text-content">
-                Upcoming Performances
+                Prochaines représentations
               </h2>
             </div>
             <Link 
               to="/dashboard/bookings" 
               className="text-sm font-semibold text-gold hover:text-gold/80 transition-colors flex items-center gap-1 group"
             >
-              View All <span className="group-hover:translate-x-1 transition-transform">→</span>
+              Tout voir <span className="group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </div>
           
@@ -305,14 +305,14 @@ const HotelDashboard: React.FC = () => {
               {upcomingPerformances.map((performance, idx) => (
                 <div 
                   key={performance.id} 
-                  className="group relative overflow-hidden flex items-center justify-between p-6 bg-surface-sunken rounded-2xl border border-line/60 hover:border-gold/40 hover:shadow-lg transition-all duration-300 fade-in-up backdrop-blur-sm"
+                  className="group relative overflow-hidden flex items-center justify-between p-6 bg-surface-sunken rounded-card border border-line/60 hover:border-gold/40 hover:shadow-lg transition-all duration-300 fade-in-up backdrop-blur-sm"
                   style={{ animationDelay: `${0.1 + idx * 0.05}s` }}
                 >
                   {/* Hover gradient effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-gold/0 via-gold/0 to-gold/0 group-hover:from-gold/5 group-hover:via-gold/0 group-hover:to-gold/5 transition-all duration-300"></div>
                   
                   <div className="relative flex items-center gap-5 flex-1">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/20 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-14 h-14 rounded-card bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/20 group-hover:scale-110 transition-transform duration-300">
                       <Music className="w-7 h-7 text-gold" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -326,7 +326,7 @@ const HotelDashboard: React.FC = () => {
                     </div>
                   </div>
                   
-                  <span className={`relative px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all duration-300 ${
+                  <span className={`relative px-5 py-2.5 rounded-card text-sm font-bold shadow-md transition-all duration-300 ${
                     performance.status === 'confirmed' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-green-500/30' :
                     'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-amber-500/30'
                   }`}>
@@ -340,18 +340,18 @@ const HotelDashboard: React.FC = () => {
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
                 <Music className="w-10 h-10 text-content-secondary" />
               </div>
-              <p className="text-content-secondary text-lg font-medium mb-2">No upcoming performances</p>
-              <p className="text-content-secondary text-sm">Book artists to see your scheduled performances here!</p>
+              <p className="text-content-secondary text-lg font-medium mb-2">Aucune représentation à venir</p>
+              <p className="text-content-secondary text-sm">Invitez des artistes pour voir votre programmation ici.</p>
             </div>
           )}
         </div>
 
         {/* Performance Spots - Enhanced */}
-        <div className="bg-surface-raised/80 backdrop-blur-sm rounded-3xl border border-line/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-2">
+        <div className="bg-surface-raised/80 backdrop-blur-sm rounded-card border border-line/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-2">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
             <h2 className="text-2xl font-serif font-bold text-content">
-              Your Performance Spots
+              Vos espaces de représentation
             </h2>
           </div>
           
@@ -360,7 +360,7 @@ const HotelDashboard: React.FC = () => {
               {performanceSpots.map((spot, index) => (
                 <div 
                   key={index} 
-                  className="group relative overflow-hidden bg-surface-raised rounded-2xl border border-line/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 fade-in-up"
+                  className="group relative overflow-hidden bg-surface-raised rounded-card border border-line/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 fade-in-up"
                   style={{ animationDelay: `${0.2 + index * 0.1}s` }}
                 >
                   {spot.image && (
@@ -371,7 +371,7 @@ const HotelDashboard: React.FC = () => {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
-                      <div className="absolute top-3 right-3 px-3 py-1 bg-gold/90 backdrop-blur-sm text-navy rounded-lg text-xs font-bold">
+                      <div className="absolute top-3 right-3 px-3 py-1 bg-gold/90 backdrop-blur-sm text-navy rounded-card text-xs font-bold">
                         {spot.type || 'Spot'}
                       </div>
                     </div>
@@ -381,10 +381,10 @@ const HotelDashboard: React.FC = () => {
                     <p className="text-sm text-content-secondary mb-4 leading-relaxed line-clamp-2">{spot.description || 'No description available'}</p>
                     <div className="flex items-center justify-between pt-4 border-t border-line">
                       <div>
-                        <span className="text-xs text-content-secondary font-medium">Capacity</span>
+                        <span className="text-xs text-content-secondary font-medium">Capacité</span>
                         <p className="text-lg font-bold text-content">{spot.capacity || 'N/A'}</p>
                       </div>
-                      <div className="px-4 py-2 bg-gradient-to-r from-gold/20 to-gold/10 border border-gold/30 rounded-xl">
+                      <div className="px-4 py-2 bg-gradient-to-r from-gold/20 to-gold/10 border border-gold/30 rounded-card">
                         <span className="text-gold font-bold text-sm">{spot.type || 'N/A'}</span>
                       </div>
                     </div>
@@ -397,27 +397,27 @@ const HotelDashboard: React.FC = () => {
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
                 <MapPin className="w-10 h-10 text-content-secondary" />
               </div>
-              <p className="text-content-secondary text-lg font-medium mb-2">No performance spots configured</p>
-              <p className="text-content-secondary text-sm">Update your hotel profile to add performance spots.</p>
+              <p className="text-content-secondary text-lg font-medium mb-2">Aucun espace de représentation configuré</p>
+              <p className="text-content-secondary text-sm">Complétez le profil de votre hôtel pour ajouter des espaces.</p>
             </div>
           )}
         </div>
 
         {/* Favorite Artists - Enhanced */}
         {favoriteArtists.length > 0 && (
-          <div className="bg-surface-raised/80 backdrop-blur-sm rounded-3xl border border-line/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-3">
+          <div className="bg-surface-raised/80 backdrop-blur-sm rounded-card border border-line/60 shadow-xl shadow-gray-200/30 p-8 fade-in-up-delay-3">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-8 bg-gradient-to-b from-gold to-gold/60 rounded-full"></div>
                 <h2 className="text-2xl font-serif font-bold text-content">
-                  Your Favorite Artists
+                  Vos artistes favoris
                 </h2>
               </div>
               <Link 
                 to="/dashboard/artists" 
                 className="text-sm font-semibold text-gold hover:text-gold/80 transition-colors flex items-center gap-1 group"
               >
-                View All <span className="group-hover:translate-x-1 transition-transform">→</span>
+                Tout voir <span className="group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -425,7 +425,7 @@ const HotelDashboard: React.FC = () => {
                 <Link
                   key={artist.id}
                   to={`/artist/${artist.id}`}
-                  className="group relative overflow-hidden bg-surface-sunken rounded-2xl p-5 border border-line/60 hover:shadow-xl hover:border-gold/40 transition-all duration-300 hover:-translate-y-2 fade-in-up"
+                  className="group relative overflow-hidden bg-surface-sunken rounded-card p-5 border border-line/60 hover:shadow-xl hover:border-gold/40 transition-all duration-300 hover:-translate-y-2 fade-in-up"
                   style={{ animationDelay: `${0.3 + idx * 0.05}s` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-gold/0 to-gold/0 group-hover:from-gold/5 group-hover:to-gold/0 transition-all duration-300"></div>
@@ -452,20 +452,20 @@ const HotelDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link 
             to="/dashboard/artists" 
-            className="group relative overflow-hidden bg-gradient-to-br from-navy via-navy/95 to-navy rounded-3xl border border-gold/20 shadow-2xl shadow-navy/20 hover:shadow-gold/10 transition-all duration-500 hover:-translate-y-1 fade-in-up-delay-2"
+            className="group relative overflow-hidden bg-gradient-to-br from-navy via-navy/95 to-navy rounded-card border border-gold/20 shadow-2xl shadow-navy/20 hover:shadow-gold/10 transition-all duration-500 hover:-translate-y-1 fade-in-up-delay-2"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-gold/0 via-gold/0 to-gold/0 group-hover:from-gold/10 group-hover:via-gold/5 group-hover:to-gold/10 transition-all duration-500"></div>
             <div className="relative p-8">
-              <div className="w-14 h-14 mb-5 rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-14 h-14 mb-5 rounded-card bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Users className="w-7 h-7 text-gold" />
               </div>
               <h3 className="text-2xl font-serif font-bold text-white mb-3 group-hover:text-gold transition-colors">
-                Browse Artists
+                Parcourir les artistes
               </h3>
               <p className="text-content-secondary mb-6 leading-relaxed text-base">
-                Discover talented artists for your rooftop performances and intimate venues.
+                Découvrez les artistes pour vos toits-terrasses et vos espaces intimistes.
               </p>
-              <div className="inline-flex items-center gap-2 px-6 py-3 bg-gold text-navy font-bold rounded-xl hover:bg-gold/90 transition-all duration-300 group-hover:gap-3">
+              <div className="inline-flex items-center gap-2 px-6 py-3 bg-gold text-navy font-bold rounded-card hover:bg-gold/90 transition-all duration-300 group-hover:gap-3">
                 Find Artists <span className="group-hover:translate-x-1 transition-transform">→</span>
               </div>
             </div>
@@ -473,21 +473,21 @@ const HotelDashboard: React.FC = () => {
 
           <Link 
             to="/dashboard/bookings" 
-            className="group relative overflow-hidden bg-surface-raised rounded-3xl border-2 border-gold/30 shadow-xl shadow-gray-200/30 hover:shadow-gold/20 transition-all duration-500 hover:-translate-y-1 fade-in-up-delay-3"
+            className="group relative overflow-hidden bg-surface-raised rounded-card border-2 border-gold/30 shadow-xl shadow-gray-200/30 hover:shadow-gold/20 transition-all duration-500 hover:-translate-y-1 fade-in-up-delay-3"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-gold/0 via-gold/0 to-gold/0 group-hover:from-gold/5 group-hover:via-gold/0 group-hover:to-gold/5 transition-all duration-500"></div>
             <div className="relative p-8">
-              <div className="w-14 h-14 mb-5 rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+              <div className="w-14 h-14 mb-5 rounded-card bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <CreditCard className="w-7 h-7 text-gold" />
               </div>
               <h3 className="text-2xl font-serif font-bold text-content mb-3 group-hover:text-gold transition-colors">
-                Manage Bookings
+                Gérer les réservations
               </h3>
               <p className="text-content-secondary mb-6 leading-relaxed text-base">
-                View and manage your artist bookings and payment status.
+                Consultez et gérez vos réservations d’artistes et leur statut.
               </p>
-              <div className="inline-flex items-center gap-2 px-6 py-3 bg-navy text-white font-bold rounded-xl hover:bg-navy/90 transition-all duration-300 group-hover:gap-3">
-                View Bookings <span className="group-hover:translate-x-1 transition-transform">→</span>
+              <div className="inline-flex items-center gap-2 px-6 py-3 bg-navy text-white font-bold rounded-card hover:bg-navy/90 transition-all duration-300 group-hover:gap-3">
+                Voir les réservations <span className="group-hover:translate-x-1 transition-transform">→</span>
               </div>
             </div>
           </Link>

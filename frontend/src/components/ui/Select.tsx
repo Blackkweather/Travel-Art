@@ -16,7 +16,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex h-11 w-full items-center justify-between rounded-lg border border-line-strong bg-surface-raised px-4 py-2.5 text-sm font-medium text-navy shadow-sm',
+      'flex h-11 w-full items-center justify-between rounded-card border border-line-strong bg-surface-raised px-4 py-2.5 text-sm font-medium text-content shadow-sm',
       'hover:border-gold/60 hover:shadow-md',
       'focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold',
       'data-[state=open]:border-gold data-[state=open]:ring-2 data-[state=open]:ring-gold/30',
@@ -76,7 +76,7 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-line bg-surface-raised shadow-xl',
+        'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-card border border-line bg-surface-raised shadow-xl',
         'data-[state=open]:opacity-100 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=closed]:scale-95',
         'transition-all duration-200 ease-out',
         position === 'popper' &&
@@ -108,7 +108,7 @@ const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn('py-1.5 pl-8 pr-2 text-sm font-semibold text-navy', className)}
+    className={cn('py-1.5 pl-8 pr-2 text-sm font-semibold text-content', className)}
     {...props}
   />
 ))
@@ -121,9 +121,9 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      'relative flex w-full cursor-pointer select-none items-center rounded-md py-2.5 pl-8 pr-2 text-sm text-navy outline-none',
-      'focus:bg-gold/10 focus:text-navy',
-      'data-[highlighted]:bg-gold/10 data-[highlighted]:text-navy',
+      'relative flex w-full cursor-pointer select-none items-center rounded-card py-2.5 pl-8 pr-2 text-sm text-content outline-none',
+      'focus:bg-gold/10 focus:text-content',
+      'data-[highlighted]:bg-gold/10 data-[highlighted]:text-content',
       'data-[state=checked]:bg-navy data-[state=checked]:text-white',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       'transition-colors duration-150',

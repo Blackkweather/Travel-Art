@@ -75,7 +75,7 @@ const HotelBookings: React.FC = () => {
           duration: calculateDuration(b.startDate, b.endDate),
           // Format date/time
           date: b.startDate,
-          time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: new Date(b.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
           // Additional fields for display
           guestCount: 0, // Would need to come from booking details
           performanceType: b.performanceType || 'Performance',
@@ -102,9 +102,9 @@ const HotelBookings: React.FC = () => {
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
     
     if (diffHours > 0) {
-      return diffMins > 0 ? `${diffHours}h ${diffMins}m` : `${diffHours} hour${diffHours > 1 ? 's' : ''}`
+      return diffMins > 0 ? `${diffHours} h ${diffMins}` : `${diffHours} heure${diffHours >= 2 ? 's' : ''}`
     }
-    return `${diffMins} minute${diffMins !== 1 ? 's' : ''}`
+    return `${diffMins} minute${diffMins >= 2 ? 's' : ''}`
   }
 
   const handleStatusUpdate = async (bookingId: string, status: 'CONFIRMED' | 'REJECTED' | 'CANCELLED') => {
@@ -145,7 +145,7 @@ const HotelBookings: React.FC = () => {
         notes: b.notes || '',
         duration: calculateDuration(b.startDate, b.endDate),
         date: b.startDate,
-        time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: new Date(b.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
         guestCount: 0,
         performanceType: b.performanceType || 'Performance',
         contactEmail: b.artist?.email || '',
@@ -155,7 +155,7 @@ const HotelBookings: React.FC = () => {
       setBookings(transformedBookings)
     } catch (error) {
       console.error('Error updating booking status:', error)
-      alert('Failed to update booking status')
+      alert('Impossible de mettre à jour le statut de la réservation')
     }
   }
   
@@ -207,10 +207,10 @@ const HotelBookings: React.FC = () => {
   }
 
   const stats = [
-    { label: 'Total Bookings', value: bookings.length, icon: Calendar },
-    { label: 'Confirmed', value: bookings.filter(b => b.status === 'confirmed').length, icon: CheckCircle },
-    { label: 'Pending', value: bookings.filter(b => b.status === 'pending').length, icon: AlertCircle },
-    { label: 'Completed', value: bookings.filter(b => b.status === 'completed').length, icon: Star }
+    { label: 'Réservations', value: bookings.length, icon: Calendar },
+    { label: 'Confirmée', value: bookings.filter(b => b.status === 'confirmed').length, icon: CheckCircle },
+    { label: 'En attente', value: bookings.filter(b => b.status === 'pending').length, icon: AlertCircle },
+    { label: 'Terminée', value: bookings.filter(b => b.status === 'completed').length, icon: Star }
   ]
 
   return (
@@ -218,10 +218,10 @@ const HotelBookings: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-          Hotel Bookings
+          Réservations de l’hôtel
         </h1>
         <p className="text-content-secondary">
-          Manage your artist bookings and performance schedules
+          Gérez vos réservations d’artistes et votre programmation
         </p>
       </div>
 
@@ -256,7 +256,7 @@ const HotelBookings: React.FC = () => {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Search by artist, venue, or performance type..."
+                placeholder="Rechercher par artiste, lieu ou type de prestation…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -272,11 +272,11 @@ const HotelBookings: React.FC = () => {
               className="filter-select"
               data-testid="status-filter"
             >
-              <option value="all">All Status</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">Tous les statuts</option>
+              <option value="confirmed">Confirmée</option>
+              <option value="pending">En attente</option>
+              <option value="completed">Terminée</option>
+              <option value="cancelled">Annulée</option>
             </select>
           </div>
         </div>
@@ -323,11 +323,11 @@ const HotelBookings: React.FC = () => {
                     <div className="space-y-1 text-sm text-content-secondary">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>{new Date(booking.startDate).toLocaleDateString()}</span>
+                        <span>{new Date(booking.startDate).toLocaleDateString('fr-FR')}</span>
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2" />
-                        <span>{new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{new Date(booking.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2" />
@@ -341,23 +341,23 @@ const HotelBookings: React.FC = () => {
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-content mb-2">Payment Info</h4>
+                    {/* Amounts are deliberately not shown on booking cards.
+                        The residency length and the settlement state are what a
+                        hotel acts on here; the figures live in Credits. */}
+                    <h4 className="text-sm font-medium text-content mb-2">Résidence</h4>
                     <div className="space-y-1 text-sm text-content-secondary">
-                      {booking.totalPaymentAmount && (
+                      {booking.numberOfWeeks && (
                         <div className="flex items-center justify-between">
-                          <span>Total Payment:</span>
-                          <span className="font-bold text-gold">€{booking.totalPaymentAmount.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {booking.numberOfWeeks && booking.weeklyPaymentAmount && (
-                        <div className="flex items-center justify-between">
-                          <span>{booking.numberOfWeeks} week{booking.numberOfWeeks > 1 ? 's' : ''} × €{booking.weeklyPaymentAmount}/week</span>
+                          <span>Durée :</span>
+                          <span className="font-medium text-content">
+                            {booking.numberOfWeeks} semaine{booking.numberOfWeeks >= 2 ? 's' : ''}
+                          </span>
                         </div>
                       )}
                       {booking.paymentStatus && (
                         <div className="flex items-center justify-between mt-2">
                           <span>Status:</span>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          <span className={`px-2 py-1 rounded-card text-xs font-semibold ${
                             booking.paymentStatus === 'PAID' ? 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400' :
                             booking.paymentStatus === 'PENDING' ? 'bg-amber-100 text-amber-800' :
                             booking.paymentStatus === 'REFUNDED' ? 'bg-blue-100 text-blue-800' :
@@ -375,7 +375,7 @@ const HotelBookings: React.FC = () => {
                 {booking.notes && (
                   <div className="mb-4">
                     <h4 className="text-sm font-medium text-content mb-2">Notes</h4>
-                    <p className="text-sm text-content-secondary bg-surface p-3 rounded-lg">
+                    <p className="text-sm text-content-secondary bg-surface p-3 rounded-card">
                       {booking.notes}
                     </p>
                   </div>
@@ -394,24 +394,24 @@ const HotelBookings: React.FC = () => {
                           onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')}
                           className="btn-primary text-sm"
                         >
-                          Confirm
+                          Confirmer
                         </button>
                         <button 
                           onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
                           className="btn-secondary text-sm"
                         >
-                          Decline
+                          Refuser
                         </button>
                       </>
                     )}
                     {booking.status === 'confirmed' && (
-                      <button className="btn-secondary text-sm">View Details</button>
+                      <button className="btn-secondary text-sm">Voir le détail</button>
                     )}
                     {booking.status === 'completed' && (
                       <button className="btn-primary text-sm">Rate Artist</button>
                     )}
                     {booking.status === 'cancelled' && (
-                      <button className="btn-secondary text-sm">Re-book</button>
+                      <button className="btn-secondary text-sm">Reprogrammer</button>
                     )}
                   </div>
                 </div>
@@ -428,7 +428,7 @@ const HotelBookings: React.FC = () => {
             <Calendar className="w-12 h-12 text-content-secondary" />
           </div>
           <h3 className="text-xl font-serif font-semibold text-content mb-2">
-            No Bookings Found
+            Aucune réservation
           </h3>
           <p className="text-content-secondary mb-6">
             {searchTerm || filter !== 'all' 
@@ -444,7 +444,7 @@ const HotelBookings: React.FC = () => {
               }}
               className="btn-primary"
             >
-              Clear Filters
+              Réinitialiser les filtres
             </button>
           )}
         </div>

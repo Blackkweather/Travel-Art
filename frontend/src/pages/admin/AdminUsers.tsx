@@ -77,7 +77,7 @@ const AdminUsers: React.FC = () => {
       await adminApi.suspendUser(userId, { reason: 'Suspended by admin' })
       fetchUsers()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to suspend user')
+      alert(err.response?.data?.message || 'Impossible de suspendre cet utilisateur')
     } finally {
       setProcessing(null)
     }
@@ -89,7 +89,7 @@ const AdminUsers: React.FC = () => {
       await adminApi.activateUser(userId)
       fetchUsers()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to activate user')
+      alert(err.response?.data?.message || 'Impossible de réactiver cet utilisateur')
     } finally {
       setProcessing(null)
     }
@@ -105,8 +105,8 @@ const AdminUsers: React.FC = () => {
       document.body.appendChild(link)
       link.click()
       link.remove()
-    } catch (err: any) {
-      alert('Failed to export users')
+    } catch {
+      alert('Échec de l’export des utilisateurs')
     }
   }
 
@@ -132,10 +132,10 @@ const AdminUsers: React.FC = () => {
       <div className="flex items-center justify-between">
     <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-        User Management
+        Gestion des utilisateurs
       </h1>
           <p className="text-content-secondary">
-            Manage users, verify accounts, and handle support requests.
+            Gérer les utilisateurs, vérifier les comptes et traiter les demandes d’assistance.
           </p>
         </div>
         <button
@@ -143,7 +143,7 @@ const AdminUsers: React.FC = () => {
           className="btn-secondary flex items-center space-x-2"
         >
           <Download className="w-4 h-4" />
-          <span>Export CSV</span>
+          <span>Exporter en CSV</span>
         </button>
       </div>
 
@@ -155,14 +155,14 @@ const AdminUsers: React.FC = () => {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Search by name or email..."
+                placeholder="Rechercher par nom ou par e-mail…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
               />
             </div>
             <button type="submit" className="btn-primary whitespace-nowrap">
-              Search
+              Rechercher
             </button>
           </form>
           
@@ -176,17 +176,17 @@ const AdminUsers: React.FC = () => {
               }}
               className="filter-select"
             >
-              <option value="all">All Roles</option>
-              <option value="ARTIST">Artists</option>
-              <option value="HOTEL">Hotels</option>
-              <option value="ADMIN">Admins</option>
+              <option value="all">Tous les rôles</option>
+              <option value="ARTIST">Artistes</option>
+              <option value="HOTEL">Hôtels</option>
+              <option value="ADMIN">Administrateurs</option>
             </select>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded-card">
           {error}
         </div>
       )}
@@ -198,16 +198,16 @@ const AdminUsers: React.FC = () => {
             <thead className="bg-surface border-b border-line">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  User
+                  Utilisateur
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                   Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  Details
+                  Détails
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  Status
+                  Statut
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                   Joined
@@ -273,7 +273,7 @@ const AdminUsers: React.FC = () => {
                     {user.isActive ? (
                       <span className="flex items-center text-green-600 dark:text-green-400 text-sm">
                         <CheckCircle className="w-4 h-4 mr-1" />
-                        Active
+                        Actif
                       </span>
                     ) : (
                       <span className="flex items-center text-red-600 dark:text-red-400 text-sm">
@@ -285,7 +285,7 @@ const AdminUsers: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-content-secondary">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-1" />
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {new Date(user.createdAt).toLocaleDateString('fr-FR')}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -320,7 +320,7 @@ const AdminUsers: React.FC = () => {
         {users.length === 0 && !loading && (
           <div className="text-center py-12">
             <User className="w-12 h-12 text-content-secondary mx-auto mb-4" />
-            <p className="text-content-secondary">No users found</p>
+            <p className="text-content-secondary">Aucun utilisateur</p>
           </div>
         )}
       </div>
@@ -333,7 +333,7 @@ const AdminUsers: React.FC = () => {
             disabled={currentPage === 1 || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Previous
+            Précédent
           </button>
           <span className="text-content-secondary">
             Page {currentPage} of {totalPages}
@@ -343,7 +343,7 @@ const AdminUsers: React.FC = () => {
             disabled={currentPage === totalPages || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Next
+            Suivant
           </button>
         </div>
       )}

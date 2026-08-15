@@ -109,24 +109,29 @@
 
 /* Custom Components - Travel Art */
 @layer components {
-  /* Controls are pill, surfaces are near-sharp. Every button presses down 1px
-     on :active so a click feels physical. */
+  /* Controls and surfaces are both near-sharp. The label is small, uppercase
+     and widely tracked - at luxury scale a CTA reads as an engraved line of
+     type, not as a chunky app button. Every button presses down 1px on
+     :active so a click feels physical. */
   .btn-base {
     @apply inline-flex items-center justify-center whitespace-nowrap rounded-control
-           px-7 py-3.5 text-sm font-semibold tracking-wide
+           px-8 py-4 text-[0.6875rem] font-semibold uppercase
            transition-all duration-300 ease-entrance
            active:translate-y-px;
+    letter-spacing: 0.14em;
   }
 
-  /* Primary sits on the inverse surface rather than a fixed navy. On the light
-     theme that resolves to navy with a near-white label, exactly as before; on
-     the dark theme it becomes a light button with a navy label. It was
-     bg-navy, which on the dark surfaces this product actually ships rendered
-     as a navy bar on a navy card — the "View Profile" buttons on the artist
-     cards were all but invisible. Gold remains the accent, via .btn-gold. */
+  /* Primary sits on the inverse surface rather than a fixed navy, so it stays
+     legible in both themes: navy with a near-white label on light, a light bar
+     with a navy label on dark. Gold remains the accent, via .btn-gold.
+
+     Buttons are flat. The drop shadows these carried made them float above the
+     page like cards, which is the opposite of the engraved, set-into-the-page
+     feel the rest of the type has. Depth comes from the 1px press only. */
   .btn-primary {
     @apply btn-base bg-[var(--surface-inverse)] text-[var(--text-on-inverse)]
-           hover:opacity-90 shadow-soft;
+           border border-[var(--surface-inverse)]
+           hover:bg-transparent hover:text-[var(--text-primary)];
   }
 
   .btn-secondary {
@@ -137,7 +142,8 @@
 
   /* Gold is light, so its label is near-black - white on gold fails AA. */
   .btn-gold {
-    @apply btn-base bg-gold text-off-black hover:bg-gold-400 shadow-soft;
+    @apply btn-base bg-gold text-off-black border border-gold
+           hover:bg-transparent hover:text-gold-700 dark:hover:text-gold-300;
   }
 
   .btn-gold-outline {
@@ -152,6 +158,28 @@
     @apply btn-base bg-transparent text-[var(--text-primary)]
            border border-[var(--border-strong)]
            hover:border-gold hover:text-gold;
+  }
+
+  /* Size modifiers. These must stay below every .btn-* variant: @apply inlines
+     the utilities into the rule, so with equal specificity it is source order
+     that decides, and a modifier has to be able to override .btn-base.
+     Call sites previously reached for `!px-6 !py-2.5` to shrink a nav button,
+     which forced an !important into the markup for something the system should
+     own. */
+  .btn-sm {
+    @apply px-5 py-2.5 text-[0.625rem];
+    letter-spacing: 0.12em;
+  }
+
+  .btn-lg {
+    @apply px-10 py-5 text-xs;
+  }
+
+  /* A button that has to sit on top of photography. The dark scrim keeps the
+     label legible whatever the image behind it does. */
+  .btn-on-media {
+    @apply btn-base border border-white/70 text-white bg-white/5 backdrop-blur-sm
+           hover:bg-white hover:text-navy hover:border-white;
   }
 
   .card-experience {
@@ -186,20 +214,13 @@
     @apply bg-[var(--surface-raised)] rounded-card shadow-soft p-6 border border-[var(--border-subtle)] transition-all duration-300 hover:shadow-medium;
   }
   
-  /* Defer to the tokens so shadows change with the theme instead of staying
-     tuned for a light background. */
-  .shadow-soft {
-    box-shadow: var(--shadow-soft);
-  }
+  /* The .shadow-soft / .shadow-medium / .shadow-luxury rules that sat here are
+     gone. They were dead: Tailwind emits the same class names from theme
+     .boxShadow, and its utilities layer outranks this components layer, so
+     these never won. tailwind.config.js now maps those four utilities onto the
+     same --shadow-* tokens, which gets the theme-aware behaviour these were
+     reaching for and leaves one definition instead of two. */
 
-  .shadow-medium {
-    box-shadow: var(--shadow-medium);
-  }
-
-  .shadow-luxury {
-    box-shadow: var(--shadow-luxury);
-  }
-  
   /* Inputs sit on a sunken surface so the field reads as a well rather than a
      white box punched into a dark page. Placeholder contrast is deliberately
      kept above the AA floor. */
@@ -291,10 +312,14 @@
   background-color: var(--cream);
 }
 
-/* Fonts */
-.font-serif {
-  font-family: 'Playfair Display', serif;
-}
+/* The `.font-serif { font-family: 'Playfair Display', serif }` rule that sat
+   here is removed. Playfair Display is not loaded anywhere in this project -
+   the two self-hosted families are Cormorant Garamond and Outfit - so the
+   declaration fell through to the generic `serif` keyword and every display
+   heading on the site rendered in Times New Roman. Because the rule sat
+   outside @layer it also outranked Tailwind's own `font-serif`, so the
+   Cormorant token configured in tailwind.config.js never applied to anything.
+   Tailwind's utility is now the only definition. */
 
 /* Animations */
 @keyframes fadeInUp {
@@ -335,56 +360,71 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--gold);
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #b8942f;
 }
 
+/* Inter was named here but never loaded either, so body copy fell back to
+   system UI fonts. Outfit is the family this project actually ships. */
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Outfit Variable', Outfit, system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--cream-bg);
-  color: var(--text-dark);
+  background-color: var(--surface);
+  color: var(--text-primary);
   line-height: 1.6;
 }
 
-/* Typography */
+/* Display type. Cormorant is a high-contrast Garamond: it carries the brand at
+   large sizes but goes weak and spindly below ~1.25rem, so h4-h6 stay on the
+   sans and only h1-h3 take the serif. Optical sizes are set in rem against a
+   modest scale - the previous 3rem h1 / 2.25rem h2 was a 1.33 ratio that left
+   headings competing with each other instead of establishing a hierarchy. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Playfair Display', serif;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.15;
   margin: 0;
 }
 
+h1, h2, h3 {
+  font-family: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, serif;
+}
+
+h4, h5, h6 {
+  font-family: 'Outfit Variable', Outfit, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
 h1 {
-  font-size: 3rem;
-  font-weight: 700;
+  font-size: clamp(2.75rem, 6vw, 4.5rem);
+  font-weight: 500;
 }
 
 h2 {
-  font-size: 2.25rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 500;
   position: relative;
 }
 
 h3 {
-  font-size: 1.875rem;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 500;
 }
 
 h4 {
-  font-size: 1.5rem;
-}
-
-h5 {
   font-size: 1.25rem;
 }
 
+h5 {
+  font-size: 1.0625rem;
+}
+
 h6 {
-  font-size: 1.125rem;
+  font-size: 0.9375rem;
 }
 
 /* Gold Underline Effect */
@@ -416,7 +456,7 @@ h6 {
 /* Card Styles */
 .card {
   background: var(--surface-raised);
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 24px;
   box-shadow: var(--shadow-soft);
   transition: all 0.3s ease;
@@ -464,7 +504,7 @@ h6 {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--border-light);
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 16px;
   transition: all 0.3s ease;
   background-color: var(--surface-sunken);
@@ -938,26 +978,13 @@ h6 {
     padding: 2rem 0 !important;
   }
   
-  /* Mobile typography improvements */
-  h1 {
-    font-size: 1.875rem !important;
-    line-height: 1.2 !important;
-  }
-  
-  h2 {
-    font-size: 1.5rem !important;
-    line-height: 1.3 !important;
-  }
-  
-  h3 {
-    font-size: 1.25rem !important;
-    line-height: 1.4 !important;
-  }
-  
-  p {
-    font-size: 0.875rem !important;
-    line-height: 1.5 !important;
-  }
+  /* The h1/h2/h3/p !important block that sat here is gone. h1-h3 now size
+     themselves with clamp() against the viewport, which is what this was
+     hand-rolling, and the !important flags meant no page could ever set its
+     own heading size on mobile. `p { font-size: 0.875rem !important }` was the
+     damaging one: it forced *every* paragraph on the site down to 14px below
+     768px and beat every text-base / text-lg / text-xl utility in the markup,
+     so lead paragraphs and body copy rendered identically. */
 }
 
 @media (max-width: 640px) {
@@ -1026,7 +1053,7 @@ h6 {
 .card-luxury {
   background: var(--surface-raised);
   border: 1px solid rgba(185, 152, 81, 0.15);
-  border-radius: 1rem;
+  border-radius: 2px;
   padding: 1.5rem 2rem;
   box-shadow: var(--shadow-soft);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1070,7 +1097,7 @@ img[src*="logo-transparent.png"] {
   z-index: 2;
   background: var(--surface-raised);
   padding: 1.5rem;
-  border-radius: 10px;
+  border-radius: 2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   margin-bottom: 1rem;
   overflow: hidden;
@@ -1098,7 +1125,7 @@ input[type="text"].search-input,
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 3.5rem;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 1rem;
   outline: none;
   box-sizing: border-box;
@@ -1137,7 +1164,7 @@ select.form-input {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 1rem;
   outline: none;
   box-sizing: border-box;
@@ -1244,7 +1271,7 @@ html {
 .dashboard-stat-card {
   background: var(--surface-raised);
   border: 1px solid rgba(201, 166, 60, 0.15);
-  border-radius: 1rem;
+  border-radius: 2px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1327,7 +1354,7 @@ html {
 
 /* Typography Improvements */
 .dashboard-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, serif;
   font-size: 2rem;
   font-weight: 700;
   /* Was var(--primary-navy), a fixed dark navy. The product ships a dark
@@ -1346,7 +1373,7 @@ html {
 }
 
 .section-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, serif;
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-primary);

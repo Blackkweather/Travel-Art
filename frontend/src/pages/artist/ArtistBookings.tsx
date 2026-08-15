@@ -53,7 +53,7 @@ const ArtistBookings: React.FC = () => {
     if (typeof value === 'string') {
       try {
         return JSON.parse(value) as T
-      } catch (error) {
+      } catch {
         return fallback
       }
     }
@@ -80,10 +80,10 @@ const ArtistBookings: React.FC = () => {
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
 
     if (diffHours > 0) {
-      return diffMins > 0 ? `${diffHours}h ${diffMins}m` : `${diffHours} hour${diffHours > 1 ? 's' : ''}`
+      return diffMins > 0 ? `${diffHours} h ${diffMins}` : `${diffHours} heure${diffHours >= 2 ? 's' : ''}`
     }
 
-    return `${diffMins} minute${diffMins !== 1 ? 's' : ''}`
+    return `${diffMins} minute${diffMins >= 2 ? 's' : ''}`
   }
 
   const loadBookings = useCallback(async () => {
@@ -112,7 +112,7 @@ const ArtistBookings: React.FC = () => {
     return rawBookings.map((booking) => {
       const hotel = hotelMap.get(booking.hotelId) || {}
       const status = (booking.status || 'PENDING').toLowerCase() as BookingStatus
-      const startTime = new Date(booking.startDate).toLocaleTimeString([], {
+      const startTime = new Date(booking.startDate).toLocaleTimeString('fr-FR', {
         hour: '2-digit',
         minute: '2-digit'
       })
@@ -145,7 +145,7 @@ const ArtistBookings: React.FC = () => {
       setBookings(data)
     } catch (err) {
       console.error('Error fetching bookings:', err)
-      setError('Unable to load bookings at the moment.')
+      setError('Impossible de charger les réservations pour le moment.')
     } finally {
       setLoading(false)
     }
@@ -163,7 +163,7 @@ const ArtistBookings: React.FC = () => {
       setBookings(data)
     } catch (err) {
       console.error('Error updating booking status:', err)
-      alert('Failed to update booking status. Please try again.')
+      alert('Impossible de mettre à jour le statut. Veuillez réessayer.')
     } finally {
       setIsUpdating(false)
     }
@@ -185,21 +185,21 @@ const ArtistBookings: React.FC = () => {
   const statCards = useMemo(
     () => [
       {
-        label: 'Total Bookings',
+        label: 'Réservations',
         value: stats.total,
         iconBg: 'bg-blue-100',
         iconColor: 'text-blue-600',
         Icon: Calendar
       },
       {
-        label: 'Confirmed',
+        label: 'Confirmée',
         value: stats.confirmed,
         iconBg: 'bg-green-100 dark:bg-green-500/10',
         iconColor: 'text-green-600 dark:text-green-400',
         Icon: CheckCircle
       },
       {
-        label: 'Pending',
+        label: 'En attente',
         value: stats.pending,
         iconBg: 'bg-amber-100',
         iconColor: 'text-amber-600',
@@ -255,10 +255,10 @@ const ArtistBookings: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            My Bookings
+            Mes réservations
           </h1>
           <p className="text-content-secondary">
-            Manage your performance bookings and track your schedule
+            Gérez vos dates et suivez votre planning
           </p>
         </div>
         <div className="flex items-center space-x-4">
@@ -270,12 +270,12 @@ const ArtistBookings: React.FC = () => {
               className="form-input w-44"
               data-testid="status-filter"
             >
-              <option value="all">All Bookings</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="rejected">Rejected</option>
+              <option value="all">Toutes les réservations</option>
+              <option value="confirmed">Confirmée</option>
+              <option value="pending">En attente</option>
+              <option value="completed">Terminée</option>
+              <option value="cancelled">Annulée</option>
+              <option value="rejected">Refusée</option>
             </select>
           </div>
         </div>
@@ -316,7 +316,7 @@ const ArtistBookings: React.FC = () => {
                 <img
                   src={booking.image}
                   alt={booking.hotelName}
-                  className="w-full lg:w-64 h-48 lg:h-40 object-cover rounded-lg"
+                  className="w-full lg:w-64 h-48 lg:h-40 object-cover rounded-card"
                   loading="lazy"
                 />
               </div>
@@ -334,7 +334,7 @@ const ArtistBookings: React.FC = () => {
                     </p>
                     <p className="text-content-secondary flex items-center">
                       <Calendar className="w-4 h-4 mr-2" />
-                      {new Date(booking.startDate).toLocaleDateString()} at {booking.startTime}
+                      {new Date(booking.startDate).toLocaleDateString('fr-FR')} at {booking.startTime}
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -347,18 +347,18 @@ const ArtistBookings: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Performance Spot</p>
+                    <p className="text-sm font-medium text-content-secondary">Espace de représentation</p>
                     <p className="text-content font-medium">{booking.performanceSpot}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Duration</p>
+                    <p className="text-sm font-medium text-content-secondary">Durée</p>
                     <p className="text-content font-medium flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
                       {booking.duration}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Credits</p>
+                    <p className="text-sm font-medium text-content-secondary">Crédits</p>
                     <p className="text-gold font-medium">{booking.creditsUsed} credits</p>
                   </div>
                 </div>
@@ -368,7 +368,7 @@ const ArtistBookings: React.FC = () => {
                 )}
 
                 {!booking.notes && (
-                  <p className="text-content-secondary mb-4 italic">Awaiting additional notes from the hotel.</p>
+                  <p className="text-content-secondary mb-4 italic">En attente de précisions de l’hôtel.</p>
                 )}
 
                 {/* Action Buttons */}
@@ -378,34 +378,34 @@ const ArtistBookings: React.FC = () => {
                       <>
                         <button
                           onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="px-4 py-2 bg-green-600 text-white rounded-card hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                           disabled={isUpdating}
                         >
                           Accept
                         </button>
                         <button
                           onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="px-4 py-2 bg-red-600 text-white rounded-card hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                           disabled={isUpdating}
                         >
-                          Decline
+                          Refuser
                         </button>
                       </>
                     )}
                     {booking.status === 'confirmed' && (
                       <button 
                         onClick={() => setSelectedBooking(booking)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-card hover:bg-blue-700 transition-colors cursor-pointer"
                       >
-                        View Details
+                        Voir le détail
                       </button>
                     )}
                     {booking.status === 'completed' && (
                       <button 
                         onClick={() => setSelectedBooking(booking)}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                        className="px-4 py-2 bg-gray-600 text-white rounded-card hover:bg-gray-700 transition-colors cursor-pointer"
                       >
-                        View Feedback
+                        Voir les retours
                       </button>
                     )}
                   </div>
@@ -421,7 +421,7 @@ const ArtistBookings: React.FC = () => {
         <div className="card-luxury text-center py-12">
           <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
           <h3 className="text-xl font-serif font-semibold text-content mb-2">
-            No bookings found
+            Aucune réservation
           </h3>
           <p className="text-content-secondary mb-6">
             {filter === 'all'
@@ -433,7 +433,7 @@ const ArtistBookings: React.FC = () => {
               onClick={() => navigate('/dashboard/profile')}
               className="btn-primary"
             >
-              Update Availability
+              Mettre à jour les disponibilités
             </button>
           )}
         </div>
@@ -445,11 +445,11 @@ const ArtistBookings: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-surface-raised rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-surface-raised rounded-card shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-serif font-bold text-content">Booking Details</h2>
+                <h2 className="text-2xl font-serif font-bold text-content">Détail de la réservation</h2>
                 <button
                   onClick={() => setSelectedBooking(null)}
                   className="text-content-secondary hover:text-content-secondary text-2xl font-bold"
@@ -471,36 +471,36 @@ const ArtistBookings: React.FC = () => {
                 {/* Booking Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Start Date & Time</p>
+                    <p className="text-sm font-medium text-content-secondary">Date et heure de début</p>
                     <p className="text-content font-medium">
-                      {new Date(selectedBooking.startDate).toLocaleDateString()} at {selectedBooking.startTime}
+                      {new Date(selectedBooking.startDate).toLocaleDateString('fr-FR')} at {selectedBooking.startTime}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">End Date</p>
+                    <p className="text-sm font-medium text-content-secondary">Date de fin</p>
                     <p className="text-content font-medium">
-                      {new Date(selectedBooking.endDate).toLocaleDateString()}
+                      {new Date(selectedBooking.endDate).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Duration</p>
+                    <p className="text-sm font-medium text-content-secondary">Durée</p>
                     <p className="text-content font-medium flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
                       {selectedBooking.duration}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Performance Spot</p>
+                    <p className="text-sm font-medium text-content-secondary">Espace de représentation</p>
                     <p className="text-content font-medium">{selectedBooking.performanceSpot}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Status</p>
+                    <p className="text-sm font-medium text-content-secondary">Statut</p>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${getStatusColor(selectedBooking.status)}`}>
                       {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Credits Used</p>
+                    <p className="text-sm font-medium text-content-secondary">Crédits utilisés</p>
                     <p className="text-gold font-medium">{selectedBooking.creditsUsed} credits</p>
                   </div>
                 </div>
@@ -509,7 +509,7 @@ const ArtistBookings: React.FC = () => {
                 {selectedBooking.notes && (
                   <div>
                     <p className="text-sm font-medium text-content-secondary mb-2">Notes</p>
-                    <p className="text-content-secondary bg-surface p-4 rounded-lg">{selectedBooking.notes}</p>
+                    <p className="text-content-secondary bg-surface p-4 rounded-card">{selectedBooking.notes}</p>
                   </div>
                 )}
 
@@ -517,9 +517,9 @@ const ArtistBookings: React.FC = () => {
                 <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
                     onClick={() => setSelectedBooking(null)}
-                    className="px-4 py-2 bg-surface-sunken text-content-secondary rounded-lg hover:bg-white/10 transition-colors"
+                    className="px-4 py-2 bg-surface-sunken text-content-secondary rounded-card hover:bg-white/10 transition-colors"
                   >
-                    Close
+                    Fermer
                   </button>
                   {selectedBooking.status === 'confirmed' && (
                     <button
@@ -527,9 +527,9 @@ const ArtistBookings: React.FC = () => {
                         navigate(`/hotel/${selectedBooking.hotelId}`)
                         setSelectedBooking(null)
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-card hover:bg-blue-700 transition-colors"
                     >
-                      View Hotel Profile
+                      Voir la fiche de l’hôtel
                     </button>
                   )}
                 </div>

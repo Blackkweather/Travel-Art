@@ -279,7 +279,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
               placeholder="Ex: Espagnol, Italien, Allemand..."
               disabled={isLoading}
               className={`
-                w-full h-12 px-4 rounded-xl border-2 transition-all
+                w-full h-12 px-4 rounded-card border-2 transition-all
                 border-line
                 ${isLoading ? 'bg-surface opacity-60 cursor-not-allowed' : 'bg-surface-raised'}
                 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
@@ -296,7 +296,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           onClick={onBack}
           disabled={isLoading}
           className={`
-            flex-1 h-14 rounded-xl font-bold text-lg transition-all
+            flex-1 h-14 rounded-card font-bold text-lg transition-all
             bg-surface-sunken hover:bg-white/10 text-navy-900
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]
@@ -308,7 +308,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           onClick={handleNext}
           disabled={isLoading}
           className={`
-            flex-1 h-14 rounded-xl font-bold text-lg transition-all
+            flex-1 h-14 rounded-card font-bold text-lg transition-all
             bg-gold hover:bg-gold-600 text-white
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]

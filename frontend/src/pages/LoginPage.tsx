@@ -27,13 +27,13 @@ const LoginPage: React.FC = () => {
       const { login } = useAuthStore.getState()
       await login(data)
       
-      toast.success('Welcome back!')
+      toast.success('Bon retour')
       navigate('/dashboard')
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || 
                           error.errors?.[0]?.message || 
                           error.message || 
-                          'Login failed. Please check your credentials.'
+                          'Connexion impossible. Vérifiez vos identifiants.'
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -72,10 +72,10 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
           <h2 className="text-3xl font-serif font-bold text-white gold-underline">
-            Welcome Back
+            Bon retour
           </h2>
           <p className="mt-2 text-white/60">
-            Sign in to your Travel Art account
+            Connectez-vous à votre compte Travel Art
           </p>
         </div>
 
@@ -83,7 +83,7 @@ const LoginPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="form-label">
-                Email Address
+                Adresse e-mail
               </label>
               <input
                 {...register('email', {
@@ -96,7 +96,7 @@ const LoginPage: React.FC = () => {
                 name="email"
                 type="email"
                 className="form-input"
-                placeholder="Enter your email"
+                placeholder="Saisissez votre e-mail"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
@@ -105,7 +105,7 @@ const LoginPage: React.FC = () => {
 
             <div>
               <label htmlFor="password" className="form-label">
-                Password
+                Mot de passe
               </label>
               <input
                 {...register('password', {
@@ -118,7 +118,7 @@ const LoginPage: React.FC = () => {
                 name="password"
                 type="password"
                 className="form-input"
-                placeholder="Enter your password"
+                placeholder="Saisissez votre mot de passe"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
@@ -132,16 +132,16 @@ const LoginPage: React.FC = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-gold focus:ring-gold border-white/15 rounded"
+                className="h-4 w-4 text-gold focus:ring-gold border-white/15 rounded-card"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-white/75">
-                Remember me
+                Se souvenir de moi
               </label>
             </div>
 
             <div className="text-sm">
               <Link to="/forgot-password" className="text-gold hover:text-gold-600">
-                Forgot your password?
+                Mot de passe oublié ?
               </Link>
             </div>
           </div>
@@ -158,9 +158,9 @@ const LoginPage: React.FC = () => {
 
           <div className="text-center">
             <p className="text-white/60">
-              Don't have an account?{' '}
+              Pas encore de compte ?{' '}
               <Link to="/register" className="text-gold hover:text-gold-600 font-medium">
-                Sign up here
+                Créer un compte
               </Link>
             </p>
           </div>
@@ -169,7 +169,7 @@ const LoginPage: React.FC = () => {
         {import.meta.env.DEV && (
           <div className="mt-8 text-center">
             <p className="text-sm text-white/45">
-              Demo credentials (Dev Only):
+              Identifiants de démonstration (développement) :
             </p>
           </div>
         )}

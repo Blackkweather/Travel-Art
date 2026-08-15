@@ -30,14 +30,14 @@ const ResetPasswordPage: React.FC = () => {
 
   const onSubmit = async (data: ResetPasswordForm) => {
     if (!token) {
-      toast.error('Invalid reset token')
+      toast.error('Lien de réinitialisation invalide')
       return
     }
 
     setIsLoading(true)
     try {
       await authApi.resetPassword({ token, password: data.password })
-      toast.success('Password reset successfully!')
+      toast.success('Mot de passe réinitialisé')
       navigate('/login')
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Failed to reset password. The token may be invalid or expired.')
@@ -54,13 +54,13 @@ const ResetPasswordPage: React.FC = () => {
         <div className="flex items-center justify-center py-20 pt-32 px-4">
           <div className="text-center">
             <h2 className="text-3xl font-serif font-bold text-white mb-4">
-              Invalid Reset Link
+              Lien invalide
             </h2>
             <p className="text-white/60 mb-4">
-              This password reset link is invalid or has expired.
+              Ce lien de réinitialisation est invalide ou a expiré.
             </p>
             <Link to="/forgot-password" className="text-gold hover:text-gold-600 font-medium">
-              Request a new reset link
+              Demander un nouveau lien
             </Link>
           </div>
         </div>
@@ -93,17 +93,17 @@ const ResetPasswordPage: React.FC = () => {
                 </div>
               </div>
               <h2 className="text-3xl font-serif font-bold text-white gold-underline">
-                Reset Password
+                Réinitialiser le mot de passe
               </h2>
               <p className="mt-2 text-white/60">
-                Enter your new password below
+                Saisissez votre nouveau mot de passe
               </p>
             </div>
 
             <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
                 <label htmlFor="password" className="form-label">
-                  New Password
+                  Nouveau mot de passe
                 </label>
                 <input
                   {...register('password', {
@@ -115,7 +115,7 @@ const ResetPasswordPage: React.FC = () => {
                   })}
                   type="password"
                   className="form-input"
-                  placeholder="Enter new password"
+                  placeholder="Saisissez le nouveau mot de passe"
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
@@ -124,7 +124,7 @@ const ResetPasswordPage: React.FC = () => {
 
               <div>
                 <label htmlFor="confirmPassword" className="form-label">
-                  Confirm Password
+                  Confirmer le mot de passe
                 </label>
                 <input
                   {...register('confirmPassword', {
@@ -133,7 +133,7 @@ const ResetPasswordPage: React.FC = () => {
                   })}
                   type="password"
                   className="form-input"
-                  placeholder="Confirm new password"
+                  placeholder="Confirmez le nouveau mot de passe"
                 />
                 {errors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>
@@ -152,7 +152,7 @@ const ResetPasswordPage: React.FC = () => {
 
               <div className="text-center">
                 <Link to="/login" className="text-gold hover:text-gold-600 font-medium text-sm">
-                  Back to Login
+                  Retour à la connexion
                 </Link>
               </div>
             </form>

@@ -61,7 +61,7 @@ const TopArtistsPage: React.FC = () => {
       } catch (err: any) {
         console.error('Error fetching top artists:', err)
         setError(err.response?.data?.error?.message || 'Failed to load artists')
-        toast.error('Failed to load top artists. Please try again.')
+        toast.error('Impossible de charger les artistes. Veuillez réessayer.')
       } finally {
         setLoading(false)
       }
@@ -102,11 +102,11 @@ const TopArtistsPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
-              Top Performing
-              <span className="block text-gold">Artists</span>
+              Les plus remarqués
+              <span className="block text-gold">Artistes</span>
             </h1>
             <p className="text-xl text-white/65 mb-8 max-w-3xl mx-auto">
-              Discover the world's most talented artists who create magical moments on hotel rooftops and luxury venues.
+              Découvrez les artistes qui font vivre les toits-terrasses et les plus belles adresses du monde.
             </p>
           </motion.div>
         </div>
@@ -125,7 +125,7 @@ const TopArtistsPage: React.FC = () => {
                 <Users className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">{stats.totalArtists || 0}</h3>
-              <p className="text-white/60">Verified Artists</p>
+              <p className="text-white/60">Artistes vérifiés</p>
             </motion.div>
 
             <motion.div
@@ -137,7 +137,7 @@ const TopArtistsPage: React.FC = () => {
                 <Star className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">{stats.averageRating.toFixed(1)}</h3>
-              <p className="text-white/60">Average Rating</p>
+              <p className="text-white/60">Note moyenne</p>
             </motion.div>
 
             <motion.div
@@ -149,7 +149,7 @@ const TopArtistsPage: React.FC = () => {
                 <Calendar className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">{stats.totalBookings || 0}</h3>
-              <p className="text-white/60">Successful Bookings</p>
+              <p className="text-white/60">Réservations abouties</p>
             </motion.div>
 
             <motion.div
@@ -161,7 +161,7 @@ const TopArtistsPage: React.FC = () => {
                 <MapPin className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">{stats.totalHotels || 0}</h3>
-              <p className="text-white/60">Luxury Hotels</p>
+              <p className="text-white/60">Hôtels d’exception</p>
             </motion.div>
           </div>
         </div>
@@ -171,10 +171,10 @@ const TopArtistsPage: React.FC = () => {
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
-            Featured Artists
+            Artistes à l’honneur
           </h2>
           <p className="text-xl text-white/60 max-w-3xl mx-auto">
-            Meet our top-performing artists who specialize in creating unforgettable rooftop experiences
+            Rencontrez les artistes qui font des toits-terrasses des scènes mémorables
           </p>
         </div>
 
@@ -185,24 +185,24 @@ const TopArtistsPage: React.FC = () => {
         ) : error ? (
           <div className="text-center py-20">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-white mb-2">Failed to Load Artists</h3>
+            <h3 className="text-2xl font-semibold text-white mb-2">Impossible de charger les artistes</h3>
             <p className="text-white/60 mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary"
             >
-              Try Again
+              Réessayer
             </button>
           </div>
         ) : topArtists.length === 0 ? (
           <div className="text-center py-20">
             <Users className="w-16 h-16 text-white/40 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-white mb-2">No Artists Found</h3>
+            <h3 className="text-2xl font-semibold text-white mb-2">Aucun artiste trouvé</h3>
             <p className="text-white/60 mb-6">
-              Check back soon to discover our top-performing artists.
+              Revenez bientôt pour découvrir nos artistes à l’honneur.
             </p>
             <Link to="/register" className="btn-primary">
-              Become an Artist
+              Devenir artiste
             </Link>
           </div>
         ) : (
@@ -282,7 +282,7 @@ const TopArtistsPage: React.FC = () => {
                       to={`/artist/${artist.id}`}
                       className="w-full btn-primary block text-center mt-auto"
                     >
-                      View Profile
+                      Voir le profil
                     </Link>
                   </div>
                 </motion.div>
@@ -301,13 +301,13 @@ const TopArtistsPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl font-serif font-bold mb-6">
-              Ready to Perform?
+              Prêt à monter sur scène ?
             </h2>
             <p className="text-xl text-white/65 mb-8 max-w-2xl mx-auto">
-              Join our community of talented artists and start performing at the world's most luxurious hotels.
+              Rejoignez notre communauté d’artistes et jouez dans les plus belles adresses du monde.
             </p>
             <a href="/register" className="btn-primary text-lg px-8 py-4">
-              Join as Artist
+              Devenir artiste
             </a>
           </motion.div>
         </div>

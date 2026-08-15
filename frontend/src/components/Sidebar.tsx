@@ -24,29 +24,29 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     switch (user.role) {
       case 'ARTIST':
         return [
-          { path: '/dashboard', label: 'Dashboard', icon: Home },
-          { path: '/dashboard/profile', label: 'My Profile', icon: UserIcon },
-          { path: '/dashboard/bookings', label: 'My Bookings', icon: Calendar },
-          { path: '/dashboard/membership', label: 'Membership', icon: CreditCard },
-          { path: '/dashboard/referrals', label: 'Referrals', icon: Gift },
+          { path: '/dashboard', label: 'Tableau de bord', icon: Home },
+          { path: '/dashboard/profile', label: 'Mon profil', icon: UserIcon },
+          { path: '/dashboard/bookings', label: 'Mes réservations', icon: Calendar },
+          { path: '/dashboard/membership', label: 'Adhésion', icon: CreditCard },
+          { path: '/dashboard/referrals', label: 'Parrainage', icon: Gift },
         ]
       case 'HOTEL':
         return [
-          { path: '/dashboard', label: 'Dashboard', icon: Home },
-          { path: '/dashboard/profile', label: 'Hotel Profile', icon: UserIcon },
-          { path: '/dashboard/artists', label: 'Browse Artists', icon: Users },
-          { path: '/dashboard/bookings', label: 'Bookings', icon: Calendar },
-          { path: '/dashboard/credits', label: 'Credits', icon: CreditCard },
+          { path: '/dashboard', label: 'Tableau de bord', icon: Home },
+          { path: '/dashboard/profile', label: 'Profil de l’hôtel', icon: UserIcon },
+          { path: '/dashboard/artists', label: 'Parcourir les artistes', icon: Users },
+          { path: '/dashboard/bookings', label: 'Réservations', icon: Calendar },
+          { path: '/dashboard/credits', label: 'Crédits', icon: CreditCard },
         ]
       case 'ADMIN':
         return [
-          { path: '/dashboard', label: 'Dashboard', icon: Home },
-          { path: '/dashboard/users', label: 'Users', icon: Users },
-          { path: '/dashboard/bookings', label: 'Bookings', icon: Calendar },
-          { path: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp },
-          { path: '/dashboard/moderation', label: 'Moderation', icon: UserIcon },
-          { path: '/dashboard/logs', label: 'Activity Logs', icon: Activity },
-          { path: '/dashboard/referrals', label: 'Referrals', icon: Gift },
+          { path: '/dashboard', label: 'Tableau de bord', icon: Home },
+          { path: '/dashboard/users', label: 'Utilisateurs', icon: Users },
+          { path: '/dashboard/bookings', label: 'Réservations', icon: Calendar },
+          { path: '/dashboard/analytics', label: 'Statistiques', icon: TrendingUp },
+          { path: '/dashboard/moderation', label: 'Modération', icon: UserIcon },
+          { path: '/dashboard/logs', label: 'Journal d’activité', icon: Activity },
+          { path: '/dashboard/referrals', label: 'Parrainage', icon: Gift },
         ]
       default:
         return []
@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 relative ${
+                className={`group flex items-center gap-4 px-4 py-3 rounded-card transition-all duration-300 relative ${
                   isActive
                     ? 'bg-gradient-to-r from-navy to-navy/95 text-white shadow-md'
                     : 'text-content-secondary hover:bg-gradient-to-r hover:from-gold/10 hover:to-gold/5'

@@ -26,18 +26,18 @@ const HotelContactButtons: React.FC<HotelContactButtonsProps> = ({
     if (!phoneNumber) return '#'
     const formattedPhone = formatPhoneForWhatsApp(phoneNumber)
     const message = responsibleName
-      ? `Hello ${responsibleName}, I'm interested in learning more about ${hotelName || 'your hotel'}.`
-      : `Hello, I'm interested in learning more about ${hotelName || 'your hotel'}.`
+      ? `Bonjour ${responsibleName}, je souhaiterais en savoir plus sur ${hotelName || 'votre établissement'}.`
+      : `Bonjour, je souhaiterais en savoir plus sur ${hotelName || 'votre établissement'}.`
     return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`
   }
 
   // Generate email URL
   const getEmailUrl = () => {
     if (!email) return '#'
-    const subject = `Inquiry about ${hotelName || 'your hotel'}`
+    const subject = `Demande de renseignements — ${hotelName || 'votre établissement'}`
     const body = responsibleName
-      ? `Dear ${responsibleName},\n\nI would like to know more about ${hotelName || 'your hotel'}.\n\nBest regards,`
-      : `Dear Sir/Madam,\n\nI would like to know more about ${hotelName || 'your hotel'}.\n\nBest regards,`
+      ? `Bonjour ${responsibleName},\n\nJe souhaiterais en savoir plus sur ${hotelName || 'votre établissement'}.\n\nBien cordialement,`
+      : `Madame, Monsieur,\n\nJe souhaiterais en savoir plus sur ${hotelName || 'votre établissement'}.\n\nBien cordialement,`
     return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
@@ -60,7 +60,7 @@ const HotelContactButtons: React.FC<HotelContactButtonsProps> = ({
             href={getWhatsAppUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center px-4 py-3.5 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition"
+            className="flex-1 flex items-center justify-center px-4 py-3.5 bg-green-500 text-white rounded-card font-medium hover:bg-green-600 transition"
           >
             <MessageCircle className="w-5 h-5 mr-2" />
             <span>WhatsApp</span>
@@ -71,10 +71,10 @@ const HotelContactButtons: React.FC<HotelContactButtonsProps> = ({
         {email && (
           <a
             href={getEmailUrl()}
-            className="flex-1 flex items-center justify-center px-4 py-3.5 border-2 border-line-strong text-content-secondary rounded-lg font-medium hover:border-navy hover:text-content transition"
+            className="flex-1 flex items-center justify-center px-4 py-3.5 border-2 border-line-strong text-content-secondary rounded-card font-medium hover:border-navy hover:text-content transition"
           >
             <Mail className="w-5 h-5 mr-2" />
-            <span>Email</span>
+            <span>E-mail</span>
           </a>
         )}
       </div>
@@ -83,13 +83,13 @@ const HotelContactButtons: React.FC<HotelContactButtonsProps> = ({
       <div className="text-sm text-content-secondary space-y-1 pt-2">
         {phoneNumber && (
           <p className="flex items-center gap-2">
-            <span className="text-gold font-medium">Phone:</span>
+            <span className="text-gold font-medium">Téléphone :</span>
             <span>{phoneNumber}</span>
           </p>
         )}
         {email && (
           <p className="flex items-center gap-2">
-            <span className="text-gold font-medium">Email:</span>
+            <span className="text-gold font-medium">E-mail :</span>
             <span>{email}</span>
           </p>
         )}

@@ -27,13 +27,13 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error('Sélectionnez un fichier image');
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be smaller than 5MB');
+      toast.error('L’image doit faire moins de 5 Mo');
       return;
     }
 
@@ -86,7 +86,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
         setPreview(null);
       }, 100);
       
-      toast.success('Profile picture saved to database!');
+      toast.success('Photo de profil enregistrée');
       
       // Clear the file input
       if (fileInputRef.current) {
@@ -117,11 +117,11 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
   return (
     <div className="relative inline-block">
-      <div className="relative w-48 h-48 rounded-xl overflow-hidden bg-surface-sunken border-2 border-line">
+      <div className="relative w-48 h-48 rounded-card overflow-hidden bg-surface-sunken border-2 border-line">
         {displayImage ? (
           <img
             src={displayImage}
-            alt="Profile"
+            alt="Profil"
             className="w-full h-full object-cover"
           />
         ) : (
@@ -156,7 +156,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
           }}
           disabled={uploading}
           className="bg-gold text-navy p-2 rounded-full hover:bg-gold/90 transition-colors shadow-lg disabled:opacity-50"
-          title="Upload new photo"
+          title="Changer la photo"
         >
           <Upload className="w-4 h-4" />
         </button>
@@ -170,7 +170,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
               handleRemove();
             }}
             className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
-            title="Remove"
+            title="Retirer"
           >
             <X className="w-4 h-4" />
           </button>

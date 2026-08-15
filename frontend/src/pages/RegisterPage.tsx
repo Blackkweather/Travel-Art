@@ -58,15 +58,15 @@ const RegisterPage: React.FC = () => {
             >
               <img
                 src={getLogoUrl('transparent')}
-                alt="Travel Art Logo"
+                alt="Logo Travel Art"
                 className="w-40 h-40 md:w-56 md:h-56 object-contain mx-auto"
               />
             </motion.div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 bg-gradient-to-r from-navy to-navy/80 bg-clip-text text-transparent">
-              Join Travel Art
+              Rejoindre Travel Art
             </h1>
             <p className="text-xl md:text-2xl text-white/60 max-w-2xl mx-auto">
-              Choose your role and start your journey with us
+              Choisissez votre rôle et commencez l’aventure
             </p>
           </motion.div>
 
@@ -84,7 +84,7 @@ const RegisterPage: React.FC = () => {
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedRole('ARTIST')}
-              className="group relative overflow-hidden rounded-3xl border-2 border-white/10 bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
+              className="group relative overflow-hidden rounded-card border-2 border-white/10 bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
               <motion.div
@@ -94,7 +94,7 @@ const RegisterPage: React.FC = () => {
               
               {/* Border Glow Effect */}
               <motion.div
-                className="absolute inset-0 rounded-3xl border-2 border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                className="absolute inset-0 rounded-card border-2 border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 initial={false}
               />
 
@@ -113,11 +113,11 @@ const RegisterPage: React.FC = () => {
                   
                   <div>
                     <h3 className="text-3xl font-bold text-white mb-3 group-hover:text-gold transition-colors duration-300">
-                      Artist
+                      Artiste
                     </h3>
-                    <p className="text-lg text-white/60 mb-4">Perform & Create</p>
+                    <p className="text-lg text-white/60 mb-4">Jouer et créer</p>
                     <p className="text-sm text-white/45 leading-relaxed">
-                      3-step detailed registration form to showcase your artistic profile, categories, and specialties
+                      Un formulaire en 3 étapes pour présenter votre profil, vos catégories et vos spécialités
                     </p>
                   </div>
 
@@ -129,7 +129,7 @@ const RegisterPage: React.FC = () => {
                     transition={{ type: "spring", stiffness: 400 }}
                     className="flex items-center justify-center gap-2 text-gold font-semibold mt-6"
                   >
-                    <span>Get Started</span>
+                    <span>Commencer</span>
                     <ArrowRight className="w-5 h-5" />
                   </motion.div>
                 </div>
@@ -143,7 +143,7 @@ const RegisterPage: React.FC = () => {
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedRole('HOTEL')}
-              className="group relative overflow-hidden rounded-3xl border-2 border-white/10 bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
+              className="group relative overflow-hidden rounded-card border-2 border-white/10 bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
               <motion.div
@@ -153,7 +153,7 @@ const RegisterPage: React.FC = () => {
               
               {/* Border Glow Effect */}
               <motion.div
-                className="absolute inset-0 rounded-3xl border-2 border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                className="absolute inset-0 rounded-card border-2 border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 initial={false}
               />
 
@@ -172,11 +172,11 @@ const RegisterPage: React.FC = () => {
                   
                   <div>
                     <h3 className="text-3xl font-bold text-white mb-3 group-hover:text-gold transition-colors duration-300">
-                      Hotel
+                      Hôtel
                     </h3>
-                    <p className="text-lg text-white/60 mb-4">Host & Entertain</p>
+                    <p className="text-lg text-white/60 mb-4">Accueillir et programmer</p>
                     <p className="text-sm text-white/45 leading-relaxed">
-                      7-step comprehensive registration form covering ambiance, equipment, collaboration terms, and logistics
+                      Un formulaire en 7 étapes couvrant l’ambiance, l’équipement, les conditions de collaboration et la logistique
                     </p>
                   </div>
 
@@ -188,7 +188,7 @@ const RegisterPage: React.FC = () => {
                     transition={{ type: "spring", stiffness: 400 }}
                     className="flex items-center justify-center gap-2 text-gold font-semibold mt-6"
                   >
-                    <span>Get Started</span>
+                    <span>Commencer</span>
                     <ArrowRight className="w-5 h-5" />
                   </motion.div>
                 </div>
@@ -204,9 +204,9 @@ const RegisterPage: React.FC = () => {
             className="text-center mt-12"
           >
             <p className="text-sm text-white/45">
-              Already have an account?{' '}
+              Déjà un compte ?{' '}
               <a href="/login" className="text-gold font-semibold hover:underline transition-colors">
-                Sign in here
+                Se connecter
               </a>
             </p>
           </motion.div>

@@ -4,10 +4,11 @@ import { Menu, X } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
 
 const NAV_ITEMS = [
-  { to: '/experiences', label: 'Experiences' },
-  { to: '/how-it-works', label: 'How it works' },
-  { to: '/pricing', label: 'Pricing' },
-  { to: '/about', label: 'About' },
+  { to: '/experiences', label: 'Expériences' },
+  { to: '/top-artists', label: 'Artistes' },
+  { to: '/top-hotels', label: 'Hôtels' },
+  { to: '/how-it-works', label: 'Le principe' },
+  { to: '/about', label: 'À propos' },
 ]
 
 /**
@@ -61,7 +62,7 @@ export default function SimpleNavbar() {
     >
       <div className="shell h-[72px] flex items-center justify-between">
         <div className="flex items-center gap-10">
-          <Link to="/" aria-label="Travel Art home" className="shrink-0">
+          <Link to="/" aria-label="Travel Art, accueil" className="shrink-0">
             <img
               src={getLogoUrl('transparent')}
               alt="Travel Art"
@@ -69,7 +70,7 @@ export default function SimpleNavbar() {
             />
           </Link>
 
-          <nav className="hidden lg:flex gap-8" aria-label="Main">
+          <nav className="hidden lg:flex gap-8" aria-label="Principal">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.to}
@@ -93,10 +94,10 @@ export default function SimpleNavbar() {
             to="/login"
             className="hidden sm:block text-sm font-medium whitespace-nowrap text-white/85 hover:text-white transition-colors duration-300"
           >
-            Sign in
+            Connexion
           </Link>
-          <Link to="/register" className="btn-gold !px-6 !py-2.5">
-            Join now
+          <Link to="/register" className="btn-gold btn-sm">
+            Nous rejoindre
           </Link>
 
           <button
@@ -104,7 +105,7 @@ export default function SimpleNavbar() {
             onClick={() => setMenuOpen((open) => !open)}
             aria-expanded={menuOpen}
             aria-controls="mobile-nav"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             className="lg:hidden text-white p-1"
           >
             {menuOpen
@@ -117,7 +118,7 @@ export default function SimpleNavbar() {
       {menuOpen && (
         <nav
           id="mobile-nav"
-          aria-label="Main"
+          aria-label="Principal"
           className="lg:hidden border-t border-white/10 bg-[#08101D]/98 backdrop-blur-md"
         >
           <ul className="shell py-6 flex flex-col">
@@ -134,7 +135,7 @@ export default function SimpleNavbar() {
             ))}
             <li className="pt-5 sm:hidden">
               <Link to="/login" className="text-sm font-medium text-white/70 hover:text-white">
-                Sign in
+                Connexion
               </Link>
             </li>
           </ul>

@@ -11,6 +11,7 @@ export interface OrganizationSchema {
     telephone?: string
     contactType?: string
     email?: string
+    availableLanguage?: string
   }
 }
 
@@ -19,7 +20,7 @@ export function getDefaultOrganizationSchema(): OrganizationSchema {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Travel Art',
-    description: 'Luxury hotel and artist exchange platform connecting talented artists with premium hospitality venues.',
+    description: 'Travel Art réunit les hôtels d’exception et les artistes : résidences, concerts et expositions au sein de lieux d’accueil d’exception.',
     url: typeof window !== 'undefined' ? window.location.origin : 'https://travelart.com',
     logo: typeof window !== 'undefined' ? `${window.location.origin}/logo-1-final.png` : 'https://travelart.com/logo-1-final.png',
     sameAs: [
@@ -27,7 +28,8 @@ export function getDefaultOrganizationSchema(): OrganizationSchema {
     ],
     contactPoint: {
       '@type': 'ContactPoint',
-      contactType: 'Customer Service',
+      contactType: 'Service client',
+      availableLanguage: 'French',
     },
   }
 }

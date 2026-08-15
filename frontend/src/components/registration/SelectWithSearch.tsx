@@ -54,7 +54,7 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
           className={`
-            w-full h-12 px-4 rounded-xl border-2 transition-all
+            w-full h-12 px-4 rounded-card border-2 transition-all
             flex items-center justify-between text-left
             ${disabled ? 'bg-surface cursor-not-allowed opacity-60' : 'bg-surface-raised hover:border-gold'}
             ${error ? 'border-red-400' : isOpen ? 'border-gold' : 'border-line'}
@@ -78,7 +78,7 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-surface-raised border-2 border-gold rounded-xl shadow-lg z-50"
+            className="absolute top-full left-0 right-0 mt-2 bg-surface-raised border-2 border-gold rounded-card shadow-lg z-50"
           >
             {/* Search Input */}
             <div className="p-3 border-b border-line">
@@ -89,7 +89,7 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
                   placeholder="Rechercher..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-line rounded-lg focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+                  className="w-full pl-10 pr-4 py-2 border border-line rounded-card focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold"
                   autoFocus
                 />
               </div>

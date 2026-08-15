@@ -20,7 +20,6 @@ interface BookingData {
   artist: {
     id: string
     discipline: string
-    priceRange: string
     user: {
       name: string
       email: string
@@ -88,17 +87,17 @@ const AdminBookings: React.FC = () => {
       document.body.appendChild(link)
       link.click()
       link.remove()
-    } catch (err: any) {
-      alert('Failed to export bookings')
+    } catch {
+      alert('Échec de l’export des réservations')
     }
   }
 
   const getStatusBadge = (status: string) => {
     const configs = {
-      PENDING: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'Pending' },
-      CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Confirmed' },
-      COMPLETED: { bg: 'bg-green-100 dark:bg-green-500/10', text: 'text-green-800 dark:text-green-400', label: 'Completed' },
-      CANCELLED: { bg: 'bg-red-100 dark:bg-red-500/10', text: 'text-red-800 dark:text-red-400', label: 'Cancelled' }
+      PENDING: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'En attente' },
+      CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Confirmée' },
+      COMPLETED: { bg: 'bg-green-100 dark:bg-green-500/10', text: 'text-green-800 dark:text-green-400', label: 'Terminée' },
+      CANCELLED: { bg: 'bg-red-100 dark:bg-red-500/10', text: 'text-red-800 dark:text-red-400', label: 'Annulée' }
     }
     const config = configs[status as keyof typeof configs] || configs.PENDING
     return (
@@ -109,7 +108,7 @@ const AdminBookings: React.FC = () => {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -145,10 +144,10 @@ const AdminBookings: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            Booking Management
+            Gestion des réservations
           </h1>
           <p className="text-content-secondary">
-            Monitor and manage all bookings across the platform.
+            Suivre et gérer l’ensemble des réservations de la plateforme.
           </p>
         </div>
         <button
@@ -156,28 +155,28 @@ const AdminBookings: React.FC = () => {
           className="btn-secondary flex items-center space-x-2"
         >
           <Download className="w-4 h-4" />
-          <span>Export CSV</span>
+          <span>Exporter en CSV</span>
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Bookings', value: bookings.length, icon: Calendar, color: 'text-blue-600' },
+          { label: 'Réservations', value: bookings.length, icon: Calendar, color: 'text-blue-600' },
           { 
-            label: 'Pending', 
+            label: 'En attente', 
             value: bookings.filter(b => b.status === 'PENDING').length, 
             icon: Clock, 
             color: 'text-amber-600' 
           },
           { 
-            label: 'Confirmed', 
+            label: 'Confirmée', 
             value: bookings.filter(b => b.status === 'CONFIRMED').length, 
             icon: Calendar, 
             color: 'text-green-600 dark:text-green-400' 
           },
           { 
-            label: 'Completed', 
+            label: 'Terminée', 
             value: bookings.filter(b => b.status === 'COMPLETED').length, 
             icon: Calendar, 
             color: 'text-purple-600' 
@@ -211,14 +210,14 @@ const AdminBookings: React.FC = () => {
               }}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder="Tous les statuts" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="PENDING">En attente</SelectItem>
+                <SelectItem value="CONFIRMED">Confirmée</SelectItem>
+                <SelectItem value="COMPLETED">Terminée</SelectItem>
+                <SelectItem value="CANCELLED">Annulée</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -226,7 +225,7 @@ const AdminBookings: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded-card">
           {error}
         </div>
       )}
@@ -257,23 +256,20 @@ const AdminBookings: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Artist Info */}
-                  <div className="flex items-start space-x-3 bg-surface p-3 rounded-lg">
+                  <div className="flex items-start space-x-3 bg-surface p-3 rounded-card">
                     <User className="w-5 h-5 text-purple-600 mt-1" />
                     <div className="flex-1">
-                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Artist</p>
+                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Artiste</p>
                       <p className="font-medium text-content">{booking.artist.user.name}</p>
                       <p className="text-sm text-content-secondary">{booking.artist.discipline}</p>
-                      <p className="text-xs text-content-secondary mt-1">
-                        {booking.artist.priceRange}
-                      </p>
                     </div>
                   </div>
 
                   {/* Hotel Info */}
-                  <div className="flex items-start space-x-3 bg-surface p-3 rounded-lg">
+                  <div className="flex items-start space-x-3 bg-surface p-3 rounded-card">
                     <Building className="w-5 h-5 text-blue-600 mt-1" />
                     <div className="flex-1">
-                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Hotel</p>
+                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Hôtel</p>
                       <p className="font-medium text-content">{booking.hotel.name}</p>
                       <div className="flex items-center text-sm text-content-secondary mt-1">
                         <MapPin className="w-3 h-3 mr-1" />
@@ -286,16 +282,16 @@ const AdminBookings: React.FC = () => {
 
               {/* Right Section - Date & Credits */}
               <div className="lg:w-64 space-y-3">
-                <div className="bg-navy/5 p-4 rounded-lg">
+                <div className="bg-navy/5 p-4 rounded-card">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-content-secondary">Duration</span>
+                    <span className="text-sm text-content-secondary">Durée</span>
                     <span className="font-semibold text-content">
                       {calculateDuration(booking.startDate, booking.endDate)}
                     </span>
                   </div>
                   <div className="text-xs text-content-secondary space-y-1">
                     <div className="flex items-center justify-between">
-                      <span>Start:</span>
+                      <span>Début :</span>
                       <span>{formatDate(booking.startDate)}</span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -305,11 +301,11 @@ const AdminBookings: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-gold/10 p-4 rounded-lg">
+                <div className="bg-gold/10 p-4 rounded-card">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <DollarSign className="w-4 h-4 text-gold" />
-                      <span className="text-sm text-content-secondary">Credits Used</span>
+                      <span className="text-sm text-content-secondary">Crédits utilisés</span>
                     </div>
                     <span className="font-bold text-gold text-lg">
                       {booking.creditsUsed}
@@ -325,7 +321,7 @@ const AdminBookings: React.FC = () => {
       {bookings.length === 0 && !loading && (
         <div className="card-luxury text-center py-12">
           <Calendar className="w-12 h-12 text-content-secondary mx-auto mb-4" />
-          <p className="text-content-secondary">No bookings found</p>
+          <p className="text-content-secondary">Aucune réservation</p>
         </div>
       )}
 
@@ -337,7 +333,7 @@ const AdminBookings: React.FC = () => {
             disabled={currentPage === 1 || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Previous
+            Précédent
           </button>
           <span className="text-content-secondary">
             Page {currentPage} of {totalPages}
@@ -347,7 +343,7 @@ const AdminBookings: React.FC = () => {
             disabled={currentPage === totalPages || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Next
+            Suivant
           </button>
         </div>
       )}

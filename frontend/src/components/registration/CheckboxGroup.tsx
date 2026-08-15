@@ -46,7 +46,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
           }}
           transition={{ duration: 0.2 }}
           className={`
-            w-6 h-6 rounded-lg border-2 flex items-center justify-center
+            w-6 h-6 rounded-card border-2 flex items-center justify-center
             transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : 'group-hover:border-gold'}
           `}
         >
@@ -108,7 +108,7 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="w-full"
     >
-      <div className="bg-beige-50 rounded-2xl p-6 border-2 border-beige-100">
+      <div className="bg-beige-50 rounded-card p-6 border-2 border-beige-100">
         {label && (
           <label className="block text-lg font-semibold text-navy-900 mb-4">
             {label}

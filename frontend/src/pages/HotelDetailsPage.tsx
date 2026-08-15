@@ -78,9 +78,9 @@ const HotelDetailsPage: React.FC = () => {
     } catch (error: any) {
       console.error('Error fetching hotel details:', error)
       if (error.response?.status === 404) {
-        toast.error('Hotel not found')
+        toast.error('Hôtel introuvable')
       } else {
-        toast.error('Failed to load hotel details')
+        toast.error('Impossible de charger la fiche hôtel')
       }
     } finally {
       setLoading(false)
@@ -94,7 +94,7 @@ const HotelDetailsPage: React.FC = () => {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-            <p className="text-white/60">Loading hotel details...</p>
+            <p className="text-white/60">Chargement de la fiche hôtel…</p>
           </div>
         </div>
         <Footer />
@@ -107,10 +107,10 @@ const HotelDetailsPage: React.FC = () => {
       <div className="min-h-screen bg-[#08101D]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl font-serif font-bold text-white mb-4">Hotel Not Found</h1>
-          <p className="text-white/60 mb-8">The hotel you're looking for doesn't exist.</p>
+          <h1 className="text-4xl font-serif font-bold text-white mb-4">Hôtel introuvable</h1>
+          <p className="text-white/60 mb-8">L’hôtel demandé n’existe pas.</p>
           <Link to="/top-hotels" className="btn-primary">
-            Back to Hotels
+            Retour aux hôtels
           </Link>
         </div>
         <Footer />
@@ -128,7 +128,7 @@ const HotelDetailsPage: React.FC = () => {
       location = typeof hotel.location === 'string' 
         ? JSON.parse(hotel.location) 
         : hotel.location
-    } catch (e) {
+    } catch {
       location = {}
     }
   }
@@ -138,7 +138,7 @@ const HotelDetailsPage: React.FC = () => {
       images = Array.isArray(hotel.images) 
         ? hotel.images 
         : (typeof hotel.images === 'string' ? JSON.parse(hotel.images) : [])
-    } catch (e) {
+    } catch {
       images = []
     }
   }
@@ -148,7 +148,7 @@ const HotelDetailsPage: React.FC = () => {
       performanceSpots = Array.isArray(hotel.performanceSpots) 
         ? hotel.performanceSpots 
         : (typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : [])
-    } catch (e) {
+    } catch {
       performanceSpots = []
     }
   }
@@ -195,7 +195,7 @@ const HotelDetailsPage: React.FC = () => {
           className="absolute top-6 left-6 bg-[var(--surface-raised)]/20 backdrop-blur-sm text-white px-4 py-2 rounded-card hover:bg-[var(--surface-raised)]/30 transition-colors flex items-center gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Hotels
+          Retour aux hôtels
         </Link>
       </div>
 
@@ -219,7 +219,7 @@ const HotelDetailsPage: React.FC = () => {
                       <Star className="w-6 h-6 text-gold" />
                     </div>
                     <div>
-                      <p className="text-sm text-white/45">Rating</p>
+                      <p className="text-sm text-white/45">Note</p>
                       <p className="text-xl font-bold text-white">{rating.toFixed(1)}</p>
                     </div>
                   </div>
@@ -229,7 +229,7 @@ const HotelDetailsPage: React.FC = () => {
                     <Calendar className="w-6 h-6 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45">Total Bookings</p>
+                    <p className="text-sm text-white/45">Réservations</p>
                     <p className="text-xl font-bold text-white">{hotel.totalBookings || 0}</p>
                   </div>
                 </div>
@@ -238,7 +238,7 @@ const HotelDetailsPage: React.FC = () => {
               {/* Performance Spots */}
               {performanceSpots.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-xl font-serif font-semibold text-white mb-3">Performance Spots</h3>
+                  <h3 className="text-xl font-serif font-semibold text-white mb-3">Espaces de représentation</h3>
                   <div className="flex flex-wrap gap-2">
                     {performanceSpots.map((spot: any, index: number) => (
                       <span
@@ -259,7 +259,7 @@ const HotelDetailsPage: React.FC = () => {
               <ScrollAnimationWrapper animation="fade-up" delay={0.1}>
                 <div className="card-luxury">
                 <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
-                  Performance Venues
+                  Lieux de représentation
                 </h2>
                 <div className="space-y-6">
                   {performanceSpots.map((spot: any, index: number) => {
@@ -267,7 +267,7 @@ const HotelDetailsPage: React.FC = () => {
                     return (
                       <div
                         key={index}
-                        className="border-l-4 border-gold pl-6 py-4 bg-gold/5 rounded-r-lg"
+                        className="border-l-4 border-gold pl-6 py-4 bg-gold/5 rounded-r-card"
                       >
                         <h3 className="text-xl font-serif font-semibold text-white mb-2">
                           {spotData.name || spotData.title || 'Performance Venue'}
@@ -304,7 +304,7 @@ const HotelDetailsPage: React.FC = () => {
           <div className="lg:col-span-1">
             <ScrollAnimationWrapper animation="slide-left" delay={0.2}>
               <div className="card-luxury sticky top-6">
-              <h3 className="text-2xl font-serif font-bold text-white mb-6">Contact Information</h3>
+              <h3 className="text-2xl font-serif font-bold text-white mb-6">Coordonnées</h3>
               
               <div className="space-y-4 mb-6">
                 {locationString && (
@@ -332,7 +332,7 @@ const HotelDetailsPage: React.FC = () => {
                 )}
                 {!hasConfirmedBooking && user?.role === 'ARTIST' && (
                   <div className="text-sm text-white/45 italic">
-                    Contact information will be available after booking confirmation.
+                    Les coordonnées seront communiquées après confirmation de la réservation.
                   </div>
                 )}
               </div>
@@ -352,7 +352,7 @@ const HotelDetailsPage: React.FC = () => {
               {/* Performance Spots Summary */}
               {performanceSpots.length > 0 && (
                 <div className="border-t border-white/10 pt-6">
-                  <h4 className="text-lg font-serif font-semibold text-white mb-4">Available Venues</h4>
+                  <h4 className="text-lg font-serif font-semibold text-white mb-4">Espaces disponibles</h4>
                   <div className="flex flex-wrap gap-2">
                     {performanceSpots.map((spot: any, index: number) => (
                       <span
@@ -372,16 +372,16 @@ const HotelDetailsPage: React.FC = () => {
                   {/* Only show contact button if there's a confirmed booking */}
                   {hasConfirmedBooking ? (
                     <a
-                      href={`mailto:${hotel.responsibleEmail || hotel.user?.email || ''}?subject=${encodeURIComponent(`Inquiry about ${hotel.name}`)}&body=${encodeURIComponent(hotel.responsibleName ? `Dear ${hotel.responsibleName},\n\nI would like to inquire about booking a performance at ${hotel.name}.\n\nBest regards,` : `Dear Sir/Madam,\n\nI would like to inquire about booking a performance at ${hotel.name}.\n\nBest regards,`)}`}
+                      href={`mailto:${hotel.responsibleEmail || hotel.user?.email || ''}?subject=${encodeURIComponent(`Demande de renseignements — ${hotel.name}`)}&body=${encodeURIComponent(hotel.responsibleName ? `Bonjour ${hotel.responsibleName},\n\nJe souhaiterais échanger au sujet d’une représentation au sein de ${hotel.name}.\n\nBien cordialement,` : `Madame, Monsieur,\n\nJe souhaiterais échanger au sujet d’une représentation au sein de ${hotel.name}.\n\nBien cordialement,`)}`}
                       className="w-full btn-primary flex items-center justify-center gap-2"
                     >
                       <Mail className="w-5 h-5" />
-                      Contact Hotel
+                      Contacter l’hôtel
                     </a>
                   ) : (
                     <div className="w-full p-4 bg-[#0C1526] rounded-card border border-white/10 text-center">
                       <p className="text-sm text-white/60">
-                        Contact information will be available after booking confirmation.
+                        Les coordonnées seront communiquées après confirmation de la réservation.
                       </p>
                     </div>
                   )}

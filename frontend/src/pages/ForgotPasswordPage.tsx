@@ -32,7 +32,7 @@ const ForgotPasswordPage: React.FC = () => {
       if (import.meta.env.DEV) {
         const responseData = response.data?.data as any
         if (responseData?.dev?.resetLink) {
-          toast.success('Password reset link generated! Check console for details.', {
+          toast.success('Lien de réinitialisation généré.', {
             duration: 10000
           })
           console.log('🔐 Password Reset Link (Dev Mode):')
@@ -41,15 +41,15 @@ const ForgotPasswordPage: React.FC = () => {
           console.log(`Token: ${responseData.dev.token}`)
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
         } else {
-          toast.success('If an account exists with that email, you will receive reset instructions.')
+          toast.success('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.')
         }
       } else {
-        toast.success('If an account exists with that email, you will receive reset instructions.')
+        toast.success('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.')
       }
-    } catch (error: any) {
+    } catch {
       // Don't reveal if email exists - always show success for security
       setEmailSent(true)
-      toast.success('If an account exists with that email, you will receive reset instructions.')
+      toast.success('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.')
     } finally {
       setIsLoading(false)
     }
@@ -87,7 +87,7 @@ const ForgotPasswordPage: React.FC = () => {
               </div>
             </div>
             <h2 className="text-3xl font-serif font-bold text-white gold-underline">
-              Forgot Password?
+              Mot de passe oublié ?
             </h2>
             <p className="mt-2 text-white/60">
               {emailSent 
@@ -101,21 +101,21 @@ const ForgotPasswordPage: React.FC = () => {
             <div className="text-center space-y-4">
               <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-card p-4">
                 <p className="text-green-800 dark:text-green-400 text-sm">
-                  If an account exists with that email, you'll receive password reset instructions shortly.
+                  Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation sous peu.
                 </p>
               </div>
               <Link
                 to="/login"
                 className="block text-center text-gold hover:text-gold/80 font-medium"
               >
-                Back to Login
+                Retour à la connexion
               </Link>
             </div>
           ) : (
             <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
                 <label htmlFor="email" className="form-label">
-                  Email Address
+                  Adresse e-mail
                 </label>
                 <input
                   {...register('email', {
@@ -127,7 +127,7 @@ const ForgotPasswordPage: React.FC = () => {
                   })}
                   type="email"
                   className="form-input"
-                  placeholder="Enter your email"
+                  placeholder="Saisissez votre e-mail"
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
@@ -146,7 +146,7 @@ const ForgotPasswordPage: React.FC = () => {
 
               <div className="text-center">
                 <Link to="/login" className="text-gold hover:text-gold-600 font-medium text-sm">
-                  Back to Login
+                  Retour à la connexion
                 </Link>
               </div>
             </form>

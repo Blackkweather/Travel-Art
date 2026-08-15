@@ -1,12 +1,13 @@
 ﻿import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { getLogoUrl } from '@/config/assets'
 import { tripsApi } from '@/utils/api'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import AmbientAudio from '@/components/AmbientAudio'
 import GalleryPan from '@/components/GalleryPan'
+import SimpleNavbar from '@/components/SimpleNavbar'
+import Footer from '@/components/Footer'
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -27,7 +28,6 @@ const SLIDE_DURATION = 1.5
 
 export default function LandingPage() {
   // States
-  const [headerScrolled, setHeaderScrolled] = useState(false)
   const [experiences, setExperiences] = useState<any[]>([])
   const [isLoadingExperiences, setIsLoadingExperiences] = useState(true)
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
@@ -46,7 +46,7 @@ export default function LandingPage() {
   const experienceImagesSectionRef = useRef<HTMLElement>(null)
   const experiencesSectionRef = useRef<HTMLElement>(null)
   
-  const weLovetags = ['MUSIC', 'ART', 'TRAVEL', 'LUXURY', 'CULTURE', 'EXPERIENCE', 'CREATIVITY', 'PERFORMANCE']
+  const weLovetags = ['MUSIQUE', 'ART', 'VOYAGE', 'LUXE', 'CULTURE', 'RENCONTRE', 'CRÉATION', 'SCÈNE']
 
   // The hero is a full-viewport section, so an empty slide list renders as a
   // black void. These fallbacks keep the landing page presentable whenever the
@@ -57,35 +57,25 @@ export default function LandingPage() {
     {
       id: 'fallback-1',
       image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=80&fit=crop',
-      title: 'BETWEEN SHADOW',
-      subtitle: 'AND LIGHT',
-      category: 'Experience'
+      title: 'ENTRE L’OMBRE',
+      subtitle: 'ET LA LUMIÈRE',
+      category: 'Expérience'
     },
     {
       id: 'fallback-2',
       image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=80&fit=crop',
-      title: 'WHERE ART',
-      subtitle: 'MEETS LUXURY',
-      category: 'Performance'
+      title: 'LÀ OÙ L’ART',
+      subtitle: 'RENÇOIT LE LUXE',
+      category: 'Scène'
     },
     {
       id: 'fallback-3',
       image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&q=80&fit=crop',
-      title: 'STAGES WITHOUT',
-      subtitle: 'BORDERS',
-      category: 'Travel'
+      title: 'DES SCÈNES SANS',
+      subtitle: 'FRONTIÈRES',
+      category: 'Voyage'
     }
   ]
-
-  // Header scroll effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setHeaderScrolled(window.scrollY > 50)
-    }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   // Fetch experiences and create slides
   useEffect(() => {
@@ -109,16 +99,16 @@ export default function LandingPage() {
           try {
             images = Array.isArray(trip.images) ? trip.images : 
               (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-          } catch (e) { 
+          } catch { 
             images = [] 
           }
           
           return {
             id: trip.id,
-            title: trip.title || 'Experience',
+            title: trip.title || 'Expérience',
             description: trip.description?.substring(0, 100) || '',
             image: images[0] || trip.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
-            category: trip.type || trip.category || 'Experience'
+            category: trip.type || trip.category || 'Expérience'
           }
         })
         
@@ -126,13 +116,13 @@ export default function LandingPage() {
 
         if (formatted.length >= 3) {
           const experienceSlides: Slide[] = formatted.slice(0, 5).map((exp: any) => {
-            const words = (exp.title || 'Experience').split(' ')
+            const words = (exp.title || 'Expérience').split(' ')
             const midPoint = Math.floor(words.length / 2)
             return {
               id: exp.id,
               image: exp.image,
-              title: words.slice(0, midPoint).join(' ') || 'BETWEEN SHADOW',
-              subtitle: words.slice(midPoint).join(' ') || 'AND LIGHT',
+              title: words.slice(0, midPoint).join(' ') || 'ENTRE L’OMBRE',
+              subtitle: words.slice(midPoint).join(' ') || 'ET LA LUMIÈRE',
               category: exp.category
             }
           })
@@ -497,7 +487,7 @@ export default function LandingPage() {
               }
             )
           }
-        } catch (e) {
+        } catch {
           if (ref.current) {
             ref.current.style.opacity = '1'
             ref.current.style.transform = 'translateY(0)'
@@ -535,7 +525,7 @@ export default function LandingPage() {
               }
             })
           }
-        } catch (e) {
+        } catch {
           experienceCards.forEach((card) => {
             const htmlCard = card as HTMLElement
             if (htmlCard && htmlCard.style) {
@@ -586,58 +576,12 @@ export default function LandingPage() {
         maxScrollForFade={1000}
       />
 
-      {/* Fixed header. Total height stays at 72px: the logo was previously
-          scaling to h-24, which pushed the bar past 120px. */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
-        headerScrolled
-          ? 'bg-[var(--surface)]/90 backdrop-blur-md border-b border-[var(--border-subtle)]'
-          : 'bg-transparent'
-      }`}>
-        <div className="shell h-[72px] flex items-center justify-between">
-          <div className="flex items-center gap-10">
-            <Link to="/" className="shrink-0" aria-label="Travel Art home">
-              <img
-                src={getLogoUrl('transparent')}
-                alt="Travel Art"
-                className={`h-8 md:h-9 w-auto object-contain transition-all duration-500 ${
-                  headerScrolled ? 'dark:invert dark:brightness-0 dark:contrast-200' : 'brightness-0 invert'
-                }`}
-              />
-            </Link>
-            <nav className="hidden md:flex gap-8" aria-label="Main">
-              {[
-                { to: '/experiences', label: 'Experiences' },
-                { to: '/how-it-works', label: 'How it works' },
-                { to: '/pricing', label: 'Pricing' },
-              ].map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`text-sm font-medium whitespace-nowrap transition-colors duration-300 relative group ${
-                    headerScrolled ? 'text-[var(--text-primary)]' : 'text-white'
-                  }`}
-                >
-                  {item.label}
-                  <span className="absolute -bottom-1 left-0 w-0 h-px bg-gold transition-all duration-300 group-hover:w-full" />
-                </Link>
-              ))}
-            </nav>
-          </div>
-          <div className="flex items-center gap-5">
-            <Link
-              to="/login"
-              className={`text-sm font-medium whitespace-nowrap transition-colors duration-300 hidden sm:block ${
-                headerScrolled ? 'text-[var(--text-primary)]' : 'text-white'
-              }`}
-            >
-              Sign in
-            </Link>
-            <Link to="/register" className="btn-gold !px-6 !py-2.5">
-              Join now
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* The site navigation, not a third copy of it. This page carried its
+          own header (and its own footer, below) with its own link list, its own
+          scroll state and its own CTA styling, so the landing page drifted out
+          of step with every other public page. SimpleNavbar already handles the
+          dark-background case this page needs. */}
+      <SimpleNavbar />
 
       {/* Hero. min-h-[100dvh] rather than h-screen so the iOS address bar does
           not crop it. */}
@@ -671,7 +615,7 @@ export default function LandingPage() {
             <button
               type="button"
               onClick={() => navigate(PREV)}
-              aria-label="Previous experience"
+              aria-label="Expérience précédente"
               className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
             >
               <ArrowLeft size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -679,7 +623,7 @@ export default function LandingPage() {
             <button
               type="button"
               onClick={() => navigate(NEXT)}
-              aria-label="Next experience"
+              aria-label="Expérience suivante"
               className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
             >
               <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -702,13 +646,14 @@ export default function LandingPage() {
                           [&>span:first-child]:text-gold [&>span:first-child]:text-[5.5rem]
                           [&>span:first-child]:leading-[0.78] [&>span:first-child]:pr-4
                           [&>span:first-child]:pt-1">
-              <span>T</span>ravel and cultural immersion are where the work starts. We put
-              artists inside hotels worth staying in, and let what happens there be the point.
+              <span>L</span>e voyage et l’immersion culturelle sont le point de départ du
+              travail. Nous installons des artistes dans des hôtels qui méritent qu’on
+              s’y arrête, et ce qui s’y produit devient l’essentiel.
             </p>
 
             <div className="lg:col-span-3 lg:col-start-10 self-end">
               <p className="text-white/50 leading-relaxed">
-                Musicians, visual artists and performers, across more than thirty
+                Musiciens, plasticiens et interprètes, dans plus de trente
                 destinations.
               </p>
               <div className="mt-8 h-px w-full bg-gold/30" />
@@ -761,21 +706,21 @@ export default function LandingPage() {
           <div className="shell">
             <div className="border-t border-white/10 py-24 md:py-36 text-center">
               <h2 className="font-serif text-white text-5xl md:text-7xl lg:text-8xl leading-[1.02]">
-                A residency,
-                <span className="block text-gold italic leading-[1.1] pb-1">not a booking.</span>
+                Une résidence,
+                <span className="block text-gold italic leading-[1.1] pb-1">pas une prestation.</span>
               </h2>
               <p className="mt-8 text-white/55 max-w-[46ch] mx-auto leading-relaxed">
-                Apply as an artist, or open your hotel to the programme.
+                Candidatez comme artiste, ou ouvrez votre hôtel au programme.
               </p>
               <div className="mt-12 flex flex-wrap gap-4 justify-center">
                 <Link to="/register" className="btn-gold">
-                  Join now
+                  Nous rejoindre
                 </Link>
                 <Link
                   to="/how-it-works"
-                  className="btn-base bg-transparent text-white border border-white/30 hover:bg-surface-raised hover:text-content"
+                  className="btn-on-media"
                 >
-                  How it works
+                  Le principe
                 </Link>
               </div>
             </div>
@@ -788,21 +733,21 @@ export default function LandingPage() {
         <section ref={experiencesSectionRef} className="section-y" style={{ opacity: 1 }}>
           <div className="shell">
             <h2 className="font-serif text-white text-4xl md:text-5xl lg:text-6xl leading-[1.05] max-w-[16ch] mb-20">
-              One exchange, two sides.
+              Un échange, deux versants.
             </h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2">
               <div className="lg:pr-16 lg:border-r border-white/10">
-                <p className="font-serif text-gold text-3xl md:text-4xl">For artists</p>
+                <p className="font-serif text-gold text-3xl md:text-4xl">Pour les artistes</p>
                 <p className="mt-6 text-white/60 leading-relaxed max-w-[42ch]">
-                  A room, a stage and the time to make something. You keep your fee and
-                  your work.
+                  Une chambre, une scène et le temps de créer. Vous gardez vos
+                  honoraires et vos œuvres.
                 </p>
                 <ul className="mt-10 space-y-5">
                   {[
-                    'Residencies in hotels that programme culture seriously',
-                    'No commission taken on the artist side',
-                    'Travel and accommodation settled before you arrive',
+                    'Des résidences dans des hôtels qui programment sérieusement la culture',
+                    'Aucune commission prélevée côté artiste',
+                    'Voyage et hébergement réglés avant votre arrivée',
                   ].map((line) => (
                     <li key={line} className="flex gap-4 text-white/80">
                       <span aria-hidden="true" className="mt-2.5 h-px w-6 shrink-0 bg-gold" />
@@ -813,16 +758,16 @@ export default function LandingPage() {
               </div>
 
               <div className="mt-16 lg:mt-0 lg:pl-16">
-                <p className="font-serif text-gold text-3xl md:text-4xl">For hotels</p>
+                <p className="font-serif text-gold text-3xl md:text-4xl">Pour les hôtels</p>
                 <p className="mt-6 text-white/60 leading-relaxed max-w-[42ch]">
-                  A cultural programme without an agency, a producer or a season of
-                  planning.
+                  Une programmation culturelle sans agence, sans producteur et sans
+                  une saison de préparatifs.
                 </p>
                 <ul className="mt-10 space-y-5">
                   {[
-                    'Vetted artists across music, visual art and performance',
-                    'One credit balance covers every booking',
-                    'Dates you control, cancelled or confirmed in a click',
+                    'Des artistes sélectionnés en musique, arts visuels et scène',
+                    'Un seul solde de crédits pour toutes vos réservations',
+                    'Des dates que vous maîtrisez, confirmées ou annulées en un clic',
                   ].map((line) => (
                     <li key={line} className="flex gap-4 text-white/80">
                       <span aria-hidden="true" className="mt-2.5 h-px w-6 shrink-0 bg-gold" />
@@ -835,57 +780,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <footer className="border-t border-white/10">
-          <div className="shell py-20">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-16">
-              <div className="col-span-2 md:col-span-1">
-                <img
-                  src={getLogoUrl('transparent')}
-                  alt="Travel Art"
-                  className="h-9 w-auto brightness-0 invert"
-                />
-                <p className="mt-5 text-sm text-white/50 max-w-[28ch]">
-                  Artist residencies inside luxury hotels.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-sans text-sm font-semibold text-white mb-5">
-                  Programme
-                </h3>
-                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/register" className="hover:text-gold transition-colors">Join now</Link></li>
-                  <li><Link to="/login" className="hover:text-gold transition-colors">Sign in</Link></li>
-                  <li><Link to="/pricing" className="hover:text-gold transition-colors">Pricing</Link></li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-sans text-sm font-semibold text-white mb-5">
-                  Discover
-                </h3>
-                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/about" className="hover:text-gold transition-colors">About</Link></li>
-                  <li><Link to="/how-it-works" className="hover:text-gold transition-colors">How it works</Link></li>
-                  <li><Link to="/experiences" className="hover:text-gold transition-colors">Experiences</Link></li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-sans text-sm font-semibold text-white mb-5">
-                  Legal
-                </h3>
-                <ul className="space-y-3 text-sm text-white/50"><li><Link to="/terms" className="hover:text-gold transition-colors">Terms</Link></li>
-                  <li><Link to="/privacy" className="hover:text-gold transition-colors">Privacy</Link></li>
-                  <li><Link to="/cookies" className="hover:text-gold transition-colors">Cookies</Link></li>
-                </ul>
-              </div>
-            </div>
-
-            <p className="text-sm text-white/40 pt-8 border-t border-white/10">
-              &copy; {new Date().getFullYear()} Travel Art
-            </p>
-          </div>
-        </footer>
       </div>
+
+      <Footer />
 
       <style>{`
         /* The remote PP Neue Montreal @import was removed: it is a
