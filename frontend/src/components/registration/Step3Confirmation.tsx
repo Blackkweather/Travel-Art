@@ -201,25 +201,14 @@ const Step3Confirmation: React.FC<Step3Props> = ({
         <button
           onClick={() => onEdit(2)}
           disabled={isLoading}
-          className={`
-            flex-1 h-14 rounded-card font-bold text-lg transition-all
-            bg-surface-sunken hover:bg-surface-sunken text-navy-900
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-lg hover:shadow-xl hover:scale-[1.02]
-          `}
+          className="btn-outline btn-lg flex-1"
         >
           Retour
         </button>
         <button
           onClick={onSubmit}
           disabled={isLoading || !basicInfo.agreeToTerms}
-          className={`
-            flex-1 h-14 rounded-card font-bold text-lg transition-all
-            bg-gold hover:bg-gold-600 text-content
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-lg hover:shadow-xl hover:scale-[1.02]
-            flex items-center justify-center gap-2
-          `}
+          className="btn-gold btn-lg flex-1"
         >
           {isLoading ? (
             <>

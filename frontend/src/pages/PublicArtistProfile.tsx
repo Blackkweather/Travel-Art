@@ -112,7 +112,7 @@ const PublicArtistProfile: React.FC = () => {
     <div className="min-h-screen bg-[var(--surface)]" data-testid="artist-profile">
       <SimpleNavbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
         {/* Back Button */}
         <Link 
           to="/top-artists" 

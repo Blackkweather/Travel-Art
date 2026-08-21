@@ -138,18 +138,21 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
         animate={{ opacity: 1, y: 0 }}
         className="text-center mt-8"
       >
+        {/* Was "Step N of M" - the one English string left in the signup flow.
+            The animated colour also hardcoded #C9A63C, a gold from an earlier
+            palette, and #0B1F3F, which is only correct in the light theme. */}
         <p className="text-sm text-content-secondary">
-          Step{' '}
+          Étape{' '}
           <motion.span
             key={currentStep}
-            initial={{ scale: 1.5, color: '#C9A63C' }}
-            animate={{ scale: 1, color: '#0B1F3F' }}
+            initial={{ scale: 1.5, color: 'var(--gold)' }}
+            animate={{ scale: 1, color: 'var(--text-primary)' }}
             transition={{ duration: 0.3 }}
             className="font-bold text-content"
           >
             {currentStep}
           </motion.span>
-          {' '}of{' '}
+          {' '}sur{' '}
           <span className="font-bold text-content">{totalSteps}</span>
         </p>
       </motion.div>

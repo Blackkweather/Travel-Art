@@ -78,14 +78,14 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
   const validateStep = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!data.mainCategory) newErrors.mainCategory = 'Main category is required';
-    if (data.audienceType.length === 0) newErrors.audienceType = 'Select at least one audience type';
-    if (!subcategoryData.categoryType) newErrors.categoryType = 'Category type is required';
-    if (!subcategoryData.domain) newErrors.domain = 'Domain is required';
+    if (!data.mainCategory) newErrors.mainCategory = 'Choisissez une catégorie principale';
+    if (data.audienceType.length === 0) newErrors.audienceType = 'Sélectionnez au moins un type de public';
+    if (!subcategoryData.categoryType) newErrors.categoryType = 'Choisissez un type de catégorie';
+    if (!subcategoryData.domain) newErrors.domain = 'Choisissez un domaine';
     if (specificCategoryOptions.length > 0 && !subcategoryData.specificCategory) {
-      newErrors.specificCategory = 'Specific category is required';
+      newErrors.specificCategory = 'Choisissez une catégorie précise';
     }
-    if (data.languages.length === 0) newErrors.languages = 'Select at least one language';
+    if (data.languages.length === 0) newErrors.languages = 'Sélectionnez au moins une langue';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -295,24 +295,14 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
         <button
           onClick={onBack}
           disabled={isLoading}
-          className={`
-            flex-1 h-14 rounded-card font-bold text-lg transition-all
-            bg-surface-sunken hover:bg-surface-sunken text-navy-900
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-lg hover:shadow-xl hover:scale-[1.02]
-          `}
+          className="btn-outline btn-lg flex-1"
         >
           Retour
         </button>
         <button
           onClick={handleNext}
           disabled={isLoading}
-          className={`
-            flex-1 h-14 rounded-card font-bold text-lg transition-all
-            bg-gold hover:bg-gold-600 text-content
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-lg hover:shadow-xl hover:scale-[1.02]
-          `}
+          className="btn-gold btn-lg flex-1 btn-arrow"
         >
           {isLoading ? 'Chargement...' : 'Suivant'}
         </button>

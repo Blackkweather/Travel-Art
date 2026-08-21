@@ -126,7 +126,8 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
           <motion.p
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2 text-sm text-red-500"
+            className="field-error"
+            role="alert"
           >
             {error}
           </motion.p>

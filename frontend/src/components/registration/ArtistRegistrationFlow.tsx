@@ -166,26 +166,15 @@ const ArtistRegistrationFlow: React.FC = () => {
     }
   };
 
-  // Check if user can proceed from step 1
-  const canProceedFromStep1 = state.basicInfo.stageName &&
-    state.basicInfo.firstName &&
-    state.basicInfo.lastName &&
-    state.basicInfo.email &&
-    state.basicInfo.password &&
-    state.basicInfo.country;
-
-  // Check if user can proceed from step 2
-  const canProceedFromStep2 = state.artisticCategory.mainCategory &&
-    state.artisticCategory.audienceType.length > 0 &&
-    state.artisticCategory.languages.length > 0 &&
-    state.subcategory.categoryType &&
-    state.subcategory.domain;
+  // Two step-gate booleans used to sit here, recomputed on every render and
+  // never passed to anything. The real gate is each step component's own
+  // validateStep(), which runs before it calls onNext.
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
       <SimpleNavbar />
 
-      <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
+      <main className="flex-1 container mx-auto px-4 pt-28 pb-12 md:pb-16">
         {/* Step Indicator */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -284,7 +273,7 @@ const ArtistRegistrationFlow: React.FC = () => {
           <p className="text-sm text-content-secondary">
             Vos informations sont sécurisées et ne seront jamais partagées.
             <br />
-            Besoin d’aide ? <a href="/contact" className="text-gold font-semibold hover:underline">Contactez-nous</a>
+            Besoin d’aide ? <a href="mailto:hello@travelart.com" className="text-gold font-semibold hover:underline">Écrivez-nous</a>
           </p>
         </motion.div>
       </main>

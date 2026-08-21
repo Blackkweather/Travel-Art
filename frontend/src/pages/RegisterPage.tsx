@@ -41,7 +41,7 @@ const RegisterPage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-surface">
       <SimpleNavbar />
-      <main className="flex-1 container mx-auto px-4 py-12 md:py-16">
+      <main className="flex-1 container mx-auto px-4 pt-28 pb-12 md:pb-16">
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}
           <motion.div

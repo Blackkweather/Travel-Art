@@ -38,30 +38,30 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
     const newErrors: Record<string, string> = {};
 
     // Check required fields
-    if (!data.stageName.trim()) newErrors.stageName = 'Stage name is required';
-    if (!data.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!data.lastName.trim()) newErrors.lastName = 'Last name is required';
-    if (!data.birthDate.trim()) newErrors.birthDate = 'Birth date is required';
-    else if (!validateDate(data.birthDate)) newErrors.birthDate = 'Format: DD/MM/YYYY';
+    if (!data.stageName.trim()) newErrors.stageName = 'Indiquez votre nom de scène';
+    if (!data.firstName.trim()) newErrors.firstName = 'Indiquez votre prénom';
+    if (!data.lastName.trim()) newErrors.lastName = 'Indiquez votre nom';
+    if (!data.birthDate.trim()) newErrors.birthDate = 'Indiquez votre date de naissance';
+    else if (!validateDate(data.birthDate)) newErrors.birthDate = 'Format attendu : JJ/MM/AAAA';
 
-    if (!data.phone.trim()) newErrors.phone = 'Phone number is required';
-    else if (!validatePhone(data.phone)) newErrors.phone = 'Invalid phone number';
+    if (!data.phone.trim()) newErrors.phone = 'Indiquez votre numéro de téléphone';
+    else if (!validatePhone(data.phone)) newErrors.phone = 'Numéro de téléphone invalide';
 
-    if (!data.email.trim()) newErrors.email = 'Email is required';
-    else if (!validateEmail(data.email)) newErrors.email = 'Invalid email address';
+    if (!data.email.trim()) newErrors.email = 'Indiquez votre adresse e-mail';
+    else if (!validateEmail(data.email)) newErrors.email = 'Adresse e-mail invalide';
 
-    if (!data.password) newErrors.password = 'Password is required';
+    if (!data.password) newErrors.password = 'Choisissez un mot de passe';
     else if (!validatePassword(data.password)) {
-      newErrors.password = 'Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special';
+      newErrors.password = '8 caractères minimum, avec une majuscule, une minuscule, un chiffre et un caractère spécial';
     }
 
-    if (!data.confirmPassword) newErrors.confirmPassword = 'Confirm your password';
+    if (!data.confirmPassword) newErrors.confirmPassword = 'Confirmez votre mot de passe';
     else if (data.password !== data.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Les deux mots de passe ne correspondent pas';
     }
 
-    if (!data.country) newErrors.country = 'Country is required';
-    if (!data.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms';
+    if (!data.country) newErrors.country = 'Sélectionnez votre pays';
+    if (!data.agreeToTerms) newErrors.agreeToTerms = 'Vous devez accepter les conditions pour continuer';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -314,12 +314,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <button
           onClick={handleNext}
           disabled={isLoading}
-          className={`
-            w-full h-14 rounded-card font-bold text-lg transition-all
-            bg-gold hover:bg-gold/90 text-navy-900
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-lg hover:shadow-xl hover:scale-[1.02]
-          `}
+          className="btn-gold btn-lg w-full"
         >
           {isLoading ? 'Chargement...' : 'Suivant'}
         </button>

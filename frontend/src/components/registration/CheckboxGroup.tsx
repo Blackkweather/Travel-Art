@@ -135,7 +135,8 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
           <motion.p
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 text-sm text-red-500"
+            className="field-error"
+            role="alert"
           >
             {error}
           </motion.p>

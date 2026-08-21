@@ -433,6 +433,21 @@
   .form-error {
     @apply mt-1 text-sm text-red-400;
   }
+
+  /* One field-error presentation for the whole app. Five field components -
+     FormField, DatePicker, SelectWithSearch, CheckboxGroup and RadioGroup -
+     each rendered their own: a tinted pill with an icon in one, bare red-600
+     text in another, bare red-500 in three more. Two problems with that
+     besides the inconsistency: a form showing errors on a text input and a
+     date picker at once showed two different kinds of error, and red-500 on
+     white is 3.7:1, under the 4.5:1 floor for body text. red-600 clears it.
+
+     Set on the wrapper; the icon is supplied by the call site so it can be
+     omitted where the message sits inside a group label. */
+  .field-error {
+    @apply mt-2 flex items-start gap-2 text-sm text-red-600 dark:text-red-400
+           bg-red-50 dark:bg-red-500/10 px-2.5 py-2 rounded-card;
+  }
   
   .hero-title {
     @apply text-6xl md:text-8xl font-serif font-bold text-white mb-6 drop-shadow-lg leading-tight;
@@ -1606,15 +1621,20 @@ html {
    and <nav> holds only the link list. They forced a 112px logo and a
    transparent background on anything that did match. */
 
-/* Dashboard content spacing - clear the fixed header, which is 72px tall in
-   both Header and SimpleNavbar. This was 55px, tuned against an older bar. */
-.dashboard-content,
-main[class*="flex-1"] {
-  padding-top: 72px;
-}
+/* Two rules used to sit here, both trying to keep content clear of the fixed
+   72px navigation bar, and both doing damage.
 
-/* Ensure page content doesn't overlap navbar */
-.space-y-8:first-child,
-.dashboard-title:first-child {
-  margin-top: 0 !important;
-}
+   `main[class*="flex-1"] { padding-top: 72px }` matched any <main> whose class
+   list happened to contain "flex-1", and because it is a plain selector
+   outside @layer it outranked every Tailwind pt-* utility. So a page could set
+   pt-28 and silently get 72px - flush with the bar, no breathing room. It was
+   also invisible from the markup: nothing about `flex-1` says "padding".
+   Pages now state their own top padding and it is honoured.
+
+   `.dashboard-content` was the other half of the same selector and appears
+   nowhere in src/.
+
+   `.space-y-8:first-child, .dashboard-title:first-child { margin-top: 0
+   !important }` was an !important rule keyed on utility classes, which meant
+   no first-child heading anywhere on the site could ever be given a top
+   margin. */
