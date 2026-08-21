@@ -169,7 +169,7 @@ const AdminModeration: React.FC = () => {
               onClick={() => setTab('artists')} 
               className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                 tab === 'artists' 
-                  ? 'bg-gray-900 text-white shadow-sm' 
+                  ? 'bg-gray-900 text-content shadow-sm' 
                   : 'text-content-secondary hover:text-content hover:bg-surface'
               }`}
             >
@@ -179,7 +179,7 @@ const AdminModeration: React.FC = () => {
               onClick={() => setTab('hotels')} 
               className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                 tab === 'hotels' 
-                  ? 'bg-gray-900 text-white shadow-sm' 
+                  ? 'bg-gray-900 text-content shadow-sm' 
                   : 'text-content-secondary hover:text-content hover:bg-surface'
               }`}
             >

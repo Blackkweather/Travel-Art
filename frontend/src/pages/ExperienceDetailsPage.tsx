@@ -123,11 +123,11 @@ const ExperienceDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#08101D]">
+      <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
           <LoadingSpinner />
-          <p className="mt-4 text-white/60">Chargement de l’expérience…</p>
+          <p className="mt-4 text-content-secondary">Chargement de l’expérience…</p>
         </div>
         <Footer />
       </div>
@@ -136,11 +136,11 @@ const ExperienceDetailsPage: React.FC = () => {
 
   if (error || !experience) {
     return (
-      <div className="min-h-screen bg-[#08101D]">
+      <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl font-serif font-bold text-white mb-4">Expérience introuvable</h1>
-          <p className="text-white/60 mb-8">L’expérience demandée n’existe pas.</p>
+          <h1 className="text-4xl font-serif font-bold text-content mb-4">Expérience introuvable</h1>
+          <p className="text-content-secondary mb-8">L’expérience demandée n’existe pas.</p>
           <Link to="/experiences" className="btn-primary">
             Retour aux expériences
           </Link>
@@ -151,44 +151,48 @@ const ExperienceDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#08101D]">
-      <SimpleNavbar />
-      
-      {/* Hero Section */}
-      <div className="relative h-96 overflow-hidden">
+    <div className="min-h-screen bg-[var(--surface)]">
+      <SimpleNavbar overMedia />
+
+      {/* The experience photograph is the hero, so type on it stays white. The
+          back link sat at top-6, underneath the fixed 72px navigation bar. */}
+      <header className="relative h-[52vh] min-h-[380px] overflow-hidden">
         <img
           src={experience.image}
-          alt={experience.title}
+          alt=""
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-navy/60"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center text-white"
-          >
-            <span className="inline-block px-4 py-2 bg-gold/20 backdrop-blur-sm rounded-control text-sm font-semibold mb-4 capitalize">
-              {experience.type}
-            </span>
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-4">
-              {experience.title}
-            </h1>
-            <p className="text-xl flex items-center justify-center gap-2">
-              <MapPin className="w-5 h-5" />
-              {experience.location.city}, {experience.location.country}
-            </p>
-          </motion.div>
+        <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/40 to-navy/30"></div>
+
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="shell pb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <span className="inline-block px-3.5 py-1.5 bg-gold text-off-black rounded-control text-xs font-semibold uppercase tracking-wider capitalize">
+                {experience.type}
+              </span>
+              <h1 className="mt-5 text-white max-w-[18ch]">
+                {experience.title}
+              </h1>
+              <p className="mt-4 text-lg text-white/85 flex items-center gap-2">
+                <MapPin className="w-5 h-5" aria-hidden="true" />
+                {experience.location.city}, {experience.location.country}
+              </p>
+            </motion.div>
+          </div>
         </div>
+
         <Link
           to="/experiences"
-          className="absolute top-6 left-6 bg-[var(--surface-raised)]/20 backdrop-blur-sm text-white px-4 py-2 rounded-card hover:bg-[var(--surface-raised)]/30 transition-colors flex items-center gap-2"
+          className="absolute top-[88px] left-5 sm:left-8 lg:left-12 bg-black/35 backdrop-blur-sm text-white px-4 py-2.5 rounded-control hover:bg-black/55 transition-colors flex items-center gap-2 text-sm font-medium"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           Retour aux expériences
         </Link>
-      </div>
+      </header>
 
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -201,34 +205,34 @@ const ExperienceDetailsPage: React.FC = () => {
               transition={{ duration: 0.6 }}
               className="card-luxury"
             >
-              <h2 className="text-3xl font-serif font-bold text-white mb-4 gold-underline">
+              <h2 className="text-3xl font-serif font-bold text-content mb-4 gold-underline">
                 À propos de cette expérience
               </h2>
-              <p className="text-white/60 text-lg leading-relaxed mb-6">
+              <p className="text-content-secondary text-lg leading-relaxed mb-6">
                 {experience.fullDescription}
               </p>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-white/10">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-line">
                 <div className="text-center">
                   <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Star className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-white/45">Note</p>
-                  <p className="text-xl font-bold text-white">{experience.rating}</p>
+                  <p className="text-sm text-content-secondary">Note</p>
+                  <p className="text-xl font-bold text-content">{experience.rating}</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Clock className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-white/45">Durée</p>
-                  <p className="text-sm font-bold text-white">{experience.duration}</p>
+                  <p className="text-sm text-content-secondary">Durée</p>
+                  <p className="text-sm font-bold text-content">{experience.duration}</p>
                 </div>
                 <div className="text-center">
                   <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Users className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-white/45">Capacité</p>
-                  <p className="text-sm font-bold text-white">{experience.capacity}</p>
+                  <p className="text-sm text-content-secondary">Capacité</p>
+                  <p className="text-sm font-bold text-content">{experience.capacity}</p>
                 </div>
               </div>
             </motion.div>
@@ -240,19 +244,19 @@ const ExperienceDetailsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="card-luxury"
             >
-              <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
+              <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
                 Programme
               </h2>
               <div className="space-y-4">
                 {experience.schedule.map((item: any, index: number) => (
                   <div
                     key={index}
-                    className="flex items-start gap-4 pb-4 border-b border-white/10 last:border-0 last:pb-0"
+                    className="flex items-start gap-4 pb-4 border-b border-line last:border-0 last:pb-0"
                   >
                     <div className="flex-shrink-0 w-24 text-gold font-semibold">
                       {item.time}
                     </div>
-                    <div className="flex-1 text-white/60">
+                    <div className="flex-1 text-content-secondary">
                       {item.activity}
                     </div>
                   </div>
@@ -267,7 +271,7 @@ const ExperienceDetailsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="card-luxury"
             >
-              <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
+              <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
                 Ce qui est compris
               </h2>
               <ul className="space-y-3">
@@ -276,7 +280,7 @@ const ExperienceDetailsPage: React.FC = () => {
                     <div className="w-6 h-6 bg-gold/20 rounded-control flex items-center justify-center flex-shrink-0 mt-0.5">
                       <div className="w-2 h-2 bg-gold rounded-control"></div>
                     </div>
-                    <span className="text-white/60">{item}</span>
+                    <span className="text-content-secondary">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -289,7 +293,7 @@ const ExperienceDetailsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="card-luxury"
             >
-              <h2 className="text-3xl font-serif font-bold text-white mb-4 gold-underline">
+              <h2 className="text-3xl font-serif font-bold text-content mb-4 gold-underline">
                 À propos de l’artiste
               </h2>
               <div className="flex items-start gap-4 mb-4">
@@ -297,10 +301,10 @@ const ExperienceDetailsPage: React.FC = () => {
                   <Music className="w-8 h-8 text-gold" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-serif font-semibold text-white mb-2">
+                  <h3 className="text-xl font-serif font-semibold text-content mb-2">
                     {experience.artist}
                   </h3>
-                  <p className="text-white/60">{experience.artistBio}</p>
+                  <p className="text-content-secondary">{experience.artistBio}</p>
                 </div>
               </div>
             </motion.div>
@@ -312,7 +316,7 @@ const ExperienceDetailsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="card-luxury"
             >
-              <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
+              <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
                 Avis des clients
               </h2>
               <div className="space-y-6">
@@ -324,14 +328,14 @@ const ExperienceDetailsPage: React.FC = () => {
                           <Star
                             key={i}
                             className={`w-4 h-4 ${
-                              i < review.rating ? 'text-gold fill-current' : 'text-white/65'
+                              i < review.rating ? 'text-gold fill-current' : 'text-content-secondary'
                             }`}
                           />
                         ))}
                       </div>
-                      <span className="font-semibold text-white">{review.author}</span>
+                      <span className="font-semibold text-content">{review.author}</span>
                     </div>
-                    <p className="text-white/60">{review.comment}</p>
+                    <p className="text-content-secondary">{review.comment}</p>
                   </div>
                 ))}
               </div>
@@ -350,7 +354,7 @@ const ExperienceDetailsPage: React.FC = () => {
                 <div className="w-20 h-20 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-10 h-10 text-gold" />
                 </div>
-                <div className="text-2xl font-bold text-white mb-2">
+                <div className="text-2xl font-bold text-content mb-2">
                   {new Date(experience.date).toLocaleDateString('fr-FR', {
                     weekday: 'long',
                     year: 'numeric',
@@ -358,7 +362,7 @@ const ExperienceDetailsPage: React.FC = () => {
                     day: 'numeric'
                   })}
                 </div>
-                <div className="text-white/60 mb-6">
+                <div className="text-content-secondary mb-6">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <MapPin className="w-4 h-4" />
                     {experience.location.city}, {experience.location.country}
@@ -372,12 +376,12 @@ const ExperienceDetailsPage: React.FC = () => {
 
               <div className="space-y-4 mb-6">
                 <div className="p-4 bg-gold/10 rounded-card">
-                  <p className="text-sm text-white/60 mb-1">Durée</p>
-                  <p className="font-semibold text-white">{experience.duration}</p>
+                  <p className="text-sm text-content-secondary mb-1">Durée</p>
+                  <p className="font-semibold text-content">{experience.duration}</p>
                 </div>
                 <div className="p-4 bg-gold/10 rounded-card">
-                  <p className="text-sm text-white/60 mb-1">Capacité</p>
-                  <p className="font-semibold text-white">{experience.capacity}</p>
+                  <p className="text-sm text-content-secondary mb-1">Capacité</p>
+                  <p className="font-semibold text-content">{experience.capacity}</p>
                 </div>
               </div>
 
@@ -385,13 +389,13 @@ const ExperienceDetailsPage: React.FC = () => {
                 Réserver cette expérience
               </button>
 
-              <div className="mt-6 pt-6 border-t border-white/10">
-                <h4 className="font-semibold text-white mb-3">Le lieu</h4>
+              <div className="mt-6 pt-6 border-t border-line">
+                <h4 className="font-semibold text-content mb-3">Le lieu</h4>
                 <div className="flex items-start gap-2 mb-2">
                   <Globe className="w-4 h-4 text-gold mt-1 flex-shrink-0" />
-                  <p className="text-sm text-white/60">{experience.hotel}</p>
+                  <p className="text-sm text-content-secondary">{experience.hotel}</p>
                 </div>
-                <p className="text-sm text-white/60">{experience.venueDetails}</p>
+                <p className="text-sm text-content-secondary">{experience.venueDetails}</p>
               </div>
             </motion.div>
           </div>

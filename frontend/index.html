@@ -1,8 +1,10 @@
 <!doctype html>
-<!-- The site is a single dark theme by design, so the token set is fixed here
-     rather than following the OS preference. Removing this class switches every
-     surface, text and border token back to the light set. -->
-<html lang="fr" class="dark">
+<!-- The site ships light. The `class="dark"` that used to sit here pinned every
+     page to the dark token set, and because DarkModeToggle is not rendered
+     anywhere in the app - it appears only in its own unit test - there was no
+     way for a visitor to leave it. The dark tokens remain defined in
+     index.css, so adding the class back restores that theme wholesale. -->
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -16,113 +18,20 @@
     
     <!-- Fonts are self-hosted via fontsource and imported from src/index.css,
          so there is no render-blocking third-party stylesheet here. -->
-    <meta name="theme-color" content="#0B1F3F" />
+    <meta name="theme-color" content="#FFFFFF" />
 
-    <!-- Simple CSS animations -->
+    <!-- What sat here was ~105 lines defining .float-animation, .gradient-text,
+         .glow-effect, .typing-animation, .hero-image, .float-enhanced,
+         .drop-shadow-lg and .drop-shadow-md. None of the eight appears
+         anywhere in src/, and .gradient-text was defined twice with different
+         colours. Two of them - .drop-shadow-lg and .drop-shadow-md - shadowed
+         real Tailwind utility names, so any future use of those utilities
+         would have silently got these instead. Only the scroll behaviour
+         earned its place; index.css overrides it to auto under
+         prefers-reduced-motion. -->
     <style>
-      /* Floating animation */
-      @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-      }
-      
-      .float-animation {
-        animation: float 6s ease-in-out infinite;
-      }
-      
-      /* Gradient text animation */
-      @keyframes gradient-shift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
-      
-      .gradient-text {
-        background: linear-gradient(-45deg, #C9A63C, #0B1F3F, #C9A63C, #0B1F3F);
-        background-size: 400% 400%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: gradient-shift 3s ease infinite;
-      }
-      
-      /* Glow effect */
-      .glow-effect {
-        box-shadow: 0 0 20px rgba(201, 166, 60, 0.3);
-        transition: box-shadow 0.3s ease;
-      }
-      
-      .glow-effect:hover {
-        box-shadow: 0 0 30px rgba(201, 166, 60, 0.5);
-      }
-      
-      /* Smooth scrolling */
       html {
         scroll-behavior: smooth;
-      }
-      
-      /* Typing animation */
-      @keyframes typing {
-        from { width: 0; }
-        to { width: 100%; }
-      }
-      
-      @keyframes blink-cursor {
-        0%, 50% { opacity: 1; }
-        51%, 100% { opacity: 0; }
-      }
-      
-      .typing-animation {
-        overflow: hidden;
-        border-right: 3px solid #C9A63C;
-        white-space: nowrap;
-        animation: typing 3s steps(40, end), blink-cursor 0.75s step-end infinite;
-      }
-      
-      /* Enhanced gradient text for hero */
-      .gradient-text {
-        background: linear-gradient(-45deg, #C9A63C, #FFFFFF, #C9A63C, #FFFFFF);
-        background-size: 400% 400%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: gradient-shift 3s ease infinite;
-      }
-      
-      /* Drop shadow for better text readability */
-      .drop-shadow-lg {
-        filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
-      }
-      
-      .drop-shadow-md {
-        filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));
-      }
-      
-      /* Hero image parallax effect */
-      .hero-image {
-        transform: scale(1.1);
-        transition: transform 0.3s ease-out;
-      }
-      
-      .hero-image:hover {
-        transform: scale(1.05);
-      }
-      
-      /* Enhanced floating animation */
-      @keyframes float-enhanced {
-        0%, 100% { 
-          transform: translateY(0px) rotate(0deg); 
-        }
-        33% { 
-          transform: translateY(-15px) rotate(1deg); 
-        }
-        66% { 
-          transform: translateY(-25px) rotate(-1deg); 
-        }
-      }
-      
-      .float-enhanced {
-        animation: float-enhanced 8s ease-in-out infinite;
       }
     </style>
     

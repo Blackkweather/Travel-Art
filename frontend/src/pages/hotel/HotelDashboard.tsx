@@ -227,25 +227,25 @@ const HotelDashboard: React.FC = () => {
               'text-blue-600': {
                 bg: 'from-blue-500/15 to-transparent',
                 iconBg: 'from-blue-500 to-blue-600',
-                iconColor: 'text-white',
+                iconColor: 'text-content',
                 accent: 'bg-blue-500'
               },
               'text-green-600 dark:text-green-400': {
                 bg: 'from-emerald-500/15 to-transparent',
                 iconBg: 'from-emerald-500 to-emerald-600',
-                iconColor: 'text-white',
+                iconColor: 'text-content',
                 accent: 'bg-emerald-500'
               },
               'text-purple-600': {
                 bg: 'from-purple-500/15 to-transparent',
                 iconBg: 'from-purple-500 to-purple-600',
-                iconColor: 'text-white',
+                iconColor: 'text-content',
                 accent: 'bg-purple-500'
               },
               'text-orange-600': {
                 bg: 'from-orange-500/15 to-transparent',
                 iconBg: 'from-orange-500 to-orange-600',
-                iconColor: 'text-white',
+                iconColor: 'text-content',
                 accent: 'bg-orange-500'
               }
             }
@@ -260,7 +260,7 @@ const HotelDashboard: React.FC = () => {
                 <div className={`absolute top-0 left-0 right-0 h-1 ${colors.accent} opacity-80`}></div>
                 
                 {/* Decorative gradient overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-all duration-500 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-surface-sunken to-surface-sunken group-hover:from-surface-sunken group-hover:to-transparent transition-all duration-500 pointer-events-none"></div>
                 
                 <div className="relative p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -327,8 +327,8 @@ const HotelDashboard: React.FC = () => {
                   </div>
                   
                   <span className={`relative px-5 py-2.5 rounded-card text-sm font-bold shadow-md transition-all duration-300 ${
-                    performance.status === 'confirmed' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-green-500/30' :
-                    'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-amber-500/30'
+                    performance.status === 'confirmed' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-content hover:shadow-green-500/30' :
+                    'bg-gradient-to-r from-amber-500 to-orange-500 text-content hover:shadow-amber-500/30'
                   }`}>
                     {performance.status.charAt(0).toUpperCase() + performance.status.slice(1)}
                   </span>
@@ -337,7 +337,7 @@ const HotelDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-16">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-surface-sunken to-surface-sunken flex items-center justify-center">
                 <Music className="w-10 h-10 text-content-secondary" />
               </div>
               <p className="text-content-secondary text-lg font-medium mb-2">Aucune représentation à venir</p>
@@ -394,7 +394,7 @@ const HotelDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-16">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-white/5 to-white/10 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-surface-sunken to-surface-sunken flex items-center justify-center">
                 <MapPin className="w-10 h-10 text-content-secondary" />
               </div>
               <p className="text-content-secondary text-lg font-medium mb-2">Aucun espace de représentation configuré</p>
@@ -459,7 +459,7 @@ const HotelDashboard: React.FC = () => {
               <div className="w-14 h-14 mb-5 rounded-card bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center border border-gold/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                 <Users className="w-7 h-7 text-gold" />
               </div>
-              <h3 className="text-2xl font-serif font-bold text-white mb-3 group-hover:text-gold transition-colors">
+              <h3 className="text-2xl font-serif font-bold text-content mb-3 group-hover:text-gold transition-colors">
                 Parcourir les artistes
               </h3>
               <p className="text-content-secondary mb-6 leading-relaxed text-base">

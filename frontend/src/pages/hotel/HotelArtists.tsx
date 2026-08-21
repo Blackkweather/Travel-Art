@@ -451,7 +451,7 @@ const HotelArtists: React.FC = () => {
       <div className="search-container">
         <div className="filters-row">
           <div className="md:col-span-2">
-            <label className="form-label">Search Artists</label>
+            <label className="form-label">Rechercher des artistes</label>
             <div className="search-icon-container">
               <Search className="search-icon" />
               <input
@@ -641,7 +641,7 @@ const HotelArtists: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="text-center p-3 bg-surface rounded-card">
                   <div className="text-sm font-medium text-content mb-1">{artist.rank || 'Standard'}</div>
-                  <p className="text-xs text-content-secondary">Artist Rank</p>
+                  <p className="text-xs text-content-secondary">Rang de l’artiste</p>
                 </div>
                 <div className="text-center p-3 bg-surface rounded-card">
                   <div className="text-sm font-medium text-content mb-1">{artist.loyaltyPoints ?? 0}</div>
@@ -701,7 +701,7 @@ const HotelArtists: React.FC = () => {
               </div>
               <div>
                 <label className="form-label">Notes (optional)</label>
-                <input type="text" name="notes" className="form-input w-full" placeholder="Special requests or notes" onChange={(e)=>setBookingModal(m=>({...m,notes:e.target.value}))} />
+                <input type="text" name="notes" className="form-input w-full" placeholder="Demandes particulières ou remarques" onChange={(e)=>setBookingModal(m=>({...m,notes:e.target.value}))} />
               </div>
               {bookingError && <div className="text-sm text-red-600 dark:text-red-400">{bookingError}</div>}
               <div className="flex justify-end space-x-2 pt-2">

@@ -1,7 +1,7 @@
 ﻿/* Self-hosted variable fonts. Loading these here rather than via a Google
    Fonts <link> removes a render-blocking third-party request. */
-@import '@fontsource-variable/cormorant-garamond';
-@import '@fontsource-variable/outfit';
+@import '@fontsource-variable/newsreader';
+@import '@fontsource-variable/inter';
 
 @tailwind base;
 @tailwind components;
@@ -14,18 +14,30 @@
   --gold: #B99851;
   --off-black: #14161A;
 
-  --surface: #FAFAFA;
+  /* Warm neutrals. The page is white and the tinted bands are warm, not grey:
+     a warm off-white beside navy reads as paper and photography, which is the
+     register this product wants. A cold #FAFAFA beside navy reads as a SaaS
+     dashboard. Sand is the secondary-button fill. */
+  --sand: #E8DFD2;
+  --clay: #BF2F17;
+
+  --surface: #FFFFFF;
   --surface-raised: #FFFFFF;
-  --surface-sunken: #F2F2F1;
+  --surface-sunken: #FDFBF9;
+  --surface-warm: #F6EFE7;
   --surface-inverse: #0B1F3F;
 
   --text-primary: #0B1F3F;
-  --text-secondary: #52525B;
-  --text-on-inverse: #F4F4F5;
+  /* Navy-tinted rather than neutral grey, so secondary text belongs to the
+     same family as the headings above it. 4.9:1 on white. */
+  --text-secondary: #5A6478;
+  --text-on-inverse: #FDFBF9;
   --text-on-gold: #14161A;
 
-  --border-subtle: #E4E4E7;
-  --border-strong: #D0D0D6;
+  /* Hairlines are warm too - a cold grey rule across a warm band is visible
+     as a different colour, not just a lighter one. */
+  --border-subtle: #E7E1D8;
+  --border-strong: #C9C0B2;
 
   /* Shadows are tinted to the navy base - never pure black on light surfaces. */
   --shadow-soft: 0 1px 2px rgba(11, 31, 63, 0.06), 0 2px 8px rgba(11, 31, 63, 0.04);
@@ -48,11 +60,18 @@
   --gradient-overlay: linear-gradient(135deg, rgba(11, 31, 63, 0.85) 0%, rgba(185, 152, 81, 0.18) 100%);
 }
 
+/* The site is designed light-first. Dark mode stays supported and every token
+   below has a light counterpart above, so a surface that follows the tokens
+   follows the theme. --surface-warm is the one that needs thought: in dark
+   there is no warm paper to tint, so it becomes a slightly raised navy. */
 .dark {
   --surface: #0C1526;
   --surface-raised: #121E33;
   --surface-sunken: #08101D;
-  --surface-inverse: #F4F4F5;
+  --surface-warm: #101B2E;
+  --surface-inverse: #FDFBF9;
+
+  --sand: #2C3D5A;
 
   --text-primary: #F4F4F5;
   --text-secondary: #A1A1AA;
@@ -79,11 +98,14 @@
     color: var(--text-primary);
   }
 
-  /* Display type carries the brand. Tight tracking keeps the serif from
-     feeling loose at large sizes. */
+  /* Display type carries the brand. Newsreader is a text-first serif with low
+     stroke contrast, so unlike the Cormorant it replaces it holds up at 700
+     and stays readable down to subheading sizes instead of going spindly.
+     Tight tracking keeps it from feeling loose at large sizes. */
   h1, h2, h3 {
     font-family: theme('fontFamily.serif');
-    letter-spacing: -0.02em;
+    font-weight: 700;
+    letter-spacing: -0.015em;
   }
 
   /* Visible, brand-coloured focus for keyboard users on every interactive
@@ -91,7 +113,7 @@
   :where(a, button, input, textarea, select, [tabindex]):focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 3px;
-    border-radius: 2px;
+    border-radius: 3px;
   }
 }
 
@@ -109,41 +131,54 @@
 
 /* Custom Components - Travel Art */
 @layer components {
-  /* Controls and surfaces are both near-sharp. The label is small, uppercase
-     and widely tracked - at luxury scale a CTA reads as an engraved line of
-     type, not as a chunky app button. Every button presses down 1px on
-     :active so a click feels physical. */
+  /* Buttons are uppercase and semibold at a real reading size, not a hairline
+     of tracked-out 11px type. The previous scale (0.6875rem / 0.14em) is what
+     an engraved luxury wordmark wants; it is not what someone filling in a
+     seven-step registration form on a phone wants, and it was the single
+     biggest legibility problem in the app. 0.9375rem with modest tracking
+     stays clearly branded and is readable at arm's length.
+
+     min-height 48px meets the WCAG 2.2 target-size guidance on every variant,
+     so no call site has to remember to pad a small button up to a tappable
+     one. Every button presses down 1px on :active so a click feels physical. */
   .btn-base {
-    @apply inline-flex items-center justify-center whitespace-nowrap rounded-control
-           px-8 py-4 text-[0.6875rem] font-semibold uppercase
-           transition-all duration-300 ease-entrance
-           active:translate-y-px;
-    letter-spacing: 0.14em;
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap
+           rounded-control min-h-[48px] px-7 py-3.5
+           text-[0.9375rem] font-semibold uppercase leading-none
+           transition-all duration-200 ease-entrance
+           active:translate-y-px
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:active:translate-y-0;
+    letter-spacing: 0.04em;
   }
 
   /* Primary sits on the inverse surface rather than a fixed navy, so it stays
      legible in both themes: navy with a near-white label on light, a light bar
-     with a navy label on dark. Gold remains the accent, via .btn-gold.
+     with a navy label on dark.
 
-     Buttons are flat. The drop shadows these carried made them float above the
-     page like cards, which is the opposite of the engraved, set-into-the-page
-     feel the rest of the type has. Depth comes from the 1px press only. */
+     Hover goes to gold rather than to transparent. A filled button that empties
+     on hover reads as losing state; filling with the accent reads as the
+     control lighting up, and it is what puts gold in front of the user at the
+     exact moment they are deciding to act. Gold is light, so its label is
+     near-black throughout - white on gold fails AA.
+
+     Buttons are flat. Depth comes from the 1px press only. */
   .btn-primary {
     @apply btn-base bg-[var(--surface-inverse)] text-[var(--text-on-inverse)]
            border border-[var(--surface-inverse)]
-           hover:bg-transparent hover:text-[var(--text-primary)];
+           hover:bg-gold hover:border-gold hover:text-off-black;
   }
 
+  /* Sand fill. The quiet companion to primary: present enough to be found,
+     never competing with it. */
   .btn-secondary {
-    @apply btn-base bg-transparent text-navy border border-navy/25
-           hover:border-navy hover:bg-navy hover:text-white
-           dark:text-white dark:border-white/30 dark:hover:bg-white dark:hover:text-navy;
+    @apply btn-base bg-[var(--sand)] text-navy border border-[var(--sand)]
+           hover:bg-navy hover:border-navy hover:text-white
+           dark:text-white dark:hover:bg-white dark:hover:text-navy;
   }
 
-  /* Gold is light, so its label is near-black - white on gold fails AA. */
   .btn-gold {
     @apply btn-base bg-gold text-off-black border border-gold
-           hover:bg-transparent hover:text-gold-700 dark:hover:text-gold-300;
+           hover:bg-navy hover:border-navy hover:text-white;
   }
 
   .btn-gold-outline {
@@ -155,9 +190,16 @@
      btn-outline. It had no definition in any loaded stylesheet, so those
      buttons rendered as bare browser chrome inside a designed form. */
   .btn-outline {
-    @apply btn-base bg-transparent text-[var(--text-primary)]
+    @apply btn-base bg-[var(--surface-raised)] text-[var(--text-primary)]
            border border-[var(--border-strong)]
            hover:border-gold hover:text-gold;
+  }
+
+  /* Text-only tertiary action. Used where a bordered button would add a third
+     box to a row that already has two. */
+  .btn-ghost {
+    @apply btn-base bg-transparent text-[var(--text-primary)] border border-transparent
+           hover:text-gold;
   }
 
   /* Size modifiers. These must stay below every .btn-* variant: @apply inlines
@@ -165,21 +207,40 @@
      that decides, and a modifier has to be able to override .btn-base.
      Call sites previously reached for `!px-6 !py-2.5` to shrink a nav button,
      which forced an !important into the markup for something the system should
-     own. */
+     own.
+
+     btn-sm keeps the 44px floor rather than dropping to the visual minimum:
+     small here means less horizontal weight, not a smaller tap target. */
   .btn-sm {
-    @apply px-5 py-2.5 text-[0.625rem];
-    letter-spacing: 0.12em;
+    @apply min-h-[44px] px-5 py-2.5 text-[0.8125rem];
+    letter-spacing: 0.05em;
   }
 
   .btn-lg {
-    @apply px-10 py-5 text-xs;
+    @apply min-h-[56px] px-9 py-[1.125rem] text-base;
   }
 
   /* A button that has to sit on top of photography. The dark scrim keeps the
      label legible whatever the image behind it does. */
   .btn-on-media {
-    @apply btn-base border border-white/70 text-white bg-white/5 backdrop-blur-sm
+    @apply btn-base border border-white/70 text-white bg-black/25 backdrop-blur-sm
            hover:bg-white hover:text-navy hover:border-white;
+  }
+
+  /* Club Med Live marks its forward actions with a trailing arrow. It is a
+     small thing that makes a row of buttons scannable by shape as well as by
+     label: the one that moves you onward is the one with the arrow. The arrow
+     slides on hover, and holds still under prefers-reduced-motion because the
+     blanket rule at the top of this file zeroes the transition. */
+  .btn-arrow::after {
+    content: "\2192";
+    @apply inline-block transition-transform duration-200 ease-entrance;
+    font-size: 1.1em;
+    line-height: 1;
+  }
+
+  .btn-arrow:hover::after {
+    transform: translateX(3px);
   }
 
   .card-experience {
@@ -189,6 +250,132 @@
   /* Shared page shell so sections align to one measure across the site. */
   .shell {
     @apply mx-auto w-full max-w-shell px-5 sm:px-8 lg:px-12;
+  }
+
+  /* ---- Signature motifs -------------------------------------------------
+     Four devices carry the identity across every page. They exist as classes
+     rather than as ad-hoc markup so a new page inherits the language for free
+     instead of reinventing it slightly differently. */
+
+  /* The spark: a small square rotated 45deg. It marks a category, separates
+     items in a marquee, and terminates a rule. Sized in em so it scales with
+     whatever type it sits beside. */
+  .spark {
+    @apply inline-block align-middle bg-gold shrink-0;
+    width: 0.5em;
+    height: 0.5em;
+    transform: rotate(45deg);
+  }
+
+  /* The eyebrow: a small tracked label above a heading, saying what kind of
+     thing follows. This is the one place uppercase micro-type belongs. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2.5 text-[0.75rem] font-semibold uppercase
+           text-[var(--text-secondary)];
+    letter-spacing: 0.16em;
+  }
+
+  .eyebrow::before {
+    content: "";
+    @apply inline-block align-middle bg-gold shrink-0;
+    width: 0.5em;
+    height: 0.5em;
+    transform: rotate(45deg);
+  }
+
+  /* A rule that draws itself in when its section scrolls into view, finished
+     with a spark. Add .is-revealed (the ScrollAnimationWrapper does this) to
+     trigger. Without JS it renders drawn, never blank. */
+  .rule-reveal {
+    @apply relative block h-px w-full bg-[var(--border-strong)] origin-left;
+    transform: scaleX(1);
+    transition: transform 0.6s var(--ease-entrance);
+  }
+
+  .rule-reveal.is-pending {
+    transform: scaleX(0);
+  }
+
+  .rule-reveal::after {
+    content: "";
+    @apply absolute right-0 bg-gold;
+    width: 8px;
+    height: 8px;
+    top: -3.5px;
+    transform: rotate(45deg);
+  }
+
+  /* Outlined display type for the marquee: white fill, navy outline. Painted
+     with four offset shadows rather than -webkit-text-stroke, which thins
+     inconsistently across browsers and clips the leftmost stem in Safari. */
+  .text-outline {
+    /* The fill is the page surface, not `transparent`. With a transparent fill
+       the four offset shadows show through the middle of every letter and
+       merge into a solid shape - the exact opposite of an outline. Filling
+       with the surface colour hides the shadow copies behind the glyph and
+       leaves only the 1px of each that sticks out past its edge. */
+    color: var(--surface);
+    -webkit-text-fill-color: var(--surface);
+    text-shadow:
+      -1px 0 var(--text-primary), 0 1px var(--text-primary),
+      1px 0 var(--text-primary), 0 -1px var(--text-primary);
+  }
+
+  /* ---- Section bands ----------------------------------------------------
+     Pages alternate white and warm. Two adjacent bands must never share a
+     tone, which is the rule that keeps a long page legible as a sequence of
+     ideas rather than one continuous scroll. */
+  .band {
+    @apply py-20 md:py-28 lg:py-32 bg-[var(--surface)];
+  }
+
+  .band-warm {
+    @apply py-20 md:py-28 lg:py-32 bg-[var(--surface-warm)];
+  }
+
+  .band-inverse {
+    @apply py-20 md:py-28 lg:py-32 bg-[var(--surface-inverse)] text-[var(--text-on-inverse)];
+  }
+
+  /* Headings inside an inverse band inherit the band's colour rather than the
+     page's, so a navy section does not need every child annotated with
+     text-white at the call site. */
+  .band-inverse h1,
+  .band-inverse h2,
+  .band-inverse h3 {
+    color: inherit;
+  }
+
+  /* ---- Editorial card ---------------------------------------------------
+     The Backstages pattern: full-bleed image, then type below it on the page
+     surface - not floating in a shadowed box. The image is the card; the
+     border is a hairline, and the lift on hover is the image scaling inside a
+     fixed frame rather than the whole card jumping. */
+  .editorial-card {
+    @apply group relative flex flex-col overflow-hidden rounded-card
+           bg-[var(--surface-raised)] border border-[var(--border-subtle)]
+           transition-shadow duration-300 hover:shadow-medium
+           focus-within:shadow-medium;
+  }
+
+  .editorial-card__media {
+    @apply relative overflow-hidden aspect-[4/3] bg-[var(--surface-sunken)];
+  }
+
+  .editorial-card__media img {
+    @apply h-full w-full object-cover transition-transform duration-700 ease-entrance
+           group-hover:scale-[1.04];
+  }
+
+  .editorial-card__body {
+    @apply flex flex-1 flex-col gap-3 p-6;
+  }
+
+  /* A link laid over the whole card so the entire surface is clickable, while
+     the accessible name still comes from the real heading link. */
+  .editorial-card__link::after {
+    content: "";
+    @apply absolute inset-0;
   }
 
   /* Airy by default: VISUAL_DENSITY 3. */
@@ -367,56 +554,70 @@
   background: #b8942f;
 }
 
-/* Inter was named here but never loaded either, so body copy fell back to
-   system UI fonts. Outfit is the family this project actually ships. */
 body {
   margin: 0;
-  font-family: 'Outfit Variable', Outfit, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--surface);
   color: var(--text-primary);
+  /* 16px, matching the reference. The app previously inherited the browser
+     default and then fought it with per-component overrides. */
+  font-size: 16px;
   line-height: 1.6;
 }
 
-/* Display type. Cormorant is a high-contrast Garamond: it carries the brand at
-   large sizes but goes weak and spindly below ~1.25rem, so h4-h6 stay on the
-   sans and only h1-h3 take the serif. Optical sizes are set in rem against a
-   modest scale - the previous 3rem h1 / 2.25rem h2 was a 1.33 ratio that left
-   headings competing with each other instead of establishing a hierarchy. */
+/* Display type. Newsreader is a low-contrast text serif, so it stays solid at
+   700 all the way down to h4 - the sans only takes over at h5/h6, where type
+   is functioning as a label rather than as a voice.
+
+   Sizes are fluid via clamp() so a heading is never set for one viewport and
+   awkward on every other. The steps between levels are wide enough (roughly
+   1.5x, 1.35x, 1.2x) that two adjacent headings read as different ranks
+   without needing a colour or a rule to separate them. */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.15;
   margin: 0;
 }
 
-h1, h2, h3 {
-  font-family: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, serif;
+h1, h2, h3, h4 {
+  font-family: 'Newsreader Variable', Newsreader, Georgia, serif;
+  letter-spacing: -0.015em;
 }
 
-h4, h5, h6 {
-  font-family: 'Outfit Variable', Outfit, system-ui, sans-serif;
+h5, h6 {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
 
 h1 {
-  font-size: clamp(2.75rem, 6vw, 4.5rem);
-  font-weight: 500;
+  font-size: clamp(2.5rem, 5.5vw, 4.75rem);
+  line-height: 1.05;
 }
 
 h2 {
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 500;
+  font-size: clamp(1.875rem, 3.6vw, 3.125rem);
+  line-height: 1.1;
   position: relative;
 }
 
 h3 {
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
-  font-weight: 500;
+  font-size: clamp(1.375rem, 2.2vw, 1.875rem);
+  line-height: 1.2;
 }
 
 h4 {
-  font-size: 1.25rem;
+  font-size: clamp(1.125rem, 1.5vw, 1.375rem);
+  line-height: 1.3;
+}
+
+h5 {
+  font-size: 1rem;
+}
+
+h6 {
+  font-size: 0.875rem;
 }
 
 h5 {
@@ -443,7 +644,24 @@ h6 {
   transition: width 0.3s ease;
 }
 
-.gold-underline:hover::after {
+/* A heading is a block, so `left: 0` pins the rule to the left edge of the
+   whole line box - correct under a left-aligned heading, but under a centred
+   one it leaves the rule stranded out to the side of the text with nothing
+   above it. Of the 37 call sites most are left-aligned dashboard headings;
+   the centred ones (login, password reset, the centred section titles) get
+   the rule centred to match. Centring is applied by the heading itself or by
+   an ancestor, so both are covered. */
+.gold-underline.text-center::after,
+.text-center .gold-underline::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Growing to the full width of the heading on hover is right for a link. On a
+   static page title - which is what all 37 of these are - it means the rule
+   twitches whenever the pointer crosses the heading. */
+a.gold-underline:hover::after,
+.gold-underline a:hover::after {
   width: 100%;
 }
 
@@ -456,7 +674,7 @@ h6 {
 /* Card Styles */
 .card {
   background: var(--surface-raised);
-  border-radius: 2px;
+  border-radius: 3px;
   padding: 24px;
   box-shadow: var(--shadow-soft);
   transition: all 0.3s ease;
@@ -483,7 +701,7 @@ h6 {
   width: 100%;
   padding: 12px 16px;
   border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border-radius: 3px;
   font-size: 16px;
   transition: all 0.3s ease;
   background-color: var(--surface-sunken);
@@ -504,7 +722,7 @@ h6 {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--border-light);
-  border-radius: 2px;
+  border-radius: 3px;
   font-size: 16px;
   transition: all 0.3s ease;
   background-color: var(--surface-sunken);
@@ -956,17 +1174,6 @@ h6 {
     min-width: 44px;
   }
   
-  /* Improved mobile navigation */
-  .mobile-menu {
-    position: fixed;
-    top: 55px;
-    left: 0;
-    right: 0;
-    background: rgba(11, 31, 63, 0.95);
-    backdrop-filter: blur(10px);
-    z-index: 40;
-  }
-  
   /* Mobile-friendly cards */
   .card-luxury {
     margin: 0.5rem !important;
@@ -1053,7 +1260,7 @@ h6 {
 .card-luxury {
   background: var(--surface-raised);
   border: 1px solid rgba(185, 152, 81, 0.15);
-  border-radius: 2px;
+  border-radius: 3px;
   padding: 1.5rem 2rem;
   box-shadow: var(--shadow-soft);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1097,8 +1304,8 @@ img[src*="logo-transparent.png"] {
   z-index: 2;
   background: var(--surface-raised);
   padding: 1.5rem;
-  border-radius: 2px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  box-shadow: var(--shadow-soft);
   margin-bottom: 1rem;
   overflow: hidden;
   box-sizing: border-box;
@@ -1125,7 +1332,7 @@ input[type="text"].search-input,
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 3.5rem;
   border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border-radius: 3px;
   font-size: 1rem;
   outline: none;
   box-sizing: border-box;
@@ -1164,7 +1371,7 @@ select.form-input {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border-radius: 3px;
   font-size: 1rem;
   outline: none;
   box-sizing: border-box;
@@ -1271,9 +1478,9 @@ html {
 .dashboard-stat-card {
   background: var(--surface-raised);
   border: 1px solid rgba(201, 166, 60, 0.15);
-  border-radius: 2px;
+  border-radius: 3px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-soft);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -1292,7 +1499,7 @@ html {
 
 .dashboard-stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
   border-color: rgba(201, 166, 60, 0.3);
 }
 
@@ -1354,7 +1561,7 @@ html {
 
 /* Typography Improvements */
 .dashboard-title {
-  font-family: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Newsreader Variable', Newsreader, Georgia, serif;
   font-size: 2rem;
   font-weight: 700;
   /* Was var(--primary-navy), a fixed dark navy. The product ships a dark
@@ -1373,7 +1580,7 @@ html {
 }
 
 .section-title {
-  font-family: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, serif;
+  font-family: 'Newsreader Variable', Newsreader, Georgia, serif;
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-primary);

@@ -310,7 +310,7 @@ const ArtistProfile: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-          <p className="text-content-secondary">Loading profile...</p>
+          <p className="text-content-secondary">Chargement du profil…</p>
         </div>
       </div>
     )
@@ -387,7 +387,7 @@ const ArtistProfile: React.FC = () => {
           <div className="flex-1">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="form-label">Artist Name</label>
+                <label className="form-label">Nom de l’artiste</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -623,7 +623,7 @@ const ArtistProfile: React.FC = () => {
           {isEditing && (
             <button className="btn-secondary flex items-center space-x-2">
               <Upload className="w-4 h-4" />
-              <span>Add Images</span>
+              <span>Ajouter des images</span>
             </button>
           )}
         </div>
@@ -742,7 +742,7 @@ const ArtistProfile: React.FC = () => {
         
         {isEditing && (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-card">
-            <label className="form-label">Add YouTube or Video URL</label>
+            <label className="form-label">Ajouter un lien YouTube ou vidéo</label>
             <div className="flex gap-3">
               <input
                 type="text"

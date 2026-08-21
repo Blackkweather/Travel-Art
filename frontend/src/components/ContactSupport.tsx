@@ -94,7 +94,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
       <div className="card-luxury fade-in-up-delay-3">
         <div className="text-center py-8">
           <div className="w-20 h-20 bg-gradient-to-br from-gold to-gold/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <CheckCircle2 className="w-10 h-10 text-white" />
+            <CheckCircle2 className="w-10 h-10 text-content" />
           </div>
           <h3 className="text-2xl font-serif font-bold text-content mb-3">
             Message prêt
@@ -161,7 +161,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               className="flex items-center gap-3 p-4 bg-surface-raised rounded-card border border-line hover:border-green-500 hover:shadow-md transition-all group"
             >
               <div className="w-10 h-10 bg-green-50 dark:bg-green-500/10 rounded-card flex items-center justify-center group-hover:bg-green-500 transition-colors">
-                <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400 group-hover:text-white" />
+                <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400 group-hover:text-content" />
               </div>
               <div>
                 <p className="font-semibold text-content text-sm">WhatsApp</p>

@@ -85,35 +85,36 @@ const TopArtistsPage: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen bg-[#08101D]">
+    <div className="min-h-screen bg-[var(--surface)]">
       <SimpleNavbar />
 
-      {/* Hero Section */}
-      <div className="relative py-20 pt-32 overflow-hidden">
-        {/* Background Gradient */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-navy via-navy/90 to-gold/20">
-          <div className="absolute inset-0 bg-navy/70"></div>
-        </div>
-        
-        <div className="container mx-auto px-6 text-center relative z-10">
+      {/* Page header. This was a navy gradient band carrying white type; on a
+          light site that put a dark slab immediately under a light navigation
+          bar. It is now set on the page surface, with the eyebrow naming the
+          section and the rule closing it - the same opening every public page
+          uses, so the site reads as one publication. */}
+      <header className="relative pt-32 pb-14 md:pb-20">
+        <div className="shell">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
-              Les plus remarqués
-              <span className="block text-gold">Artistes</span>
+            <p className="eyebrow">Le répertoire</p>
+            <h1 className="mt-5 max-w-[14ch]">
+              Les artistes
+              <span className="block text-gold">les plus remarqués</span>
             </h1>
-            <p className="text-xl text-white/65 mb-8 max-w-3xl mx-auto">
+            <p className="mt-7 text-lg text-content-secondary max-w-[52ch] leading-relaxed">
               Découvrez les artistes qui font vivre les toits-terrasses et les plus belles adresses du monde.
             </p>
           </motion.div>
         </div>
-      </div>
+        <div className="shell mt-12"><span className="rule-reveal" /></div>
+      </header>
 
       {/* Stats Section */}
-      <div className="bg-[#0C1526] py-16">
+      <div className="bg-[var(--surface-warm)] py-16">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <motion.div
@@ -122,10 +123,10 @@ const TopArtistsPage: React.FC = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-white" />
+                <Users className="w-8 h-8 text-content" />
               </div>
-              <h3 className="text-3xl font-bold text-white mb-2">{stats.totalArtists || 0}</h3>
-              <p className="text-white/60">Artistes vérifiés</p>
+              <h3 className="text-3xl font-bold text-content mb-2">{stats.totalArtists || 0}</h3>
+              <p className="text-content-secondary">Artistes vérifiés</p>
             </motion.div>
 
             <motion.div
@@ -134,10 +135,10 @@ const TopArtistsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-white" />
+                <Star className="w-8 h-8 text-content" />
               </div>
-              <h3 className="text-3xl font-bold text-white mb-2">{stats.averageRating.toFixed(1)}</h3>
-              <p className="text-white/60">Note moyenne</p>
+              <h3 className="text-3xl font-bold text-content mb-2">{stats.averageRating.toFixed(1)}</h3>
+              <p className="text-content-secondary">Note moyenne</p>
             </motion.div>
 
             <motion.div
@@ -146,10 +147,10 @@ const TopArtistsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-white" />
+                <Calendar className="w-8 h-8 text-content" />
               </div>
-              <h3 className="text-3xl font-bold text-white mb-2">{stats.totalBookings || 0}</h3>
-              <p className="text-white/60">Réservations abouties</p>
+              <h3 className="text-3xl font-bold text-content mb-2">{stats.totalBookings || 0}</h3>
+              <p className="text-content-secondary">Réservations abouties</p>
             </motion.div>
 
             <motion.div
@@ -158,10 +159,10 @@ const TopArtistsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
             >
               <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-white" />
+                <MapPin className="w-8 h-8 text-content" />
               </div>
-              <h3 className="text-3xl font-bold text-white mb-2">{stats.totalHotels || 0}</h3>
-              <p className="text-white/60">Hôtels d’exception</p>
+              <h3 className="text-3xl font-bold text-content mb-2">{stats.totalHotels || 0}</h3>
+              <p className="text-content-secondary">Hôtels d’exception</p>
             </motion.div>
           </div>
         </div>
@@ -170,10 +171,10 @@ const TopArtistsPage: React.FC = () => {
       {/* Artists Grid */}
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
+          <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
             Artistes à l’honneur
           </h2>
-          <p className="text-xl text-white/60 max-w-3xl mx-auto">
+          <p className="text-xl text-content-secondary max-w-3xl mx-auto">
             Rencontrez les artistes qui font des toits-terrasses des scènes mémorables
           </p>
         </div>
@@ -185,8 +186,8 @@ const TopArtistsPage: React.FC = () => {
         ) : error ? (
           <div className="text-center py-20">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-white mb-2">Impossible de charger les artistes</h3>
-            <p className="text-white/60 mb-6">{error}</p>
+            <h3 className="text-2xl font-semibold text-content mb-2">Impossible de charger les artistes</h3>
+            <p className="text-content-secondary mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary"
@@ -196,9 +197,9 @@ const TopArtistsPage: React.FC = () => {
           </div>
         ) : topArtists.length === 0 ? (
           <div className="text-center py-20">
-            <Users className="w-16 h-16 text-white/40 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-white mb-2">Aucun artiste trouvé</h3>
-            <p className="text-white/60 mb-6">
+            <Users className="w-16 h-16 text-content-secondary mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold text-content mb-2">Aucun artiste trouvé</h3>
+            <p className="text-content-secondary mb-6">
               Revenez bientôt pour découvrir nos artistes à l’honneur.
             </p>
             <Link to="/register" className="btn-primary">
@@ -237,13 +238,13 @@ const TopArtistsPage: React.FC = () => {
                     />
                     <div className="absolute top-4 right-4 bg-[var(--surface-raised)]/90 backdrop-blur-sm px-3 py-2 rounded-control flex items-center space-x-2">
                       <ArtistRank tier={getQuickRank(rating, bookings)} size="sm" />
-                      <span className="text-sm font-semibold text-white">{rating.toFixed(1)}</span>
+                      <span className="text-sm font-semibold text-content">{rating.toFixed(1)}</span>
                     </div>
                   </div>
                   
                   <div className="p-6 flex flex-col flex-1">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xl font-serif font-semibold text-white">
+                      <h3 className="text-xl font-serif font-semibold text-content">
                         {artist.user.name}
                       </h3>
                       {artist.ratingBadge && (
@@ -258,16 +259,16 @@ const TopArtistsPage: React.FC = () => {
                       <p className="text-gold font-medium mb-1">{artist.discipline}</p>
                     )}
                     {artist.ratingBadge && (
-                      <p className="text-xs text-white/45 mb-3">
+                      <p className="text-xs text-content-secondary mb-3">
                         {artist.ratingBadge}
                       </p>
                     )}
-                    <p className="text-white/60 text-sm mb-4 flex items-center">
+                    <p className="text-content-secondary text-sm mb-4 flex items-center">
                       <MapPin className="w-4 h-4 mr-2" />
                       {formatLocation(artist.user.country)}
                     </p>
 
-                    <div className="flex items-center justify-between text-sm text-white/45 mb-4">
+                    <div className="flex items-center justify-between text-sm text-content-secondary mb-4">
                       <span className="flex items-center">
                         <Calendar className="w-4 h-4 mr-1" />
                         {bookings} {bookings === 1 ? 'booking' : 'bookings'}
@@ -292,26 +293,31 @@ const TopArtistsPage: React.FC = () => {
         )}
       </div>
 
-      {/* CTA Section */}
-      <div className="bg-navy text-white py-20">
-        <div className="container mx-auto px-6 text-center">
+      {/* Closing call to action. Two things were wrong here beyond the colour:
+          the subtitle resolved to navy-on-navy and was invisible, and the
+          button was .btn-primary - a navy fill - sitting on a navy band, so
+          only its label could be seen. Gold is the correct fill on an inverse
+          surface, and it is the only place on the page gold fills anything. */}
+      <section className="band-inverse">
+        <div className="shell text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl font-serif font-bold mb-6">
+            <h2 className="mx-auto max-w-[18ch]">
               Prêt à monter sur scène ?
             </h2>
-            <p className="text-xl text-white/65 mb-8 max-w-2xl mx-auto">
+            <p className="mt-7 text-lg text-[var(--text-on-inverse)]/70 mb-10 max-w-[50ch] mx-auto leading-relaxed">
               Rejoignez notre communauté d’artistes et jouez dans les plus belles adresses du monde.
             </p>
-            <a href="/register" className="btn-primary text-lg px-8 py-4">
+            <Link to="/register?role=artist" className="btn-gold btn-lg btn-arrow">
               Devenir artiste
-            </a>
+            </Link>
           </motion.div>
         </div>
-      </div>
+      </section>
       
       <Footer />
     </div>

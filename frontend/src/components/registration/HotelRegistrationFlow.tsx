@@ -10,7 +10,7 @@ import SelectWithSearch from './SelectWithSearch';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
 import { useAuthStore } from '@/store/authStore';
-import { COUNTRIES } from '@/types/artistRegistration';
+import { COUNTRIES, VALIDATION } from '@/types/artistRegistration';
 import { hotelsApi } from '@/utils/api';
 
 type PublicType = 'Familles' | 'Couples' | 'Adult only' | 'Corporate';
@@ -77,7 +77,11 @@ interface HotelGeneral {
   website?: string;
   socials?: { instagram?: string; facebook?: string; youtube?: string };
   contactName?: string;
-  contactEmail?: string;
+  // The contact email is the account's login identity and the password is what
+  // secures it, so neither is optional - see the validation in canLeaveStep1.
+  contactEmail: string;
+  password: string;
+  confirmPassword: string;
   contactPhone?: string;
 }
 
@@ -107,6 +111,8 @@ const INITIAL_STATE: HotelRegistrationData = {
     socials: { instagram: '', facebook: '', youtube: '' },
     contactName: '',
     contactEmail: '',
+    password: '',
+    confirmPassword: '',
     contactPhone: ''
   },
   ambiance: {
@@ -172,6 +178,27 @@ const HotelRegistrationFlow: React.FC = () => {
   ];
 
   const countryOptions = useMemo(() => COUNTRIES.map(c => ({ value: c, label: c })), []);
+
+  // Step 1 carries the credentials, so it gates on them. Everything the account
+  // needs to exist and be reachable by exactly one person is checked here rather
+  // than at submit, where the user would have to walk back six steps to fix it.
+  const step1Errors = useMemo(() => {
+    const g = state.general;
+    const errors: string[] = [];
+    if (!g.name) errors.push('le nom de l’hôtel');
+    if (!g.country) errors.push('le pays');
+    if (!g.city) errors.push('la ville');
+    if (!g.hotelType) errors.push('le type d’établissement');
+    if (!g.roomCount) errors.push('le nombre de chambres');
+    if (!g.contactEmail) errors.push('l’email de contact');
+    else if (!VALIDATION.email.test(g.contactEmail)) errors.push('un email de contact valide');
+    if (!g.password) errors.push('un mot de passe');
+    else if (!VALIDATION.password.test(g.password)) {
+      errors.push('un mot de passe d’au moins 8 caractères avec majuscule, minuscule, chiffre et caractère spécial');
+    }
+    if (g.password && g.password !== g.confirmPassword) errors.push('deux mots de passe identiques');
+    return errors;
+  }, [state.general]);
 
   const updateGeneral = useCallback((patch: Partial<HotelGeneral>) => {
     setState(prev => ({ ...prev, general: { ...prev.general, ...patch } }));
@@ -240,8 +267,12 @@ const HotelRegistrationFlow: React.FC = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      if (!state.general.name || !state.general.country || !state.general.city || !state.general.hotelType || !state.general.roomCount) {
-        toast.error('Veuillez compléter les informations obligatoires');
+      // Re-checked at submit as well as at step 1: the user can reach step 7 and
+      // then edit step 1 back into an invalid state.
+      if (step1Errors.length > 0) {
+        setState(prev => ({ ...prev, step: 1 }));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.error(`Il manque encore ${step1Errors.join(', ')}.`);
         setIsLoading(false);
         return;
       }
@@ -249,8 +280,8 @@ const HotelRegistrationFlow: React.FC = () => {
       await registerUser({
         role: 'HOTEL',
         name: state.general.name,
-        email: state.general.contactEmail || '',
-        password: 'Temp@12345',
+        email: state.general.contactEmail,
+        password: state.general.password,
         phone: state.general.contactPhone || '',
         country: state.general.country
       });
@@ -399,11 +430,46 @@ const HotelRegistrationFlow: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField label="Contact responsable" placeholder="Nom" value={state.general.contactName || ''} onChange={(e) => updateGeneral({ contactName: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                    <FormField label="Email contact" placeholder="email@hotel.com" value={state.general.contactEmail || ''} onChange={(e) => updateGeneral({ contactEmail: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                    <FormField label="E-mail de contact *" placeholder="contact@votre-hotel.com" value={state.general.contactEmail} onChange={(e) => updateGeneral({ contactEmail: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                     <FormField label="Téléphone contact" placeholder="+33 ..." value={state.general.contactPhone || ''} onChange={(e) => updateGeneral({ contactPhone: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   </div>
+                  <motion.div variants={itemVariants}>
+                    <p className="text-sm text-content-secondary mb-3">
+                      Cet email et ce mot de passe vous serviront à vous connecter à votre espace hôtel.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        label="Mot de passe *"
+                        type="password"
+                        placeholder="8 caractères minimum"
+                        value={state.general.password}
+                        onChange={(e) => updateGeneral({ password: (e.target as HTMLInputElement).value })}
+                        disabled={isLoading}
+                      />
+                      <FormField
+                        label="Confirmer le mot de passe *"
+                        type="password"
+                        placeholder="Retapez le mot de passe"
+                        value={state.general.confirmPassword}
+                        onChange={(e) => updateGeneral({ confirmPassword: (e.target as HTMLInputElement).value })}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </motion.div>
+                  {step1Errors.length > 0 && (
+                    <p className="text-sm text-red-400">
+                      Il manque encore {step1Errors.join(', ')}.
+                    </p>
+                  )}
                   <div className="flex justify-between pt-4">
-                    <button type="button" onClick={nextStep} className="btn-primary w-full md:w-auto">Continuer</button>
+                    <button
+                      type="button"
+                      onClick={nextStep}
+                      disabled={step1Errors.length > 0}
+                      className="btn-primary w-full md:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Continuer
+                    </button>
                   </div>
                 </motion.div>
               </motion.div>

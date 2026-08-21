@@ -34,16 +34,16 @@ const SOCIALS = [
  */
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#08101D] border-t border-white/10">
+    <footer className="bg-[var(--surface-inverse)] text-[var(--text-on-inverse)] border-t border-line">
       <div className="shell py-20">
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-8 gap-y-14">
           <div className="col-span-2 lg:col-span-4">
             <img
               src={getLogoUrl('transparent')}
               alt="Travel Art"
-              className="h-9 w-auto object-contain brightness-0 invert"
+              className="h-9 w-auto object-contain brightness-0 invert dark:brightness-100 dark:invert-0"
             />
-            <p className="mt-6 text-white/55 leading-relaxed max-w-[38ch]">
+            <p className="mt-6 text-[var(--text-on-inverse)]/60 leading-relaxed max-w-[38ch]">
               Des résidences d’artistes au cœur des hôtels d’exception.
               Musiciens, plasticiens et interprètes, reçus là où leur travail
               trouve sa place.
@@ -55,11 +55,11 @@ const Footer: React.FC = () => {
           </div>
 
           <nav className="lg:col-span-2 lg:col-start-6" aria-label="Découvrir">
-            <h3 className="font-sans text-sm font-semibold text-white mb-5">Découvrir</h3>
+            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">Découvrir</h3>
             <ul className="space-y-3">
               {DISCOVER_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-white/55 hover:text-gold transition-colors">
+                  <Link to={link.to} className="text-sm text-[var(--text-on-inverse)]/60 hover:text-gold transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -68,11 +68,11 @@ const Footer: React.FC = () => {
           </nav>
 
           <nav className="lg:col-span-2" aria-label="La maison">
-            <h3 className="font-sans text-sm font-semibold text-white mb-5">La maison</h3>
+            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">La maison</h3>
             <ul className="space-y-3">
               {COMPANY_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-white/55 hover:text-gold transition-colors">
+                  <Link to={link.to} className="text-sm text-[var(--text-on-inverse)]/60 hover:text-gold transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -81,8 +81,8 @@ const Footer: React.FC = () => {
           </nav>
 
           <div className="lg:col-span-3">
-            <h3 className="font-sans text-sm font-semibold text-white mb-5">Contact</h3>
-            <ul className="space-y-3 text-sm text-white/55">
+            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">Contact</h3>
+            <ul className="space-y-3 text-sm text-[var(--text-on-inverse)]/60">
               <li>Paris, France</li>
               <li>
                 <a href="mailto:hello@travelart.com" className="hover:text-gold transition-colors">
@@ -99,7 +99,7 @@ const Footer: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="text-white/45 hover:text-gold transition-colors inline-block"
+                    className="text-[var(--text-on-inverse)]/50 hover:text-gold transition-colors inline-block"
                   >
                     <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
                   </a>
@@ -109,14 +109,14 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-16 pt-8 flex flex-col sm:flex-row justify-between gap-4">
-          <p className="text-sm text-white/40">
+        <div className="border-t border-[var(--text-on-inverse)]/15 mt-16 pt-8 flex flex-col sm:flex-row justify-between gap-4">
+          <p className="text-sm text-[var(--text-on-inverse)]/50">
             &copy; {new Date().getFullYear()} Travel Art
           </p>
           <ul className="flex flex-wrap gap-6">
             {LEGAL_LINKS.map((link) => (
               <li key={link.to}>
-                <Link to={link.to} className="text-sm text-white/40 hover:text-gold transition-colors">
+                <Link to={link.to} className="text-sm text-[var(--text-on-inverse)]/50 hover:text-gold transition-colors">
                   {link.label}
                 </Link>
               </li>

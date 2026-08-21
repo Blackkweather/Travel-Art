@@ -54,7 +54,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
             <motion.svg
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="w-4 h-4 text-white"
+              className="w-4 h-4 text-content"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

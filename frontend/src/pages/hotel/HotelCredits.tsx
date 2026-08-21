@@ -127,7 +127,7 @@ const HotelCredits: React.FC = () => {
             <CreditCard className="w-8 h-8 text-gold" />
           </div>
           <h3 className="text-3xl font-bold text-content mb-2 count-up">{credits ? credits.availableCredits : (loading ? '—' : 0)}</h3>
-          <p className="section-subtitle">Available Credits</p>
+          <p className="section-subtitle">Crédits disponibles</p>
         </motion.div>
 
         <motion.div
@@ -190,7 +190,7 @@ const HotelCredits: React.FC = () => {
                 </h3>
                 <div className="mb-4">
                   <span className="text-4xl font-bold text-content">{pkg.credits}</span>
-                  <span className="text-content-secondary ml-2">credits</span>
+                  <span className="text-content-secondary ml-2">crédits</span>
                 </div>
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <span className="text-2xl font-bold text-gold">€{pkg.price.toLocaleString('fr-FR')}</span>

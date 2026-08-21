@@ -89,12 +89,12 @@ const HotelDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#08101D]">
+      <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-            <p className="text-white/60">Chargement de la fiche hôtel…</p>
+            <p className="text-content-secondary">Chargement de la fiche hôtel…</p>
           </div>
         </div>
         <Footer />
@@ -104,11 +104,11 @@ const HotelDetailsPage: React.FC = () => {
 
   if (!hotel) {
     return (
-      <div className="min-h-screen bg-[#08101D]">
+      <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl font-serif font-bold text-white mb-4">Hôtel introuvable</h1>
-          <p className="text-white/60 mb-8">L’hôtel demandé n’existe pas.</p>
+          <h1 className="text-4xl font-serif font-bold text-content mb-4">Hôtel introuvable</h1>
+          <p className="text-content-secondary mb-8">L’hôtel demandé n’existe pas.</p>
           <Link to="/top-hotels" className="btn-primary">
             Retour aux hôtels
           </Link>
@@ -160,44 +160,49 @@ const HotelDetailsPage: React.FC = () => {
   const rating = hotel.rating || 0
 
   return (
-    <div className="min-h-screen bg-[#08101D]">
-      <SimpleNavbar />
-      
-      {/* Hero Section */}
-      <div className="relative h-96 overflow-hidden">
+    <div className="min-h-screen bg-[var(--surface)]">
+      <SimpleNavbar overMedia />
+
+      {/* The hotel's own photograph is the hero, so the type on it stays white
+          regardless of the page theme. The back link sat at top-6, directly
+          under the fixed 72px navigation bar; it is now clear of it. */}
+      <header className="relative h-[52vh] min-h-[380px] overflow-hidden">
         <img
           src={images[0] || '/placeholder-hotel.jpg'}
-          alt={hotel.name}
+          alt=""
           className="w-full h-full object-cover"
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/placeholder-hotel.jpg'
           }}
         />
-        <div className="absolute inset-0 bg-navy/60"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center text-white"
-          >
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-4">
-              {hotel.name}
-            </h1>
-            <p className="text-xl flex items-center justify-center gap-2">
-              <MapPin className="w-5 h-5" />
-              {locationString}
-            </p>
-          </motion.div>
+        <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/40 to-navy/30"></div>
+
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="shell pb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <h1 className="text-white max-w-[18ch]">
+                {hotel.name}
+              </h1>
+              <p className="mt-4 text-lg text-white/85 flex items-center gap-2">
+                <MapPin className="w-5 h-5" aria-hidden="true" />
+                {locationString}
+              </p>
+            </motion.div>
+          </div>
         </div>
+
         <Link
           to="/top-hotels"
-          className="absolute top-6 left-6 bg-[var(--surface-raised)]/20 backdrop-blur-sm text-white px-4 py-2 rounded-card hover:bg-[var(--surface-raised)]/30 transition-colors flex items-center gap-2"
+          className="absolute top-[88px] left-5 sm:left-8 lg:left-12 bg-black/35 backdrop-blur-sm text-white px-4 py-2.5 rounded-control hover:bg-black/55 transition-colors flex items-center gap-2 text-sm font-medium"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           Retour aux hôtels
         </Link>
-      </div>
+      </header>
 
       <div className="container mx-auto px-6 py-12">
         {/* Overview Section */}
@@ -205,10 +210,10 @@ const HotelDetailsPage: React.FC = () => {
           <div className="lg:col-span-2">
             <ScrollAnimationWrapper animation="fade-up">
               <div className="card-luxury mb-8">
-              <h2 className="text-3xl font-serif font-bold text-white mb-4 gold-underline">
+              <h2 className="text-3xl font-serif font-bold text-content mb-4 gold-underline">
                 About {hotel.name}
               </h2>
-              <p className="text-white/60 text-lg leading-relaxed mb-6">
+              <p className="text-content-secondary text-lg leading-relaxed mb-6">
                 {hotel.description || 'No description available.'}
               </p>
               
@@ -219,8 +224,8 @@ const HotelDetailsPage: React.FC = () => {
                       <Star className="w-6 h-6 text-gold" />
                     </div>
                     <div>
-                      <p className="text-sm text-white/45">Note</p>
-                      <p className="text-xl font-bold text-white">{rating.toFixed(1)}</p>
+                      <p className="text-sm text-content-secondary">Note</p>
+                      <p className="text-xl font-bold text-content">{rating.toFixed(1)}</p>
                     </div>
                   </div>
                 )}
@@ -229,8 +234,8 @@ const HotelDetailsPage: React.FC = () => {
                     <Calendar className="w-6 h-6 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45">Réservations</p>
-                    <p className="text-xl font-bold text-white">{hotel.totalBookings || 0}</p>
+                    <p className="text-sm text-content-secondary">Réservations</p>
+                    <p className="text-xl font-bold text-content">{hotel.totalBookings || 0}</p>
                   </div>
                 </div>
               </div>
@@ -238,7 +243,7 @@ const HotelDetailsPage: React.FC = () => {
               {/* Performance Spots */}
               {performanceSpots.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-xl font-serif font-semibold text-white mb-3">Espaces de représentation</h3>
+                  <h3 className="text-xl font-serif font-semibold text-content mb-3">Espaces de représentation</h3>
                   <div className="flex flex-wrap gap-2">
                     {performanceSpots.map((spot: any, index: number) => (
                       <span
@@ -258,7 +263,7 @@ const HotelDetailsPage: React.FC = () => {
             {performanceSpots.length > 0 && (
               <ScrollAnimationWrapper animation="fade-up" delay={0.1}>
                 <div className="card-luxury">
-                <h2 className="text-3xl font-serif font-bold text-white mb-6 gold-underline">
+                <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
                   Lieux de représentation
                 </h2>
                 <div className="space-y-6">
@@ -269,14 +274,14 @@ const HotelDetailsPage: React.FC = () => {
                         key={index}
                         className="border-l-4 border-gold pl-6 py-4 bg-gold/5 rounded-r-card"
                       >
-                        <h3 className="text-xl font-serif font-semibold text-white mb-2">
+                        <h3 className="text-xl font-serif font-semibold text-content mb-2">
                           {spotData.name || spotData.title || 'Performance Venue'}
                         </h3>
                         {spotData.description && (
-                          <p className="text-white/60 mb-4">{spotData.description}</p>
+                          <p className="text-content-secondary mb-4">{spotData.description}</p>
                         )}
                         {(spotData.time || spotData.capacity) && (
-                          <div className="flex flex-wrap gap-4 text-sm text-white/45">
+                          <div className="flex flex-wrap gap-4 text-sm text-content-secondary">
                             {spotData.time && (
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4" />
@@ -304,20 +309,20 @@ const HotelDetailsPage: React.FC = () => {
           <div className="lg:col-span-1">
             <ScrollAnimationWrapper animation="slide-left" delay={0.2}>
               <div className="card-luxury sticky top-6">
-              <h3 className="text-2xl font-serif font-bold text-white mb-6">Coordonnées</h3>
+              <h3 className="text-2xl font-serif font-bold text-content mb-6">Coordonnées</h3>
               
               <div className="space-y-4 mb-6">
                 {locationString && (
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-gold mt-1 flex-shrink-0" />
-                    <p className="text-white/60">{locationString}</p>
+                    <p className="text-content-secondary">{locationString}</p>
                   </div>
                 )}
                 {/* Only show phone/email if there's a confirmed booking */}
                 {hasConfirmedBooking && hotel.contactPhone && !hotel.responsiblePhone && (
                   <div className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-gold flex-shrink-0" />
-                    <a href={`tel:${hotel.contactPhone}`} className="text-white/60 hover:text-gold">
+                    <a href={`tel:${hotel.contactPhone}`} className="text-content-secondary hover:text-gold">
                       {hotel.contactPhone}
                     </a>
                   </div>
@@ -325,13 +330,13 @@ const HotelDetailsPage: React.FC = () => {
                 {hasConfirmedBooking && hotel.user?.email && !hotel.responsibleEmail && (
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-gold flex-shrink-0" />
-                    <a href={`mailto:${hotel.user.email}`} className="text-white/60 hover:text-gold">
+                    <a href={`mailto:${hotel.user.email}`} className="text-content-secondary hover:text-gold">
                       {hotel.user.email}
                     </a>
                   </div>
                 )}
                 {!hasConfirmedBooking && user?.role === 'ARTIST' && (
-                  <div className="text-sm text-white/45 italic">
+                  <div className="text-sm text-content-secondary italic">
                     Les coordonnées seront communiquées après confirmation de la réservation.
                   </div>
                 )}
@@ -339,7 +344,7 @@ const HotelDetailsPage: React.FC = () => {
 
               {/* Contact Hotel Buttons - Only show if confirmed booking */}
               {hasConfirmedBooking && (
-                <div className="border-t border-white/10 pt-6 mb-6">
+                <div className="border-t border-line pt-6 mb-6">
                   <HotelContactButtons
                     phoneNumber={hotel.responsiblePhone || hotel.contactPhone}
                     email={hotel.responsibleEmail || hotel.user?.email}
@@ -351,13 +356,13 @@ const HotelDetailsPage: React.FC = () => {
 
               {/* Performance Spots Summary */}
               {performanceSpots.length > 0 && (
-                <div className="border-t border-white/10 pt-6">
-                  <h4 className="text-lg font-serif font-semibold text-white mb-4">Espaces disponibles</h4>
+                <div className="border-t border-line pt-6">
+                  <h4 className="text-lg font-serif font-semibold text-content mb-4">Espaces disponibles</h4>
                   <div className="flex flex-wrap gap-2">
                     {performanceSpots.map((spot: any, index: number) => (
                       <span
                         key={index}
-                        className="px-3 py-1 bg-[#0C1526] text-white/75 rounded-control text-sm"
+                        className="px-3 py-1 bg-[var(--surface-warm)] text-content-secondary rounded-control text-sm"
                       >
                         {typeof spot === 'string' ? spot : spot.name || spot}
                       </span>
@@ -368,7 +373,7 @@ const HotelDetailsPage: React.FC = () => {
               
               {/* Action Buttons for Artists */}
               {user && user.role === 'ARTIST' && (
-                <div className="border-t border-white/10 pt-6 mt-6 space-y-3">
+                <div className="border-t border-line pt-6 mt-6 space-y-3">
                   {/* Only show contact button if there's a confirmed booking */}
                   {hasConfirmedBooking ? (
                     <a
@@ -379,8 +384,8 @@ const HotelDetailsPage: React.FC = () => {
                       Contacter l’hôtel
                     </a>
                   ) : (
-                    <div className="w-full p-4 bg-[#0C1526] rounded-card border border-white/10 text-center">
-                      <p className="text-sm text-white/60">
+                    <div className="w-full p-4 bg-[var(--surface-warm)] rounded-card border border-line text-center">
+                      <p className="text-sm text-content-secondary">
                         Les coordonnées seront communiquées après confirmation de la réservation.
                       </p>
                     </div>

@@ -77,10 +77,10 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gold rounded-r-full"></div>
                 )}
                 <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${
-                  isActive ? 'text-white' : 'text-content-secondary group-hover:text-gold'
+                  isActive ? 'text-content' : 'text-content-secondary group-hover:text-gold'
                 } ${isActive ? '' : 'group-hover:scale-110'}`} />
                 <span className={`font-medium text-sm ${
-                  isActive ? 'text-white' : 'text-content-secondary group-hover:text-content'
+                  isActive ? 'text-content' : 'text-content-secondary group-hover:text-content'
                 }`}>{item.label}</span>
               </Link>
             )

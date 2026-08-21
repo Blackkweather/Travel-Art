@@ -788,7 +788,7 @@ export default function AmbientAudio({
       >
         {isMuted ? (
           <svg 
-            className="w-6 h-6 text-white" 
+            className="w-6 h-6 text-content" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -808,7 +808,7 @@ export default function AmbientAudio({
           </svg>
         ) : (
           <svg 
-            className="w-6 h-6 text-white" 
+            className="w-6 h-6 text-content" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"

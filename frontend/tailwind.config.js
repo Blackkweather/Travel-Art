@@ -36,6 +36,22 @@ module.exports = {
           800: '#5A4827',
           900: '#3B301B',
         },
+        // Sand: the secondary-button fill and the quiet band tint. Warm, so it
+        // sits with the gold rather than against it.
+        sand: {
+          DEFAULT: '#E8DFD2',
+          50: '#FDFBF9',
+          100: '#F6EFE7',
+          200: '#E8DFD2',
+          300: '#D9CDBB',
+          400: '#C9BAA3',
+          500: '#B3A188',
+          600: '#8F806C',
+          700: '#6B6051',
+          800: '#484036',
+          900: '#24201B',
+        },
+        clay: '#BF2F17',
         cream: {
           DEFAULT: '#F9F8F3',
           50: '#F9F8F3',
@@ -60,6 +76,7 @@ module.exports = {
           DEFAULT: 'var(--surface)',
           raised: 'var(--surface-raised)',
           sunken: 'var(--surface-sunken)',
+          warm: 'var(--surface-warm)',
           inverse: 'var(--surface-inverse)',
         },
         content: {
@@ -72,32 +89,43 @@ module.exports = {
           strong: 'var(--border-strong)',
         },
       },
-      // Cormorant Garamond echoes the engraved serif of the wordmark and earns
-      // its place on a heritage/luxury brief. Outfit replaces Inter for UI text.
-      // Both are self-hosted through fontsource - no render-blocking Google
-      // Fonts request.
+      // Newsreader for display, Inter for UI - the pairing the reference site
+      // uses. Newsreader is a low-contrast text serif, which is the reason it
+      // replaces Cormorant Garamond here: Cormorant is a display Garamond that
+      // goes thin and grey below ~1.25rem, so it could only ever carry h1-h3
+      // and left every card title and table heading on the sans. Newsreader
+      // holds its colour down to subheading sizes, so the serif can run
+      // further into the page and the brand voice reaches more of the product.
+      // Both self-hosted through fontsource - no render-blocking Google Fonts
+      // request.
       fontFamily: {
-        'serif': ['"Cormorant Garamond Variable"', 'Cormorant Garamond', 'Georgia', 'serif'],
-        'sans': ['"Outfit Variable"', 'Outfit', 'system-ui', 'sans-serif'],
+        'serif': ['"Newsreader Variable"', 'Newsreader', 'Georgia', 'serif'],
+        'sans': ['"Inter Variable"', 'Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         // The shape system, and the only radii allowed on this site.
         //
-        // Both are near-sharp. A 2px corner is the single strongest signal that
-        // a page belongs to a heritage brand rather than a SaaS dashboard: the
-        // luxury houses this product sits beside (Aman, Hermes, Dior) all set
-        // type and images to hard edges. `control` was 999px, which put pill
-        // buttons against square photography and read as consumer-app chrome.
+        // 3px, matching the reference. Near-sharp keeps the editorial, printed
+        // feel - photography and type both meet the grid at hard edges - while
+        // the single pixel over the previous 2px takes the hard mechanical
+        // edge off controls the user actually touches. `control` was once
+        // 999px, which put pill buttons against square photography and read as
+        // consumer-app chrome.
         //
         // Circles and capsules keep Tailwind's own `rounded-full`, which stays
         // correct for the things that are actually round: avatars, status dots,
         // spinners, progress tracks and status chips. Those are objects, not
         // controls, so they are outside this scale by design.
-        'card': '2px',
-        'control': '2px',
+        'card': '3px',
+        'control': '3px',
       },
       maxWidth: {
-        'shell': '1400px',
+        // 1280 rather than 1400. The reference holds its content to 1185px and
+        // that restraint is most of why it reads as editorial: a 1400px measure
+        // stretches a three-card row wide enough that the eye stops reading it
+        // as a row. 1280 keeps large screens generous without losing the
+        // column.
+        'shell': '1280px',
         'prose': '65ch',
       },
       transitionTimingFunction: {

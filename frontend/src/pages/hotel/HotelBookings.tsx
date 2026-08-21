@@ -251,7 +251,7 @@ const HotelBookings: React.FC = () => {
       <div className="search-container">
         <div className="filters-row">
           <div className="flex-1">
-            <label className="form-label">Search Bookings</label>
+            <label className="form-label">Rechercher une réservation</label>
             <div className="search-icon-container">
               <Search className="search-icon" />
               <input
@@ -408,7 +408,7 @@ const HotelBookings: React.FC = () => {
                       <button className="btn-secondary text-sm">Voir le détail</button>
                     )}
                     {booking.status === 'completed' && (
-                      <button className="btn-primary text-sm">Rate Artist</button>
+                      <button className="btn-primary text-sm">Évaluer l’artiste</button>
                     )}
                     {booking.status === 'cancelled' && (
                       <button className="btn-secondary text-sm">Reprogrammer</button>

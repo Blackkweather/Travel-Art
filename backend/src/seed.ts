@@ -2,6 +2,22 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import path from 'path';
+import { randomInt } from 'crypto';
+
+// Seed passwords used to be the literals 'Password123!' and 'password123',
+// printed at the end of the run. This repository is public, so those were
+// published credentials for whatever database the seed had last been run
+// against - which included production. They are now taken from the environment,
+// or generated per run when it is not set, and the generated values are printed
+// once so a local developer can still log in.
+const generateSeedPassword = () => {
+  const alphabet = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789@$!%*?&#';
+  return Array.from({ length: 20 }, () => alphabet[randomInt(alphabet.length)]).join('');
+};
+
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || generateSeedPassword();
+const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD || generateSeedPassword();
+const passwordsWereGenerated = !process.env.SEED_ADMIN_PASSWORD || !process.env.SEED_DEMO_PASSWORD;
 
 // Load .env files (same as config.ts)
 // Try multiple paths to find .env file
@@ -46,7 +62,7 @@ async function main() {
   console.log(`📊 Database: ${maskedUrl.substring(0, 50)}...`);
 
   // Create admin user
-  const adminPasswordHash = await bcrypt.hash('Password123!', 12);
+  const adminPasswordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@travelart.test' },
     update: {},
@@ -178,7 +194,7 @@ async function main() {
 
   const createdHotels = [];
   for (const hotelData of hotels) {
-    const passwordHash = await bcrypt.hash('password123', 12);
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
     const location = JSON.stringify({
       city: hotelData.city,
       country: hotelData.country,
@@ -396,7 +412,7 @@ async function main() {
 
   const createdArtists = [];
   for (const artistData of artists) {
-    const passwordHash = await bcrypt.hash('password123', 12);
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
 
     const user = await prisma.user.upsert({
       where: { email: artistData.email },
@@ -624,7 +640,7 @@ async function main() {
   ];
 
   for (const artistData of featuredArtists) {
-    const passwordHash = await bcrypt.hash('password123', 12);
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
 
     const user = await prisma.user.upsert({
       where: { email: artistData.email },
@@ -746,7 +762,7 @@ async function main() {
   ];
 
   for (const hotelData of partnerHotels) {
-    const passwordHash = await bcrypt.hash('password123', 12);
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
     const location = JSON.stringify({
       city: hotelData.city,
       country: hotelData.country,
@@ -929,20 +945,20 @@ async function main() {
   console.log('✅ Immersive experiences created');
 
   console.log('🎉 Database seeding completed successfully!');
-  console.log('\n📋 Sample login credentials:');
-  console.log('Admin: admin@travelart.test / Password123!');
-  console.log('Hotel: hotel1@example.com / password123');
-  console.log('Artist: artist1@example.com / password123');
-  console.log('\n✨ Featured Artists:');
-  console.log('Elena Rodriguez: elena.rodriguez@example.com / password123');
-  console.log('Marcus Chen: marcus.chen@example.com / password123');
-  console.log('Sophie Laurent: sophie.laurent@example.com / password123');
-  console.log('David Kim: david.kim@example.com / password123');
-  console.log('\n🏨 Partner Hotels:');
-  console.log('The Ritz Paris: ritz.paris@example.com / password123');
-  console.log('Aman Tokyo: aman.tokyo@example.com / password123');
-  console.log('The Plaza New York: plaza.newyork@example.com / password123');
-  console.log('Ushuaïa Ibiza: ushuaia.ibiza@example.com / password123');
+  console.log('\n📋 Accounts created:');
+  console.log('  admin@travelart.test  (ADMIN)');
+  console.log('  hotel1-5@example.com, ritz.paris@, aman.tokyo@, plaza.newyork@, ushuaia.ibiza@  (HOTEL)');
+  console.log('  artist1-10@example.com, elena.rodriguez@, marcus.chen@, sophie.laurent@, david.kim@  (ARTIST)');
+
+  if (passwordsWereGenerated) {
+    // Printed once, to this terminal only. Never commit these.
+    console.log('\n🔑 Generated passwords for this run:');
+    console.log(`  admin:  ${ADMIN_PASSWORD}`);
+    console.log(`  demo:   ${DEMO_PASSWORD}`);
+    console.log('\n  Set SEED_ADMIN_PASSWORD and SEED_DEMO_PASSWORD to choose your own.');
+  } else {
+    console.log('\n🔑 Passwords taken from SEED_ADMIN_PASSWORD and SEED_DEMO_PASSWORD.');
+  }
 }
 
 main()

@@ -403,7 +403,7 @@ const ArtistBookings: React.FC = () => {
                     {booking.status === 'completed' && (
                       <button 
                         onClick={() => setSelectedBooking(booking)}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-card hover:bg-gray-700 transition-colors cursor-pointer"
+                        className="px-4 py-2 bg-gray-600 text-content rounded-card hover:bg-gray-700 transition-colors cursor-pointer"
                       >
                         Voir les retours
                       </button>
@@ -452,7 +452,7 @@ const ArtistBookings: React.FC = () => {
                 <h2 className="text-2xl font-serif font-bold text-content">Détail de la réservation</h2>
                 <button
                   onClick={() => setSelectedBooking(null)}
-                  className="text-content-secondary hover:text-content-secondary text-2xl font-bold"
+                  className="text-content-secondary hover:text-content text-2xl font-bold"
                 >
                   ×
                 </button>
@@ -517,7 +517,7 @@ const ArtistBookings: React.FC = () => {
                 <div className="flex justify-end space-x-3 pt-4 border-t">
                   <button
                     onClick={() => setSelectedBooking(null)}
-                    className="px-4 py-2 bg-surface-sunken text-content-secondary rounded-card hover:bg-white/10 transition-colors"
+                    className="px-4 py-2 bg-surface-sunken text-content-secondary rounded-card hover:bg-surface-warm hover:text-content transition-colors"
                   >
                     Fermer
                   </button>

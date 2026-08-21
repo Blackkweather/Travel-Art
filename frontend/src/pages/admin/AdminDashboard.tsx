@@ -335,7 +335,7 @@ const AdminDashboard: React.FC = () => {
                       </div>
                       <div className="text-right ml-4">
                         <p className="text-sm font-semibold text-content">{artist.bookings}</p>
-                        <p className="text-xs text-content-secondary">bookings</p>
+                        <p className="text-xs text-content-secondary">réservations</p>
                       </div>
                   </div>
                   </div>

@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#08101D]">
+    <div className="min-h-screen bg-[var(--surface)]">
       <SimpleNavbar />
       
       <div className="flex items-center justify-center py-20 pt-32 px-4 sm:px-6 lg:px-8">
@@ -66,15 +66,15 @@ const LoginPage: React.FC = () => {
               }}
             />
             <div id="logo-fallback-login" className="hidden text-4xl font-serif font-bold">
-              <span className="text-white">TRAVEL</span>
+              <span className="text-content">TRAVEL</span>
               <span className="text-gold mx-2">+</span>
-              <span className="text-white">ART</span>
+              <span className="text-content">ART</span>
             </div>
           </div>
-          <h2 className="text-3xl font-serif font-bold text-white gold-underline">
+          <h2 className="text-3xl font-serif font-bold text-content gold-underline">
             Bon retour
           </h2>
-          <p className="mt-2 text-white/60">
+          <p className="mt-2 text-content-secondary">
             Connectez-vous à votre compte Travel Art
           </p>
         </div>
@@ -132,9 +132,9 @@ const LoginPage: React.FC = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-gold focus:ring-gold border-white/15 rounded-card"
+                className="h-4 w-4 text-gold focus:ring-gold border-line rounded-card"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-white/75">
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-content-secondary">
                 Se souvenir de moi
               </label>
             </div>
@@ -150,14 +150,14 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gold text-off-black py-3 text-lg rounded-card font-semibold hover:bg-gold/90 transition-all duration-300 shadow-soft disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary btn-lg w-full"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Connexion…' : 'Se connecter'}
             </button>
           </div>
 
           <div className="text-center">
-            <p className="text-white/60">
+            <p className="text-content-secondary">
               Pas encore de compte ?{' '}
               <Link to="/register" className="text-gold hover:text-gold-600 font-medium">
                 Créer un compte
@@ -168,7 +168,7 @@ const LoginPage: React.FC = () => {
 
         {import.meta.env.DEV && (
           <div className="mt-8 text-center">
-            <p className="text-sm text-white/45">
+            <p className="text-sm text-content-secondary">
               Identifiants de démonstration (développement) :
             </p>
           </div>

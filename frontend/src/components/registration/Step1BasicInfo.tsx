@@ -171,8 +171,8 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             type="email"
-            label="Adresse email"
-            placeholder="your@email.com"
+            label="Adresse e-mail"
+            placeholder="vous@exemple.com"
             value={data.email}
             onChange={(e) => onChange({ ...data, email: e.target.value })}
             error={errors.email}

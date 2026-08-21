@@ -76,8 +76,8 @@ const HowItWorksPage: React.FC = () => {
   const reduceMotion = useReducedMotion()
 
   return (
-    <div className="min-h-screen bg-[#08101D]">
-      <SimpleNavbar />
+    <div className="min-h-screen bg-[var(--surface)]">
+      <SimpleNavbar overMedia />
 
       {/* Asymmetric hero. The headline sits in the grid rather than centred
           over a darkened photograph, which is the default this page had. */}
@@ -91,7 +91,7 @@ const HowItWorksPage: React.FC = () => {
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-[#08101D] via-[#08101D]/70 to-[#08101D]/40"
+            className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-[var(--surface)]/70 to-[var(--surface)]/40"
           />
         </div>
 
@@ -100,7 +100,7 @@ const HowItWorksPage: React.FC = () => {
             initial={reduceMotion ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-7 font-serif text-white text-5xl md:text-6xl lg:text-7xl leading-[1.03]"
+            className="lg:col-span-7 font-serif text-content text-5xl md:text-6xl lg:text-7xl leading-[1.03]"
           >
             Le principe
             <span className="block text-gold italic leading-[1.1] pb-1">Travel Art</span>
@@ -110,7 +110,7 @@ const HowItWorksPage: React.FC = () => {
             initial={reduceMotion ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-4 lg:col-start-9 text-white/65 leading-relaxed"
+            className="lg:col-span-4 lg:col-start-9 text-content-secondary leading-relaxed"
           >
             Réunir les hôtels d’exception et les artistes, pour des concerts sur
             les toits et des moments plus intimes. Du saxophone jazz sur une
@@ -124,10 +124,10 @@ const HowItWorksPage: React.FC = () => {
         <div className="shell grid grid-cols-1 lg:grid-cols-12 gap-x-8 gap-y-12">
           <div className="lg:col-span-4">
             <div className="lg:sticky lg:top-32">
-              <h2 className="font-serif text-white text-3xl md:text-4xl leading-[1.1]">
+              <h2 className="font-serif text-content text-3xl md:text-4xl leading-[1.1]">
                 Pourquoi Travel Art ?
               </h2>
-              <p className="mt-5 text-white/50 leading-relaxed max-w-[34ch]">
+              <p className="mt-5 text-content-secondary leading-relaxed max-w-[34ch]">
                 La rencontre juste entre l’hôtellerie d’exception et l’exigence
                 artistique.
               </p>
@@ -145,15 +145,15 @@ const HowItWorksPage: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.35 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className={`py-12 ${i === 0 ? 'pt-0' : 'border-t border-white/10'}`}
+                className={`py-12 ${i === 0 ? 'pt-0' : 'border-t border-line'}`}
               >
                 <h3 className="font-serif text-gold text-3xl md:text-4xl">{step.title}</h3>
-                <p className="mt-4 text-white/80 text-lg leading-relaxed max-w-prose">
+                <p className="mt-4 text-content-secondary text-lg leading-relaxed max-w-prose">
                   {step.lede}
                 </p>
                 <ul className="mt-6 space-y-3">
                   {step.points.map((point) => (
-                    <li key={point} className="flex gap-4 text-white/55">
+                    <li key={point} className="flex gap-4 text-content-secondary">
                       <span aria-hidden="true" className="mt-2.5 h-px w-5 shrink-0 bg-gold/60" />
                       <span className="leading-relaxed">{point}</span>
                     </li>
@@ -167,11 +167,11 @@ const HowItWorksPage: React.FC = () => {
 
       {/* Closing band, matching the landing page so the two read as one site. */}
       <section className="shell">
-        <div className="border-t border-white/10 py-24 md:py-32 text-center">
-          <h2 className="font-serif text-white text-4xl md:text-6xl leading-[1.05]">
+        <div className="border-t border-line py-24 md:py-32 text-center">
+          <h2 className="font-serif text-content text-4xl md:text-6xl leading-[1.05]">
             Prêt à créer ?
           </h2>
-          <p className="mt-6 text-white/55 max-w-[52ch] mx-auto leading-relaxed">
+          <p className="mt-6 text-content-secondary max-w-[52ch] mx-auto leading-relaxed">
             Rejoignez Travel Art et commencez à faire dialoguer hôtels
             d’exception et artistes.
           </p>

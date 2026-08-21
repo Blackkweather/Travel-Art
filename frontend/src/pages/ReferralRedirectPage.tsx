@@ -26,10 +26,10 @@ const ReferralRedirectPage: React.FC = () => {
   }, [code, navigate])
 
   return (
-    <div className="min-h-screen bg-[#08101D] flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--surface)] flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-        <p className="text-white/60">Redirection…</p>
+        <p className="text-content-secondary">Redirection…</p>
       </div>
     </div>
   )

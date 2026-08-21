@@ -470,7 +470,7 @@ const AdminAnalytics: React.FC = () => {
               <PieChart className="w-5 h-5" />
               Booking Status Distribution
             </h3>
-            <p className="text-sm text-content-secondary">Breakdown of bookings by status</p>
+            <p className="text-sm text-content-secondary">Répartition des réservations par statut</p>
           </div>
           {bookingStatusData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -512,7 +512,7 @@ const AdminAnalytics: React.FC = () => {
               <Users className="w-5 h-5" />
               Artist Growth (Last 6 Months)
             </h3>
-            <p className="text-sm text-content-secondary">Cumulative artist registrations</p>
+            <p className="text-sm text-content-secondary">Inscriptions cumulées d’artistes</p>
           </div>
           {artistGrowth.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -547,7 +547,7 @@ const AdminAnalytics: React.FC = () => {
               <Building className="w-5 h-5" />
               Hotel Growth (Last 6 Months)
             </h3>
-            <p className="text-sm text-content-secondary">Cumulative hotel registrations</p>
+            <p className="text-sm text-content-secondary">Inscriptions cumulées d’hôtels</p>
           </div>
           {hotelGrowth.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>

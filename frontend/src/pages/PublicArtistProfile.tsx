@@ -41,12 +41,12 @@ const PublicArtistProfile: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#08101D]">
+      <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-            <p className="text-white/60">Chargement du profil de l’artiste…</p>
+            <p className="text-content-secondary">Chargement du profil de l’artiste…</p>
           </div>
         </div>
         <Footer />
@@ -56,12 +56,12 @@ const PublicArtistProfile: React.FC = () => {
 
   if (!artist) {
     return (
-      <div className="min-h-screen bg-[#08101D]">
+      <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">Artiste introuvable</h2>
-            <p className="text-white/60 mb-6">Le profil d’artiste demandé n’existe pas.</p>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">Artiste introuvable</h2>
+            <p className="text-content-secondary mb-6">Le profil d’artiste demandé n’existe pas.</p>
             <Link to="/top-artists" className="btn-primary">
               Parcourir les artistes
             </Link>
@@ -109,14 +109,14 @@ const PublicArtistProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#08101D]" data-testid="artist-profile">
+    <div className="min-h-screen bg-[var(--surface)]" data-testid="artist-profile">
       <SimpleNavbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back Button */}
         <Link 
           to="/top-artists" 
-          className="inline-flex items-center text-white hover:text-gold mb-8 transition-colors"
+          className="inline-flex items-center text-content hover:text-gold mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour aux artistes
@@ -149,24 +149,24 @@ const PublicArtistProfile: React.FC = () => {
                   className={`w-full h-full rounded-control bg-gradient-to-br from-navy/10 to-gold/10 ring-2 ring-gold/20 flex items-center justify-center ${images[0] ? 'hidden' : 'flex'}`}
                   style={{ display: images[0] ? 'none' : 'flex' }}
                 >
-                  <User className="w-16 h-16 md:w-20 md:h-20 text-white/30" />
+                  <User className="w-16 h-16 md:w-20 md:h-20 text-content-secondary" />
                 </div>
               </div>
             </div>
 
             {/* Artist Info */}
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-serif font-bold text-white mb-2">
+              <h1 className="text-3xl md:text-4xl font-serif font-bold text-content mb-2">
                 {artist.stageName || artist.user?.name || 'Artist'}
               </h1>
               {artist.stageName && artist.user?.name && (
-                <p className="text-sm text-white/45 mb-2">({artist.user.name})</p>
+                <p className="text-sm text-content-secondary mb-2">({artist.user.name})</p>
               )}
               <p className="text-lg text-gold font-medium mb-3">{artist.discipline || 'Artist'}</p>
               
               {artist.user?.country && (
-                <div className="flex items-center text-white/60 mb-4">
-                  <MapPin className="w-4 h-4 mr-2 text-white/40" />
+                <div className="flex items-center text-content-secondary mb-4">
+                  <MapPin className="w-4 h-4 mr-2 text-content-secondary" />
                   <span className="text-sm">{artist.user.country}</span>
                 </div>
               )}
@@ -176,20 +176,20 @@ const PublicArtistProfile: React.FC = () => {
                 {artist.avgRating && (
                   <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 text-gold fill-current" />
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-sm font-medium text-content">
                       {artist.avgRating.toFixed(1)} Rating
                     </span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gold" />
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-sm font-medium text-content">
                     {artist.bookings?.length || 0} {(artist.bookings?.length || 0) === 1 ? 'Booking' : 'Bookings'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-control ${artist.membershipStatus === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-sm font-medium text-content">
                     {artist.membershipStatus === 'ACTIVE' ? 'Active' : 'Inactive'}
                   </span>
                 </div>
@@ -199,7 +199,7 @@ const PublicArtistProfile: React.FC = () => {
           
           {/* Action Buttons for Hotels */}
           {user && user.role === 'HOTEL' && (
-            <div className="mt-8 pt-6 border-t border-white/10 flex gap-3">
+            <div className="mt-8 pt-6 border-t border-line flex gap-3">
               <button
                 onClick={() => {
                   toast.success('Demande de contact envoyée à l’artiste')
@@ -217,7 +217,7 @@ const PublicArtistProfile: React.FC = () => {
                 className={`px-6 py-3 rounded-card font-medium border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
                   isFavorite 
                     ? 'bg-gold/10 border-gold text-gold' 
-                    : 'bg-[var(--surface-raised)] border-white/15 text-white/75 hover:border-gold hover:text-gold'
+                    : 'bg-[var(--surface-raised)] border-line text-content-secondary hover:border-gold hover:text-gold'
                 }`}
               >
                 <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
@@ -230,18 +230,18 @@ const PublicArtistProfile: React.FC = () => {
         {/* About Section */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.1}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">About {artist.stageName || artist.user?.name}</h2>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">About {artist.stageName || artist.user?.name}</h2>
             <div className="prose prose-lg max-w-none">
-              <p className="text-white/75 leading-relaxed text-base mb-4">
+              <p className="text-content-secondary leading-relaxed text-base mb-4">
                 {artist.bio || `${artist.stageName || artist.user?.name} est un artiste professionnel${artist.discipline ? ` — ${artist.discipline}` : ''} qui se produit dans les lieux d’exception du monde entier, avec le goût des moments dont on se souvient.`}
               </p>
               {!artist.bio && (
                 <>
-                  <p className="text-white/75 leading-relaxed text-base mb-4">
+                  <p className="text-content-secondary leading-relaxed text-base mb-4">
                     Son style et sa vision artistique ont conquis le public {artist.user?.country ? `en ${artist.user.country}` : 'de nombreuses scènes'},
                     ce qui en fait un artiste recherché par les hôtels d’exception et les événements privés.
                   </p>
-                  <p className="text-white/75 leading-relaxed text-base">
+                  <p className="text-content-secondary leading-relaxed text-base">
                     Des réunions intimistes aux grandes célébrations, {artist.stageName || artist.user?.name} apporte
                     rigueur, créativité et un vrai talent pour créer le lien avec tous les publics.
                   </p>
@@ -254,7 +254,7 @@ const PublicArtistProfile: React.FC = () => {
         {/* Artist Details */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.15}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-6">Informations sur l’artiste</h2>
+            <h2 className="text-2xl font-serif font-bold text-content mb-6">Informations sur l’artiste</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Main Category */}
               {(artist.discipline || artisticProfile.mainCategory) && (
@@ -263,8 +263,8 @@ const PublicArtistProfile: React.FC = () => {
                     <Music className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Catégorie principale</p>
-                    <p className="text-base font-medium text-white">{artist.discipline || artisticProfile.mainCategory}</p>
+                    <p className="text-sm text-content-secondary mb-1">Catégorie principale</p>
+                    <p className="text-base font-medium text-content">{artist.discipline || artisticProfile.mainCategory}</p>
                   </div>
                 </div>
               )}
@@ -276,8 +276,8 @@ const PublicArtistProfile: React.FC = () => {
                     <Music className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Catégorie secondaire</p>
-                    <p className="text-base font-medium text-white">{artisticProfile.secondaryCategory}</p>
+                    <p className="text-sm text-content-secondary mb-1">Catégorie secondaire</p>
+                    <p className="text-base font-medium text-content">{artisticProfile.secondaryCategory}</p>
                   </div>
                 </div>
               )}
@@ -291,8 +291,8 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Spécialité</p>
-                    <p className="text-base font-medium text-white">{artisticProfile.specificCategory}</p>
+                    <p className="text-sm text-content-secondary mb-1">Spécialité</p>
+                    <p className="text-base font-medium text-content">{artisticProfile.specificCategory}</p>
                   </div>
                 </div>
               )}
@@ -306,8 +306,8 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Domaine</p>
-                    <p className="text-base font-medium text-white">{artisticProfile.domain}</p>
+                    <p className="text-sm text-content-secondary mb-1">Domaine</p>
+                    <p className="text-base font-medium text-content">{artisticProfile.domain}</p>
                   </div>
                 </div>
               )}
@@ -319,8 +319,8 @@ const PublicArtistProfile: React.FC = () => {
                     <MapPin className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Basé à</p>
-                    <p className="text-base font-medium text-white">{artist.user.country}</p>
+                    <p className="text-sm text-content-secondary mb-1">Basé à</p>
+                    <p className="text-base font-medium text-content">{artist.user.country}</p>
                   </div>
                 </div>
               )}
@@ -334,8 +334,8 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Nom de scène</p>
-                    <p className="text-base font-medium text-white">{artist.stageName}</p>
+                    <p className="text-sm text-content-secondary mb-1">Nom de scène</p>
+                    <p className="text-base font-medium text-content">{artist.stageName}</p>
                   </div>
                 </div>
               )}
@@ -349,8 +349,8 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Téléphone</p>
-                    <p className="text-base font-medium text-white">{artist.phone}</p>
+                    <p className="text-sm text-content-secondary mb-1">Téléphone</p>
+                    <p className="text-base font-medium text-content">{artist.phone}</p>
                   </div>
                 </div>
               )}
@@ -362,8 +362,8 @@ const PublicArtistProfile: React.FC = () => {
                     <Calendar className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Date de naissance</p>
-                    <p className="text-base font-medium text-white">{artist.birthDate}</p>
+                    <p className="text-sm text-content-secondary mb-1">Date de naissance</p>
+                    <p className="text-base font-medium text-content">{artist.birthDate}</p>
                   </div>
                 </div>
               )}
@@ -377,8 +377,8 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Langues</p>
-                    <p className="text-base font-medium text-white">{artisticProfile.languages.join(', ')}</p>
+                    <p className="text-sm text-content-secondary mb-1">Langues</p>
+                    <p className="text-base font-medium text-content">{artisticProfile.languages.join(', ')}</p>
                   </div>
                 </div>
               )}
@@ -392,8 +392,8 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Type de public</p>
-                    <p className="text-base font-medium text-white">{artisticProfile.audienceType.join(', ')}</p>
+                    <p className="text-sm text-content-secondary mb-1">Type de public</p>
+                    <p className="text-base font-medium text-content">{artisticProfile.audienceType.join(', ')}</p>
                   </div>
                 </div>
               )}
@@ -405,8 +405,8 @@ const PublicArtistProfile: React.FC = () => {
                     <Star className="w-5 h-5 text-gold fill-current" />
                   </div>
                   <div>
-                    <p className="text-sm text-white/45 mb-1">Note moyenne</p>
-                    <p className="text-base font-medium text-white">{artist.avgRating.toFixed(1)} / 5.0</p>
+                    <p className="text-sm text-content-secondary mb-1">Note moyenne</p>
+                    <p className="text-base font-medium text-content">{artist.avgRating.toFixed(1)} / 5.0</p>
                   </div>
                 </div>
               )}
@@ -418,8 +418,8 @@ const PublicArtistProfile: React.FC = () => {
         {(videos.length > 0 || !videos.length) && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.2}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-white mb-4">Vidéos de performances</h2>
-              <p className="text-white/60 mb-6">Découvrez le travail de l’artiste à travers ses performances</p>
+              <h2 className="text-2xl font-serif font-bold text-content mb-4">Vidéos de performances</h2>
+              <p className="text-content-secondary mb-6">Découvrez le travail de l’artiste à travers ses performances</p>
               
               {videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -465,21 +465,21 @@ const PublicArtistProfile: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Placeholder Videos */}
-                  <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-white/5 to-white/10 flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/15">
+                  <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-surface-sunken to-surface-sunken flex flex-col items-center justify-center p-8 border-2 border-dashed border-line">
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
                       <Music className="w-8 h-8 text-gold" />
                     </div>
-                    <p className="text-white/60 text-center font-medium mb-2">En représentation</p>
-                    <p className="text-white/45 text-sm text-center">Vidéo à venir</p>
+                    <p className="text-content-secondary text-center font-medium mb-2">En représentation</p>
+                    <p className="text-content-secondary text-sm text-center">Vidéo à venir</p>
                   </div>
-                  <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-white/5 to-white/10 flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/15">
+                  <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-surface-sunken to-surface-sunken flex flex-col items-center justify-center p-8 border-2 border-dashed border-line">
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
                       <svg className="w-8 h-8 text-gold" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
                       </svg>
                     </div>
-                    <p className="text-white/60 text-center font-medium mb-2">Performance live</p>
-                    <p className="text-white/45 text-sm text-center">Vidéo à venir</p>
+                    <p className="text-content-secondary text-center font-medium mb-2">Performance live</p>
+                    <p className="text-content-secondary text-sm text-center">Vidéo à venir</p>
                   </div>
                 </div>
               )}
@@ -490,13 +490,13 @@ const PublicArtistProfile: React.FC = () => {
         {/* Portfolio Images */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.3}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">Portfolio</h2>
-            <p className="text-white/60 mb-6">Un aperçu des performances passées et des moments de scène</p>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">Portfolio</h2>
+            <p className="text-content-secondary mb-6">Un aperçu des performances passées et des moments de scène</p>
             
             {images.length > 1 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {images.slice(1).map((image: string, index: number) => (
-                  <div key={index} className="relative aspect-square overflow-hidden rounded-card bg-[#0C1526] group cursor-pointer">
+                  <div key={index} className="relative aspect-square overflow-hidden rounded-card bg-[var(--surface-warm)] group cursor-pointer">
                     <img
                       src={image}
                       alt={`Portfolio ${index + 1}`}
@@ -508,7 +508,7 @@ const PublicArtistProfile: React.FC = () => {
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                      <p className="text-white font-medium">Voir l’image</p>
+                      <p className="text-content font-medium">Voir l’image</p>
                     </div>
                   </div>
                 ))}
@@ -516,13 +516,13 @@ const PublicArtistProfile: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="relative aspect-square rounded-card overflow-hidden bg-gradient-to-br from-white/5 to-white/10 flex flex-col items-center justify-center border-2 border-dashed border-white/15">
+                  <div key={i} className="relative aspect-square rounded-card overflow-hidden bg-gradient-to-br from-surface-sunken to-surface-sunken flex flex-col items-center justify-center border-2 border-dashed border-line">
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
                       <svg className="w-8 h-8 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <p className="text-white/45 text-sm">Photo {i}</p>
+                    <p className="text-content-secondary text-sm">Photo {i}</p>
                   </div>
                 ))}
               </div>
@@ -534,16 +534,16 @@ const PublicArtistProfile: React.FC = () => {
         {(artisticProfile.mainCategory || artisticProfile.languages?.length > 0 || artisticProfile.audienceType?.length > 0) && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.4}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-white mb-4">Ce que je propose</h2>
+              <h2 className="text-2xl font-serif font-bold text-content mb-4">Ce que je propose</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Main Discipline/Category */}
                 {(artisticProfile.mainCategory || artist.discipline) && (
-                  <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-white/10 hover:border-gold/50 transition-colors">
+                  <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line hover:border-gold/50 transition-colors">
                     <div className="w-12 h-12 rounded-card bg-gold/10 flex items-center justify-center mb-4">
                       <Music className="w-6 h-6 text-gold" />
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">{artisticProfile.mainCategory || artist.discipline} Performances</h3>
-                    <p className="text-white/60 text-sm leading-relaxed">
+                    <h3 className="text-lg font-semibold text-content mb-2">{artisticProfile.mainCategory || artist.discipline} Performances</h3>
+                    <p className="text-content-secondary text-sm leading-relaxed">
                       {artisticProfile.specificCategory && `Spécialité : ${artisticProfile.specificCategory}. `}
                       Des prestations pensées pour l’atmosphère de votre établissement.
                       {artisticProfile.domain && ` Expertise : ${artisticProfile.domain}.`}
@@ -553,14 +553,14 @@ const PublicArtistProfile: React.FC = () => {
                 
                 {/* Languages */}
                 {artisticProfile.languages && artisticProfile.languages.length > 0 && (
-                  <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-white/10 hover:border-gold/50 transition-colors">
+                  <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line hover:border-gold/50 transition-colors">
                     <div className="w-12 h-12 rounded-card bg-gold/10 flex items-center justify-center mb-4">
                       <svg className="w-6 h-6 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Performances multilingues</h3>
-                    <p className="text-white/60 text-sm leading-relaxed">
+                    <h3 className="text-lg font-semibold text-content mb-2">Performances multilingues</h3>
+                    <p className="text-content-secondary text-sm leading-relaxed">
                       Fluent in {artisticProfile.languages.join(', ')}. Able to connect with international audiences and adapt performances to different cultural contexts.
                     </p>
                   </div>
@@ -568,28 +568,28 @@ const PublicArtistProfile: React.FC = () => {
                 
                 {/* Target Audience */}
                 {artisticProfile.audienceType && artisticProfile.audienceType.length > 0 && (
-                  <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-white/10 hover:border-gold/50 transition-colors">
+                  <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line hover:border-gold/50 transition-colors">
                     <div className="w-12 h-12 rounded-card bg-gold/10 flex items-center justify-center mb-4">
                       <svg className="w-6 h-6 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Un jeu qui s’adapte au public</h3>
-                    <p className="text-white/60 text-sm leading-relaxed">
+                    <h3 className="text-lg font-semibold text-content mb-2">Un jeu qui s’adapte au public</h3>
+                    <p className="text-content-secondary text-sm leading-relaxed">
                       Experienced in performing for {artisticProfile.audienceType.join(', ').toLowerCase()}. Tailored performances that resonate with your specific clientele.
                     </p>
                   </div>
                 )}
                 
                 {/* Professional Commitment */}
-                <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-white/10 hover:border-gold/50 transition-colors">
+                <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line hover:border-gold/50 transition-colors">
                   <div className="w-12 h-12 rounded-card bg-gold/10 flex items-center justify-center mb-4">
                     <svg className="w-6 h-6 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Excellence professionnelle</h3>
-                  <p className="text-white/60 text-sm leading-relaxed">
+                  <h3 className="text-lg font-semibold text-content mb-2">Excellence professionnelle</h3>
+                  <p className="text-content-secondary text-sm leading-relaxed">
                     Basé {artist.user?.country ? `en ${artist.user.country}` : 'à l’international'}. Un matériel professionnel et une préparation méticuleuse, au service de la qualité.
                   </p>
                 </div>
@@ -604,7 +604,7 @@ const PublicArtistProfile: React.FC = () => {
             <div className="mb-12 text-center">
               <div className="inline-flex items-center gap-2 px-6 py-3 bg-gold/10 border border-gold/30 rounded-control">
                 <Star className="w-5 h-5 text-gold fill-current" />
-                <span className="text-sm font-medium text-white">
+                <span className="text-sm font-medium text-content">
                   {artist.ratingBadge}
                 </span>
               </div>
@@ -615,7 +615,7 @@ const PublicArtistProfile: React.FC = () => {
         {/* Experience & Achievements */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.5}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">Expérience et distinctions</h2>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">Expérience et distinctions</h2>
             <div className="space-y-4">
               <div className="p-6 bg-gradient-to-r from-gold/5 to-transparent rounded-card border-l-4 border-gold">
                 <div className="flex items-start gap-4">
@@ -623,8 +623,8 @@ const PublicArtistProfile: React.FC = () => {
                     <Star className="w-6 h-6 text-gold fill-current" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Excellence professionnelle</h3>
-                    <p className="text-white/60 text-sm leading-relaxed">
+                    <h3 className="text-lg font-semibold text-content mb-2">Excellence professionnelle</h3>
+                    <p className="text-content-secondary text-sm leading-relaxed">
                       Avec {artist.bookings?.length || 0} {(artist.bookings?.length || 0) >= 2 ? 'engagements menés à bien' : 'engagement mené à bien'} et {artist.avgRating ? `une note de ${artist.avgRating.toFixed(1)}/5` : 'd’excellents retours'},
                       {artist.stageName || artist.user?.name} s’est construit une réputation de fiabilité et d’exigence.
                     </p>
@@ -635,11 +635,11 @@ const PublicArtistProfile: React.FC = () => {
               <div className="p-6 bg-gradient-to-r from-navy/5 to-transparent rounded-card border-l-4 border-navy">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-control bg-navy/10 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-white" />
+                    <MapPin className="w-6 h-6 text-content" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Présence internationale</h3>
-                    <p className="text-white/60 text-sm leading-relaxed">
+                    <h3 className="text-lg font-semibold text-content mb-2">Présence internationale</h3>
+                    <p className="text-content-secondary text-sm leading-relaxed">
                       Basé {artist.user?.country ? `en ${artist.user.country}` : 'à l’international'}, disponible partout dans le monde.
                       Habitué à s’adapter aux lieux, aux cultures et aux attentes de chaque public.
                     </p>
@@ -653,13 +653,13 @@ const PublicArtistProfile: React.FC = () => {
         {/* Availability */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.6}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-white mb-4">Disponibilités</h2>
-            <p className="text-white/60 mb-6">Disponibilités pour les prochaines dates</p>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">Disponibilités</h2>
+            <p className="text-content-secondary mb-6">Disponibilités pour les prochaines dates</p>
             
             {artist.availability && artist.availability.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {artist.availability.map((avail: any, index: number) => (
-                  <div key={index} className="p-5 bg-[var(--surface-raised)] border-2 border-white/10 rounded-card hover:border-gold hover:shadow-md transition-all duration-200">
+                  <div key={index} className="p-5 bg-[var(--surface-raised)] border-2 border-line rounded-card hover:border-gold hover:shadow-md transition-all duration-200">
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-card bg-green-50 dark:bg-green-500/10 flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -669,10 +669,10 @@ const PublicArtistProfile: React.FC = () => {
                           <div className="w-2 h-2 rounded-control bg-green-500"></div>
                           <span className="text-sm font-semibold text-green-600 dark:text-green-400">Disponible</span>
                         </div>
-                        <p className="text-base font-semibold text-white mb-1">
+                        <p className="text-base font-semibold text-content mb-1">
                           {new Date(avail.dateFrom).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </p>
-                        <p className="text-sm text-white/60">
+                        <p className="text-sm text-content-secondary">
                           to {new Date(avail.dateTo).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </p>
                       </div>
@@ -681,12 +681,12 @@ const PublicArtistProfile: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="p-8 bg-[#0C1526] rounded-card border-2 border-dashed border-white/15 text-center">
+              <div className="p-8 bg-[var(--surface-warm)] rounded-card border-2 border-dashed border-line text-center">
                 <div className="w-16 h-16 rounded-control bg-surface-sunken flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="w-8 h-8 text-white/40" />
+                  <Calendar className="w-8 h-8 text-content-secondary" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Disponibilités bientôt publiées</h3>
-                <p className="text-white/60 mb-4">
+                <h3 className="text-lg font-semibold text-content mb-2">Disponibilités bientôt publiées</h3>
+                <p className="text-content-secondary mb-4">
                   Contactez {artist.stageName || artist.user?.name} directement pour échanger sur les dates et les disponibilités.
                 </p>
                 {user && user.role === 'HOTEL' && (
@@ -706,18 +706,18 @@ const PublicArtistProfile: React.FC = () => {
         {artist.bookings && artist.bookings.length > 0 && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.7}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-white mb-4">Témoignages</h2>
-              <p className="text-white/60 mb-6">Ce que les lieux disent de leur collaboration avec {artist.stageName || artist.user?.name}</p>
+              <h2 className="text-2xl font-serif font-bold text-content mb-4">Témoignages</h2>
+              <p className="text-content-secondary mb-6">Ce que les lieux disent de leur collaboration avec {artist.stageName || artist.user?.name}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Placeholder testimonials */}
-                <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-white/10 shadow-sm">
+                <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line shadow-sm">
                   <div className="flex items-center gap-1 mb-4">
                     {[1,2,3,4,5].map((star) => (
                       <Star key={star} className="w-5 h-5 text-gold fill-current" />
                     ))}
                   </div>
-                  <p className="text-white/75 italic mb-4 leading-relaxed">
+                  <p className="text-content-secondary italic mb-4 leading-relaxed">
                     «&nbsp;Un talent et un professionnalisme rares. Nos clients ont été conquis par la qualité de la prestation.&nbsp;»
                   </p>
                   <div className="flex items-center gap-3">
@@ -725,19 +725,19 @@ const PublicArtistProfile: React.FC = () => {
                       <span className="text-gold font-semibold text-sm">H</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-sm">Hôtel partenaire</p>
-                      <p className="text-white/45 text-xs">Réservation vérifiée</p>
+                      <p className="font-semibold text-content text-sm">Hôtel partenaire</p>
+                      <p className="text-content-secondary text-xs">Réservation vérifiée</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-white/10 shadow-sm">
+                <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line shadow-sm">
                   <div className="flex items-center gap-1 mb-4">
                     {[1,2,3,4,5].map((star) => (
                       <Star key={star} className="w-5 h-5 text-gold fill-current" />
                     ))}
                   </div>
-                  <p className="text-white/75 italic mb-4 leading-relaxed">
+                  <p className="text-content-secondary italic mb-4 leading-relaxed">
                     «&nbsp;Un moment vraiment mémorable pour nos clients. Professionnel, ponctuel et remarquablement doué. Nous recommandons sans réserve.&nbsp;»
                   </p>
                   <div className="flex items-center gap-3">
@@ -745,8 +745,8 @@ const PublicArtistProfile: React.FC = () => {
                       <span className="text-gold font-semibold text-sm">V</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-white text-sm">Responsable du lieu</p>
-                      <p className="text-white/45 text-xs">Réservation vérifiée</p>
+                      <p className="font-semibold text-content text-sm">Responsable du lieu</p>
+                      <p className="text-content-secondary text-xs">Réservation vérifiée</p>
                     </div>
                   </div>
                 </div>

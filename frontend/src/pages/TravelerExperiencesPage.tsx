@@ -209,36 +209,48 @@ const TravelerExperiencesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#08101D]">
-        <SimpleNavbar />
+    <div className="min-h-screen bg-[var(--surface)]">
+        <SimpleNavbar overMedia />
       
-      {/* Hero Section */}
-      <section className="relative py-24 bg-gradient-to-b from-navy to-navy/90 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920')] opacity-20 bg-cover bg-center" />
-        <div className="relative max-w-7xl mx-auto px-6">
+      {/* The photograph was set at 20% opacity behind a near-opaque navy
+          gradient, which is a way of paying to download an image nobody can
+          see. It now carries the hero at full strength under a scrim shaped to
+          the type. */}
+      <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=80&fit=crop"
+            alt=""
+            className="w-full h-full object-cover"
+            fetchPriority="high"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/45 to-navy/25" />
+        </div>
+
+        <div className="shell relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center"
           >
-            <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6">
+            <p className="eyebrow text-white/80">Le programme</p>
+            <h1 className="mt-5 max-w-[16ch] text-white">
               Découvrir les expériences
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
-              Vivez les performances d’artistes accueillis par les hôtels d’exception du monde entier
+            <p className="mt-7 text-lg text-white/80 max-w-[54ch] leading-relaxed">
+              Vivez les performances d’artistes accueillis par les hôtels d’exception du monde entier.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/register" className="btn-gold">
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link to="/register?role=artist" className="btn-gold btn-arrow">
                 Rejoindre en tant qu’artiste
               </Link>
-              <Link to="/top-artists" className="btn-gold-outline">
+              <Link to="/top-artists" className="btn-on-media">
                 Parcourir les artistes
               </Link>
             </div>
           </motion.div>
         </div>
-      </section>
+      </header>
 
       {/* Interactive Map Section */}
       <section className="py-16 bg-[var(--surface-raised)]">
@@ -248,10 +260,10 @@ const TravelerExperiencesPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl font-serif font-bold text-white mb-4">
+            <h2 className="text-4xl font-serif font-bold text-content mb-4">
               Explorer les expériences dans le monde
             </h2>
-            <p className="text-white/60 max-w-2xl mx-auto">
+            <p className="text-content-secondary max-w-2xl mx-auto">
               Cliquez sur un lieu pour découvrir les prochaines dates et les résidences d’artistes
             </p>
           </motion.div>
@@ -283,10 +295,10 @@ const TravelerExperiencesPage: React.FC = () => {
                   >
                     <Popup>
                       <div className="p-2">
-                        <h3 className="font-semibold text-white text-sm mb-1">{exp.location.city}</h3>
-                        <p className="text-xs text-white/60 mb-2">{exp.title}</p>
-                        <p className="text-xs text-white/45">{exp.artist} at {exp.hotel}</p>
-                        <p className="text-xs text-white/45 mt-1">
+                        <h3 className="font-semibold text-content text-sm mb-1">{exp.location.city}</h3>
+                        <p className="text-xs text-content-secondary mb-2">{exp.title}</p>
+                        <p className="text-xs text-content-secondary">{exp.artist} at {exp.hotel}</p>
+                        <p className="text-xs text-content-secondary mt-1">
                           {new Date(exp.date).toLocaleDateString('fr-FR')}
                         </p>
                       </div>
@@ -304,7 +316,7 @@ const TravelerExperiencesPage: React.FC = () => {
               className={`px-4 py-2 rounded-control transition-colors ${
                 !selectedLocation
                   ? 'bg-gold text-off-black font-semibold'
-                  : 'bg-surface-sunken text-white/75 hover:bg-white/10'
+                  : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken'
               }`}
             >
               Toutes les villes
@@ -316,7 +328,7 @@ const TravelerExperiencesPage: React.FC = () => {
                 className={`px-4 py-2 rounded-control transition-colors ${
                   selectedLocation === loc
                     ? 'bg-gold text-off-black font-semibold'
-                    : 'bg-surface-sunken text-white/75 hover:bg-white/10'
+                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken'
                 }`}
               >
                 {loc}
@@ -333,7 +345,7 @@ const TravelerExperiencesPage: React.FC = () => {
                 className={`px-4 py-2 rounded-control transition-colors capitalize ${
                   filterType === type
                     ? 'bg-navy text-white font-semibold'
-                    : 'bg-surface-sunken text-white/75 hover:bg-white/10'
+                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken'
                 }`}
               >
                 {type === 'all' ? 'All Types' : type}
@@ -344,19 +356,19 @@ const TravelerExperiencesPage: React.FC = () => {
       </section>
 
       {/* Experiences Grid */}
-      <section className="py-16 bg-[#08101D]">
+      <section className="py-16 bg-[var(--surface)]">
         <div className="max-w-7xl mx-auto px-6">
           {loading ? (
             <div className="text-center py-20">
               <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
-              <p className="text-white/60 text-lg">Loading experiences...</p>
+              <p className="text-content-secondary text-lg">Chargement des expériences…</p>
             </div>
           ) : filteredExperiences.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-white/60 text-lg mb-4">Aucune expérience.</p>
-              <p className="text-white/45 mb-2">Total experiences in state: {experiences.length}</p>
-              <p className="text-white/45 mb-2">Filtered experiences: {filteredExperiences.length}</p>
-              <p className="text-white/45">Revenez bientôt pour découvrir nos expériences.</p>
+              <p className="text-content-secondary text-lg mb-4">Aucune expérience.</p>
+              <p className="text-content-secondary mb-2">Total experiences in state: {experiences.length}</p>
+              <p className="text-content-secondary mb-2">Filtered experiences: {filteredExperiences.length}</p>
+              <p className="text-content-secondary">Revenez bientôt pour découvrir nos expériences.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -379,7 +391,7 @@ const TravelerExperiencesPage: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy/80 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
+                  <div className="absolute bottom-4 left-4 right-4 text-content">
                     <div className="flex items-center space-x-2 mb-2">
                       <MapPin className="w-4 h-4" />
                       <span className="text-sm font-medium">
@@ -398,13 +410,13 @@ const TravelerExperiencesPage: React.FC = () => {
                     <span className="px-3 py-1 bg-gold/20 text-gold text-xs font-semibold rounded-control capitalize">
                       {exp.type}
                     </span>
-                    <div className="flex items-center text-white/60 text-sm">
+                    <div className="flex items-center text-content-secondary text-sm">
                       <Calendar className="w-4 h-4 mr-1" />
                       {new Date(exp.date).toLocaleDateString('fr-FR')}
                     </div>
                   </div>
-                  <p className="text-white/60 text-sm mb-4 line-clamp-2">{exp.description}</p>
-                  <div className="space-y-2 text-sm text-white/60 mb-4">
+                  <p className="text-content-secondary text-sm mb-4 line-clamp-2">{exp.description}</p>
+                  <div className="space-y-2 text-sm text-content-secondary mb-4">
                     <div className="flex items-center">
                       <Music className="w-4 h-4 mr-2 text-gold" />
                       <span>{exp.artist}</span>
@@ -414,7 +426,7 @@ const TravelerExperiencesPage: React.FC = () => {
                       <span>{exp.hotel}</span>
                     </div>
                   </div>
-                  <div className="inline-flex items-center text-gold font-semibold group-hover:text-white transition-colors">
+                  <div className="inline-flex items-center text-gold font-semibold group-hover:text-content transition-colors">
                     En savoir plus
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -427,26 +439,31 @@ const TravelerExperiencesPage: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-navy to-navy/90 text-white">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+      {/* The second button's class list was self-contradicting - btn-gold-outline
+          sets a gold border and gold label, then border-white and text-content
+          overrode both, and the hover pair set the same colour it already had.
+          It also still read "Explore Artists" on a site that ships in French
+          only. */}
+      <section className="band-inverse">
+        <div className="shell text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
+            <h2 className="mx-auto max-w-[18ch]">
               Envie de vivre l’art autrement ?
             </h2>
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+            <p className="mt-7 text-lg text-[var(--text-on-inverse)]/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
               Rejoignez la communauté de voyageurs, d’artistes et d’hôtels qui créent ces moments ensemble.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/register" className="btn-gold text-lg px-8 py-4">
+              <Link to="/register" className="btn-gold btn-lg btn-arrow">
                 Commencer
               </Link>
-              <Link to="/top-artists" className="btn-gold-outline text-lg px-8 py-4 border-white text-white hover:bg-[var(--surface-raised)] hover:text-white">
-                Explore Artists
+              <Link to="/top-artists" className="btn-on-media btn-lg">
+                Parcourir les artistes
               </Link>
             </div>
           </motion.div>

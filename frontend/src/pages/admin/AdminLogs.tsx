@@ -267,7 +267,7 @@ const AdminLogs: React.FC = () => {
                 {type.count !== undefined && (
                   <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
                     selectedType === type.value
-                      ? 'bg-surface-raised/20 text-white'
+                      ? 'bg-surface-raised/20 text-content'
                       : 'bg-surface-sunken text-content-secondary'
                   }`}>
                     {type.count}

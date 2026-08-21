@@ -216,7 +216,7 @@ const HotelProfile: React.FC = () => {
 
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <label htmlFor="hotel-name" className="form-label">Hotel name</label>
+              <label htmlFor="hotel-name" className="form-label">Nom de l’hôtel</label>
               <input
                 id="hotel-name"
                 className="form-input"

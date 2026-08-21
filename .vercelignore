@@ -3,3 +3,23 @@ registring form/
 docs/
 backend/uploads/
 *.md
+
+# Build output. Vercel runs `npm run vercel-build` itself and produces
+# frontend/dist there, so uploading the local copies only inflates the
+# deploy payload. This file supersedes .gitignore, which is why they need
+# naming again here.
+dist/
+build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# Local secrets. Same reason: .gitignore is not consulted, so without this
+# a local .env would be uploaded into the deployment.
+.env
+.env.*
+
+# Test and tooling artifacts.
+test-results/
+playwright-report/
+.eslintcache

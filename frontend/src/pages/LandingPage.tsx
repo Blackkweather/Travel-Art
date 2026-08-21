@@ -26,6 +26,27 @@ const NEXT = 1
 const PREV = -1
 const SLIDE_DURATION = 1.5
 
+// The three promises the programme makes, in the order an artist weighs them:
+// where they will be, what they will make, what it costs them. Imagery is
+// served from the Unsplash CDN, which the backend CSP already allows.
+const PILLARS = [
+  {
+    title: 'Résidence',
+    body: 'Une chambre et une scène dans un hôtel qui programme la culture toute l’année, pas un soir de gala.',
+    image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=900&q=80&fit=crop',
+  },
+  {
+    title: 'Création',
+    body: 'Du temps entre deux représentations. Ce que vous produisez sur place vous appartient entièrement.',
+    image: 'https://images.unsplash.com/photo-1499415479124-43c32433a620?w=900&q=80&fit=crop',
+  },
+  {
+    title: 'Tout compris',
+    body: 'Voyage, hébergement et repas réglés avant votre arrivée. Aucune commission prélevée côté artiste.',
+    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=900&q=80&fit=crop',
+  },
+] as const
+
 export default function LandingPage() {
   // States
   const [experiences, setExperiences] = useState<any[]>([])
@@ -581,7 +602,7 @@ export default function LandingPage() {
           scroll state and its own CTA styling, so the landing page drifted out
           of step with every other public page. SimpleNavbar already handles the
           dark-background case this page needs. */}
-      <SimpleNavbar />
+      <SimpleNavbar overMedia />
 
       {/* Hero. min-h-[100dvh] rather than h-screen so the iOS address bar does
           not crop it. */}
@@ -608,6 +629,20 @@ export default function LandingPage() {
           ))}
         </div>
 
+        {/* The hero had no call to action at all: the first screen of the site
+            named the product and then asked the visitor for nothing. Both
+            audiences are addressed here because the homepage serves two
+            entirely different people and guessing which one arrived is worse
+            than asking. */}
+        <div className="absolute bottom-24 sm:bottom-10 left-5 sm:left-8 lg:left-12 z-20 flex flex-wrap gap-3">
+          <Link to="/register?role=artist" className="btn-gold btn-arrow">
+            Je suis artiste
+          </Link>
+          <Link to="/register?role=hotel" className="btn-on-media btn-arrow">
+            Je suis un hôtel
+          </Link>
+        </div>
+
         {/* Real buttons instead of a custom cursor: keyboard reachable and
             visible on touch, where a cursor affordance does not exist. */}
         {slides.length > 1 && (
@@ -616,7 +651,7 @@ export default function LandingPage() {
               type="button"
               onClick={() => navigate(PREV)}
               aria-label="Expérience précédente"
-              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
+              className="w-12 h-12 rounded-control border border-line-strong text-content flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
             >
               <ArrowLeft size={18} strokeWidth={1.5} aria-hidden="true" />
             </button>
@@ -624,7 +659,7 @@ export default function LandingPage() {
               type="button"
               onClick={() => navigate(NEXT)}
               aria-label="Expérience suivante"
-              className="w-12 h-12 rounded-control border border-white/40 text-white flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
+              className="w-12 h-12 rounded-control border border-line-strong text-content flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
             >
               <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
             </button>
@@ -632,46 +667,24 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* The page is dark end to end: a hotel hosting artists is a gallery
-          after hours, and gold is the only warm light in the room. No section
-          inverts to a light theme. */}
-      <div className="bg-[#08101D]">
-        {/* Manifesto. A drop cap and a hanging measure make this read as
-            editorial opening copy rather than a hero subtitle. */}
-        <section ref={descriptionRef} className="section-y" style={{ opacity: 1 }}>
-          <div className="shell grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8">
-            <p className="lg:col-span-7 lg:col-start-2 text-2xl md:text-3xl lg:text-[2.6rem] font-serif
-                          leading-[1.3] text-white
-                          [&>span:first-child]:float-left [&>span:first-child]:font-serif
-                          [&>span:first-child]:text-gold [&>span:first-child]:text-[5.5rem]
-                          [&>span:first-child]:leading-[0.78] [&>span:first-child]:pr-4
-                          [&>span:first-child]:pt-1">
-              <span>L</span>e voyage et l’immersion culturelle sont le point de départ du
-              travail. Nous installons des artistes dans des hôtels qui méritent qu’on
-              s’y arrête, et ce qui s’y produit devient l’essentiel.
-            </p>
-
-            <div className="lg:col-span-3 lg:col-start-10 self-end">
-              <p className="text-white/50 leading-relaxed">
-                Musiciens, plasticiens et interprètes, dans plus de trente
-                destinations.
-              </p>
-              <div className="mt-8 h-px w-full bg-gold/30" />
-              <p className="mt-8 font-serif text-5xl text-gold">30+</p>
-              <p className="text-white/40 text-sm mt-1">Destinations</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Kinetic marquee. The only marquee on the page: it carries the
-            disciplines at a glance, where a static list would bury them. */}
-        <section ref={weLoveSectionRef} className="pb-24 md:pb-32 relative overflow-hidden" style={{ opacity: 1 }}>
-          <div aria-hidden="true" className="space-y-4 select-none">
+      {/* Below the hero the page is light. Bands alternate white and warm and
+          never repeat a tone twice in a row, so a long scroll reads as a
+          sequence of separate ideas. The one inverse band is the closing call
+          to action, which makes it the highest-contrast moment on the page -
+          exactly where the decision is asked for. */}
+      <div className="bg-[var(--surface)]">
+        {/* Disciplines, immediately after the hero. Moving this above the
+            manifesto answers "what kind of artists?" before asking anyone to
+            read a paragraph. Outlined type rather than a near-invisible tint:
+            on a white page a 7%-opacity fill is not decoration, it is nothing,
+            whereas an outline reads as deliberate display lettering. */}
+        <section ref={weLoveSectionRef} className="py-16 md:py-24 relative overflow-hidden border-b border-line" style={{ opacity: 1 }}>
+          <div aria-hidden="true" className="space-y-2 select-none">
             <div className="flex animate-scroll-right" style={{ willChange: 'transform', width: 'fit-content' }}>
               {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
                 <span
                   key={i}
-                  className="flex-shrink-0 text-6xl md:text-8xl lg:text-9xl font-serif italic text-white/[0.07] mx-8 md:mx-14 whitespace-nowrap"
+                  className="flex-shrink-0 text-5xl md:text-7xl lg:text-8xl font-serif italic text-outline mx-6 md:mx-10 whitespace-nowrap"
                 >
                   {tag}
                 </span>
@@ -682,7 +695,7 @@ export default function LandingPage() {
               {[...weLovetags, ...weLovetags, ...weLovetags].map((tag, i) => (
                 <span
                   key={i}
-                  className="flex-shrink-0 text-6xl md:text-8xl lg:text-9xl font-serif italic text-gold/20 mx-8 md:mx-14 whitespace-nowrap"
+                  className="flex-shrink-0 text-5xl md:text-7xl lg:text-8xl font-serif italic text-gold mx-6 md:mx-10 whitespace-nowrap"
                 >
                   {tag}
                 </span>
@@ -696,50 +709,79 @@ export default function LandingPage() {
           </ul>
         </section>
 
-        {/* Signature moment: the work travels sideways while the page holds. */}
-        <GalleryPan items={experiences.slice(0, 6)} />
+        {/* Manifesto. A drop cap and a hanging measure make this read as
+            editorial opening copy rather than a hero subtitle. */}
+        <section ref={descriptionRef} className="band-warm" style={{ opacity: 1 }}>
+          <div className="shell grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8">
+            <p className="lg:col-span-7 lg:col-start-2 text-2xl md:text-3xl lg:text-[2.4rem] font-serif
+                          leading-[1.3] text-content
+                          [&>span:first-child]:float-left [&>span:first-child]:font-serif
+                          [&>span:first-child]:text-gold [&>span:first-child]:text-[5.5rem]
+                          [&>span:first-child]:leading-[0.78] [&>span:first-child]:pr-4
+                          [&>span:first-child]:pt-1">
+              <span>L</span>e voyage et l’immersion culturelle sont le point de départ du
+              travail. Nous installons des artistes dans des hôtels qui méritent qu’on
+              s’y arrête, et ce qui s’y produit devient l’essentiel.
+            </p>
 
-        {/* Closing band. The one moment on the page where gold fills a surface
-            instead of accenting it, so the final action carries the most
-            contrast on the page. */}
-        <section ref={experienceImagesSectionRef} className="relative overflow-hidden" style={{ opacity: 1 }}>
-          <div className="shell">
-            <div className="border-t border-white/10 py-24 md:py-36 text-center">
-              <h2 className="font-serif text-white text-5xl md:text-7xl lg:text-8xl leading-[1.02]">
-                Une résidence,
-                <span className="block text-gold italic leading-[1.1] pb-1">pas une prestation.</span>
-              </h2>
-              <p className="mt-8 text-white/55 max-w-[46ch] mx-auto leading-relaxed">
-                Candidatez comme artiste, ou ouvrez votre hôtel au programme.
+            <div className="lg:col-span-3 lg:col-start-10 self-end">
+              <p className="text-content-secondary leading-relaxed">
+                Musiciens, plasticiens et interprètes, dans plus de trente
+                destinations.
               </p>
-              <div className="mt-12 flex flex-wrap gap-4 justify-center">
-                <Link to="/register" className="btn-gold">
-                  Nous rejoindre
-                </Link>
-                <Link
-                  to="/how-it-works"
-                  className="btn-on-media"
-                >
-                  Le principe
-                </Link>
-              </div>
+              <div className="mt-8 h-px w-full bg-line-strong" />
+              <p className="mt-8 font-serif text-5xl text-gold">30+</p>
+              <p className="text-content-secondary text-sm mt-1">Destinations</p>
             </div>
           </div>
         </section>
 
+        {/* The three pillars, the reference's central device: what the
+            programme actually is, said in three images rather than in a
+            paragraph nobody finishes. Each one is a promise the product has to
+            keep, which is why they are named for what the artist receives
+            rather than for platform features. */}
+        <section className="band">
+          <div className="shell">
+            <p className="eyebrow">Le programme</p>
+            <h2 className="mt-5 max-w-[18ch]">Une résidence, pas une prestation.</h2>
+
+            <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+              {PILLARS.map((pillar) => (
+                <article key={pillar.title} className="flex flex-col">
+                  <div className="relative overflow-hidden rounded-card aspect-[4/5] bg-surface-sunken">
+                    <img
+                      src={pillar.image}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <h3 className="mt-6">{pillar.title}</h3>
+                  <p className="mt-3 text-content-secondary leading-relaxed">
+                    {pillar.body}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Signature moment: the work travels sideways while the page holds. */}
+        <GalleryPan items={experiences.slice(0, 6)} />
+
         {/* The exchange, set as two facing columns. A different layout family
             from the gallery above and the band below, and it states both sides
             of the trade at once rather than as three identical cards. */}
-        <section ref={experiencesSectionRef} className="section-y" style={{ opacity: 1 }}>
+        <section ref={experiencesSectionRef} className="band-warm" style={{ opacity: 1 }}>
           <div className="shell">
-            <h2 className="font-serif text-white text-4xl md:text-5xl lg:text-6xl leading-[1.05] max-w-[16ch] mb-20">
-              Un échange, deux versants.
-            </h2>
+            <p className="eyebrow">Comment ça marche</p>
+            <h2 className="mt-5 max-w-[16ch] mb-16">Un échange, deux versants.</h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2">
-              <div className="lg:pr-16 lg:border-r border-white/10">
-                <p className="font-serif text-gold text-3xl md:text-4xl">Pour les artistes</p>
-                <p className="mt-6 text-white/60 leading-relaxed max-w-[42ch]">
+              <div className="lg:pr-16 lg:border-r border-line-strong">
+                <h3 className="text-gold">Pour les artistes</h3>
+                <p className="mt-6 text-content-secondary leading-relaxed max-w-[42ch]">
                   Une chambre, une scène et le temps de créer. Vous gardez vos
                   honoraires et vos œuvres.
                 </p>
@@ -749,17 +791,20 @@ export default function LandingPage() {
                     'Aucune commission prélevée côté artiste',
                     'Voyage et hébergement réglés avant votre arrivée',
                   ].map((line) => (
-                    <li key={line} className="flex gap-4 text-white/80">
-                      <span aria-hidden="true" className="mt-2.5 h-px w-6 shrink-0 bg-gold" />
+                    <li key={line} className="flex gap-4 text-content">
+                      <span aria-hidden="true" className="spark mt-2" />
                       <span className="leading-relaxed">{line}</span>
                     </li>
                   ))}
                 </ul>
+                <Link to="/register?role=artist" className="btn-primary btn-arrow mt-10">
+                  Candidater
+                </Link>
               </div>
 
               <div className="mt-16 lg:mt-0 lg:pl-16">
-                <p className="font-serif text-gold text-3xl md:text-4xl">Pour les hôtels</p>
-                <p className="mt-6 text-white/60 leading-relaxed max-w-[42ch]">
+                <h3 className="text-gold">Pour les hôtels</h3>
+                <p className="mt-6 text-content-secondary leading-relaxed max-w-[42ch]">
                   Une programmation culturelle sans agence, sans producteur et sans
                   une saison de préparatifs.
                 </p>
@@ -769,13 +814,37 @@ export default function LandingPage() {
                     'Un seul solde de crédits pour toutes vos réservations',
                     'Des dates que vous maîtrisez, confirmées ou annulées en un clic',
                   ].map((line) => (
-                    <li key={line} className="flex gap-4 text-white/80">
-                      <span aria-hidden="true" className="mt-2.5 h-px w-6 shrink-0 bg-gold" />
+                    <li key={line} className="flex gap-4 text-content">
+                      <span aria-hidden="true" className="spark mt-2" />
                       <span className="leading-relaxed">{line}</span>
                     </li>
                   ))}
                 </ul>
+                <Link to="/register?role=hotel" className="btn-primary btn-arrow mt-10">
+                  Ouvrir mon hôtel
+                </Link>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Closing band. The only inverse surface below the hero, so the final
+            action carries the most contrast on the page. */}
+        <section ref={experienceImagesSectionRef} className="band-inverse relative overflow-hidden" style={{ opacity: 1 }}>
+          <div className="shell text-center">
+            <h2 className="mx-auto max-w-[20ch] text-4xl md:text-6xl lg:text-7xl leading-[1.05]">
+              Rejoignez le programme.
+            </h2>
+            <p className="mt-8 text-[var(--text-on-inverse)]/70 max-w-[46ch] mx-auto leading-relaxed">
+              Candidatez comme artiste, ou ouvrez votre hôtel au programme.
+            </p>
+            <div className="mt-12 flex flex-wrap gap-4 justify-center">
+              <Link to="/register" className="btn-gold btn-arrow">
+                Nous rejoindre
+              </Link>
+              <Link to="/how-it-works" className="btn-on-media">
+                Le principe
+              </Link>
             </div>
           </div>
         </section>
@@ -859,9 +928,10 @@ export default function LandingPage() {
           );
         }
         
+        /* Raised clear of the CTA pair that now sits at the foot of the hero. */
         .slide__text {
           position: absolute;
-          bottom: 5rem;
+          bottom: 11rem;
           left: 5rem;
           max-width: 80%;
           overflow: hidden;
@@ -990,8 +1060,8 @@ export default function LandingPage() {
         
         @media (max-width: 768px) {
           .slide__text {
-            bottom: 3rem;
-            left: 2rem;
+            bottom: 12rem;
+            left: 1.25rem;
             max-width: 90%;
           }
 

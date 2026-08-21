@@ -56,7 +56,7 @@ const ForgotPasswordPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#08101D]">
+    <div className="min-h-screen bg-[var(--surface)]">
       <SimpleNavbar />
       
       <div className="flex items-center justify-center py-20 pt-32 px-4 sm:px-6 lg:px-8">
@@ -81,15 +81,15 @@ const ForgotPasswordPage: React.FC = () => {
                 }}
               />
               <div id="logo-fallback-forgot" className="hidden text-4xl font-serif font-bold">
-                <span className="text-white">TRAVEL</span>
+                <span className="text-content">TRAVEL</span>
                 <span className="text-gold mx-2">+</span>
-                <span className="text-white">ART</span>
+                <span className="text-content">ART</span>
               </div>
             </div>
-            <h2 className="text-3xl font-serif font-bold text-white gold-underline">
+            <h2 className="text-3xl font-serif font-bold text-content gold-underline">
               Mot de passe oublié ?
             </h2>
-            <p className="mt-2 text-white/60">
+            <p className="mt-2 text-content-secondary">
               {emailSent 
                 ? 'Check your email for reset instructions'
                 : 'Enter your email and we\'ll send you reset instructions'

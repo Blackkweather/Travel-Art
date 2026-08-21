@@ -120,5 +120,14 @@ prisma/dev.db
 # Never commit data exports or vendored binaries
 *.csv
 *.exe
+# Account backups taken during credential remediation - these contain
+# password hashes and must never reach a public repository.
+backend/demo-accounts-backup-*.json
 .vercel
 .env*
+
+# Cypress run artifacts. The visual-audit spec writes a contact sheet of the
+# whole public site here; it is a working artifact, not source.
+frontend/cypress/screenshots/
+frontend/cypress/videos/
+frontend/cypress/downloads/

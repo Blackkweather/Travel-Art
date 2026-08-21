@@ -62,10 +62,16 @@ const RegisterPage: React.FC = () => {
                 className="w-40 h-40 md:w-56 md:h-56 object-contain mx-auto"
               />
             </motion.div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 bg-gradient-to-r from-navy to-navy/80 bg-clip-text text-transparent">
+            {/* This carried three competing text colours at once: text-white,
+                text-transparent, and a navy gradient clipped to the glyphs.
+                Only one text-color utility can win, and it was text-white -
+                so the page title rendered white on a white page and the
+                heading was invisible. The gradient-clipped-to-text trick buys
+                nothing over a solid navy heading here, so it is gone. */}
+            <h1 className="mb-4">
               Rejoindre Travel Art
             </h1>
-            <p className="text-xl md:text-2xl text-white/60 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-content-secondary max-w-2xl mx-auto">
               Choisissez votre rôle et commencez l’aventure
             </p>
           </motion.div>
@@ -84,7 +90,7 @@ const RegisterPage: React.FC = () => {
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedRole('ARTIST')}
-              className="group relative overflow-hidden rounded-card border-2 border-white/10 bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
+              className="group relative overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
               <motion.div
@@ -112,11 +118,11 @@ const RegisterPage: React.FC = () => {
                   </motion.div>
                   
                   <div>
-                    <h3 className="text-3xl font-bold text-white mb-3 group-hover:text-gold transition-colors duration-300">
+                    <h3 className="text-3xl font-bold text-content mb-3 group-hover:text-gold transition-colors duration-300">
                       Artiste
                     </h3>
-                    <p className="text-lg text-white/60 mb-4">Jouer et créer</p>
-                    <p className="text-sm text-white/45 leading-relaxed">
+                    <p className="text-lg text-content-secondary mb-4">Jouer et créer</p>
+                    <p className="text-sm text-content-secondary leading-relaxed">
                       Un formulaire en 3 étapes pour présenter votre profil, vos catégories et vos spécialités
                     </p>
                   </div>
@@ -143,7 +149,7 @@ const RegisterPage: React.FC = () => {
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedRole('HOTEL')}
-              className="group relative overflow-hidden rounded-card border-2 border-white/10 bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
+              className="group relative overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
               <motion.div
@@ -171,11 +177,11 @@ const RegisterPage: React.FC = () => {
                   </motion.div>
                   
                   <div>
-                    <h3 className="text-3xl font-bold text-white mb-3 group-hover:text-gold transition-colors duration-300">
+                    <h3 className="text-3xl font-bold text-content mb-3 group-hover:text-gold transition-colors duration-300">
                       Hôtel
                     </h3>
-                    <p className="text-lg text-white/60 mb-4">Accueillir et programmer</p>
-                    <p className="text-sm text-white/45 leading-relaxed">
+                    <p className="text-lg text-content-secondary mb-4">Accueillir et programmer</p>
+                    <p className="text-sm text-content-secondary leading-relaxed">
                       Un formulaire en 7 étapes couvrant l’ambiance, l’équipement, les conditions de collaboration et la logistique
                     </p>
                   </div>
@@ -203,7 +209,7 @@ const RegisterPage: React.FC = () => {
             transition={{ delay: 0.6, duration: 0.5 }}
             className="text-center mt-12"
           >
-            <p className="text-sm text-white/45">
+            <p className="text-sm text-content-secondary">
               Déjà un compte ?{' '}
               <a href="/login" className="text-gold font-semibold hover:underline transition-colors">
                 Se connecter

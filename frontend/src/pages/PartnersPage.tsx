@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Building, Star, MapPin, Users, Calendar, Award } from 'lucide-react'
 import Footer from '../components/Footer'
-import { getLogoUrl } from '@/config/assets'
+import SimpleNavbar from '@/components/SimpleNavbar'
 import { commonApi } from '@/utils/api'
 
 const PartnersPage: React.FC = () => {
-  const { scrollY } = useScroll()
   const navigate = useNavigate()
   const [partners, setPartners] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  
-  // Scroll-based animations for header
-  const headerBackground = useTransform(scrollY, [0, 100], ['rgba(11, 31, 63, 0.1)', 'rgba(11, 31, 63, 0.1)'])
-  const textColor = useTransform(scrollY, [0, 100], ['white', 'white'])
+
+  // The two useTransform values that used to sit here interpolated between
+  // identical endpoints - 'rgba(11, 31, 63, 0.1)' to itself, and 'white' to
+  // itself - so they were a scroll subscription that recomputed a constant on
+  // every frame. They fed only the inline navigation bar, which is gone.
 
   // Fetch hotels from database
   useEffect(() => {
@@ -163,101 +163,48 @@ const PartnersPage: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-[#08101D]">
-      {/* Header */}
-      <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-white/10"
-        style={{
-          background: headerBackground,
-          padding: '10px 80px',
-          height: '55px',
-          overflow: 'visible'
-        }}
-      >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity -ml-4">
-            <img 
-              src={getLogoUrl('transparent')} 
-              alt="Travel Art" 
-              style={{
-                height: '150px',
-                width: 'auto',
-                objectFit: 'contain'
-              }}
-            />
-          </Link>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <motion.div style={{ color: textColor }}>
-              <Link to="/how-it-works" className="hover:text-gold transition-colors font-medium text-sm">
-                Le principe
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/partners" className="hover:text-gold transition-colors font-medium text-sm">
-                Partenaires
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/top-artists" className="hover:text-gold transition-colors font-medium text-sm">
-                Artistes à l’honneur
-              </Link>
-            </motion.div>
-            <motion.div style={{ color: textColor }}>
-              <Link to="/top-hotels" className="hover:text-gold transition-colors font-medium text-sm">
-                Hôtels à l’honneur
-              </Link>
-            </motion.div>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-3">
-            <motion.div style={{ color: textColor }}>
-              <Link to="/login" className="hover:text-gold transition-colors font-medium text-sm px-4 py-2">
-                Connexion
-              </Link>
-            </motion.div>
-            <Link to="/register" className="bg-gold text-off-black px-6 py-2 rounded-card font-semibold hover:bg-gold/90 transition-all duration-200 text-sm shadow-lg">
-              Rejoindre
-            </Link>
-          </div>
-        </div>
-      </motion.nav>
+    <div className="min-h-screen bg-[var(--surface)]">
+      {/* This page carried its own navigation bar: a fourth implementation
+          beside Header, SimpleNavbar and the one the landing page used to
+          have. It had a different link list from all of them, a 150px logo
+          forced inside a 55px bar, hardcoded `padding: 10px 80px` that pushed
+          content off-screen on a phone, and `hidden md:flex` with no fallback,
+          so mobile visitors got no navigation at all. */}
+      <SimpleNavbar overMedia />
 
-      {/* Hero Section */}
-      <div className="relative py-20 pt-32 overflow-hidden">
-        {/* Background Image */}
+      <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
-            alt="Hôtel d’exception" 
+          <img
+            src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+            alt=""
             className="w-full h-full object-cover"
           />
-          {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-navy/70"></div>
+          {/* A gradient scrim rather than a flat 70% wash: a flat wash greys the
+              whole photograph in order to lift type that only sits in its
+              lower third. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/45 to-navy/25"></div>
         </div>
-        
-        <div className="container mx-auto px-6 text-center relative z-10">
+
+        <div className="shell relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
+            <p className="eyebrow text-white/80">Nos partenaires</p>
+            <h1 className="mt-5 max-w-[14ch] text-white">
               Nos hôtels
-              <span className="block text-gold">Partenaires</span>
+              <span className="block text-gold">partenaires</span>
             </h1>
-            <p className="text-xl text-white/65 mb-8 max-w-3xl mx-auto">
+            <p className="mt-7 text-lg text-white/80 max-w-[54ch] leading-relaxed">
               Découvrez les hôtels les plus prestigieux, leurs toits-terrasses et leurs espaces intimistes, pour des rencontres artistiques inoubliables.
             </p>
           </motion.div>
         </div>
-      </div>
+      </header>
 
       {/* Stats Section */}
-      <div className="bg-[#0C1526] py-16">
+      <div className="bg-[var(--surface-warm)] py-16">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             {statsData.map((stat, index) => {
@@ -270,10 +217,10 @@ const PartnersPage: React.FC = () => {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
                   <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
-                    <Icon className="w-8 h-8 text-white" />
+                    <Icon className="w-8 h-8 text-content" />
                   </div>
-                  <h3 className="text-3xl font-bold text-white mb-2">{stat.value}</h3>
-                  <p className="text-white/60">{stat.label}</p>
+                  <h3 className="text-3xl font-bold text-content mb-2">{stat.value}</h3>
+                  <p className="text-content-secondary">{stat.label}</p>
                 </motion.div>
               )
             })}
@@ -284,10 +231,10 @@ const PartnersPage: React.FC = () => {
       {/* Partners Grid */}
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
+          <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
             Partenaires à l’honneur
           </h2>
-          <p className="text-xl text-white/60 max-w-3xl mx-auto">
+          <p className="text-xl text-content-secondary max-w-3xl mx-auto">
             Les plus belles adresses du monde, leurs toits-terrasses et leurs scènes intimistes
           </p>
         </div>
@@ -295,12 +242,12 @@ const PartnersPage: React.FC = () => {
         {loading ? (
           <div className="text-center py-20">
             <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
-            <p className="text-white/60 text-lg">Chargement des partenaires…</p>
+            <p className="text-content-secondary text-lg">Chargement des partenaires…</p>
           </div>
         ) : partners.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-white/60 text-lg mb-4">Aucun hôtel partenaire pour le moment.</p>
-            <p className="text-white/45">Revenez bientôt pour découvrir nos hôtels partenaires.</p>
+            <p className="text-content-secondary text-lg mb-4">Aucun hôtel partenaire pour le moment.</p>
+            <p className="text-content-secondary">Revenez bientôt pour découvrir nos hôtels partenaires.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -321,7 +268,7 @@ const PartnersPage: React.FC = () => {
                     e.currentTarget.src = 'https://via.placeholder.com/600x400/0B1F3F/C9A63C?text=' + encodeURIComponent(partner.name)
                   }}
                 />
-                <div className="absolute top-4 right-4 bg-[var(--surface-raised)]/90 backdrop-blur-sm px-3 py-1 rounded-control text-sm font-semibold text-white flex items-center space-x-1">
+                <div className="absolute top-4 right-4 bg-[var(--surface-raised)]/90 backdrop-blur-sm px-3 py-1 rounded-control text-sm font-semibold text-content flex items-center space-x-1">
                   <span className="text-gold font-bold">◆</span>
                   <span>{partner.rating}</span>
                 </div>
@@ -331,20 +278,20 @@ const PartnersPage: React.FC = () => {
               </div>
               
               <div className="p-6">
-                <h3 className="text-xl font-serif font-semibold text-white mb-2">
+                <h3 className="text-xl font-serif font-semibold text-content mb-2">
                   {partner.name}
                 </h3>
-                <p className="text-white/60 text-sm mb-4 flex items-center">
+                <p className="text-content-secondary text-sm mb-4 flex items-center">
                   <MapPin className="w-4 h-4 mr-2" />
                   {partner.location}
                 </p>
                 
-                <p className="text-white/60 text-sm mb-4">
+                <p className="text-content-secondary text-sm mb-4">
                   {partner.description}
                 </p>
 
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-white mb-2">Spécialités :</h4>
+                  <h4 className="text-sm font-medium text-content mb-2">Spécialités :</h4>
                   <div className="flex flex-wrap gap-2">
                     {partner.specialties.map((specialty, specIndex) => (
                       <span
@@ -358,12 +305,12 @@ const PartnersPage: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-white mb-2">Espaces de représentation :</h4>
+                  <h4 className="text-sm font-medium text-content mb-2">Espaces de représentation :</h4>
                   <div className="flex flex-wrap gap-2">
                     {partner.performanceSpots.map((spot, spotIndex) => (
                       <span
                         key={spotIndex}
-                        className="px-2 py-1 bg-[#0C1526] text-white/75 text-xs rounded-control"
+                        className="px-2 py-1 bg-[var(--surface-warm)] text-content-secondary text-xs rounded-control"
                       >
                         {spot}
                       </span>
@@ -371,7 +318,7 @@ const PartnersPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-white/45 mb-4">
+                <div className="flex items-center justify-between text-sm text-content-secondary mb-4">
                   <span className="flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
                     {partner.bookings} bookings
@@ -396,13 +343,13 @@ const PartnersPage: React.FC = () => {
       </div>
 
       {/* Benefits Section */}
-      <div className="bg-[#0C1526] py-20">
+      <div className="bg-[var(--surface-warm)] py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
+            <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
               Les avantages du partenariat
             </h2>
-            <p className="text-xl text-white/60 max-w-3xl mx-auto">
+            <p className="text-xl text-content-secondary max-w-3xl mx-auto">
               Pourquoi les hôtels d’exception choisissent Travel Art
             </p>
           </div>
@@ -419,10 +366,10 @@ const PartnersPage: React.FC = () => {
                 <div className="w-20 h-20 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-6">
                   {benefit.icon}
                 </div>
-                <h3 className="text-xl font-serif font-semibold text-white mb-4">
+                <h3 className="text-xl font-serif font-semibold text-content mb-4">
                   {benefit.title}
                 </h3>
-                <p className="text-white/60">
+                <p className="text-content-secondary">
                   {benefit.description}
                 </p>
               </motion.div>
@@ -434,15 +381,15 @@ const PartnersPage: React.FC = () => {
       {/* Testimonials Section */}
       <div className="container mx-auto px-6 py-20 pb-32">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-serif font-bold text-white mb-6 gold-underline">
+          <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
             La parole à nos partenaires
           </h2>
         </div>
 
         {testimonials.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-white/60 text-lg">Aucun témoignage pour le moment.</p>
-            <p className="text-white/45 text-sm mt-2">Les témoignages apparaîtront ici à mesure que les hôtels partagent leur expérience.</p>
+            <p className="text-content-secondary text-lg">Aucun témoignage pour le moment.</p>
+            <p className="text-content-secondary text-sm mt-2">Les témoignages apparaîtront ici à mesure que les hôtels partagent leur expérience.</p>
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -461,16 +408,16 @@ const PartnersPage: React.FC = () => {
                 ))}
               </div>
             </div>
-            <p className="text-white/60 mb-4">
+            <p className="text-content-secondary mb-4">
                   &laquo;&nbsp;{testimonial.comment}&nbsp;&raquo;
             </p>
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gold/15 rounded-control flex items-center justify-center mr-4">
-                <Building className="w-6 h-6 text-white" />
+                <Building className="w-6 h-6 text-content" />
               </div>
               <div>
-                    <h4 className="font-semibold text-white">{testimonial.hotelName}</h4>
-                    <p className="text-sm text-white/60">{testimonial.location}</p>
+                    <h4 className="font-semibold text-content">{testimonial.hotelName}</h4>
+                    <p className="text-sm text-content-secondary">{testimonial.location}</p>
               </div>
             </div>
           </motion.div>
@@ -479,26 +426,28 @@ const PartnersPage: React.FC = () => {
         )}
       </div>
 
-      {/* CTA Section */}
-      <div className="bg-navy text-white py-20 pb-32">
-        <div className="container mx-auto px-6 text-center">
+      {/* .btn-primary is a navy fill and this band is navy, so the old button
+          could only be read by its label. Gold is the fill on inverse. */}
+      <section className="band-inverse">
+        <div className="shell text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl font-serif font-bold mb-6">
+            <h2 className="mx-auto max-w-[18ch]">
               Envie de devenir partenaire ?
             </h2>
-            <p className="text-xl text-white/65 mb-8 max-w-2xl mx-auto">
+            <p className="mt-7 text-lg text-[var(--text-on-inverse)]/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
               Rejoignez notre réseau d’hôtels d’exception et offrez à vos clients des moments artistiques dont ils se souviendront.
             </p>
-            <a href="/register" className="btn-primary text-lg px-8 py-4">
+            <Link to="/register?role=hotel" className="btn-gold btn-lg btn-arrow">
               Devenir hôtel partenaire
-            </a>
+            </Link>
           </motion.div>
         </div>
-      </div>
+      </section>
       
       <Footer />
     </div>

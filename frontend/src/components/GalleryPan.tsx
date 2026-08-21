@@ -61,7 +61,7 @@ export default function GalleryPan({ items }: GalleryPanProps) {
     <section
       ref={wrap}
       aria-label="Résidences sélectionnées"
-      className="relative overflow-hidden bg-[#08101D]"
+      className="relative overflow-hidden bg-[var(--surface)]"
     >
       <div
         ref={track}
@@ -71,11 +71,11 @@ export default function GalleryPan({ items }: GalleryPanProps) {
         {/* The section title travels with the work rather than sitting above
             it, so the pin starts on an image instead of dead space. */}
         <div className="shrink-0 w-[78vw] sm:w-[46vw] lg:w-[30vw] snap-start">
-          <h2 className="font-serif text-white text-4xl md:text-5xl lg:text-6xl leading-[1.05]">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl leading-[1.05]">
             Entre l’ombre
             <span className="block text-gold italic">et la lumière.</span>
           </h2>
-          <p className="mt-6 text-white/55 text-base leading-relaxed max-w-[34ch]">
+          <p className="mt-6 text-content-secondary text-base leading-relaxed max-w-[34ch]">
             Des résidences dans des hôtels où même un hall mérite qu’on y joue.
           </p>
         </div>
@@ -88,7 +88,7 @@ export default function GalleryPan({ items }: GalleryPanProps) {
           >
             {/* Alternating heights keep the run from reading as a filmstrip. */}
             <div
-              className={`relative overflow-hidden bg-surface-raised/5 rounded-card ${
+              className={`relative overflow-hidden bg-surface-sunken rounded-card ${
                 i % 2 === 0 ? 'aspect-[3/4]' : 'aspect-[4/5] lg:mt-24'
               }`}
             >
@@ -96,16 +96,16 @@ export default function GalleryPan({ items }: GalleryPanProps) {
                 src={item.image}
                 alt={item.title}
                 loading={i < 2 ? 'eager' : 'lazy'}
-                className="w-full h-full object-cover opacity-90 transition-all duration-[1200ms] ease-entrance
-                           group-hover:opacity-100 group-hover:scale-[1.03]"
+                className="w-full h-full object-cover transition-transform duration-[1200ms] ease-entrance
+                           group-hover:scale-[1.03]"
               />
             </div>
             <div className="mt-5 flex items-baseline justify-between gap-4">
-              <h3 className="font-serif text-white text-xl md:text-2xl group-hover:text-gold transition-colors duration-500">
+              <h3 className="text-xl md:text-2xl group-hover:text-gold transition-colors duration-500">
                 {item.title}
               </h3>
               {item.category && (
-                <span className="text-white/40 text-sm shrink-0">{item.category}</span>
+                <span className="text-content-secondary text-sm shrink-0">{item.category}</span>
               )}
             </div>
           </Link>

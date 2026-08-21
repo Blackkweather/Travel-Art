@@ -49,7 +49,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
               Restez inspiré avec Travel Art
             </h3>
           </div>
-          <p className="text-white/90 mb-6 max-w-2xl mx-auto">
+          <p className="text-white/75 mb-6 max-w-2xl mx-auto">
             Chaque semaine, les nouvelles résidences, les expériences exclusives et les coulisses de nos hôtels.
           </p>
           <form onSubmit={handleSubmit} className="max-w-md mx-auto flex gap-3">

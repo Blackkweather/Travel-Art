@@ -297,7 +297,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           disabled={isLoading}
           className={`
             flex-1 h-14 rounded-card font-bold text-lg transition-all
-            bg-surface-sunken hover:bg-white/10 text-navy-900
+            bg-surface-sunken hover:bg-surface-sunken text-navy-900
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]
           `}
@@ -309,7 +309,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           disabled={isLoading}
           className={`
             flex-1 h-14 rounded-card font-bold text-lg transition-all
-            bg-gold hover:bg-gold-600 text-white
+            bg-gold hover:bg-gold-600 text-content
             disabled:opacity-50 disabled:cursor-not-allowed
             shadow-lg hover:shadow-xl hover:scale-[1.02]
           `}
