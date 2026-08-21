@@ -269,7 +269,7 @@ const ArtistReferrals: React.FC = () => {
               >
                 <div className="flex items-center space-x-4">
                   {referral.image ? (
-                    <img
+                    <img decoding="async" loading="lazy"
                       src={referral.image}
                       alt={referral.name}
                       className="w-12 h-12 rounded-full object-cover"

@@ -133,7 +133,7 @@ const PublicArtistProfile: React.FC = () => {
             <div className="flex-shrink-0">
               <div className="relative w-32 h-32 md:w-40 md:h-40">
                 {images[0] ? (
-                  <img
+                  <img decoding="async" loading="lazy"
                     src={images[0]}
                     alt={artist.user?.name || 'Artist'}
                     className="w-full h-full rounded-control object-cover bg-surface-sunken ring-2 ring-gold/20"
@@ -497,7 +497,7 @@ const PublicArtistProfile: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {images.slice(1).map((image: string, index: number) => (
                   <div key={index} className="relative aspect-square overflow-hidden rounded-card bg-[var(--surface-warm)] group cursor-pointer">
-                    <img
+                    <img decoding="async"
                       src={image}
                       alt={`Portfolio ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"

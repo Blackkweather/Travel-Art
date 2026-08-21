@@ -154,8 +154,8 @@ const TopHotelsPage: React.FC = () => {
       {/* Hero Section */}
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=75"
+          <img decoding="async"
+            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=70"
             alt=""
             className="w-full h-full object-cover"
             fetchPriority="high"
@@ -310,7 +310,7 @@ const TopHotelsPage: React.FC = () => {
                   onClick={() => handleHotelClick(hotel.id)}
                 >
                   <div className="relative">
-                    <img
+                    <img decoding="async"
                       src={getImageUrl(hotel.images)}
                       alt={hotel.name}
                       className="w-full h-64 object-cover"

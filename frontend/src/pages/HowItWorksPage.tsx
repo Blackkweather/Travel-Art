@@ -83,8 +83,8 @@ const HowItWorksPage: React.FC = () => {
           over a darkened photograph, which is the default this page had. */}
       <section className="relative min-h-[78dvh] flex items-end overflow-hidden">
         <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=2070&q=80&fit=crop"
+          <img decoding="async"
+            src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=2070&q=70&fit=crop&auto=format"
             alt=""
             aria-hidden="true"
             className="w-full h-full object-cover"

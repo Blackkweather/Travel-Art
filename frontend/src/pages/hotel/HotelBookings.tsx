@@ -296,7 +296,7 @@ const HotelBookings: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Artist Info */}
               <div className="flex items-start space-x-4">
-                <img
+                <img decoding="async" loading="lazy"
                   src={booking.artist.image}
                   alt={booking.artist.name}
                   className="w-16 h-16 rounded-full object-cover"

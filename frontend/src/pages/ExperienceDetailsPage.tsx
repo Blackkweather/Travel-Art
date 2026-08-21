@@ -92,7 +92,7 @@ const ExperienceDetailsPage: React.FC = () => {
           date: trip.startDate || trip.date || new Date().toISOString().split('T')[0],
           image: images && images.length > 0 
             ? images[0] 
-            : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop',
+            : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop&auto=format&q=70',
           type: trip.type || 'intimate',
           rating: trip.averageRating || trip.rating || 4.5,
           description: trip.description || 'An amazing experience awaits.',
@@ -158,7 +158,7 @@ const ExperienceDetailsPage: React.FC = () => {
       {/* The experience photograph is the hero, so type on it stays white. The
           back link sat at top-6, underneath the fixed 72px navigation bar. */}
       <header className="relative h-[52vh] min-h-[380px] overflow-hidden">
-        <img
+        <img decoding="async"
           src={experience.image}
           alt=""
           className="w-full h-full object-cover"

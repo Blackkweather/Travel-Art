@@ -95,7 +95,7 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
       <div className="shell h-[72px] flex items-center justify-between">
         <div className="flex items-center gap-10">
           <Link to="/" aria-label="Travel Art, accueil" className="shrink-0">
-            <img
+            <img decoding="async"
               src={getLogoUrl('transparent')}
               alt="Travel Art"
               className={`h-8 md:h-9 w-auto object-contain ${

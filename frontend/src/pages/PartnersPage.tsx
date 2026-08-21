@@ -66,7 +66,7 @@ const PartnersPage: React.FC = () => {
               category: 'Luxury Hotel',
               rating: hotel.averageRating || 4.5,
               bookings: hotel.bookingCount || 0,
-              image: images && images.length > 0 ? images[0] : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
+              image: images && images.length > 0 ? images[0] : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=70',
               description: hotel.description || 'Luxury hotel offering exceptional artistic experiences.',
               specialties: performanceSpots.slice(0, 3).map((spot: any) => spot.name || spot),
               performanceSpots: performanceSpots.map((spot: any) => spot.name || spot)
@@ -174,8 +174,8 @@ const PartnersPage: React.FC = () => {
 
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+          <img decoding="async"
+            src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=70"
             alt=""
             className="w-full h-full object-cover"
           />
@@ -260,7 +260,7 @@ const PartnersPage: React.FC = () => {
               className="card-luxury overflow-hidden"
             >
               <div className="relative">
-                <img
+                <img decoding="async" loading="lazy"
                   src={partner.image}
                   alt={partner.name}
                   className="w-full h-64 object-cover"

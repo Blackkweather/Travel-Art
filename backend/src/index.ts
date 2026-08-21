@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
@@ -41,6 +42,12 @@ initializeDatabase()
   });
 
 // Security middleware
+// Gzip every response above the default 1KB threshold. Without this the API
+// and the whole frontend bundle were served uncompressed - the JS entry chunk
+// is about 375KB raw and roughly 115KB gzipped. Must sit ahead of any
+// middleware that writes a body.
+app.use(compression());
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -247,10 +254,17 @@ const frontendDistPath = getFrontendDistPath();
 console.log(`📁 Serving frontend from: ${frontendDistPath}`);
 
 app.use(express.static(frontendDistPath, {
+  // Vite fingerprints everything under /assets, so those filenames change
+  // whenever their contents do and can be cached for a year. index.html is the
+  // opposite case: it names the current fingerprints, so caching it would
+  // leave returning visitors pinned to a previous deploy.
+  maxAge: '1y',
   setHeaders: (res, filePath) => {
-    // Set correct Content-Type for webmanifest files
     if (filePath.endsWith('.webmanifest')) {
       res.setHeader('Content-Type', 'application/manifest+json');
+    }
+    if (filePath.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
     }
   }
 }));

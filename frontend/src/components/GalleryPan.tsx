@@ -92,7 +92,7 @@ export default function GalleryPan({ items }: GalleryPanProps) {
                 i % 2 === 0 ? 'aspect-[3/4]' : 'aspect-[4/5] lg:mt-24'
               }`}
             >
-              <img
+              <img decoding="async"
                 src={item.image}
                 alt={item.title}
                 loading={i < 2 ? 'eager' : 'lazy'}

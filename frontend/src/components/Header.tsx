@@ -79,7 +79,7 @@ const Header: React.FC = () => {
               {/* The mark is navy and gold, which disappears against the dark
                   surface. It inverts only in dark mode - inverting it in light
                   mode would render it white on white. */}
-              <img
+              <img decoding="async"
                 src={getLogoUrl('transparent')}
                 alt="Travel Art"
                 className="h-8 md:h-9 w-auto object-contain dark:brightness-0 dark:invert"

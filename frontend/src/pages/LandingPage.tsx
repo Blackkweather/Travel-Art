@@ -4,7 +4,6 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { tripsApi } from '@/utils/api'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import AmbientAudio from '@/components/AmbientAudio'
 import GalleryPan from '@/components/GalleryPan'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
@@ -33,17 +32,17 @@ const PILLARS = [
   {
     title: 'Résidence',
     body: 'Une chambre et une scène dans un hôtel qui programme la culture toute l’année, pas un soir de gala.',
-    image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=900&q=80&fit=crop',
+    image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=900&q=70&fit=crop&auto=format',
   },
   {
     title: 'Création',
     body: 'Du temps entre deux représentations. Ce que vous produisez sur place vous appartient entièrement.',
-    image: 'https://images.unsplash.com/photo-1499415479124-43c32433a620?w=900&q=80&fit=crop',
+    image: 'https://images.unsplash.com/photo-1499415479124-43c32433a620?w=900&q=70&fit=crop&auto=format',
   },
   {
     title: 'Tout compris',
     body: 'Voyage, hébergement et repas réglés avant votre arrivée. Aucune commission prélevée côté artiste.',
-    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=900&q=80&fit=crop',
+    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=900&q=70&fit=crop&auto=format',
   },
 ] as const
 
@@ -77,21 +76,21 @@ export default function LandingPage() {
   const defaultSlides: Slide[] = [
     {
       id: 'fallback-1',
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=80&fit=crop',
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=70&fit=crop&auto=format',
       title: 'ENTRE L’OMBRE',
       subtitle: 'ET LA LUMIÈRE',
       category: 'Expérience'
     },
     {
       id: 'fallback-2',
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=80&fit=crop',
+      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=70&fit=crop&auto=format',
       title: 'LÀ OÙ L’ART',
       subtitle: 'RENÇOIT LE LUXE',
       category: 'Scène'
     },
     {
       id: 'fallback-3',
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&q=80&fit=crop',
+      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&q=70&fit=crop&auto=format',
       title: 'DES SCÈNES SANS',
       subtitle: 'FRONTIÈRES',
       category: 'Voyage'
@@ -128,7 +127,7 @@ export default function LandingPage() {
             id: trip.id,
             title: trip.title || 'Expérience',
             description: trip.description?.substring(0, 100) || '',
-            image: images[0] || trip.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
+            image: images[0] || trip.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&q=70&fit=crop',
             category: trip.type || trip.category || 'Expérience'
           }
         })
@@ -590,13 +589,6 @@ export default function LandingPage() {
 
   return (
     <div className="overflow-x-hidden relative bg-[var(--surface)]">
-      {/* Ambient Audio */}
-      <AmbientAudio 
-        src="https://www.youtube.com/watch?v=LCQSGDqWIEY" 
-        initialVolume={0.5}
-        maxScrollForFade={1000}
-      />
-
       {/* The site navigation, not a third copy of it. This page carried its
           own header (and its own footer, below) with its own link list, its own
           scroll state and its own CTA styling, so the landing page drifted out
@@ -750,7 +742,7 @@ export default function LandingPage() {
               {PILLARS.map((pillar) => (
                 <article key={pillar.title} className="flex flex-col">
                   <div className="relative overflow-hidden rounded-card aspect-[4/5] bg-surface-sunken">
-                    <img
+                    <img decoding="async"
                       src={pillar.image}
                       alt=""
                       loading="lazy"

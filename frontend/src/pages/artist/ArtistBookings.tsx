@@ -313,7 +313,7 @@ const ArtistBookings: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Hotel Image */}
               <div className="flex-shrink-0">
-                <img
+                <img decoding="async"
                   src={booking.image}
                   alt={booking.hotelName}
                   className="w-full lg:w-64 h-48 lg:h-40 object-cover rounded-card"

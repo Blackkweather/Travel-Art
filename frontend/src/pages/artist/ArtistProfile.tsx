@@ -361,7 +361,7 @@ const ArtistProfile: React.FC = () => {
             ) : (
               <div className="relative w-48 h-48">
                 {profileData.images[0] ? (
-                  <img
+                  <img decoding="async" loading="lazy"
                     src={normalizeImageUrl(profileData.images[0])}
                     alt={profileData.name}
                     className="w-full h-full rounded-card object-cover bg-surface-sunken ring-2 ring-gold/20"
@@ -631,7 +631,7 @@ const ArtistProfile: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {profileData.images.map((image, index) => (
               <div key={index} className="relative group">
-                <img
+                <img decoding="async" loading="lazy"
                   src={normalizeImageUrl(image)}
                   alt={`Portfolio ${index + 1}`}
                   className="w-full h-48 object-cover rounded-card"

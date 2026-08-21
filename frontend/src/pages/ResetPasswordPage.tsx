@@ -74,7 +74,7 @@ const ResetPasswordPage: React.FC = () => {
           >
             <div className="text-center">
               <div className="flex justify-center mb-6">
-                <img 
+                <img decoding="async" 
                   src={getLogoUrl('transparent')} 
                   alt="Travel Art" 
                   className="h-24 w-auto"

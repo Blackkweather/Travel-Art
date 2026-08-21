@@ -227,7 +227,7 @@ const TopArtistsPage: React.FC = () => {
                   className="card-luxury overflow-hidden flex flex-col h-full"
                 >
                   <div className="relative">
-                    <img
+                    <img decoding="async"
                       src={getImageUrl(artist.images)}
                       alt={artist.user.name}
                       className="w-full h-64 object-cover"

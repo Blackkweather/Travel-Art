@@ -365,7 +365,7 @@ const HotelDashboard: React.FC = () => {
                 >
                   {spot.image && (
                     <div className="relative h-48 overflow-hidden">
-                      <img 
+                      <img decoding="async" loading="lazy" 
                         src={spot.image} 
                         alt={spot.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"

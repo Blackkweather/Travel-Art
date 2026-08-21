@@ -564,7 +564,7 @@ const HotelArtists: React.FC = () => {
             className="card-luxury overflow-hidden"
           >
             <div className="relative">
-              <img
+              <img decoding="async"
                 src={artist.image}
                 alt={`${artist.name}, ${artist.discipline} performing in ${artist.location}`}
                 className="w-full h-64 object-cover"

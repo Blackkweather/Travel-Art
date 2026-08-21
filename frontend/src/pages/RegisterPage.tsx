@@ -56,7 +56,7 @@ const RegisterPage: React.FC = () => {
               transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
               className="inline-block mb-6"
             >
-              <img
+              <img decoding="async"
                 src={getLogoUrl('transparent')}
                 alt="Logo Travel Art"
                 className="w-40 h-40 md:w-56 md:h-56 object-contain mx-auto"

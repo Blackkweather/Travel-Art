@@ -12,6 +12,9 @@ import { tripsApi } from '@/utils/api'
 import { experienceTypeLabel } from '@/utils/i18n'
 
 // Fix for default marker icons in Leaflet with Vite
+// Loaded here rather than in main.tsx: this is the only route with a map,
+// so its stylesheet has no business in the global bundle.
+import 'leaflet/dist/leaflet.css'
 import icon from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 
@@ -127,7 +130,7 @@ const TravelerExperiencesPage: React.FC = () => {
               date: trip.date || new Date().toISOString().split('T')[0],
               image: images && images.length > 0
                 ? images[0]
-                : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
+                : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=70&auto=format&fit=crop',
               type: (trip.type === 'rooftop' || trip.type === 'intimate' || trip.type === 'workshop' || trip.type === 'residency' 
                 ? trip.type 
                 : 'intimate') as Experience['type'],
@@ -225,8 +228,8 @@ const TravelerExperiencesPage: React.FC = () => {
           the type. */}
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=80&fit=crop"
+          <img decoding="async"
+            src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=70&fit=crop&auto=format"
             alt=""
             className="w-full h-full object-cover"
             fetchPriority="high"
@@ -398,7 +401,7 @@ const TravelerExperiencesPage: React.FC = () => {
                   className="card-experience group cursor-pointer"
                 >
                 <div className="relative h-64 overflow-hidden">
-                  <img
+                  <img decoding="async" loading="lazy"
                     src={exp.image}
                     alt={exp.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"

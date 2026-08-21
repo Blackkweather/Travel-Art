@@ -38,7 +38,7 @@ const Footer: React.FC = () => {
       <div className="shell py-20">
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-8 gap-y-14">
           <div className="col-span-2 lg:col-span-4">
-            <img
+            <img decoding="async"
               src={getLogoUrl('transparent')}
               alt="Travel Art"
               className="h-9 w-auto object-contain brightness-0 invert dark:brightness-100 dark:invert-0"

@@ -119,7 +119,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
     <div className="relative inline-block">
       <div className="relative w-48 h-48 rounded-card overflow-hidden bg-surface-sunken border-2 border-line">
         {displayImage ? (
-          <img
+          <img decoding="async" loading="lazy"
             src={displayImage}
             alt="Profil"
             className="w-full h-full object-cover"
