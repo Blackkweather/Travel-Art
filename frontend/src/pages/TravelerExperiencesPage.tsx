@@ -9,6 +9,7 @@ import { useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L, { LatLngTuple } from 'leaflet'
 import { tripsApi } from '@/utils/api'
+import { experienceTypeLabel } from '@/utils/i18n'
 
 // Fix for default marker icons in Leaflet with Vite
 import icon from 'leaflet/dist/images/marker-icon.png'
@@ -37,6 +38,12 @@ interface Experience {
   rating: number
   description: string
 }
+
+// Values match the `type` field the API returns and must not be translated;
+// the labels come from the shared map so the filter chip and the card badge
+// cannot drift apart.
+const EXPERIENCE_TYPES = (['all', 'rooftop', 'intimate', 'workshop', 'residency'] as const)
+  .map((value) => ({ value, label: experienceTypeLabel(value) }))
 
 const TravelerExperiencesPage: React.FC = () => {
   const [experiences, setExperiences] = useState<Experience[]>([])
@@ -316,7 +323,7 @@ const TravelerExperiencesPage: React.FC = () => {
               className={`px-4 py-2 rounded-control transition-colors ${
                 !selectedLocation
                   ? 'bg-gold text-off-black font-semibold'
-                  : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken'
+                  : 'bg-surface-sunken text-content-secondary hover:bg-surface-warm'
               }`}
             >
               Toutes les villes
@@ -328,7 +335,7 @@ const TravelerExperiencesPage: React.FC = () => {
                 className={`px-4 py-2 rounded-control transition-colors ${
                   selectedLocation === loc
                     ? 'bg-gold text-off-black font-semibold'
-                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken'
+                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-warm'
                 }`}
               >
                 {loc}
@@ -336,19 +343,25 @@ const TravelerExperiencesPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Type Filter */}
+          {/* Type Filter. The values are compared against `exp.type` coming
+              from the API, so they stay in English; only the labels are
+              translated. Before this the chips rendered the raw value -
+              "Rooftop", "Intimate", "Workshop", "Residency" - on a site that
+              ships in French only, and `capitalize` was doing the presentation
+              work a label should do. */}
           <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {['all', 'rooftop', 'intimate', 'workshop', 'residency'].map(type => (
+            {EXPERIENCE_TYPES.map(({ value, label }) => (
               <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={`px-4 py-2 rounded-control transition-colors capitalize ${
-                  filterType === type
+                key={value}
+                onClick={() => setFilterType(value)}
+                aria-pressed={filterType === value}
+                className={`px-4 py-2 min-h-[44px] rounded-control transition-colors ${
+                  filterType === value
                     ? 'bg-navy text-white font-semibold'
-                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken'
+                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-warm'
                 }`}
               >
-                {type === 'all' ? 'All Types' : type}
+                {label}
               </button>
             ))}
           </div>
@@ -391,7 +404,7 @@ const TravelerExperiencesPage: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy/80 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4 text-content">
+                  <div className="absolute bottom-4 left-4 right-4 text-white">
                     <div className="flex items-center space-x-2 mb-2">
                       <MapPin className="w-4 h-4" />
                       <span className="text-sm font-medium">
@@ -407,8 +420,8 @@ const TravelerExperiencesPage: React.FC = () => {
                 </div>
                 <div className="p-6 bg-[var(--surface-raised)]">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-3 py-1 bg-gold/20 text-gold text-xs font-semibold rounded-control capitalize">
-                      {exp.type}
+                    <span className="px-3 py-1 bg-gold/20 text-gold-700 text-xs font-semibold rounded-control">
+                      {experienceTypeLabel(exp.type)}
                     </span>
                     <div className="flex items-center text-content-secondary text-sm">
                       <Calendar className="w-4 h-4 mr-1" />
@@ -455,7 +468,7 @@ const TravelerExperiencesPage: React.FC = () => {
             <h2 className="mx-auto max-w-[18ch]">
               Envie de vivre l’art autrement ?
             </h2>
-            <p className="mt-7 text-lg text-[var(--text-on-inverse)]/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
+            <p className="mt-7 text-lg text-content-inverse/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
               Rejoignez la communauté de voyageurs, d’artistes et d’hôtels qui créent ces moments ensemble.
             </p>
             <div className="flex flex-wrap justify-center gap-4">

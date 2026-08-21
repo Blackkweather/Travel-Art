@@ -651,7 +651,7 @@ export default function LandingPage() {
               type="button"
               onClick={() => navigate(PREV)}
               aria-label="Expérience précédente"
-              className="w-12 h-12 rounded-control border border-line-strong text-content flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
+              className="w-12 h-12 rounded-control border border-white/60 bg-black/25 backdrop-blur-sm text-white flex items-center justify-center hover:bg-white hover:text-navy hover:border-white transition-colors duration-300 active:translate-y-px"
             >
               <ArrowLeft size={18} strokeWidth={1.5} aria-hidden="true" />
             </button>
@@ -659,7 +659,7 @@ export default function LandingPage() {
               type="button"
               onClick={() => navigate(NEXT)}
               aria-label="Expérience suivante"
-              className="w-12 h-12 rounded-control border border-line-strong text-content flex items-center justify-center hover:bg-surface-raised hover:text-content transition-colors duration-300 active:translate-y-px"
+              className="w-12 h-12 rounded-control border border-white/60 bg-black/25 backdrop-blur-sm text-white flex items-center justify-center hover:bg-white hover:text-navy hover:border-white transition-colors duration-300 active:translate-y-px"
             >
               <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
             </button>
@@ -835,7 +835,7 @@ export default function LandingPage() {
             <h2 className="mx-auto max-w-[20ch] text-4xl md:text-6xl lg:text-7xl leading-[1.05]">
               Rejoignez le programme.
             </h2>
-            <p className="mt-8 text-[var(--text-on-inverse)]/70 max-w-[46ch] mx-auto leading-relaxed">
+            <p className="mt-8 text-content-inverse/70 max-w-[46ch] mx-auto leading-relaxed">
               Candidatez comme artiste, ou ouvrez votre hôtel au programme.
             </p>
             <div className="mt-12 flex flex-wrap gap-4 justify-center">
@@ -1059,8 +1059,10 @@ export default function LandingPage() {
         }
         
         @media (max-width: 768px) {
+          /* Clears the stacked CTA pair below it: two 48px buttons plus the gap,
+             sitting on a 6rem offset, occupy about 12.5rem of the bottom edge. */
           .slide__text {
-            bottom: 12rem;
+            bottom: 14.5rem;
             left: 1.25rem;
             max-width: 90%;
           }

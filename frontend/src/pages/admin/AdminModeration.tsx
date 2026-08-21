@@ -169,7 +169,7 @@ const AdminModeration: React.FC = () => {
               onClick={() => setTab('artists')} 
               className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                 tab === 'artists' 
-                  ? 'bg-gray-900 text-content shadow-sm' 
+                  ? 'bg-gray-900 text-white shadow-sm' 
                   : 'text-content-secondary hover:text-content hover:bg-surface'
               }`}
             >
@@ -179,7 +179,7 @@ const AdminModeration: React.FC = () => {
               onClick={() => setTab('hotels')} 
               className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                 tab === 'hotels' 
-                  ? 'bg-gray-900 text-content shadow-sm' 
+                  ? 'bg-gray-900 text-white shadow-sm' 
                   : 'text-content-secondary hover:text-content hover:bg-surface'
               }`}
             >
@@ -205,7 +205,7 @@ const AdminModeration: React.FC = () => {
       ) : (
         <div className="bg-surface-raised rounded-card border border-line">
           {tab === 'artists' ? (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-line">
               {artists.length === 0 ? (
                 <div className="text-center py-12 text-content-secondary">
                   <User className="w-12 h-12 mx-auto mb-4 text-content-secondary" />
@@ -253,7 +253,7 @@ const AdminModeration: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-line">
               {hotels.length === 0 ? (
                 <div className="text-center py-12 text-content-secondary">
                   <Building className="w-12 h-12 mx-auto mb-4 text-content-secondary" />

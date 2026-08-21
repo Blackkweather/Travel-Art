@@ -76,7 +76,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  <span>{submitting ? 'Subscribing...' : 'Subscribe'}</span>
+                  <span>{submitting ? 'Inscription…' : 'S’inscrire'}</span>
                 </>
               )}
             </button>
@@ -152,7 +152,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
           disabled={submitting || success}
           className="btn-primary disabled:opacity-60 px-6 whitespace-nowrap"
         >
-          {success ? '✓ Subscribed' : submitting ? '...' : 'Subscribe'}
+          {success ? '✓ Inscrit' : submitting ? '…' : 'S’inscrire'}
         </button>
       </form>
     </div>

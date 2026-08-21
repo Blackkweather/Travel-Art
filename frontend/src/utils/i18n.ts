@@ -84,4 +84,55 @@ if (typeof window !== 'undefined') {
   initLocale()
 }
 
-export default { LOCALE, formatDate, formatShortDate, formatTime, formatNumber, plural, initLocale }
+
+/**
+ * Labels for enum-ish values the API returns.
+ *
+ * These values are protocol, not copy: they are compared against API data and
+ * must stay exactly as the backend sends them. Only the label is translated.
+ * Several screens were printing the raw value through a `capitalize` class -
+ * "Rooftop", "Workshop", "CREDIT_PURCHASE" - which is English on a
+ * French-only site and, in the transactions case, a database constant shown
+ * to a customer.
+ */
+export const EXPERIENCE_TYPE_LABELS: Record<string, string> = {
+  all: 'Tous les types',
+  rooftop: 'Toit-terrasse',
+  intimate: 'Intimiste',
+  workshop: 'Atelier',
+  residency: 'Résidence',
+}
+
+export const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+  CREDIT_PURCHASE: 'Achat de crédits',
+  REFUND: 'Remboursement',
+  BOOKING: 'Réservation',
+  BOOKING_PAYMENT: 'Paiement de réservation',
+  ADJUSTMENT: 'Ajustement',
+}
+
+/**
+ * Falls back to the raw value rather than to an empty string: an unfamiliar
+ * value the backend adds later should still show something the user and
+ * support can talk about.
+ */
+export const labelFor = (map: Record<string, string>, value: string | null | undefined): string =>
+  (value && map[value]) || value || ''
+
+export const experienceTypeLabel = (value: string | null | undefined): string =>
+  labelFor(EXPERIENCE_TYPE_LABELS, value)
+
+export const transactionTypeLabel = (value: string | null | undefined): string =>
+  labelFor(TRANSACTION_TYPE_LABELS, value)
+
+export default {
+  LOCALE,
+  formatDate,
+  formatShortDate,
+  formatTime,
+  formatNumber,
+  plural,
+  initLocale,
+  experienceTypeLabel,
+  transactionTypeLabel,
+}

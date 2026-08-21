@@ -268,7 +268,7 @@ const PartnersPage: React.FC = () => {
                     e.currentTarget.src = 'https://via.placeholder.com/600x400/0B1F3F/C9A63C?text=' + encodeURIComponent(partner.name)
                   }}
                 />
-                <div className="absolute top-4 right-4 bg-[var(--surface-raised)]/90 backdrop-blur-sm px-3 py-1 rounded-control text-sm font-semibold text-content flex items-center space-x-1">
+                <div className="absolute top-4 right-4 bg-surface-raised/90 backdrop-blur-sm px-3 py-1 rounded-control text-sm font-semibold text-content flex items-center space-x-1">
                   <span className="text-gold font-bold">◆</span>
                   <span>{partner.rating}</span>
                 </div>
@@ -439,7 +439,7 @@ const PartnersPage: React.FC = () => {
             <h2 className="mx-auto max-w-[18ch]">
               Envie de devenir partenaire ?
             </h2>
-            <p className="mt-7 text-lg text-[var(--text-on-inverse)]/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
+            <p className="mt-7 text-lg text-content-inverse/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
               Rejoignez notre réseau d’hôtels d’exception et offrez à vos clients des moments artistiques dont ils se souviendront.
             </p>
             <Link to="/register?role=hotel" className="btn-gold btn-lg btn-arrow">

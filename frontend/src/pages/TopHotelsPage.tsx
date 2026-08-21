@@ -477,7 +477,7 @@ const TopHotelsPage: React.FC = () => {
             <h2 className="mx-auto max-w-[18ch]">
               Envie de devenir partenaire ?
             </h2>
-            <p className="mt-7 text-lg text-[var(--text-on-inverse)]/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
+            <p className="mt-7 text-lg text-content-inverse/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
               Rejoignez notre réseau d’hôtels d’exception et offrez à vos clients des moments artistiques mémorables.
             </p>
             <Link to="/register?role=hotel" className="btn-gold btn-lg btn-arrow">

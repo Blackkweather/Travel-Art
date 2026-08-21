@@ -284,7 +284,7 @@ const AdminDashboard: React.FC = () => {
                 </button>
               </div>
             </div>
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-line">
               {activity.length > 0 ? (
                 activity.slice(0, 8).map((item) => (
                   <div 
@@ -316,7 +316,7 @@ const AdminDashboard: React.FC = () => {
             <div className="px-6 py-4 border-b border-line">
               <h2 className="text-lg font-semibold text-content">Artistes à l’honneur</h2>
             </div>
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-line">
             {topArtists.length > 0 ? (
                 topArtists.map((artist, idx) => (
                   <div 
@@ -373,7 +373,7 @@ const AdminDashboard: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Statut</th>
                 </tr>
               </thead>
-              <tbody className="bg-surface-raised divide-y divide-gray-200">
+              <tbody className="bg-surface-raised divide-y divide-line">
                 {topHotels.length > 0 ? (
                   topHotels.map((hotel) => (
                     <tr key={hotel.id} className="hover:bg-surface transition-colors">

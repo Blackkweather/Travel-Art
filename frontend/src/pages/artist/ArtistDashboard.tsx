@@ -182,7 +182,7 @@ const ArtistDashboard: React.FC = () => {
               </Link>
             </div>
           </div>
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-line">
             {recentBookings.length > 0 ? (
               recentBookings.map((booking) => {
                 const statusColor = booking.status === 'CONFIRMED' || booking.status === 'confirmed'

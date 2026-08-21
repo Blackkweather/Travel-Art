@@ -403,7 +403,7 @@ const ArtistBookings: React.FC = () => {
                     {booking.status === 'completed' && (
                       <button 
                         onClick={() => setSelectedBooking(booking)}
-                        className="px-4 py-2 bg-gray-600 text-content rounded-card hover:bg-gray-700 transition-colors cursor-pointer"
+                        className="px-4 py-2 bg-gray-600 text-white rounded-card hover:bg-gray-700 transition-colors cursor-pointer"
                       >
                         Voir les retours
                       </button>

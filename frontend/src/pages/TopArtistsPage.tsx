@@ -236,7 +236,7 @@ const TopArtistsPage: React.FC = () => {
                         e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Cg transform="translate(200 200)"%3E%3Ccircle fill="%239ca3af" opacity="0.2" r="80"/%3E%3Cpath fill="%239ca3af" d="M0-40c-22 0-40 18-40 40s18 40 40 40 40-18 40-40-18-40-40-40zm0 120c-30 0-80 15-80 45v20h160v-20c0-30-50-45-80-45z"/%3E%3C/g%3E%3C/svg%3E'
                       }}
                     />
-                    <div className="absolute top-4 right-4 bg-[var(--surface-raised)]/90 backdrop-blur-sm px-3 py-2 rounded-control flex items-center space-x-2">
+                    <div className="absolute top-4 right-4 bg-surface-raised/90 backdrop-blur-sm px-3 py-2 rounded-control flex items-center space-x-2">
                       <ArtistRank tier={getQuickRank(rating, bookings)} size="sm" />
                       <span className="text-sm font-semibold text-content">{rating.toFixed(1)}</span>
                     </div>
@@ -309,7 +309,7 @@ const TopArtistsPage: React.FC = () => {
             <h2 className="mx-auto max-w-[18ch]">
               Prêt à monter sur scène ?
             </h2>
-            <p className="mt-7 text-lg text-[var(--text-on-inverse)]/70 mb-10 max-w-[50ch] mx-auto leading-relaxed">
+            <p className="mt-7 text-lg text-content-inverse/70 mb-10 max-w-[50ch] mx-auto leading-relaxed">
               Rejoignez notre communauté d’artistes et jouez dans les plus belles adresses du monde.
             </p>
             <Link to="/register?role=artist" className="btn-gold btn-lg btn-arrow">

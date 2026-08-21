@@ -5,6 +5,7 @@ import { Star, MapPin, Calendar, Music, Users, Globe, Clock, ArrowLeft, Award, C
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { tripsApi } from '@/utils/api'
+import { experienceTypeLabel } from '@/utils/i18n'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 const ExperienceDetailsPage: React.FC = () => {
@@ -171,8 +172,8 @@ const ExperienceDetailsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <span className="inline-block px-3.5 py-1.5 bg-gold text-off-black rounded-control text-xs font-semibold uppercase tracking-wider capitalize">
-                {experience.type}
+              <span className="inline-block px-3.5 py-1.5 bg-gold text-off-black rounded-control text-xs font-semibold uppercase tracking-wider">
+                {experienceTypeLabel(experience.type)}
               </span>
               <h1 className="mt-5 text-white max-w-[18ch]">
                 {experience.title}

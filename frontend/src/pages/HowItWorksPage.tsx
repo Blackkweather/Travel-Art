@@ -91,7 +91,7 @@ const HowItWorksPage: React.FC = () => {
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-[var(--surface)]/70 to-[var(--surface)]/40"
+            className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-surface/70 to-surface/40"
           />
         </div>
 

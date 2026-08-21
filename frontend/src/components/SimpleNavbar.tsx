@@ -78,9 +78,20 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
       className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
         onMedia
           ? 'bg-transparent'
-          : 'bg-[var(--surface)]/95 backdrop-blur-md border-b border-line'
+          : 'bg-surface/95 backdrop-blur-md border-b border-line'
       }`}
     >
+      {/* Over photography the bar itself is transparent, which leaves the white
+          links resting on whatever the top of the image happens to be - a
+          bright sky on several of these heroes. A short scrim behind the bar
+          keeps them legible without darkening the photograph below it. */}
+      {onMedia && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[120px] bg-gradient-to-b from-black/45 to-transparent"
+        />
+      )}
+      <div className="relative">
       <div className="shell h-[72px] flex items-center justify-between">
         <div className="flex items-center gap-10">
           <Link to="/" aria-label="Travel Art, accueil" className="shrink-0">
@@ -123,7 +134,7 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
           >
             Connexion
           </Link>
-          <Link to="/register" className="btn-gold btn-sm">
+          <Link to="/register" className="hidden sm:inline-flex btn-gold btn-sm">
             Nous rejoindre
           </Link>
 
@@ -140,6 +151,7 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
               : <Menu size={22} strokeWidth={1.5} aria-hidden="true" />}
           </button>
         </div>
+      </div>
       </div>
 
       {menuOpen && (
@@ -160,8 +172,11 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
                 </Link>
               </li>
             ))}
-            <li className="pt-5 sm:hidden">
-              <Link to="/login" className="text-sm font-medium text-content-secondary hover:text-gold">
+            <li className="pt-6 sm:hidden flex flex-col gap-3">
+              <Link to="/register" className="btn-gold w-full">
+                Nous rejoindre
+              </Link>
+              <Link to="/login" className="btn-outline w-full">
                 Connexion
               </Link>
             </li>

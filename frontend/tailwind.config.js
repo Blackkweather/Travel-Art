@@ -72,21 +72,27 @@ module.exports = {
         // lets a screen follow the theme: the .dark class swaps the underlying
         // variables and every surface moves with it. Pages that hardcode grey
         // scales are frozen in the light theme no matter what the toggle says.
+        // Expressed as channels with <alpha-value> so the opacity modifier
+        // works: bg-surface/95, text-content-inverse/70, border-line/40. Given
+        // a plain var() holding a hex string Tailwind cannot substitute an
+        // alpha, and it silently emits the colour at full opacity - which is
+        // how the navigation bar ended up fully transparent over dark bands.
+        // The --*-rgb twins are defined beside the hex tokens in index.css.
         surface: {
-          DEFAULT: 'var(--surface)',
-          raised: 'var(--surface-raised)',
-          sunken: 'var(--surface-sunken)',
-          warm: 'var(--surface-warm)',
-          inverse: 'var(--surface-inverse)',
+          DEFAULT: 'rgb(var(--surface-rgb) / <alpha-value>)',
+          raised: 'rgb(var(--surface-raised-rgb) / <alpha-value>)',
+          sunken: 'rgb(var(--surface-sunken-rgb) / <alpha-value>)',
+          warm: 'rgb(var(--surface-warm-rgb) / <alpha-value>)',
+          inverse: 'rgb(var(--surface-inverse-rgb) / <alpha-value>)',
         },
         content: {
-          DEFAULT: 'var(--text-primary)',
-          secondary: 'var(--text-secondary)',
-          inverse: 'var(--text-on-inverse)',
+          DEFAULT: 'rgb(var(--text-primary-rgb) / <alpha-value>)',
+          secondary: 'rgb(var(--text-secondary-rgb) / <alpha-value>)',
+          inverse: 'rgb(var(--text-on-inverse-rgb) / <alpha-value>)',
         },
         line: {
-          DEFAULT: 'var(--border-subtle)',
-          strong: 'var(--border-strong)',
+          DEFAULT: 'rgb(var(--border-subtle-rgb) / <alpha-value>)',
+          strong: 'rgb(var(--border-strong-rgb) / <alpha-value>)',
         },
       },
       // Newsreader for display, Inter for UI - the pairing the reference site

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { CreditCard, ShoppingCart, TrendingUp, Gift, Star, Calendar, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { hotelsApi, paymentsApi } from '@/utils/api'
+import { transactionTypeLabel } from '@/utils/i18n'
 
 const HotelCredits: React.FC = () => {
   const { user } = useAuthStore()
@@ -257,7 +258,7 @@ const HotelCredits: React.FC = () => {
               
               <div className="text-right">
                 <div className={`px-3 py-1 rounded-full text-sm font-medium ${getTransactionColor(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}`}>
-                  {transaction.type}
+                  {transactionTypeLabel(transaction.type)}
                 </div>
                 <div className="mt-2">
                   {transaction.amount > 0 && (

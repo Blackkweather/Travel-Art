@@ -43,7 +43,7 @@ const Footer: React.FC = () => {
               alt="Travel Art"
               className="h-9 w-auto object-contain brightness-0 invert dark:brightness-100 dark:invert-0"
             />
-            <p className="mt-6 text-[var(--text-on-inverse)]/60 leading-relaxed max-w-[38ch]">
+            <p className="mt-6 text-content-inverse/60 leading-relaxed max-w-[38ch]">
               Des résidences d’artistes au cœur des hôtels d’exception.
               Musiciens, plasticiens et interprètes, reçus là où leur travail
               trouve sa place.
@@ -59,7 +59,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               {DISCOVER_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-[var(--text-on-inverse)]/60 hover:text-gold transition-colors">
+                  <Link to={link.to} className="text-sm text-content-inverse/60 hover:text-gold transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -72,7 +72,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-3">
               {COMPANY_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-[var(--text-on-inverse)]/60 hover:text-gold transition-colors">
+                  <Link to={link.to} className="text-sm text-content-inverse/60 hover:text-gold transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
 
           <div className="lg:col-span-3">
             <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">Contact</h3>
-            <ul className="space-y-3 text-sm text-[var(--text-on-inverse)]/60">
+            <ul className="space-y-3 text-sm text-content-inverse/60">
               <li>Paris, France</li>
               <li>
                 <a href="mailto:hello@travelart.com" className="hover:text-gold transition-colors">
@@ -99,7 +99,7 @@ const Footer: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="text-[var(--text-on-inverse)]/50 hover:text-gold transition-colors inline-block"
+                    className="text-content-inverse/50 hover:text-gold transition-colors inline-block"
                   >
                     <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
                   </a>
@@ -109,14 +109,14 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-[var(--text-on-inverse)]/15 mt-16 pt-8 flex flex-col sm:flex-row justify-between gap-4">
-          <p className="text-sm text-[var(--text-on-inverse)]/50">
+        <div className="border-t border-content-inverse/15 mt-16 pt-8 flex flex-col sm:flex-row justify-between gap-4">
+          <p className="text-sm text-content-inverse/50">
             &copy; {new Date().getFullYear()} Travel Art
           </p>
           <ul className="flex flex-wrap gap-6">
             {LEGAL_LINKS.map((link) => (
               <li key={link.to}>
-                <Link to={link.to} className="text-sm text-[var(--text-on-inverse)]/50 hover:text-gold transition-colors">
+                <Link to={link.to} className="text-sm text-content-inverse/50 hover:text-gold transition-colors">
                   {link.label}
                 </Link>
               </li>

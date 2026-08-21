@@ -217,7 +217,7 @@ const AdminUsers: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-surface-raised divide-y divide-gray-200">
+            <tbody className="bg-surface-raised divide-y divide-line">
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-surface">
                   <td className="px-6 py-4 whitespace-nowrap">

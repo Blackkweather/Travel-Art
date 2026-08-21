@@ -260,7 +260,7 @@ const AdminLogs: React.FC = () => {
                 className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                   selectedType === type.value
                     ? 'bg-gold text-off-black shadow-md'
-                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-sunken border border-line'
+                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-warm border border-line'
                 }`}
               >
                 {type.label}

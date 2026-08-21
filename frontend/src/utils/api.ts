@@ -8,8 +8,12 @@ class ApiClient {
   constructor() {
     // In production, use relative path since backend serves frontend
     // In development, use Vite proxy (/api) which proxies to localhost:4000
-    const isProduction = (import.meta as any).env?.MODE === 'production'
-    const apiUrl = (import.meta as any).env?.VITE_API_URL || (isProduction ? '/api' : '/api')
+    // '/api' either way: in production the backend serves the built frontend
+    // from the same origin, and in development Vite proxies /api to
+    // localhost:4000. The isProduction ternary that used to be here chose
+    // '/api' in both branches.
+    const apiUrl = (import.meta as any).env?.VITE_API_URL || '/api'
+
     
     this.client = axios.create({
       baseURL: apiUrl,
@@ -195,7 +199,12 @@ export const adminApi = {
     apiClient.get('/admin/referrals', params),
   
   exportData: async (type: string) => {
-    const response = await axios.get(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api'}/admin/export?type=${type}`, {
+    // Uses axios directly rather than apiClient because it needs a blob
+    // response, but it must resolve the base URL the same way - its own
+    // fallback was http://localhost:8080/api, a port nothing in this project
+    // listens on, so an export in development failed with a network error.
+    const baseUrl = (import.meta as any).env?.VITE_API_URL || '/api'
+    const response = await axios.get(`${baseUrl}/admin/export?type=${type}`, {
       responseType: 'blob',
       headers: {
         'Authorization': `Bearer ${useAuthStore.getState().token}`

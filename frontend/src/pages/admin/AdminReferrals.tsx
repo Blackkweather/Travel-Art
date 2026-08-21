@@ -249,7 +249,7 @@ const AdminReferrals: React.FC = () => {
                       <th className="px-6 py-3 text-right text-xs font-medium text-content-secondary uppercase tracking-wider">Reward</th>
                 </tr>
               </thead>
-                  <tbody className="bg-surface-raised divide-y divide-gray-200">
+                  <tbody className="bg-surface-raised divide-y divide-line">
                 {referrals.map((referral) => (
                       <tr key={referral.id} className="hover:bg-surface transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">

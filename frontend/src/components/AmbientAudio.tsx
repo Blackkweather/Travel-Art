@@ -266,47 +266,13 @@ export default function AmbientAudio({
                 audioRef.current = { youtubePlayer: player }
                 isInitializingRef.current = false
                 
-                // Try to start automatically
-                const tryPlay = () => {
-                  if (!isMountedRef.current) return
-                  
-                  try {
-                    console.log('🎵 Attempting to play YouTube automatically...')
-                    player.playVideo()
-                    safeSetState(setHasStarted, true)
-                    safeSetState(setIsMuted, false)
-                  } catch (error: any) {
-                    console.warn('⚠️ Autoplay blocked, will start on user interaction:', error)
-                    // Fallback: start on any user interaction
-                    const startOnClick = () => {
-                      if (!isMountedRef.current) return
-                      if (hasStarted) return
-                      
-                      try {
-                        console.log('🎵 Starting YouTube on click...')
-                        player.playVideo()
-                        safeSetState(setHasStarted, true)
-                        safeSetState(setIsMuted, false)
-                      } catch (e) {
-                        console.warn('⚠️ Error starting on click:', e)
-                      }
-                    }
-                    
-                    // Store listeners for cleanup
-                    const clickHandler = startOnClick
-                    const touchHandler = startOnClick
-                    document.addEventListener('click', clickHandler, { once: true })
-                    document.addEventListener('touchstart', touchHandler, { once: true })
-                    
-                    interactionListenersRef.current.push(
-                      { element: document, event: 'click', handler: clickHandler },
-                      { element: document, event: 'touchstart', handler: touchHandler }
-                    )
-                  }
-                }
-                
-                // Try immediately
-                tryPlay()
+                // The player is left paused. This is the branch that actually
+                // runs on the landing page, whose src is a YouTube URL: it
+                // called playVideo() the moment the player was ready and, when
+                // the browser refused, bound click and touchstart on
+                // `document` with { once: true } - so the visitor's next click
+                // anywhere started music at half volume. Playback now begins
+                // only from the labelled control.
               },
               onStateChange: (event: any) => {
                 if (!isMountedRef.current) return
@@ -513,58 +479,17 @@ export default function AmbientAudio({
     
     console.log('🎵 Audio element created with src:', audio.src)
 
-    // Function to start audio
-    const startAudio = async () => {
-      if (!isMountedRef.current || hasStarted || !audioRef.current) {
-        console.log('🎵 Start audio skipped:', { isMounted: isMountedRef.current, hasStarted, hasAudio: !!audioRef.current })
-        return
-      }
-      
-      console.log('🎵 Attempting to play audio:', (audioRef.current as HTMLAudioElement).src)
-      try {
-        (audioRef.current as HTMLAudioElement).muted = false
-        ;(audioRef.current as HTMLAudioElement).volume = initialVolume
-        await (audioRef.current as HTMLAudioElement).play()
-        console.log('✅ Audio playing!')
-        safeSetState(setHasStarted, true)
-      } catch (e: any) {
-        console.error('❌ Audio play failed:', e.message, e)
-      }
-    }
-
-    // Try to start automatically when ready
-    const canPlayStartHandler = () => {
-      startAudio().catch((error) => {
-        if (!isMountedRef.current) return
-        
-        console.warn('⚠️ Autoplay blocked, will start on user interaction')
-        // If autoplay fails, start on user interaction
-        const handleInteraction = () => {
-          if (!isMountedRef.current) return
-          startAudio().catch(() => {})
-        }
-        
-        const clickHandler = handleInteraction
-        const touchHandler = handleInteraction
-        
-        document.addEventListener('click', clickHandler, { once: true })
-        document.addEventListener('touchstart', touchHandler, { once: true })
-        
-        interactionListenersRef.current.push(
-          { element: document, event: 'click', handler: clickHandler },
-          { element: document, event: 'touchstart', handler: touchHandler }
-        )
-      })
-    }
-    
-    audio.addEventListener('canplay', canPlayStartHandler)
-    
-    // Also try after a short delay
-    const delayTimeout = setTimeout(() => {
-      if (isMountedRef.current && !hasStarted && audioRef.current) {
-        startAudio().catch(() => {})
-      }
-    }, 500)
+    // Sound is never started for the visitor. What used to sit here tried to
+    // autoplay unmuted at 50% volume as soon as the file could play, and again
+    // on a 500ms timer; when the browser refused - which it always does
+    // without a prior gesture - it registered click and touchstart listeners
+    // on `document` with { once: true }. So the visitor's first click anywhere
+    // on the site started music: clicking "Je suis artiste", or a nav link, or
+    // dismissing a toast. Nothing about that click asked for audio.
+    //
+    // The floating control is now the only way to start playback. It is
+    // labelled, it is reachable by keyboard, and it says "Écouter" until it
+    // has been used.
 
     // Setup GSAP scroll-based volume fade
     try {
@@ -607,7 +532,6 @@ export default function AmbientAudio({
         audioEl.removeEventListener('loadstart', loadStartHandler)
         audioEl.removeEventListener('canplay', canPlayHandler)
         audioEl.removeEventListener('playing', playingHandler)
-        audioEl.removeEventListener('canplay', canPlayStartHandler)
         
         try {
           audioEl.pause()
@@ -617,9 +541,6 @@ export default function AmbientAudio({
           // Ignore cleanup errors
         }
       }
-      
-      // Clear timeout
-      clearTimeout(delayTimeout)
       
       // Clear audio reference
       audioRef.current = null
@@ -719,8 +640,9 @@ export default function AmbientAudio({
         safeSetState(setIsMuted, false)
         return
       } catch (error: any) {
-        console.error('❌ Failed to start:', error)
-        alert(`Lecture audio impossible : ${error.message}`)
+        // Was a window.alert. Ambient music failing to start is not worth
+        // interrupting the page for.
+        console.warn('Lecture audio impossible :', error?.message)
         return
       }
     }
@@ -782,7 +704,7 @@ export default function AmbientAudio({
     <>
       <button
         onClick={toggleMute}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-all duration-300 flex items-center justify-center group"
+        className="fixed bottom-6 left-6 z-50 w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-all duration-300 flex items-center justify-center group"
         aria-label={isMuted ? 'Unmute ambient audio' : 'Mute ambient audio'}
         title={isMuted ? 'Unmute ambient audio' : 'Mute ambient audio'}
       >
@@ -821,9 +743,12 @@ export default function AmbientAudio({
             />
           </svg>
         )}
+        {/* Was "Click to Play" - English on a French-only site - and the
+            control itself sat bottom-right, on top of the landing hero's
+            previous/next buttons. Both now live in opposite corners. */}
         {!hasStarted && (
-          <span className="absolute -top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-xs text-off-black bg-gold px-3 py-1.5 rounded-card shadow-lg font-medium">
-            Click to Play
+          <span className="absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap text-xs text-off-black bg-gold px-3 py-1.5 rounded-card shadow-lg font-medium">
+            Écouter
           </span>
         )}
       </button>
