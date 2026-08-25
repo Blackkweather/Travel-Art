@@ -312,14 +312,14 @@
   /* A rule that draws itself in when its section scrolls into view, finished
      with a spark. Add .is-revealed (the ScrollAnimationWrapper does this) to
      trigger. Without JS it renders drawn, never blank. */
+  /* A hairline closing a page header, finished with the gold spark. It was
+     built to draw itself in on scroll via an .is-pending class, but nothing
+     ever applied that class, so the transition was dead and the rule always
+     rendered drawn. Rather than wire up an animation that only decorates, the
+     rule stays static: it organises the header, which is the job it is
+     actually doing. */
   .rule-reveal {
-    @apply relative block h-px w-full bg-[var(--border-strong)] origin-left;
-    transform: scaleX(1);
-    transition: transform 0.6s var(--ease-entrance);
-  }
-
-  .rule-reveal.is-pending {
-    transform: scaleX(0);
+    @apply relative block h-px w-full bg-[var(--border-strong)];
   }
 
   .rule-reveal::after {

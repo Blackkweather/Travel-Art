@@ -46,6 +46,14 @@ const PILLARS = [
   },
 ] as const
 
+// Spans, crops and vertical offsets for the pillar trio. Kept beside the data
+// so the two cannot fall out of step: three entries, three pillars.
+const PILLAR_LAYOUT = [
+  { col: 'md:col-span-5', ratio: 'aspect-[4/5]', offset: '' },
+  { col: 'md:col-span-4', ratio: 'aspect-[3/4]', offset: 'md:mt-16' },
+  { col: 'md:col-span-3', ratio: 'aspect-square', offset: 'md:mt-32' },
+] as const
+
 export default function LandingPage() {
   // States
   const [experiences, setExperiences] = useState<any[]>([])
@@ -716,14 +724,17 @@ export default function LandingPage() {
               s’y arrête, et ce qui s’y produit devient l’essentiel.
             </p>
 
+            {/* A headline beside a small explainer paragraph is the templated
+                section header this design language keeps reaching for. The
+                paragraph that used to open this column restated the manifesto
+                next to it and was cut; what remains is a figure, which is a
+                compositional element rather than filler, and earns the split. */}
             <div className="lg:col-span-3 lg:col-start-10 self-end">
-              <p className="text-content-secondary leading-relaxed">
-                Musiciens, plasticiens et interprètes, dans plus de trente
-                destinations.
+              <div className="h-px w-full bg-line-strong" />
+              <p className="mt-8 font-serif text-6xl text-gold leading-none">30+</p>
+              <p className="text-content-secondary text-sm mt-3">
+                Destinations, de Paris à Ibiza
               </p>
-              <div className="mt-8 h-px w-full bg-line-strong" />
-              <p className="mt-8 font-serif text-5xl text-gold">30+</p>
-              <p className="text-content-secondary text-sm mt-1">Destinations</p>
             </div>
           </div>
         </section>
@@ -738,10 +749,19 @@ export default function LandingPage() {
             <p className="eyebrow">Le programme</p>
             <h2 className="mt-5 max-w-[18ch]">Une résidence, pas une prestation.</h2>
 
-            <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
-              {PILLARS.map((pillar) => (
-                <article key={pillar.title} className="flex flex-col">
-                  <div className="relative overflow-hidden rounded-card aspect-[4/5] bg-surface-sunken">
+            {/* Three equal columns at identical heights is the single most
+                recognisable generated-layout shape, and it also flattens the
+                content: these three promises are not equally weighted. The
+                residency is the offer, so it takes the widest column and the
+                tallest crop; the other two step down in width, aspect and
+                vertical offset. Twelve columns, spans 5 / 4 / 3. */}
+            <div className="mt-14 grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-x-10 lg:gap-y-12">
+              {PILLARS.map((pillar, i) => (
+                <article
+                  key={pillar.title}
+                  className={`flex flex-col ${PILLAR_LAYOUT[i].col} ${PILLAR_LAYOUT[i].offset}`}
+                >
+                  <div className={`relative overflow-hidden rounded-card bg-surface-sunken ${PILLAR_LAYOUT[i].ratio}`}>
                     <img decoding="async"
                       src={pillar.image}
                       alt=""
@@ -750,7 +770,7 @@ export default function LandingPage() {
                     />
                   </div>
                   <h3 className="mt-6">{pillar.title}</h3>
-                  <p className="mt-3 text-content-secondary leading-relaxed">
+                  <p className="mt-3 text-content-secondary leading-relaxed max-w-[38ch]">
                     {pillar.body}
                   </p>
                 </article>
@@ -790,7 +810,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link to="/register?role=artist" className="btn-primary btn-arrow mt-10">
-                  Candidater
+                  Je suis artiste
                 </Link>
               </div>
 
@@ -813,7 +833,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link to="/register?role=hotel" className="btn-primary btn-arrow mt-10">
-                  Ouvrir mon hôtel
+                  Je suis un hôtel
                 </Link>
               </div>
             </div>
@@ -830,12 +850,17 @@ export default function LandingPage() {
             <p className="mt-8 text-content-inverse/70 max-w-[46ch] mx-auto leading-relaxed">
               Candidatez comme artiste, ou ouvrez votre hôtel au programme.
             </p>
+            {/* "Nous rejoindre" here was a third label for the action the hero
+                already names twice. The page asks the same question at the
+                start and at the end, in the same words, so a visitor who
+                scrolled past the hero meets a choice they recognise rather
+                than a new one they have to re-read. */}
             <div className="mt-12 flex flex-wrap gap-4 justify-center">
-              <Link to="/register" className="btn-gold btn-arrow">
-                Nous rejoindre
+              <Link to="/register?role=artist" className="btn-gold btn-arrow">
+                Je suis artiste
               </Link>
-              <Link to="/how-it-works" className="btn-on-media">
-                Le principe
+              <Link to="/register?role=hotel" className="btn-on-media btn-arrow">
+                Je suis un hôtel
               </Link>
             </div>
           </div>
