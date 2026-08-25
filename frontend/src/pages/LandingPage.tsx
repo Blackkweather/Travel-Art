@@ -26,23 +26,35 @@ const PREV = -1
 const SLIDE_DURATION = 1.5
 
 // The three promises the programme makes, in the order an artist weighs them:
-// where they will be, what they will make, what it costs them. Imagery is
-// served from the Unsplash CDN, which the backend CSP already allows.
+// where they will be, what they will make, what it costs them.
+//
+// The imagery was three Unsplash stock frames - a hotel bed with a television,
+// a neon MUSIC sign, a festival crowd - which said "hotel" and "music" without
+// saying anything about a residency. These are commissioned to the brand
+// instead: one warm-light register across all three, navy in the shadows, gold
+// in the highlights, and an artist's presence implied by their tools rather
+// than staged. Self-hosted, so the CDN round trip and its CSP entry go away.
 const PILLARS = [
   {
     title: 'Résidence',
     body: 'Une chambre et une scène dans un hôtel qui programme la culture toute l’année, pas un soir de gala.',
-    image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=900&q=70&fit=crop&auto=format',
+    image: '/images/pillars/residence.webp',
+    width: 1792,
+    height: 2304,
   },
   {
     title: 'Création',
     body: 'Du temps entre deux représentations. Ce que vous produisez sur place vous appartient entièrement.',
-    image: 'https://images.unsplash.com/photo-1499415479124-43c32433a620?w=900&q=70&fit=crop&auto=format',
+    image: '/images/pillars/creation.webp',
+    width: 1792,
+    height: 2432,
   },
   {
     title: 'Tout compris',
     body: 'Voyage, hébergement et repas réglés avant votre arrivée. Aucune commission prélevée côté artiste.',
-    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=900&q=70&fit=crop&auto=format',
+    image: '/images/pillars/tout-compris.webp',
+    width: 2048,
+    height: 2048,
   },
 ] as const
 
@@ -762,10 +774,16 @@ export default function LandingPage() {
                   className={`flex flex-col ${PILLAR_LAYOUT[i].col} ${PILLAR_LAYOUT[i].offset}`}
                 >
                   <div className={`relative overflow-hidden rounded-card bg-surface-sunken ${PILLAR_LAYOUT[i].ratio}`}>
-                    <img decoding="async"
+                    {/* alt is empty on purpose: the heading directly below
+                        names the pillar, so describing the photograph would
+                        make a screen reader announce it twice. */}
+                    <img
                       src={pillar.image}
                       alt=""
+                      width={pillar.width}
+                      height={pillar.height}
                       loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover"
                     />
                   </div>
