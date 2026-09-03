@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 import { hotelsApi, paymentsApi } from '@/utils/api'
 import { transactionTypeLabel, formatNumber } from '@/utils/i18n'
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const HotelCredits: React.FC = () => {
   const { user } = useAuthStore()
@@ -107,6 +108,7 @@ const HotelCredits: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Crédits') + ' — Travel Art'} />
       {/* Header */}
       <div className="fade-in-up">
         <h1 className="dashboard-title mb-3 gold-underline">

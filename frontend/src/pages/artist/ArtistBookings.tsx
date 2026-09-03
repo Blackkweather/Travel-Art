@@ -9,6 +9,7 @@ import StatusBadge from '@/components/StatusBadge'
 import type { Booking as BookingType } from '@/types'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected'
 
@@ -217,6 +218,7 @@ const ArtistBookings: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Mes réservations') + ' — Travel Art'} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -9,6 +9,7 @@ import StatusBadge from '@/components/StatusBadge'
 import { parseJsonField } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 interface Booking {
   id: string
@@ -118,6 +119,7 @@ const ArtistDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface" data-testid="dashboard">
+      <SEOHead title={t('Tableau de bord') + ' — Travel Art'} />
       <div className="shell py-12 md:py-16">
         <header className="page-head">
           <span className="eyebrow">Espace artiste</span>

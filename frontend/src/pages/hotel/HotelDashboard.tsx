@@ -11,6 +11,7 @@ import { personName } from '@/utils/apiPayload'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 interface Booking {
   id: string
@@ -201,6 +202,7 @@ const HotelDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface" data-testid="dashboard">
+      <SEOHead title={t('Tableau de bord') + ' — Travel Art'} />
       <div className="shell py-12 md:py-16 space-y-12">
         <header className="page-head">
           <span className="eyebrow">{t('Espace hôtel')}</span>

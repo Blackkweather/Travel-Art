@@ -4,6 +4,7 @@ import { User, Search, Filter, Download } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 interface UserData {
   id: string
@@ -138,6 +139,7 @@ const AdminUsers: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <SEOHead title={t('Utilisateurs') + ' — Travel Art'} />
       <div className="flex items-center justify-between">
     <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">

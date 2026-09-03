@@ -17,6 +17,7 @@ import {
 import { extractArray } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 type DashboardStats = {
   totalUsers: number
@@ -314,6 +315,7 @@ const AdminAnalytics: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Statistiques') + ' — Travel Art'} />
       <header className="page-head">
         <span className="eyebrow">Administration</span>
         <h1 className="page-head__title">{t('Statistiques de la plateforme')}</h1>

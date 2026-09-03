@@ -4,6 +4,7 @@ import { apiClient } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 interface Application {
   id: string
@@ -111,6 +112,7 @@ const AdminAdmissions: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface">
+      <SEOHead title={t('Admissions') + ' — Travel Art'} />
       {/* Not `.shell`: that centres a 1280px measure, which inside the
           sidebar layout pushed the decision column off the panel. */}
       <div className="mx-auto w-full max-w-[1600px] px-6 py-12 md:px-10 md:py-16">

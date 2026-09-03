@@ -3,21 +3,24 @@ import { artistsApi, hotelsApi, adminApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { User, Building, Download, Eye, Ban, CheckCircle } from 'lucide-react'
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 type ArtistListItem = {
   id: string
   userId?: string
-  user?: { id?: string; name?: string; email?: string }
+  user?: { id?: string; name?: string; email?: string; isActive?: boolean }
   name?: string
   discipline?: string
+  isActive?: boolean
 }
 
 type HotelListItem = {
   id: string
   userId?: string
-  user?: { id?: string; name?: string; email?: string }
+  user?: { id?: string; name?: string; email?: string; isActive?: boolean }
   name: string
   location?: string
+  isActive?: boolean
 }
 
 const AdminModeration: React.FC = () => {
@@ -153,6 +156,7 @@ const AdminModeration: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface">
+      <SEOHead title={t('Modération') + ' — Travel Art'} />
       <div className="shell py-12 md:py-16">
         <div className="mb-8">
       <div className="flex items-center justify-between">
@@ -220,8 +224,8 @@ const AdminModeration: React.FC = () => {
                       <User className="w-6 h-6 text-content-secondary" />
                     </div>
                     <div>
-                      <div className="font-semibold text-content">{a.user?.name || a.name || 'Artist'}</div>
-                      <div className="text-sm text-content-secondary">{a.discipline || 'Artist'}</div>
+                      <div className="font-semibold text-content">{a.user?.name || a.name || t('Artiste')}</div>
+                      <div className="text-sm text-content-secondary">{a.discipline || t('Discipline non renseignée')}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -232,22 +236,25 @@ const AdminModeration: React.FC = () => {
                       <Eye className="w-4 h-4" />
                       Examiner
                     </a>
-                    <button 
-                      onClick={() => suspendUser(a.userId || a.user?.id)} 
-                      disabled={processing === (a.userId || a.user?.id)} 
-                      className="btn-danger btn-sm"
-                    >
-                      <Ban className="w-4 h-4" />
-                      Suspendre
-                    </button>
-                    <button 
-                      onClick={() => activateUser(a.userId || a.user?.id)} 
-                      disabled={processing === (a.userId || a.user?.id)} 
-                      className="btn-outline btn-sm"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      {t('Réactiver')}
-                    </button>
+                    {(a.user?.isActive ?? a.isActive ?? true) ? (
+                      <button
+                        onClick={() => suspendUser(a.userId || a.user?.id)}
+                        disabled={processing === (a.userId || a.user?.id)}
+                        className="btn-danger btn-sm"
+                      >
+                        <Ban className="w-4 h-4" />
+                        {t('Suspendre')}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => activateUser(a.userId || a.user?.id)}
+                        disabled={processing === (a.userId || a.user?.id)}
+                        className="btn-outline btn-sm"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        {t('Réactiver')}
+                      </button>
+                    )}
                   </div>
                 </div>
                 ))
@@ -282,22 +289,25 @@ const AdminModeration: React.FC = () => {
                       <Eye className="w-4 h-4" />
                       Examiner
                     </a>
-                    <button 
-                      onClick={() => suspendUser(h.userId || h.user?.id)} 
-                      disabled={processing === (h.userId || h.user?.id)} 
-                      className="btn-danger btn-sm"
-                    >
-                      <Ban className="w-4 h-4" />
-                      Suspendre
-                    </button>
-                    <button 
-                      onClick={() => activateUser(h.userId || h.user?.id)} 
-                      disabled={processing === (h.userId || h.user?.id)} 
-                      className="btn-outline btn-sm"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      {t('Réactiver')}
-                    </button>
+                    {(h.user?.isActive ?? h.isActive ?? true) ? (
+                      <button
+                        onClick={() => suspendUser(h.userId || h.user?.id)}
+                        disabled={processing === (h.userId || h.user?.id)}
+                        className="btn-danger btn-sm"
+                      >
+                        <Ban className="w-4 h-4" />
+                        {t('Suspendre')}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => activateUser(h.userId || h.user?.id)}
+                        disabled={processing === (h.userId || h.user?.id)}
+                        className="btn-outline btn-sm"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        {t('Réactiver')}
+                      </button>
+                    )}
                   </div>
                 </div>
                 ))

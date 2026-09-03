@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import { personName } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 interface Booking {
   id: string
@@ -196,6 +197,7 @@ const HotelBookings: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Réservations') + ' — Travel Art'} />
       {/* Header */}
       <div>
         <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">

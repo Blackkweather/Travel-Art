@@ -9,6 +9,7 @@ import DateRangePicker from '@/components/DateRangePicker'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { t } from '@/i18n'
 import { formatShortDate } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const ArtistProfile: React.FC = () => {
   const [uploadingImages, setUploadingImages] = useState(false)
@@ -323,6 +324,7 @@ const ArtistProfile: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Mon profil') + ' — Travel Art'} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

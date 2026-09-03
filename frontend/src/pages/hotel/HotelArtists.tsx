@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
 import { extractArray } from '@/utils/apiPayload'
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const PLACEHOLDER_IMAGE = '/images/placeholder-experience.webp'
 
@@ -434,6 +435,7 @@ const HotelArtists: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Parcourir les artistes') + ' — Travel Art'} />
       {/* Header */}
       <div>
         <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">

@@ -20,6 +20,7 @@ import { adminApi } from '@/utils/api'
 import toast from 'react-hot-toast'
 import { t } from '@/i18n'
 import { formatNumber, formatRelative } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 type ActivityType = 'ALL' | 'USER_REGISTRATION' | 'BOOKING' | 'TRANSACTION' | 'RATING' | 'ADMIN_ACTION'
 
@@ -206,6 +207,7 @@ const AdminLogs: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <SEOHead title={t('Journal d’activité') + ' — Travel Art'} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -222,7 +224,7 @@ const AdminLogs: React.FC = () => {
             className="btn-secondary flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            {t('Actualiser')}
           </button>
           <button
             onClick={exportLogs}

@@ -5,6 +5,7 @@ import StatusBadge from '@/components/StatusBadge'
 import { Users, Download, Search, Filter } from 'lucide-react'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 interface Referral {
   id: string
@@ -129,6 +130,7 @@ const AdminReferrals: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface">
+      <SEOHead title={t('Parrainage') + ' — Travel Art'} />
       <div className="shell py-12 md:py-16">
         {/* Header */}
         <div className="mb-8">

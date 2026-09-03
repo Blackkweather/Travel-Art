@@ -7,6 +7,7 @@ import { adminApi, commonApi, paymentsApi } from '@/utils/api'
 import { extractArray } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { formatNumber, formatRelative } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 type DashboardStats = {
   totalUsers: number
@@ -206,6 +207,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface" data-testid="dashboard">
+      <SEOHead title={t('Tableau de bord') + ' — Travel Art'} />
       <div className="shell py-12 md:py-16 space-y-10">
         <header className="page-head">
           <span className="eyebrow">Administration</span>

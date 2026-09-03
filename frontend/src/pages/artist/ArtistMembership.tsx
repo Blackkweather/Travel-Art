@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
 import { formatDate, formatShortDate } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 function showToast(message: string) {
   try {
@@ -183,6 +184,7 @@ const ArtistMembership: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Adhésion') + ' — Travel Art'} />
       {/* Header */}
       <div>
         <h1 className="page-head__title">

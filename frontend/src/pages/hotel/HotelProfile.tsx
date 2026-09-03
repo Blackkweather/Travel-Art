@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Save, Edit3, MapPin, Building, Plus, Trash2, AlertCircle } from 'lucide-react'
 import { hotelsApi } from '@/utils/api'
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 /**
  * Hotel profile.
@@ -147,6 +148,7 @@ const HotelProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead title={t('Profil de l’hôtel') + ' — Travel Art'} />
       <div className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>

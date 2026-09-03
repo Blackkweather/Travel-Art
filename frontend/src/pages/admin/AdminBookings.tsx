@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/Select'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 interface BookingData {
   id: string
@@ -130,6 +131,7 @@ const AdminBookings: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <SEOHead title={t('Réservations') + ' — Travel Art'} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
