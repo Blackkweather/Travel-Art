@@ -157,7 +157,7 @@ const ArtistRegistrationFlow: React.FC = () => {
       const errorMessage =
         error.response?.data?.error?.message ||
         error.message ||
-        'Inscription échouée. Veuillez réessayer.';
+        t('Inscription échouée. Veuillez réessayer.');
       toast.error(errorMessage);
       console.error('Registration error:', error);
     } finally {

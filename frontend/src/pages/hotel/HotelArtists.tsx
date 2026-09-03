@@ -690,9 +690,18 @@ const HotelArtists: React.FC = () => {
 
       {/* Booking Modal */}
       {bookingModal.open && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-surface-raised rounded-card shadow-soft p-6 w-full max-w-md">
-            <h3 className="text-xl font-serif font-semibold text-content mb-4">{t('Demander une date')}</h3>
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setBookingModal({ open: false })}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="booking-modal-title"
+            className="bg-surface-raised rounded-card shadow-soft p-6 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="booking-modal-title" className="text-xl font-serif font-semibold text-content mb-4">{t('Demander une date')}</h3>
             <div className="space-y-3">
               <div>
                 <label className="form-label">{t('Date de début')}</label>

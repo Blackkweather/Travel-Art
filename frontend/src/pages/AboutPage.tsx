@@ -41,10 +41,10 @@ const AUDIENCES = [
 ] as const
 
 const VALUES = [
-  ['Exigence', 'Un niveau élevé attendu des artistes comme des hôtels.'],
-  ['Clarté', 'Des conditions et des échanges transparents à chaque étape.'],
-  ['Accompagnement', 'Un interlocuteur dédié des deux côtés.'],
-  ['Amélioration continue', 'Une plateforme qui évolue avec ceux qui s’en servent.'],
+  [t('Exigence'), t('Un niveau élevé attendu des artistes comme des hôtels.')],
+  [t('Clarté'), t('Des conditions et des échanges transparents à chaque étape.')],
+  [t('Accompagnement'), t('Un interlocuteur dédié des deux côtés.')],
+  [t('Amélioration continue'), t('Une plateforme qui évolue avec ceux qui s’en servent.')],
 ] as const
 
 const AboutPage: React.FC = () => {

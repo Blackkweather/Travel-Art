@@ -76,6 +76,44 @@ const prismaAdmin = new PrismaClient({
  */
 const appDbUrl = process.env.APP_DATABASE_URL;
 
+/**
+ * Refuse to serve production traffic with row-level security switched off.
+ *
+ * Leaving APP_DATABASE_URL out of a deploy environment is not a visible
+ * failure: every query still works, every page still renders, and the only
+ * difference is that tenant isolation is gone - one hotel can read another's
+ * bookings and credits. A deployment that is silently insecure is worse than
+ * one that will not start, so this stops rather than warns.
+ *
+ * RLS_OPT_OUT=1 is the escape hatch for running production on the owner
+ * connection knowingly.
+ */
+if (
+  process.env.NODE_ENV === 'production' &&
+  !appDbUrl &&
+  process.env.RLS_OPT_OUT !== '1'
+) {
+  console.error(
+    [
+      '',
+      'FATAL: APP_DATABASE_URL is not set.',
+      'Row-level security is enforced by connecting as the travelart_app role.',
+      'Without it this process uses the owner connection, every policy is',
+      'bypassed, and hotels can read one another. Refusing to start.',
+      '',
+      'Set APP_DATABASE_URL, or RLS_OPT_OUT=1 if that is genuinely intended.',
+      '',
+    ].join('\n')
+  );
+  process.exit(1);
+}
+
+if (!appDbUrl && process.env.NODE_ENV !== 'production') {
+  console.warn(
+    'APP_DATABASE_URL is not set: row-level security is INACTIVE in this process.'
+  );
+}
+
 const baseClient = appDbUrl
   ? new PrismaClient({
       datasources: { db: { url: appDbUrl } },

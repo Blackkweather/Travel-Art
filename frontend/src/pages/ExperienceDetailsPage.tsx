@@ -128,7 +128,7 @@ const ExperienceDetailsPage: React.FC = () => {
           hotel:
             typeof trip.hotel === 'string'
               ? trip.hotel
-              : trip.hotel?.name || trip.hotelName || 'Lieu à confirmer',
+              : trip.hotel?.name || trip.hotelName || t('Lieu à confirmer'),
           date: trip.startDate || trip.date || new Date().toISOString().split('T')[0],
           image: images && images.length > 0 
             ? images[0] 

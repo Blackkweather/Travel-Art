@@ -72,15 +72,15 @@ const Step3Confirmation: React.FC<Step3Props> = ({
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-content-secondary mb-1">{t('Nom de scène')}</p>
-            <p className="text-content font-medium">{basicInfo.stageName || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{basicInfo.stageName || t('Non renseigné')}</p>
           </div>
           <div>
             <p className="text-sm text-content-secondary mb-1">{t('Prénom')}</p>
-            <p className="text-content font-medium">{basicInfo.firstName || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{basicInfo.firstName || t('Non renseigné')}</p>
           </div>
           <div>
             <p className="text-sm text-content-secondary mb-1">Nom</p>
-            <p className="text-content font-medium">{basicInfo.lastName || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{basicInfo.lastName || t('Non renseigné')}</p>
           </div>
           <div>
             <p className="text-sm text-content-secondary mb-1">{t('Date de naissance')}</p>
@@ -88,15 +88,15 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           </div>
           <div>
             <p className="text-sm text-content-secondary mb-1">E-mail</p>
-            <p className="text-content font-medium">{basicInfo.email || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{basicInfo.email || t('Non renseigné')}</p>
           </div>
           <div>
             <p className="text-sm text-content-secondary mb-1">{t('Téléphone')}</p>
-            <p className="text-content font-medium">{basicInfo.phone || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{basicInfo.phone || t('Non renseigné')}</p>
           </div>
           <div>
             <p className="text-sm text-content-secondary mb-1">Pays</p>
-            <p className="text-content font-medium">{basicInfo.country || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{basicInfo.country || t('Non renseigné')}</p>
           </div>
         </div>
       </motion.div>
@@ -117,7 +117,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
         <div className="space-y-4">
           <div>
             <p className="text-sm text-content-secondary mb-1">{t('Catégorie principale')}</p>
-            <p className="text-content font-medium">{artisticCategory.mainCategory || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{artisticCategory.mainCategory || t('Non renseigné')}</p>
           </div>
           {artisticCategory.secondaryCategory && (
             <div>
@@ -144,7 +144,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           </div>
           <div>
             <p className="text-sm text-content-secondary mb-1">Tribu Artistique</p>
-            <p className="text-content font-medium">{subcategory.categoryType || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{subcategory.categoryType || t('Non renseigné')}</p>
           </div>
           {subcategory.specificCategory && (
             <div>
@@ -154,7 +154,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           )}
           <div>
             <p className="text-sm text-content-secondary mb-1">Domaine</p>
-            <p className="text-content font-medium">{subcategory.domain || 'Non renseigné'}</p>
+            <p className="text-content font-medium">{subcategory.domain || t('Non renseigné')}</p>
           </div>
           <div>
             <p className="text-sm text-content-secondary mb-1">{t('Langues parlées')}</p>

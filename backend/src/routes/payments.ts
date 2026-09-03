@@ -182,8 +182,8 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
   );
 
   throw new CustomError(
-    'Memberships are temporarily unavailable while payment processing is being set up. ' +
-    'No card has been charged and your membership has not changed. Please contact us to arrange an upgrade.',
+    'Les adhésions ne sont pas encore disponibles à l’achat en ligne. ' +
+    'Aucune carte n’a été débitée et votre adhésion est inchangée. Écrivez-nous pour la mettre en place.',
     503
   );
 }));

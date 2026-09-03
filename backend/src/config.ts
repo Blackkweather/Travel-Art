@@ -44,6 +44,7 @@ export const config = {
   // is where Stripe's checkout success_url and the password-reset link pointed.
   // Production sets FRONTEND_URL explicitly and still wins here.
   frontendUrl: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || vercelUrl || 'http://localhost:5173',
+
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
@@ -60,3 +61,19 @@ export const config = {
   previewOriginPattern: process.env.PREVIEW_ORIGIN_PATTERN,
 };
 
+/**
+ * Confirmation and password-reset links are built from `frontendUrl`.
+ * If nothing configures it in production they point at localhost, and
+ * the only way to find out is a real person clicking a real link and
+ * landing nowhere. Not fatal - the rest of the API is fine - but it has
+ * to be visible at boot rather than discovered by a locked-out user.
+ */
+if (
+  process.env.NODE_ENV === 'production' &&
+  config.frontendUrl.includes('localhost')
+) {
+  console.error(
+    'WARNING: FRONTEND_URL is not set, so confirmation and password-reset '
+      + 'links will point at localhost and no recipient will be able to use them.'
+  );
+}

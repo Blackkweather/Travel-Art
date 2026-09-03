@@ -101,7 +101,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
             {t('Message prêt')}
           </h3>
           <p className="text-content-secondary mb-6">
-            Votre messagerie devrait s’ouvrir dans un instant. Si ce n’est pas le cas, écrivez-nous directement à{' '}
+            {t('Votre messagerie devrait s’ouvrir dans un instant. Si ce n’est pas le cas,')} écrivez-nous directement à{' '}
             <a href="mailto:hello@travelart.com" className="text-gold hover:underline font-semibold">
               hello@travelart.com
             </a>

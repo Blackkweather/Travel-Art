@@ -505,7 +505,14 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
     // to take over the account. A send failure is swallowed on purpose: the
     // response is identical either way, so a caller cannot learn whether the
     // address exists by watching for an error.
-    await passwordResetEmail(user.email, user.name, resetLink);
+    //
+    // Not awaited, for the same reason registration no longer awaits its
+    // confirmation mail: the round trip put the provider's latency inside the
+    // request, and a slow send became a failure reported for a reset that had
+    // actually been issued.
+    void passwordResetEmail(user.email, user.name, resetLink).catch((err) => {
+      console.error('password reset email failed for user', user.id, err);
+    });
     console.log(`Password reset requested for user ${user.id}`);
   }
 

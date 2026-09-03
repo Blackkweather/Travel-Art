@@ -59,13 +59,13 @@ const PartnersPage: React.FC = () => {
             
             const locationStr = location.city 
               ? `${location.city}, ${location.country || ''}`.trim()
-              : (location.country || hotel.user?.country || 'Pays non renseigné')
+              : (location.country || hotel.user?.country || t('Pays non renseigné'))
             
             return {
               id: hotel.id,
               name: hotel.name,
               location: locationStr,
-              category: 'Hôtel d’exception',
+              category: t('Hôtel d’exception'),
               rating: hotel.averageRating || 4.5,
               bookings: hotel.bookingCount || 0,
               image: images && images.length > 0 ? images[0] : '/images/placeholder-experience.webp',

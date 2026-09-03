@@ -62,7 +62,7 @@ const ArtistMembership: React.FC = () => {
 
   const handleUpgrade = async (membershipType: 'ARTIST' | 'PROFESSIONAL') => {
     if (!user?.artist?.id && !artist?.id) {
-      showToast('Artist profile not found. Please create your profile first.')
+      showToast(t('Créez d’abord votre profil d’artiste.'))
       return
     }
     
@@ -71,14 +71,20 @@ const ArtistMembership: React.FC = () => {
     try {
       setProcessing(true)
       await paymentsApi.membership(artistId, membershipType, 'CARD')
-      showToast('Membership purchased successfully')
+      showToast(t('Adhésion mise à jour'))
       await fetchArtistProfile() // Refresh profile after purchase
     } catch (e: any) {
       console.error('Membership purchase error:', e)
       // The server explains *why* it refused (for example that payment
       // processing is not configured yet, in which case retrying is futile).
       // Telling the artist to "try again" regardless was misleading.
-      showToast(e?.response?.data?.message || 'Membership purchase failed. Please try again.')
+      // The reason lives at data.error.message; reading data.message meant
+      // the server's explanation was thrown away every time.
+      showToast(
+        e?.response?.data?.error?.message ||
+          e?.response?.data?.message ||
+          t('L’adhésion n’a pas pu être mise à jour.')
+      )
     } finally {
       setProcessing(false)
     }
