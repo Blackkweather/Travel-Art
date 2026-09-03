@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { t } from '@/i18n'
 
 const NAV_ITEMS = [
-  { to: '/experiences', label: 'Expériences' },
-  { to: '/top-artists', label: 'Artistes' },
-  { to: '/top-hotels', label: 'Hôtels' },
-  { to: '/how-it-works', label: 'Le principe' },
-  { to: '/about', label: 'À propos' },
+  { to: '/experiences', label: t('Expériences') },
+  { to: '/top-artists', label: t('Artistes') },
+  { to: '/top-hotels', label: t('Hôtels') },
+  { to: '/how-it-works', label: t('Le principe') },
+  { to: '/about', label: t('À propos') },
 ]
 
 interface SimpleNavbarProps {
@@ -126,16 +128,17 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
         </div>
 
         <div className="flex items-center gap-5">
+          <LanguageSwitcher />
           <Link
             to="/login"
             className={`hidden sm:block text-sm font-medium whitespace-nowrap transition-colors duration-300 ${
               onMedia ? 'text-white/85 hover:text-white' : 'text-content hover:text-gold'
             }`}
           >
-            Connexion
+            {t('Connexion')}
           </Link>
           <Link to="/register" className="hidden sm:inline-flex btn-gold btn-sm">
-            Nous rejoindre
+            {t('Nous rejoindre')}
           </Link>
 
           <button
@@ -172,12 +175,15 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
                 </Link>
               </li>
             ))}
+            <li className="pt-6">
+              <LanguageSwitcher compact />
+            </li>
             <li className="pt-6 sm:hidden flex flex-col gap-3">
               <Link to="/register" className="btn-gold w-full">
-                Nous rejoindre
+                {t('Nous rejoindre')}
               </Link>
               <Link to="/login" className="btn-outline w-full">
-                Connexion
+                {t('Connexion')}
               </Link>
             </li>
           </ul>

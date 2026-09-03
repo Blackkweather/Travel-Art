@@ -48,17 +48,12 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApi.register(data)
           console.log('📥 Registration response:', response.data)
           
-          const { user, token } = response.data.data
-          console.log('✅ User registered successfully:', { userId: user.id, email: user.email, token: token ? '✓' : '✗' })
-          
-          set({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false
-          })
-          
-          console.log('💾 Auth state updated - user is now authenticated')
+          /* Registration deliberately returns no token: the account is
+             PENDING until an administrator admits it, so there is no session
+             to establish. Setting isAuthenticated here would leave the app
+             believing it is signed in while every authenticated call is
+             refused - which is exactly what it used to do. */
+          set({ isLoading: false })
         } catch (error: any) {
           console.error('❌ Registration failed:', error.response?.data || error.message)
           set({ isLoading: false })

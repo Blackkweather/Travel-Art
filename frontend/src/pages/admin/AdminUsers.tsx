@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { adminApi } from '@/utils/api'
-import { User, CheckCircle, XCircle, Search, Filter, Download, Calendar } from 'lucide-react'
+import { User, Search, Filter, Download } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import StatusBadge from '@/components/StatusBadge'
+import { t } from '@/i18n'
 
 interface UserData {
   id: string
@@ -110,13 +112,20 @@ const AdminUsers: React.FC = () => {
     }
   }
 
-  const getRoleBadge = (role: string) => {
-    const colors = {
-      ARTIST: 'bg-purple-100 text-purple-800',
-      HOTEL: 'bg-blue-100 text-blue-800',
-      ADMIN: 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
+  /* A role is not a status. Painting ADMIN in the critical red reserved for
+     failures said an administrator account was a problem; all three roles are
+     now the neutral chip, and the label carries the distinction. */
+  const roleLabel = (role: string) => {
+    switch (role) {
+      case 'ARTIST':
+        return 'Artiste'
+      case 'HOTEL':
+        return t('Hôtel')
+      case 'ADMIN':
+        return 'Administrateur'
+      default:
+        return role
     }
-    return colors[role as keyof typeof colors] || 'bg-surface-sunken text-content'
   }
 
   if (loading && users.length === 0) {
@@ -132,10 +141,10 @@ const AdminUsers: React.FC = () => {
       <div className="flex items-center justify-between">
     <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-        Gestion des utilisateurs
+        {t('Gestion des utilisateurs')}
       </h1>
           <p className="text-content-secondary">
-            Gérer les utilisateurs, vérifier les comptes et traiter les demandes d’assistance.
+            {t('Gérer les utilisateurs, vérifier les comptes et traiter les demandes d’assistance.')}
           </p>
         </div>
         <button
@@ -155,14 +164,14 @@ const AdminUsers: React.FC = () => {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Rechercher par nom ou par e-mail…"
+                placeholder={t('Rechercher par nom ou par e-mail…')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
               />
             </div>
             <button type="submit" className="btn-primary whitespace-nowrap">
-              Rechercher
+              {t('Rechercher')}
             </button>
           </form>
           
@@ -176,9 +185,9 @@ const AdminUsers: React.FC = () => {
               }}
               className="filter-select"
             >
-              <option value="all">Tous les rôles</option>
+              <option value="all">{t('Tous les rôles')}</option>
               <option value="ARTIST">Artistes</option>
-              <option value="HOTEL">Hôtels</option>
+              <option value="HOTEL">{t('Hôtels')}</option>
               <option value="ADMIN">Administrateurs</option>
             </select>
           </div>
@@ -186,64 +195,40 @@ const AdminUsers: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded-card">
-          {error}
-        </div>
+        <div className="notice-critical">{error}</div>
       )}
 
       {/* Users Table */}
-      <div className="card-luxury overflow-hidden">
+      <div className="panel overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-surface border-b border-line">
+          <table className="data-table">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  Utilisateur
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  Détails
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  Statut
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  Joined
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-content-secondary uppercase tracking-wider">
-                  Actions
-                </th>
+                <th scope="col">Utilisateur</th>
+                <th scope="col">{t('Rôle')}</th>
+                <th scope="col">{t('Détails')}</th>
+                <th scope="col">Statut</th>
+                <th scope="col">Inscription</th>
+                <th scope="col" className="numeric">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-surface-raised divide-y divide-line">
+            <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="hover:bg-surface">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
-                        <User className="w-5 h-5 text-gold" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-content">{user.name}</div>
-                        <div className="text-sm text-content-secondary">{user.email}</div>
-                      </div>
-                    </div>
+                <tr key={user.id}>
+                  <td>
+                    <div className="font-medium text-content">{user.name}</div>
+                    <div className="text-content-secondary">{user.email}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadge(user.role)}`}>
-                      {user.role}
-                    </span>
+                  <td>
+                    <span className="badge-neutral">{roleLabel(user.role)}</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td>
                     {user.role === 'ARTIST' && user.artist && (
                       <div className="text-sm">
                         <div className="text-content font-medium">{user.artist.discipline}</div>
                         {user.artist.membershipStatus === 'ACTIVE' && (
-                          <div className="text-green-600 dark:text-green-400 text-xs flex items-center mt-1">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Active Member
+                          <div className="mt-1 text-[0.8125rem] text-[var(--state-positive)]">
+                            {t('Adhésion active')}
                           </div>
                         )}
                       </div>
@@ -264,48 +249,33 @@ const AdminUsers: React.FC = () => {
                       </div>
                     )}
                     {user.role === 'ADMIN' && (
-                      <div className="text-sm text-content-secondary">
-                        {user.country || 'N/A'}
-                      </div>
+                      <div className="text-content-secondary">{user.country || '—'}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {user.isActive ? (
-                      <span className="flex items-center text-green-600 dark:text-green-400 text-sm">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Actif
-                      </span>
-                    ) : (
-                      <span className="flex items-center text-red-600 dark:text-red-400 text-sm">
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Suspended
-                      </span>
-                    )}
+                  <td>
+                    <StatusBadge status={user.isActive ? 'ACTIVE' : 'SUSPENDED'} />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-content-secondary">
-                    <div className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {new Date(user.createdAt).toLocaleDateString('fr-FR')}
-                    </div>
+                  <td className="text-content-secondary">
+                    {new Date(user.createdAt).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="numeric">
                     {user.role !== 'ADMIN' && (
                       <div className="flex justify-end space-x-2">
                         {user.isActive ? (
                           <button
                             onClick={() => handleSuspendUser(user.id)}
                             disabled={processing === user.id}
-                            className="text-red-600 dark:text-red-400 hover:text-red-900 dark:text-red-400 disabled:opacity-50"
+                            className="text-[var(--state-critical)] underline-offset-4 hover:underline disabled:opacity-50"
                           >
-                            {processing === user.id ? 'Processing...' : 'Suspend'}
+                            {processing === user.id ? 'En cours…' : 'Suspendre'}
                           </button>
                         ) : (
                           <button
                             onClick={() => handleActivateUser(user.id)}
                             disabled={processing === user.id}
-                            className="text-green-600 dark:text-green-400 hover:text-green-900 dark:text-green-400 disabled:opacity-50"
+                            className="text-[var(--state-positive)] underline-offset-4 hover:underline disabled:opacity-50"
                           >
-                            {processing === user.id ? 'Processing...' : 'Activate'}
+                            {processing === user.id ? 'En cours…' : t('Réactiver')}
                           </button>
                         )}
                       </div>
@@ -318,9 +288,9 @@ const AdminUsers: React.FC = () => {
         </div>
 
         {users.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <User className="w-12 h-12 text-content-secondary mx-auto mb-4" />
-            <p className="text-content-secondary">Aucun utilisateur</p>
+          <div className="empty-state">
+            <User className="h-6 w-6 text-content-secondary" aria-hidden="true" />
+            <p className="empty-state__title">Aucun utilisateur</p>
           </div>
         )}
       </div>
@@ -333,7 +303,7 @@ const AdminUsers: React.FC = () => {
             disabled={currentPage === 1 || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Précédent
+            {t('Précédent')}
           </button>
           <span className="text-content-secondary">
             Page {currentPage} of {totalPages}
@@ -343,7 +313,7 @@ const AdminUsers: React.FC = () => {
             disabled={currentPage === totalPages || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Suivant
+            {t('Suivant')}
           </button>
         </div>
       )}

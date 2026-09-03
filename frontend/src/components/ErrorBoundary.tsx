@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { t } from '@/i18n'
 
 interface Props {
   children: ReactNode
@@ -104,7 +105,7 @@ class ErrorBoundary extends Component<Props, State> {
           <div className="min-h-screen bg-surface flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-surface-raised rounded-card shadow-lg p-6 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy mx-auto mb-4"></div>
-              <p className="text-content-secondary">Récupération après une erreur temporaire…</p>
+              <p className="text-content-secondary">{t('Récupération après une erreur temporaire…')}</p>
             </div>
           </div>
         )
@@ -114,14 +115,14 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen bg-surface flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-surface-raised rounded-card shadow-lg p-6 text-center">
-            <h1 className="text-2xl font-bold text-content mb-4">Une erreur est survenue</h1>
+            <h1 className="text-2xl font-bold text-content mb-4">{t('Une erreur est survenue')}</h1>
             <p className="text-content-secondary mb-4">
-              Désolé, un incident inattendu s’est produit. Essayez de recharger la page.
+              {t('Désolé, un incident inattendu s’est produit. Essayez de recharger la page.')}
             </p>
             {this.state.error && (
               <details className="mt-4 text-left">
                 <summary className="cursor-pointer text-sm text-content-secondary mb-2">
-                  Détail de l’erreur
+                  {t('Détail de l’erreur')}
                 </summary>
                 <pre className="text-xs bg-surface-sunken p-2 rounded-card overflow-auto max-h-40">
                   {this.state.error.toString()}
@@ -139,13 +140,13 @@ class ErrorBoundary extends Component<Props, State> {
                 onClick={this.handleReset}
                 className="px-4 py-2 bg-surface-sunken text-content-secondary rounded-card hover:bg-surface-warm transition-colors"
               >
-                Réessayer
+                {t('Réessayer')}
               </button>
               <button
                 onClick={this.handleReload}
                 className="px-4 py-2 bg-navy text-white rounded-card hover:bg-navy/90 transition-colors"
               >
-                Recharger la page
+                {t('Recharger la page')}
               </button>
             </div>
           </div>

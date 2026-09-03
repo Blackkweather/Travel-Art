@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { artistsApi, hotelsApi, adminApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { User, Building, Download, FileText, Eye, Ban, CheckCircle } from 'lucide-react'
+import { User, Building, Download, Eye, Ban, CheckCircle } from 'lucide-react'
+import { t } from '@/i18n'
 
 type ArtistListItem = {
   id: string
@@ -152,15 +153,15 @@ const AdminModeration: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface">
-      <div className="max-w-[1600px] mx-auto px-6 py-8">
+      <div className="shell py-12 md:py-16">
         <div className="mb-8">
       <div className="flex items-center justify-between">
         <div>
-              <h1 className="text-3xl font-semibold text-content mb-1">
-                Modération des contenus
+              <h1 className="page-head__title">
+                {t('Modération des contenus')}
               </h1>
-              <p className="text-sm text-content-secondary">
-                Examiner les artistes et les hôtels ; suspendre ou réactiver un compte.
+              <p className="page-head__lede">
+                {t('Examiner les artistes et les hôtels ; suspendre ou réactiver un compte.')}
               </p>
         </div>
             <div className="flex items-center gap-4">
@@ -169,30 +170,30 @@ const AdminModeration: React.FC = () => {
               onClick={() => setTab('artists')} 
               className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                 tab === 'artists' 
-                  ? 'bg-gray-900 text-white shadow-sm' 
+                  ? 'bg-surface-inverse text-white shadow-sm' 
                   : 'text-content-secondary hover:text-content hover:bg-surface'
               }`}
             >
-              Artistes
+              {t('Artistes')}
             </button>
             <button 
               onClick={() => setTab('hotels')} 
               className={`px-4 py-2 rounded-card text-sm font-medium transition-all ${
                 tab === 'hotels' 
-                  ? 'bg-gray-900 text-white shadow-sm' 
+                  ? 'bg-surface-inverse text-white shadow-sm' 
                   : 'text-content-secondary hover:text-content hover:bg-surface'
               }`}
             >
-              Hôtels
+              {t('Hôtels')}
             </button>
           </div>
           <button
             onClick={() => exportToCSV(tab === 'artists' ? artists : hotels, tab)}
-            className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
-            title="Export to CSV"
+            className="btn-ghost btn-sm"
+            title="Exporter en CSV"
           >
             <Download className="w-4 h-4" />
-            Export
+            Exporter
           </button>
         </div>
         </div>
@@ -201,7 +202,7 @@ const AdminModeration: React.FC = () => {
       {loading ? (
         <div className="flex justify-center items-center min-h-[200px]"><LoadingSpinner /></div>
       ) : error ? (
-        <div className="bg-surface-raised rounded-card border border-red-200 dark:border-red-500/30 p-4 text-red-700 dark:text-red-400">{error}</div>
+        <div className="bg-surface-raised rounded-card border border-[var(--state-critical-line)] p-4 text-[var(--state-critical)]">{error}</div>
       ) : (
         <div className="bg-surface-raised rounded-card border border-line">
           {tab === 'artists' ? (
@@ -226,7 +227,7 @@ const AdminModeration: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <a 
                       href={`/artist/${a.id}`}
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
+                      className="btn-ghost btn-sm"
                     >
                       <Eye className="w-4 h-4" />
                       Examiner
@@ -234,7 +235,7 @@ const AdminModeration: React.FC = () => {
                     <button 
                       onClick={() => suspendUser(a.userId || a.user?.id)} 
                       disabled={processing === (a.userId || a.user?.id)} 
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-red-300 dark:border-red-500/30 rounded-card text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="btn-danger btn-sm"
                     >
                       <Ban className="w-4 h-4" />
                       Suspendre
@@ -242,10 +243,10 @@ const AdminModeration: React.FC = () => {
                     <button 
                       onClick={() => activateUser(a.userId || a.user?.id)} 
                       disabled={processing === (a.userId || a.user?.id)} 
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-green-300 dark:border-green-500/30 rounded-card text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="btn-outline btn-sm"
                     >
                       <CheckCircle className="w-4 h-4" />
-                      Réactiver
+                      {t('Réactiver')}
                     </button>
                   </div>
                 </div>
@@ -255,9 +256,9 @@ const AdminModeration: React.FC = () => {
           ) : (
             <div className="divide-y divide-line">
               {hotels.length === 0 ? (
-                <div className="text-center py-12 text-content-secondary">
-                  <Building className="w-12 h-12 mx-auto mb-4 text-content-secondary" />
-                  <p>Aucun hôtel</p>
+                <div className="empty-state">
+                  <Building className="h-6 w-6 text-content-secondary" aria-hidden="true" />
+                  <p className="empty-state__title">{t('Aucun hôtel')}</p>
                 </div>
               ) : (
                 hotels.map((h) => (
@@ -269,14 +270,14 @@ const AdminModeration: React.FC = () => {
                     <div>
                       <div className="font-semibold text-content">{h.name}</div>
                       <div className="text-sm text-content-secondary">
-                        {h.location || 'N/A'}
+                        {h.location || '—'}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <a 
                       href={`/hotel/${h.id}`}
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
+                      className="btn-ghost btn-sm"
                     >
                       <Eye className="w-4 h-4" />
                       Examiner
@@ -284,7 +285,7 @@ const AdminModeration: React.FC = () => {
                     <button 
                       onClick={() => suspendUser(h.userId || h.user?.id)} 
                       disabled={processing === (h.userId || h.user?.id)} 
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-red-300 dark:border-red-500/30 rounded-card text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="btn-danger btn-sm"
                     >
                       <Ban className="w-4 h-4" />
                       Suspendre
@@ -292,10 +293,10 @@ const AdminModeration: React.FC = () => {
                     <button 
                       onClick={() => activateUser(h.userId || h.user?.id)} 
                       disabled={processing === (h.userId || h.user?.id)} 
-                      className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-green-300 dark:border-green-500/30 rounded-card text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:bg-green-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="btn-outline btn-sm"
                     >
                       <CheckCircle className="w-4 h-4" />
-                      Réactiver
+                      {t('Réactiver')}
                     </button>
                   </div>
                 </div>

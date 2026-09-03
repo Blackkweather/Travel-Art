@@ -3,6 +3,7 @@ import { Camera, Upload, X, Loader } from 'lucide-react';
 import { apiClient } from '@/utils/api';
 import { normalizeImageUrl } from '@/utils/imageUrl';
 import toast from 'react-hot-toast';
+import { t } from '@/i18n'
 
 interface ProfilePictureUploadProps {
   currentImage?: string;
@@ -27,13 +28,13 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Sélectionnez un fichier image');
+      toast.error(t('Sélectionnez un fichier image'));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('L’image doit faire moins de 5 Mo');
+      toast.error(t('L’image doit faire moins de 5 Mo'));
       return;
     }
 
@@ -86,7 +87,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
         setPreview(null);
       }, 100);
       
-      toast.success('Photo de profil enregistrée');
+      toast.success(t('Photo de profil enregistrée'));
       
       // Clear the file input
       if (fileInputRef.current) {
@@ -156,7 +157,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
           }}
           disabled={uploading}
           className="bg-gold text-navy p-2 rounded-full hover:bg-gold/90 transition-colors shadow-lg disabled:opacity-50"
-          title="Changer la photo"
+          title={t('Changer la photo')}
         >
           <Upload className="w-4 h-4" />
         </button>
@@ -169,7 +170,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
               e.stopPropagation();
               handleRemove();
             }}
-            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
+            className="bg-[var(--state-critical)] text-white p-2 rounded-full hover:bg-[var(--state-critical)] transition-colors shadow-lg"
             title="Retirer"
           >
             <X className="w-4 h-4" />

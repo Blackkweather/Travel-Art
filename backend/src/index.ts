@@ -61,9 +61,11 @@ app.use(helmet({
       imgSrc: [
         "'self'",
         "data:",
-        "https://images.unsplash.com",
         "https://res.cloudinary.com",
         "https://*.public.blob.vercel-storage.com",
+        // Raster tiles for the experiences map. The {s} in the tile URL
+        // expands to a/b/c, so the wildcard covers all three.
+        "https://*.tile.openstreetmap.org",
       ],
       connectSrc: ["'self'"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],

@@ -188,6 +188,14 @@ export interface RegisterData {
     specificCategory?: string
     domain?: string
   }
+  /** What the seven-step hotel form collected, written with the account. */
+  hotelProfile?: {
+    description?: string
+    city?: string
+    performanceSpots?: string
+    rooms?: string
+    repName?: string
+  }
 }
 
 export interface ArtistProfileData {

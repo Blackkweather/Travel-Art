@@ -4,6 +4,8 @@ import { Crown, Check, Star, Calendar, Gift, Users } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { paymentsApi, artistsApi } from '@/utils/api'
 import { toast } from 'react-hot-toast'
+import StatusBadge from '@/components/StatusBadge'
+import { t } from '@/i18n'
 
 function showToast(message: string) {
   try {
@@ -91,14 +93,14 @@ const ArtistMembership: React.FC = () => {
       name: 'Artiste',
       price: '€50',
       period: '/year',
-      description: 'Pensé pour les artistes qui se lancent',
+      description: t('Pensé pour les artistes qui se lancent'),
       features: [
-        'Un profil d’artiste détaillé',
-        'Portfolio jusqu’à 20 images',
-        'Calendrier de disponibilités',
-        'Réception des demandes de réservation',
+        t('Un profil d’artiste détaillé'),
+        t('Portfolio jusqu’à 20 images'),
+        t('Calendrier de disponibilités'),
+        t('Réception des demandes de réservation'),
         'Statistiques essentielles',
-        'Assistance par e-mail',
+        t('Assistance par e-mail'),
         'T-shirt offert'
       ],
       tier: 'ARTIST' as const,
@@ -109,15 +111,15 @@ const ArtistMembership: React.FC = () => {
       name: 'Professional Artist',
       price: '€100',
       period: '/year',
-      description: 'Pour les artistes confirmés qui veulent plus de dates',
+      description: t('Pour les artistes confirmés qui veulent plus de dates'),
       features: [
-        'Tout ce que comprend la formule Artiste',
-        'Portfolio illimité',
-        'Priorité dans les résultats',
-        'Tableau de bord statistique avancé',
-        'Distinctions et évaluations',
+        t('Tout ce que comprend la formule Artiste'),
+        t('Portfolio illimité'),
+        t('Priorité dans les résultats'),
+        t('Tableau de bord statistique avancé'),
+        t('Distinctions et évaluations'),
         'Assistance prioritaire',
-        'Programme de parrainage',
+        t('Programme de parrainage'),
         'T-shirt offert'
       ],
       tier: 'PROFESSIONAL' as const,
@@ -133,12 +135,12 @@ const ArtistMembership: React.FC = () => {
       icon: Calendar 
     },
     { 
-      label: 'Représentations', 
+      label: t('Représentations'), 
       value: totalBookings.toString(), 
       icon: Star 
     },
     { 
-      label: 'Statut de l’adhésion', 
+      label: t('Statut de l’adhésion'), 
       value: membershipStatus === 'ACTIVE' ? 'Active' : 'Inactive', 
       icon: Users 
     }
@@ -148,22 +150,22 @@ const ArtistMembership: React.FC = () => {
     {
       icon: <Crown className="w-6 h-6 text-gold" />,
       title: 'Mise en avant prioritaire',
-      description: 'Apparaissez en tête des résultats et recevez davantage de demandes'
+      description: t('Apparaissez en tête des résultats et recevez davantage de demandes')
     },
     {
       icon: <Star className="w-6 h-6 text-gold" />,
-      title: 'Statistiques de performance',
-      description: 'Suivez vos indicateurs et optimisez vos dates'
+      title: t('Statistiques de performance'),
+      description: t('Suivez vos indicateurs et optimisez vos dates')
     },
     {
       icon: <Gift className="w-6 h-6 text-gold" />,
-      title: 'Récompenses de parrainage',
-      description: 'Gagnez des crédits pour chaque artiste parrainé'
+      title: t('Récompenses de parrainage'),
+      description: t('Gagnez des crédits pour chaque artiste parrainé')
     },
     {
       icon: <Users className="w-6 h-6 text-gold" />,
-      title: 'Accès exclusif',
-      description: 'Accès aux plus beaux lieux et à des dates exclusives'
+      title: t('Accès exclusif'),
+      description: t('Accès aux plus beaux lieux et à des dates exclusives')
     }
   ]
 
@@ -172,7 +174,7 @@ const ArtistMembership: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-          <p className="text-content-secondary">Chargement de votre abonnement…</p>
+          <p className="text-content-secondary">{t('Chargement de votre abonnement…')}</p>
         </div>
       </div>
     )
@@ -182,11 +184,11 @@ const ArtistMembership: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold text-content mb-2">
-          Adhésion et facturation
+        <h1 className="page-head__title">
+          {t('Adhésion et facturation')}
         </h1>
         <p className="text-sm text-content-secondary">
-          Gérez votre adhésion et suivez votre activité
+          {t('Gérez votre adhésion et suivez votre activité')}
         </p>
       </div>
 
@@ -195,7 +197,7 @@ const ArtistMembership: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-lg font-semibold text-content mb-2">
-              Adhésion en cours
+              {t('Adhésion en cours')}
             </h2>
             <p className="text-sm text-content-secondary">
               {membershipStatus === 'ACTIVE' 
@@ -252,31 +254,31 @@ const ArtistMembership: React.FC = () => {
               transition={{ duration: 0.3, delay: index * 0.1 }}
               className={`relative bg-surface-raised rounded-card border-2 transition-all hover:shadow-lg ${
                 plan.popular && !plan.current
-                  ? 'border-gold shadow-md'
+                  ? 'border-gold'
                   : plan.current
-                  ? 'border-gold/50 bg-gold/5'
-                  : 'border-line hover:border-gold/30'
+                  ? 'border-gold bg-surface-sunken'
+                  : 'border-line hover:border-line-strong'
               }`}
             >
               {plan.popular && !plan.current && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gold text-navy px-4 py-1 rounded-full text-xs font-semibold shadow-md">
-                    Le plus choisi
+                  <span className="badge border-gold bg-gold text-[var(--text-on-gold)]">
+                    {t('Le plus choisi')}
                   </span>
                 </div>
               )}
               
               {plan.current && (
                 <div className="absolute -top-3 right-4">
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-md">
-                    Current Plan
+                  <span className="badge-positive">
+                    Formule actuelle
                   </span>
                 </div>
               )}
               
               <div className="p-6">
                 <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-content mb-2">
+                  <h3 className="mb-2 font-serif text-xl text-content">
                     {plan.name}
                   </h3>
                   <p className="text-sm text-content-secondary mb-4">{plan.description}</p>
@@ -323,7 +325,7 @@ const ArtistMembership: React.FC = () => {
       {/* Benefits Section */}
       <div className="bg-surface-raised rounded-card border border-line p-6">
         <h2 className="text-xl font-semibold text-content mb-6">
-          Les avantages de l’adhésion
+          {t('Les avantages de l’adhésion')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {benefits.map((benefit, index) => (
@@ -353,28 +355,28 @@ const ArtistMembership: React.FC = () => {
       {/* Billing History */}
       <div className="bg-surface-raised rounded-card border border-line p-6">
         <h2 className="text-xl font-semibold text-content mb-6">
-          Historique de facturation
+          {t('Historique de facturation')}
         </h2>
         <div className="space-y-3">
           {artist?.transactions && artist.transactions.length > 0 ? (
             artist.transactions.map((transaction: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-4 bg-surface rounded-card border border-line hover:bg-surface-sunken transition-colors">
                 <div>
-                  <p className="text-sm font-medium text-content">{transaction.type || 'Membership'}</p>
+                  <p className="text-sm font-medium text-content">{transaction.type || 'Adhésion'}</p>
                   <p className="text-xs text-content-secondary mt-1">
-                    {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('fr-FR') : 'Unknown date'}
+                    {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('fr-FR') : 'Date inconnue'}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-content">€{transaction.amount || 0}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400 text-xs font-medium rounded-card">
-                    Paid
-                  </span>
+                  <StatusBadge status="PAID" className="mt-1" />
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-sm text-content-secondary text-center py-8">Aucun historique de facturation</p>
+            <div className="empty-state">
+              <p className="empty-state__title">{t('Aucun historique de facturation')}</p>
+            </div>
           )}
         </div>
       </div>
@@ -383,15 +385,15 @@ const ArtistMembership: React.FC = () => {
       {referralCode && (
         <div className="bg-surface-raised rounded-card border border-line p-6">
           <h2 className="text-xl font-semibold text-content mb-6">
-            Programme de parrainage
+            {t('Programme de parrainage')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-base font-semibold text-content mb-3">
-                Invitez d’autres artistes
+                {t('Invitez d’autres artistes')}
               </h3>
               <p className="text-sm text-content-secondary mb-4">
-                Partagez votre code de parrainage et gagnez des crédits à chaque parrainage abouti.
+                {t('Partagez votre code de parrainage et gagnez des crédits à chaque parrainage abouti.')}
               </p>
               <div className="flex items-center gap-2 mb-3">
                 <input
@@ -404,27 +406,27 @@ const ArtistMembership: React.FC = () => {
                   className="px-4 py-2 bg-navy text-white rounded-card text-sm font-medium hover:bg-navy/90 transition-colors"
                   onClick={() => {
                     navigator.clipboard.writeText(referralCode)
-                    toast.success('Code de parrainage copié')
+                    toast.success(t('Code de parrainage copié'))
                   }}
                 >
                   Copy
                 </button>
               </div>
               <p className="text-xs text-content-secondary">
-                Partagez ce code avec d’autres artistes : vous y gagnez tous les deux lorsqu’ils nous rejoignent.
+                {t('Partagez ce code avec d’autres artistes : vous y gagnez tous les deux lorsqu’ils nous rejoignent.')}
               </p>
             </div>
             <div>
               <h3 className="text-base font-semibold text-content mb-4">
-                Statistiques de parrainage
+                {t('Statistiques de parrainage')}
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-3 bg-surface rounded-card">
-                  <span className="text-sm text-content-secondary">Points de fidélité</span>
+                  <span className="text-sm text-content-secondary">{t('Points de fidélité')}</span>
                   <span className="text-sm font-semibold text-content">{artist?.loyaltyPoints || 0}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-surface rounded-card">
-                  <span className="text-sm text-content-secondary">Réservations</span>
+                  <span className="text-sm text-content-secondary">{t('Réservations')}</span>
                   <span className="text-sm font-semibold text-content">{totalBookings}</span>
                 </div>
               </div>

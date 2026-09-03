@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { t } from '@/i18n'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -60,7 +61,7 @@ export default function GalleryPan({ items }: GalleryPanProps) {
   return (
     <section
       ref={wrap}
-      aria-label="Résidences sélectionnées"
+      aria-label={t('Résidences sélectionnées')}
       className="relative overflow-hidden bg-[var(--surface)]"
     >
       <div
@@ -72,11 +73,11 @@ export default function GalleryPan({ items }: GalleryPanProps) {
             it, so the pin starts on an image instead of dead space. */}
         <div className="shrink-0 w-[78vw] sm:w-[46vw] lg:w-[30vw] snap-start">
           <h2 className="text-4xl md:text-5xl lg:text-6xl leading-[1.05]">
-            Entre l’ombre
-            <span className="block text-gold italic">et la lumière.</span>
+            {t('Entre l’ombre')}
+            <span className="block text-gold italic">{t('et la lumière.')}</span>
           </h2>
           <p className="mt-6 text-content-secondary text-base leading-relaxed max-w-[34ch]">
-            Des résidences dans des hôtels où même un hall mérite qu’on y joue.
+            {t('Des résidences dans des hôtels où même un hall mérite qu’on y joue.')}
           </p>
         </div>
 

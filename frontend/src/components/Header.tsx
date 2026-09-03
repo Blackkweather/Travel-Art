@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
 import { useAuthStore } from '@/store/authStore'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { t } from '@/i18n'
 
 /**
  * Header for the signed-in shell. It renders inside Layout, alongside Sidebar,
@@ -19,10 +21,10 @@ import { useAuthStore } from '@/store/authStore'
  */
 
 const NAV_ITEMS = [
-  { to: '/experiences', label: 'Expériences' },
-  { to: '/top-artists', label: 'Artistes' },
-  { to: '/top-hotels', label: 'Hôtels' },
-  { to: '/how-it-works', label: 'Le principe' },
+  { to: '/experiences', label: t('Expériences') },
+  { to: '/top-artists', label: t('Artistes') },
+  { to: '/top-hotels', label: t('Hôtels') },
+  { to: '/how-it-works', label: t('Le principe') },
 ]
 
 const Header: React.FC = () => {
@@ -44,10 +46,9 @@ const Header: React.FC = () => {
   }, [pathname])
 
   const handleLogout = async () => {
-    // Only ever on an explicit user action - never automatically.
-    const confirmLogout = window.confirm('Voulez-vous vraiment vous déconnecter ?')
-    if (!confirmLogout) return
-
+    // Only ever on an explicit user action - never automatically. No
+    // confirmation: signing out costs one sign-in to undo, and a native dialog
+    // in front of it was friction on the one action people take deliberately.
     logout()
     window.location.href = '/'
   }
@@ -102,14 +103,15 @@ const Header: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-5">
+            <LanguageSwitcher />
             {user ? (
               <>
                 <Link to="/dashboard" className={`${linkClass} hidden sm:block`}>
-                  Tableau de bord
+                  {t('Tableau de bord')}
                   <span className={underline(pathname === '/dashboard')} />
                 </Link>
                 <button onClick={handleLogout} className="btn-gold btn-sm" data-testid="user-menu">
-                  Déconnexion
+                  {t('Déconnexion')}
                 </button>
               </>
             ) : (
@@ -119,7 +121,7 @@ const Header: React.FC = () => {
                   <span className={underline(pathname === '/login')} />
                 </Link>
                 <Link to="/register" className="btn-gold btn-sm">
-                  Nous rejoindre
+                  {t('Nous rejoindre')}
                 </Link>
               </>
             )}
@@ -163,14 +165,17 @@ const Header: React.FC = () => {
                 </Link>
               </li>
             ))}
+            <li className="pt-5">
+              <LanguageSwitcher compact />
+            </li>
             <li className="pt-5 sm:hidden">
               {user ? (
                 <Link to="/dashboard" className="text-sm font-medium text-content-secondary hover:text-content">
-                  Tableau de bord
+                  {t('Tableau de bord')}
                 </Link>
               ) : (
                 <Link to="/login" className="text-sm font-medium text-content-secondary hover:text-content">
-                  Connexion
+                  {t('Connexion')}
                 </Link>
               )}
             </li>

@@ -47,7 +47,14 @@ if (!dbUrl) {
   console.error('⚠️  Invalid DATABASE_URL format. Must start with file: (SQLite) or postgresql:// (PostgreSQL)');
 }
 
-const prisma = new PrismaClient({
+import { requestContext, RLS_MODELS } from './rlsContext';
+
+/**
+ * The privileged connection. Owns the schema, bypasses row-level security.
+ * Reserved for migrations, the seed, maintenance scripts and Stripe webhooks -
+ * anything that has no authenticated user to attribute a row to.
+ */
+const prismaAdmin = new PrismaClient({
   datasources: {
     db: {
       url: getDatabaseUrl(),
@@ -55,6 +62,56 @@ const prisma = new PrismaClient({
   },
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 });
+
+/**
+ * The connection the request path uses.
+ *
+ * With APP_DATABASE_URL set this is travelart_app, which cannot bypass RLS. The
+ * extension below stamps the caller's identity onto any query that touches a
+ * protected table, inside a transaction so `set_config(..., true)` is scoped to
+ * that statement and cannot leak to the next request sharing the connection.
+ *
+ * Without APP_DATABASE_URL this is the owner connection and the extension is a
+ * no-op - which is the deliberate off switch for this whole mechanism.
+ */
+const appDbUrl = process.env.APP_DATABASE_URL;
+
+const baseClient = appDbUrl
+  ? new PrismaClient({
+      datasources: { db: { url: appDbUrl } },
+      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    })
+  : prismaAdmin;
+
+const prisma = appDbUrl
+  ? baseClient.$extends({
+      query: {
+        async $allOperations({ model, args, query }: any) {
+          // Unprotected tables skip the round trip entirely. Setting a variable
+          // no policy reads would add a transaction to the great majority of
+          // traffic - catalogue reads - for nothing.
+          if (!model || !RLS_MODELS.has(model)) {
+            return query(args);
+          }
+
+          const identity = requestContext.getStore();
+
+          // No identity on a protected table is not an error to throw: the
+          // policies already resolve it to zero rows. Throwing here would turn
+          // a safe empty result into a 500 on legitimate anonymous paths.
+          if (!identity) {
+            return query(args);
+          }
+
+          const [, result] = await baseClient.$transaction([
+            baseClient.$executeRaw`SELECT set_config('app.user_id', ${identity.userId}, true), set_config('app.user_role', ${identity.role}, true)`,
+            query(args),
+          ]);
+          return result;
+        },
+      },
+    })
+  : prismaAdmin;
 
 let dbInitialized = false;
 
@@ -149,6 +206,7 @@ export async function createUser(data: {
   role: string;
   language?: string;
   phone?: string | null;
+  country?: string | null;
   clerkId?: string | null;
 }) {
   await initializeDatabase();
@@ -159,8 +217,9 @@ export async function createUser(data: {
       name: data.name,
       passwordHash: data.passwordHash,
       role: data.role,
-      language: data.language || 'en',
+      language: data.language || 'fr',
       phone: data.phone || null,
+      country: data.country || null,
       clerkId: data.clerkId || null,
       isActive: true,
     },
@@ -184,7 +243,16 @@ export async function createUser(data: {
   };
 }
 
-// Export prisma for other operations that need it
+// The request-scoped client. Use this everywhere in the request path.
 export { prisma };
+
+/**
+ * The privileged client. Bypasses row-level security.
+ *
+ * Only three callers should ever want this: Stripe webhooks, the seed, and
+ * maintenance scripts. If you are reaching for it inside a route handler, the
+ * question to answer first is whose data you are about to read.
+ */
+export { prismaAdmin };
 export { initializeDatabase };
 

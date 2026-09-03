@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface CheckboxProps {
@@ -138,7 +139,8 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
             className="field-error"
             role="alert"
           >
-            {error}
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <span>{error}</span>
           </motion.p>
         )}
       </div>

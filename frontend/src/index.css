@@ -59,6 +59,27 @@
   --shadow-large: 0 12px 32px rgba(11, 31, 63, 0.10), 0 32px 64px rgba(11, 31, 63, 0.08);
   --shadow-luxury: 0 24px 64px rgba(11, 31, 63, 0.18);
 
+  /* Status. Desaturated and darkened off the stock ramps so they read as
+     part of a warm navy page: each hue is pulled toward the navy base and
+     each wash is warm rather than pure-tinted white. All four clear 4.5:1 on
+     their own wash. Critical is the brand's clay, darkened, rather than a
+     seventh red entering the palette. */
+  --state-positive: #2F6B4F;
+  --state-positive-wash: #EDF4EF;
+  --state-positive-line: #C3DACC;
+
+  --state-caution: #8A5A18;
+  --state-caution-wash: #FAF2E4;
+  --state-caution-line: #E5D3AE;
+
+  --state-critical: #A32A14;
+  --state-critical-wash: #FAEDEA;
+  --state-critical-line: #E8C8C0;
+
+  --state-info: #2B4A7A;
+  --state-info-wash: #EDF1F7;
+  --state-info-line: #C7D3E4;
+
   --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Aliases for the older variable names still referenced further down this
@@ -106,6 +127,25 @@
 
   --border-subtle: #1E2C45;
   --border-strong: #2C3D5A;
+
+  /* In dark the relationship inverts: the hue becomes the light element and
+     the wash a barely-lifted navy, so the badge still reads as a tinted chip
+     rather than a bright block. */
+  --state-positive: #7FC49E;
+  --state-positive-wash: #14261D;
+  --state-positive-line: #24422F;
+
+  --state-caution: #E0B871;
+  --state-caution-wash: #2A2113;
+  --state-caution-line: #473721;
+
+  --state-critical: #E89A87;
+  --state-critical-wash: #2B1712;
+  --state-critical-line: #4A2820;
+
+  --state-info: #93B4E0;
+  --state-info-wash: #16223A;
+  --state-info-line: #263A5C;
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.30);
   --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.40);
@@ -237,6 +277,24 @@
 
      btn-sm keeps the 44px floor rather than dropping to the visual minimum:
      small here means less horizontal weight, not a smaller tap target. */
+  /* Accept / decline pairs appeared on six screens, each hand-rolled as a
+     solid `bg-green-600` beside a solid `bg-red-600`. Two saturated fills
+     side by side make the destructive option as loud as the constructive one,
+     and neither belonged to this palette. The confirming action is the
+     ordinary primary button; declining is an outline that only commits to
+     colour on hover, so the dangerous choice is legible but never the loudest
+     thing on the row. */
+  .btn-danger {
+    @apply btn-base border bg-transparent;
+    border-color: var(--state-critical-line);
+    color: var(--state-critical);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background-color: var(--state-critical-wash);
+    border-color: var(--state-critical);
+  }
+
   .btn-sm {
     @apply min-h-[44px] px-5 py-2.5 text-[0.8125rem];
     letter-spacing: 0.05em;
@@ -377,8 +435,15 @@
      surface - not floating in a shadowed box. The image is the card; the
      border is a hairline, and the lift on hover is the image scaling inside a
      fixed frame rather than the whole card jumping. */
+  /* `group` is deliberately NOT applied here. Tailwind rejects `@apply group`
+     outright - it is a marker class the variant system reads from the markup,
+     not a rule that can be composed into another class - so this definition
+     failed the build the moment anything used it. That is also the proof it
+     never had: the class was written in the rebuild and referenced by no page
+     until now, so the error had nowhere to surface. Call sites add `group`
+     themselves, which is what `group-hover` on the media image needs. */
   .editorial-card {
-    @apply group relative flex flex-col overflow-hidden rounded-card
+    @apply relative flex flex-col overflow-hidden rounded-card
            bg-[var(--surface-raised)] border border-[var(--border-subtle)]
            transition-shadow duration-300 hover:shadow-medium
            focus-within:shadow-medium;
@@ -404,6 +469,266 @@
     @apply absolute inset-0;
   }
 
+  /* ---- Product surfaces -------------------------------------------------
+     Everything above this point is the marketing language. What follows is
+     the same system spoken at product scale: dashboards, tables, forms. It
+     exists because the signed-in half of the site had no vocabulary of its
+     own and reached for `.card-luxury` - a box with a gold gradient bar
+     across the top - 62 times. That bar put the accent on the container
+     rather than on anything the user needed to look at, and repeated down a
+     column of six it read as an admin template, not as this brand. */
+
+  /* The panel is the flat replacement: a hairline, the raised surface, and
+     nothing else. Emphasis comes from the type inside it. */
+  .panel {
+    @apply rounded-card border border-line bg-surface-raised;
+  }
+
+  /* Panels that are their own click target get the hover; static containers
+     must not, or a whole dashboard twitches under the pointer. */
+  .panel-interactive {
+    @apply panel transition-colors duration-200 hover:border-line-strong
+           focus-within:border-line-strong;
+  }
+
+  .panel-head {
+    @apply flex flex-wrap items-baseline justify-between gap-3
+           border-b border-line px-6 py-5;
+  }
+
+  .panel-head h2,
+  .panel-head h3 {
+    @apply text-lg;
+  }
+
+  .panel-body {
+    @apply p-6;
+  }
+
+  /* The stat tile. The number is the content, so it is set in the display
+     serif at a size nothing else on the page competes with, and the label is
+     the eyebrow's micro-type. No icon in a tinted circle: four of those in a
+     row, each a different hue, is the single most template-like shape in the
+     product, and the hues carried no meaning - they were decoration applied
+     per tile in source order. */
+  .stat {
+    @apply flex flex-col gap-2 rounded-card border border-line
+           bg-surface-raised px-6 py-6;
+  }
+
+  .stat__label {
+    @apply text-[0.6875rem] font-semibold uppercase text-content-secondary;
+    letter-spacing: 0.14em;
+  }
+
+  .stat__value {
+    @apply font-serif text-[2.5rem] font-bold leading-none text-content;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat__note {
+    @apply text-[0.8125rem] text-content-secondary;
+  }
+
+  /* ---- Data tables ------------------------------------------------------
+     Rules, not stripes. A zebra table is a grid of filled cells; this is a
+     list of records separated by hairlines, which is how the rest of the site
+     divides things. */
+  .data-table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+
+  .data-table thead th {
+    @apply whitespace-nowrap border-b border-line px-6 py-4
+           text-[0.6875rem] font-semibold uppercase text-content-secondary;
+    letter-spacing: 0.12em;
+  }
+
+  .data-table tbody td {
+    @apply border-b border-line px-6 py-5 align-middle text-content;
+  }
+
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .data-table tbody tr {
+    @apply transition-colors duration-150;
+  }
+
+  .data-table tbody tr:hover {
+    @apply bg-surface-sunken;
+  }
+
+  .data-table td.numeric,
+  .data-table th.numeric {
+    @apply text-right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Status ------------------------------------------------------------
+     Status is the one place a colour other than gold is allowed, because here
+     the colour carries meaning a label alone would have to spell out. The
+     four hues are desaturated and darkened against the stock Tailwind ramps
+     so they sit in a warm navy page rather than shouting out of it, and each
+     badge pairs its hue with a text label - colour is never the only carrier.
+     Anything that is not one of these four states is `neutral`. */
+  .badge {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-control
+           border px-2.5 py-1 text-[0.6875rem] font-semibold uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .badge-neutral {
+    @apply badge border-line-strong bg-surface-sunken text-content-secondary;
+  }
+
+  .badge-positive {
+    @apply badge;
+    border-color: var(--state-positive-line);
+    background-color: var(--state-positive-wash);
+    color: var(--state-positive);
+  }
+
+  .badge-caution {
+    @apply badge;
+    border-color: var(--state-caution-line);
+    background-color: var(--state-caution-wash);
+    color: var(--state-caution);
+  }
+
+  .badge-critical {
+    @apply badge;
+    border-color: var(--state-critical-line);
+    background-color: var(--state-critical-wash);
+    color: var(--state-critical);
+  }
+
+  .badge-info {
+    @apply badge;
+    border-color: var(--state-info-line);
+    background-color: var(--state-info-wash);
+    color: var(--state-info);
+  }
+
+  /* A full-width message, not a badge: form errors, empty-state warnings,
+     confirmation after a save. */
+  .notice {
+    @apply flex items-start gap-3 rounded-card border px-4 py-3.5 text-sm;
+  }
+
+  .notice-positive {
+    @apply notice;
+    border-color: var(--state-positive-line);
+    background-color: var(--state-positive-wash);
+    color: var(--state-positive);
+  }
+
+  .notice-caution {
+    @apply notice;
+    border-color: var(--state-caution-line);
+    background-color: var(--state-caution-wash);
+    color: var(--state-caution);
+  }
+
+  .notice-critical {
+    @apply notice;
+    border-color: var(--state-critical-line);
+    background-color: var(--state-critical-wash);
+    color: var(--state-critical);
+  }
+
+  .notice-info {
+    @apply notice;
+    border-color: var(--state-info-line);
+    background-color: var(--state-info-wash);
+    color: var(--state-info);
+  }
+
+  /* ---- Page head --------------------------------------------------------
+     The signed-in pages opened with a sans-serif h1 and a grey line of help
+     text, which is the one place the brand voice was most obviously absent.
+     This is the marketing header at product scale: eyebrow, serif title,
+     hairline. */
+  .page-head {
+    @apply flex flex-col gap-3 pb-6;
+  }
+
+  .page-head__title {
+    @apply font-serif text-[2rem] leading-tight text-content md:text-[2.5rem];
+  }
+
+  .page-head__lede {
+    @apply max-w-[60ch] text-[0.9375rem] text-content-secondary;
+  }
+
+  /* ---- Legal prose ------------------------------------------------------
+     The three policy documents. Their headings previously carried the same
+     `text-2xl font-serif font-semibold` as a marketing section title, so a
+     clause heading inside a document shouted at the same volume as the name of
+     a landing-page band. Here the hierarchy is internal to the document: the
+     heading is a size above its own body and nothing more. */
+  .legal-prose {
+    @apply mt-14 max-w-prose text-content-secondary;
+  }
+
+  .legal-prose > * + * {
+    @apply mt-5;
+  }
+
+  .legal-prose h2 {
+    @apply mt-12 font-serif text-xl text-content;
+  }
+
+  .legal-prose h3 {
+    @apply mt-8 font-serif text-lg text-content;
+  }
+
+  .legal-prose p {
+    @apply leading-relaxed;
+  }
+
+  .legal-prose ul {
+    @apply space-y-2 pl-5;
+    list-style: none;
+  }
+
+  .legal-prose ul > li {
+    @apply relative leading-relaxed;
+  }
+
+  /* The gold spark stands in for the disc, so the list marker belongs to this
+     site rather than to the browser default. */
+  .legal-prose ul > li::before {
+    content: "";
+    @apply absolute bg-gold;
+    left: -1.25rem;
+    top: 0.6em;
+    width: 0.4em;
+    height: 0.4em;
+    transform: rotate(45deg);
+  }
+
+  .legal-prose a {
+    @apply text-gold underline underline-offset-4;
+  }
+
+  /* ---- Empty state ------------------------------------------------------
+     A panel with nothing in it should say why, in the display face, rather
+     than rendering an empty grid. */
+  .empty-state {
+    @apply flex flex-col items-center gap-3 px-6 py-16 text-center;
+  }
+
+  .empty-state__title {
+    @apply font-serif text-xl text-content;
+  }
+
+  .empty-state__body {
+    @apply max-w-[46ch] text-sm text-content-secondary;
+  }
+
   /* Airy by default: VISUAL_DENSITY 3. */
   .section-y {
     @apply py-24 md:py-32 lg:py-40;
@@ -421,12 +746,7 @@
   
   .card-experience:hover {
     @apply shadow-luxury transform scale-105;
-  }
-  
-  .card-showcase {
-    @apply bg-[var(--surface-raised)] rounded-card shadow-soft p-6 border border-[var(--border-subtle)] transition-all duration-300 hover:shadow-medium;
-  }
-  
+  }  
   /* The .shadow-soft / .shadow-medium / .shadow-luxury rules that sat here are
      gone. They were dead: Tailwind emits the same class names from theme
      .boxShadow, and its utilities layer outranks this components layer, so
@@ -473,20 +793,10 @@
   .field-error {
     @apply mt-2 flex items-start gap-2 text-sm text-red-600 dark:text-red-400
            bg-red-50 dark:bg-red-500/10 px-2.5 py-2 rounded-card;
-  }
-  
-  .hero-title {
-    @apply text-6xl md:text-8xl font-serif font-bold text-white mb-6 drop-shadow-lg leading-tight;
-  }
-  
+  }  
   .hero-subtitle {
     @apply text-xl md:text-2xl text-white/90 mb-8 max-w-4xl mx-auto drop-shadow-md leading-relaxed;
-  }
-  
-  .compass-scroll {
-    @apply absolute bottom-8 left-1/2 transform -translate-x-1/2 text-gold animate-bounce;
-  }
-  
+  }  
   .parallax-bg {
     @apply absolute inset-0 bg-cover bg-center bg-no-repeat;
     transform: translateZ(0);
@@ -496,12 +806,7 @@
   .gradient-overlay {
     @apply absolute inset-0;
     background: var(--gradient-overlay);
-  }
-  
-  .experience-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8;
-  }
-  
+  }  
   .step-connector {
     @apply absolute top-1/2 left-full w-16 h-0.5 bg-gold transform -translate-y-1/2;
   }
@@ -512,12 +817,7 @@
   
   .carousel-track {
     @apply flex transition-transform duration-500 ease-out;
-  }
-  
-  .carousel-item {
-    @apply flex-shrink-0 mx-4;
-  }
-}
+  }}
 
 /* Custom Colors */
 .text-navy {
@@ -713,20 +1013,6 @@ a.gold-underline:hover::after,
    on gold (which fails AA). The design system is now the only definition. */
 
 /* Card Styles */
-.card {
-  background: var(--surface-raised);
-  border-radius: 3px;
-  padding: 24px;
-  box-shadow: var(--shadow-soft);
-  transition: all 0.3s ease;
-  border: 1px solid var(--border-light);
-}
-
-.card:hover {
-  box-shadow: var(--shadow-medium);
-  transform: translateY(-4px);
-}
-
 /* Form Styles */
 .form-group {
   margin-bottom: 24px;
@@ -837,12 +1123,7 @@ a.gold-underline:hover::after,
   
   h2 {
     font-size: 1.875rem;
-  }
-  
-  .card-luxury {
-    padding: 24px;
-  }
-}
+  }}
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .container {
@@ -942,11 +1223,6 @@ a.gold-underline:hover::after,
     box-shadow: 0 0 30px rgba(201, 166, 60, 0.6);
   }
 }
-
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -955,13 +1231,6 @@ a.gold-underline:hover::after,
     background-position: 200% 0;
   }
 }
-
-.shimmer {
-  background: linear-gradient(90deg, transparent, rgba(201, 166, 60, 0.4), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
 @keyframes bounce-gentle {
   0%, 100% {
     transform: translateY(0);
@@ -970,11 +1239,6 @@ a.gold-underline:hover::after,
     transform: translateY(-10px);
   }
 }
-
-.bounce-gentle {
-  animation: bounce-gentle 3s ease-in-out infinite;
-}
-
 @keyframes float-enhanced {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -1156,45 +1420,12 @@ a.gold-underline:hover::after,
 }
 
 /* Responsive Enhancements - Travel Art */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.5rem !important;
-    line-height: 1.1 !important;
-  }
-  
+@media (max-width: 768px) {  
   .hero-subtitle {
     font-size: 1.125rem !important;
-  }
-  
-  .section-title {
-    font-size: 2.5rem !important;
-  }
-  
-  .section-subtitle {
-    font-size: 1.125rem !important;
-  }
-  
-  .card-luxury:hover {
-    transform: translateY(-4px);
-  }
-  
-  .card-experience:hover {
+  }  .card-experience:hover {
     transform: scale(1.02);
-  }
-  
-  .float-animation {
-    animation-duration: 4s;
-  }
-  
-  .experience-grid {
-    grid-template-columns: 1fr !important;
-    gap: 1.5rem !important;
-  }
-  
-  .carousel-item {
-    width: 280px !important;
-  }
-  
+  }  
   /* Mobile-specific improvements */
   .container {
     padding-left: 1rem;
@@ -1215,17 +1446,6 @@ a.gold-underline:hover::after,
     min-width: 44px;
   }
   
-  /* Mobile-friendly cards */
-  .card-luxury {
-    margin: 0.5rem !important;
-    padding: 1rem !important;
-  }
-  
-  /* Better mobile spacing */
-  .section-padding {
-    padding: 2rem 0 !important;
-  }
-  
   /* The h1/h2/h3/p !important block that sat here is gone. h1-h3 now size
      themselves with clamp() against the viewport, which is what this was
      hand-rolling, and the !important flags meant no page could ever set its
@@ -1235,96 +1455,6 @@ a.gold-underline:hover::after,
      so lead paragraphs and body copy rendered identically. */
 }
 
-@media (max-width: 640px) {
-  .hero-title {
-    font-size: 2rem !important;
-  }
-  
-  .section-title {
-    font-size: 2rem !important;
-  }
-  
-  .card-luxury {
-    padding: 1.5rem !important;
-  }
-  
-  .carousel-item {
-    width: 260px !important;
-  }
-  
-  .compass-scroll {
-    bottom: 1rem !important;
-  }
-  
-  .compass-scroll svg {
-    width: 1.5rem !important;
-    height: 1.5rem !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .experience-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-  
-  .carousel-item {
-    width: 320px !important;
-  }
-}
-
-@media (min-width: 1280px) {
-  .carousel-item {
-    width: 360px !important;
-  }
-}
-
-/* Accessibility Improvements */
-@media (prefers-reduced-motion: reduce) {
-  .float-animation,
-  .gradient-text,
-  .pulse-glow,
-  .shimmer,
-  .bounce-gentle {
-    animation: none !important;
-  }
-  
-  .card-luxury:hover {
-    transform: none !important;
-  }
-}
-
-/* The single .card-luxury definition. There were four, and this one — the
-   last and the only one marked !important — was the one actually rendering.
-   The !important flags are gone now that nothing competes with it. The top
-   accent no longer fades to teal, which was left over from a previous
-   palette and clashed with the navy and gold in use. */
-.card-luxury {
-  background: var(--surface-raised);
-  border: 1px solid rgba(185, 152, 81, 0.15);
-  border-radius: 3px;
-  padding: 1.5rem 2rem;
-  box-shadow: var(--shadow-soft);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.card-luxury::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--gold) 0%, rgba(185, 152, 81, 0.25) 100%);
-  opacity: 0.6;
-}
-
-.card-luxury:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-medium);
-  border-color: rgba(185, 152, 81, 0.3);
-}
 
 /* Logo styling - clean and transparent */
 img[src*="logo-transparent.png"] {
@@ -1487,20 +1617,7 @@ select.form-input:focus {
 
   .dashboard-subtitle {
     font-size: 0.9375rem;
-  }
-
-  .section-title {
-    font-size: 1.25rem;
-  }
-
-  .card-luxury {
-    padding: 1.25rem 1.5rem !important;
-  }
-
-  .dashboard-stat-card {
-    padding: 1.25rem;
-  }
-}
+  }}
 
 /* Prevent scroll overlap */
 .search-container,
@@ -1516,42 +1633,7 @@ html {
 }
 
 /* Dashboard Refinements */
-.dashboard-stat-card {
-  background: var(--surface-raised);
-  border: 1px solid rgba(201, 166, 60, 0.15);
-  border-radius: 3px;
-  padding: 1.5rem;
-  box-shadow: var(--shadow-soft);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.dashboard-stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--gold-accent) 0%, rgba(201, 166, 60, 0.3) 100%);
-  opacity: 0.6;
-}
-
-.dashboard-stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-medium);
-  border-color: rgba(201, 166, 60, 0.3);
-}
-
 /* Section Dividers */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(201, 166, 60, 0.3) 50%, transparent 100%);
-  margin: 2rem 0;
-  border: none;
-}
-
 /* Count-up Animation */
 @keyframes countUp {
   from {
@@ -1619,23 +1701,6 @@ html {
   color: var(--text-secondary);
   line-height: 1.5;
 }
-
-.section-title {
-  font-family: 'Newsreader Variable', Newsreader, Georgia, serif;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-  margin-bottom: 1.5rem;
-}
-
-.section-subtitle {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-}
-
 /* A blanket `.grid { gap }` at three breakpoints used to sit here. It applied
    to every grid on the site and, being outside @layer, overrode whatever
    gap-* a component asked for.

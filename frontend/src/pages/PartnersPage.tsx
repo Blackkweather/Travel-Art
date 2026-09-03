@@ -5,6 +5,8 @@ import { Building, Star, MapPin, Users, Calendar, Award } from 'lucide-react'
 import Footer from '../components/Footer'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import { commonApi } from '@/utils/api'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
 
 const PartnersPage: React.FC = () => {
   const navigate = useNavigate()
@@ -57,16 +59,16 @@ const PartnersPage: React.FC = () => {
             
             const locationStr = location.city 
               ? `${location.city}, ${location.country || ''}`.trim()
-              : (location.country || hotel.user?.country || 'Unknown')
+              : (location.country || hotel.user?.country || 'Pays non renseigné')
             
             return {
               id: hotel.id,
               name: hotel.name,
               location: locationStr,
-              category: 'Luxury Hotel',
+              category: 'Hôtel d’exception',
               rating: hotel.averageRating || 4.5,
               bookings: hotel.bookingCount || 0,
-              image: images && images.length > 0 ? images[0] : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=70',
+              image: images && images.length > 0 ? images[0] : '/images/placeholder-experience.webp',
               description: hotel.description || 'Luxury hotel offering exceptional artistic experiences.',
               specialties: performanceSpots.slice(0, 3).map((spot: any) => spot.name || spot),
               performanceSpots: performanceSpots.map((spot: any) => spot.name || spot)
@@ -135,35 +137,39 @@ const PartnersPage: React.FC = () => {
   const benefits = [
     {
       icon: <Building className="w-8 h-8 text-gold" />,
-      title: 'Accès exclusif',
+      title: t('Accès exclusif'),
       description: 'Partner with the world\'s most prestigious hotels and luxury venues'
     },
     {
       icon: <Star className="w-8 h-8 text-gold" />,
-      title: 'Une exigence de qualité',
-      description: 'Travaillez avec des artistes vérifiés dont la prestation est à la hauteur du lieu'
+      title: t('Une exigence de qualité'),
+      description: t('Travaillez avec des artistes vérifiés dont la prestation est à la hauteur du lieu')
     },
     {
       icon: <Users className="w-8 h-8 text-gold" />,
-      title: 'Un accompagnement dédié',
-      description: 'Un interlocuteur attitré et une assistance disponible à tout moment'
+      title: t('Un accompagnement dédié'),
+      description: t('Un interlocuteur attitré et une assistance disponible à tout moment')
     },
     {
       icon: <Award className="w-8 h-8 text-gold" />,
-      title: 'Le rayonnement de votre maison',
+      title: t('Le rayonnement de votre maison'),
       description: 'Enhance your hotel\'s reputation with curated artistic experiences'
     }
   ]
 
   const statsData = [
-    { label: 'Hôtels partenaires', value: stats.partnerHotels.toString(), icon: Building },
-    { label: 'Lieux de représentation', value: stats.performanceVenues.toString(), icon: MapPin },
-    { label: 'Événements réussis', value: stats.successfulEvents.toString(), icon: Calendar },
+    { label: t('Hôtels partenaires'), value: stats.partnerHotels.toString(), icon: Building },
+    { label: t('Lieux de représentation'), value: stats.performanceVenues.toString(), icon: MapPin },
+    { label: t('Événements réussis'), value: stats.successfulEvents.toString(), icon: Calendar },
     { label: 'Note moyenne', value: stats.averageRating.toFixed(1), icon: Star }
   ]
 
   return (
     <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={t('Devenir hôtel partenaire — Travel Art')}
+        description={t('Accueillez des artistes en résidence dans votre établissement et offrez à vos clients une programmation culturelle singulière.')}
+      />
       {/* This page carried its own navigation bar: a fourth implementation
           beside Header, SimpleNavbar and the one the landing page used to
           have. It had a different link list from all of them, a 150px logo
@@ -175,7 +181,12 @@ const PartnersPage: React.FC = () => {
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img decoding="async"
-            src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=70"
+            src="/images/headers/partners.webp"
+            srcSet="/images/headers/partners-960.webp 960w, /images/headers/partners-1440.webp 1440w, /images/headers/partners.webp 1920w"
+            sizes="100vw"
+            width={1920}
+            height={1097}
+            fetchPriority="high"
             alt=""
             className="w-full h-full object-cover"
           />
@@ -193,11 +204,11 @@ const PartnersPage: React.FC = () => {
           >
             <p className="eyebrow text-white/80">Nos partenaires</p>
             <h1 className="mt-5 max-w-[14ch] text-white">
-              Nos hôtels
+              {t('Nos hôtels')}
               <span className="block text-gold">partenaires</span>
             </h1>
             <p className="mt-7 text-lg text-white/80 max-w-[54ch] leading-relaxed">
-              Découvrez les hôtels les plus prestigieux, leurs toits-terrasses et leurs espaces intimistes, pour des rencontres artistiques inoubliables.
+              {t('Découvrez les hôtels les plus prestigieux, leurs toits-terrasses et leurs espaces intimistes, pour des rencontres artistiques inoubliables.')}
             </p>
           </motion.div>
         </div>
@@ -232,111 +243,97 @@ const PartnersPage: React.FC = () => {
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
-            Partenaires à l’honneur
+            {t('Partenaires à l’honneur')}
           </h2>
           <p className="text-xl text-content-secondary max-w-3xl mx-auto">
-            Les plus belles adresses du monde, leurs toits-terrasses et leurs scènes intimistes
+            {t('Les plus belles adresses du monde, leurs toits-terrasses et leurs scènes intimistes')}
           </p>
         </div>
 
         {loading ? (
           <div className="text-center py-20">
             <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
-            <p className="text-content-secondary text-lg">Chargement des partenaires…</p>
+            <p className="text-content-secondary text-lg">{t('Chargement des partenaires…')}</p>
           </div>
         ) : partners.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-content-secondary text-lg mb-4">Aucun hôtel partenaire pour le moment.</p>
-            <p className="text-content-secondary">Revenez bientôt pour découvrir nos hôtels partenaires.</p>
+            <p className="text-content-secondary text-lg mb-4">{t('Aucun hôtel partenaire pour le moment.')}</p>
+            <p className="text-content-secondary">{t('Revenez bientôt pour découvrir nos hôtels partenaires.')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {partners.map((partner, index) => (
-              <motion.div
+              <motion.article
                 key={partner.id || partner.name}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="card-luxury overflow-hidden"
-            >
-              <div className="relative">
-                <img decoding="async" loading="lazy"
-                  src={partner.image}
-                  alt={partner.name}
-                  className="w-full h-64 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/600x400/0B1F3F/C9A63C?text=' + encodeURIComponent(partner.name)
-                  }}
-                />
-                <div className="absolute top-4 right-4 bg-surface-raised/90 backdrop-blur-sm px-3 py-1 rounded-control text-sm font-semibold text-content flex items-center space-x-1">
-                  <span className="text-gold font-bold">◆</span>
-                  <span>{partner.rating}</span>
-                </div>
-                <div className="absolute bottom-4 left-4 bg-navy text-white px-3 py-1 rounded-control text-sm font-medium">
-                  {partner.category}
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <h3 className="text-xl font-serif font-semibold text-content mb-2">
-                  {partner.name}
-                </h3>
-                <p className="text-content-secondary text-sm mb-4 flex items-center">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {partner.location}
-                </p>
-                
-                <p className="text-content-secondary text-sm mb-4">
-                  {partner.description}
-                </p>
-
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-content mb-2">Spécialités :</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {partner.specialties.map((specialty, specIndex) => (
-                      <span
-                        key={specIndex}
-                        className="px-2 py-1 bg-gold/20 text-gold text-xs rounded-control"
-                      >
-                        {specialty}
-                      </span>
-                    ))}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.06 }}
+                className="editorial-card group"
+              >
+                <div className="editorial-card__media">
+                  <img
+                    decoding="async"
+                    loading="lazy"
+                    src={partner.image}
+                    alt=""
+                    onError={(e) => {
+                      e.currentTarget.src = '/images/placeholder-experience.webp'
+                    }}
+                  />
+                  <div className="absolute left-3 top-3">
+                    <span className="badge border-line bg-surface-raised/90 text-content backdrop-blur-sm">
+                      {partner.category}
+                    </span>
+                  </div>
+                  <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-control bg-surface-raised/90 px-2.5 py-1.5 text-sm font-semibold text-content backdrop-blur-sm">
+                    <span className="spark" aria-hidden="true" />
+                    <span className="tabular-nums">{partner.rating}</span>
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-content mb-2">Espaces de représentation :</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {partner.performanceSpots.map((spot, spotIndex) => (
-                      <span
-                        key={spotIndex}
-                        className="px-2 py-1 bg-[var(--surface-warm)] text-content-secondary text-xs rounded-control"
-                      >
-                        {spot}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                <div className="editorial-card__body">
+                  <h3 className="font-serif text-xl text-content">
+                    <button
+                      type="button"
+                      className="editorial-card__link text-left"
+                      onClick={() => navigate(`/hotel/${partner.id}`)}
+                    >
+                      {partner.name}
+                    </button>
+                  </h3>
 
-                <div className="flex items-center justify-between text-sm text-content-secondary mb-4">
-                  <span className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {partner.bookings} bookings
-                  </span>
-                  <span className="flex items-center">
-                    <Star className="w-4 h-4 mr-1" />
-                    {partner.rating} rating
-                  </span>
-                </div>
+                  <p className="text-sm text-content-secondary">{partner.location}</p>
 
-                <button 
-                  onClick={() => navigate(`/hotel/${partner.id}`)}
-                  className="w-full btn-primary"
-                >
-                  Voir les espaces
-                </button>
-              </div>
-            </motion.div>
+                  <p className="line-clamp-2 text-sm text-content-secondary">
+                    {partner.description}
+                  </p>
+
+                  {partner.specialties.length > 0 && (
+                    <ul className="flex flex-wrap gap-2 pt-1">
+                      {partner.specialties.slice(0, 3).map((specialty, specIndex) => (
+                        <li key={specIndex} className="badge border-gold/30 bg-gold/10 text-gold">
+                          {specialty}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <dl className="mt-auto flex items-baseline gap-6 border-t border-line pt-4 text-sm">
+                    <div className="flex items-baseline gap-2">
+                      <dt className="text-content-secondary">{t('Réservations')}</dt>
+                      <dd className="font-serif text-base text-content tabular-nums">
+                        {partner.bookings}
+                      </dd>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <dt className="text-content-secondary">Note</dt>
+                      <dd className="font-serif text-base text-content tabular-nums">
+                        {partner.rating}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </motion.article>
           ))}
           </div>
         )}
@@ -347,10 +344,10 @@ const PartnersPage: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
-              Les avantages du partenariat
+              {t('Les avantages du partenariat')}
             </h2>
             <p className="text-xl text-content-secondary max-w-3xl mx-auto">
-              Pourquoi les hôtels d’exception choisissent Travel Art
+              {t('Pourquoi les hôtels d’exception choisissent Travel Art')}
             </p>
           </div>
 
@@ -382,14 +379,14 @@ const PartnersPage: React.FC = () => {
       <div className="container mx-auto px-6 py-20 pb-32">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
-            La parole à nos partenaires
+            {t('La parole à nos partenaires')}
           </h2>
         </div>
 
         {testimonials.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-content-secondary text-lg">Aucun témoignage pour le moment.</p>
-            <p className="text-content-secondary text-sm mt-2">Les témoignages apparaîtront ici à mesure que les hôtels partagent leur expérience.</p>
+            <p className="text-content-secondary text-lg">{t('Aucun témoignage pour le moment.')}</p>
+            <p className="text-content-secondary text-sm mt-2">{t('Les témoignages apparaîtront ici à mesure que les hôtels partagent leur expérience.')}</p>
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -399,7 +396,7 @@ const PartnersPage: React.FC = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-            className="card-luxury"
+            className="panel p-6"
           >
             <div className="flex items-center mb-4">
               <div className="flex text-gold">
@@ -437,13 +434,13 @@ const PartnersPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="mx-auto max-w-[18ch]">
-              Envie de devenir partenaire ?
+              {t('Envie de devenir partenaire ?')}
             </h2>
             <p className="mt-7 text-lg text-content-inverse/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
-              Rejoignez notre réseau d’hôtels d’exception et offrez à vos clients des moments artistiques dont ils se souviendront.
+              {t('Rejoignez notre réseau d’hôtels d’exception et offrez à vos clients des moments artistiques dont ils se souviendront.')}
             </p>
             <Link to="/register?role=hotel" className="btn-gold btn-lg btn-arrow">
-              Devenir hôtel partenaire
+              {t('Devenir hôtel partenaire')}
             </Link>
           </motion.div>
         </div>

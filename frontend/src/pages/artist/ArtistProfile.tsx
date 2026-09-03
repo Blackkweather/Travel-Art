@@ -6,12 +6,17 @@ import { normalizeImageUrl } from '@/utils/imageUrl'
 import toast from 'react-hot-toast'
 import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 import DateRangePicker from '@/components/DateRangePicker'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import { t } from '@/i18n'
 
 const ArtistProfile: React.FC = () => {
+  const [uploadingImages, setUploadingImages] = useState(false)
   const { user } = useAuthStore()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [profileData, setProfileData] = useState({
     name: '',
     discipline: '',
@@ -112,7 +117,7 @@ const ArtistProfile: React.FC = () => {
           memberSince: user?.createdAt || new Date().toISOString()
         })
       } else {
-        toast.error('Impossible de charger le profil')
+        toast.error(t('Impossible de charger le profil'))
         console.error('Error fetching profile:', error)
       }
     } finally {
@@ -122,7 +127,7 @@ const ArtistProfile: React.FC = () => {
 
   const handleSave = async () => {
     if (!profile?.id) {
-      toast.error('Créez d’abord votre profil')
+      toast.error(t('Créez d’abord votre profil'))
       return
     }
 
@@ -161,7 +166,7 @@ const ArtistProfile: React.FC = () => {
 
       await apiClient.put('/artists/me', updateData);
       
-      toast.success('Profil mis à jour')
+      toast.success(t('Profil mis à jour'))
       setIsEditing(false)
       await fetchProfile()
     } catch (error: any) {
@@ -172,7 +177,7 @@ const ArtistProfile: React.FC = () => {
 
   const handleAddVideo = () => {
     if (!newVideoUrl.trim()) {
-      toast.error('Saisissez l’adresse d’une vidéo')
+      toast.error(t('Saisissez l’adresse d’une vidéo'))
       return
     }
     
@@ -182,7 +187,7 @@ const ArtistProfile: React.FC = () => {
                        newVideoUrl.startsWith('http')
     
     if (!isValidUrl) {
-      toast.error('Saisissez une adresse YouTube ou vidéo valide')
+      toast.error(t('Saisissez une adresse YouTube ou vidéo valide'))
       return
     }
     
@@ -191,7 +196,7 @@ const ArtistProfile: React.FC = () => {
       videos: [...profileData.videos, newVideoUrl]
     })
     setNewVideoUrl('')
-    toast.success('Vidéo ajoutée. Utilisez « Enregistrer les modifications » pour mettre à jour votre profil')
+    toast.success(t('Vidéo ajoutée. Utilisez « Enregistrer les modifications » pour mettre à jour votre profil'))
   }
 
   const handleRemoveVideo = (index: number) => {
@@ -199,7 +204,7 @@ const ArtistProfile: React.FC = () => {
       ...profileData,
       videos: profileData.videos.filter((_, i) => i !== index)
     })
-    toast.success('Vidéo retirée. Utilisez « Enregistrer les modifications » pour mettre à jour votre profil')
+    toast.success(t('Vidéo retirée. Utilisez « Enregistrer les modifications » pour mettre à jour votre profil'))
   }
 
   const fetchAvailability = async () => {
@@ -220,17 +225,17 @@ const ArtistProfile: React.FC = () => {
 
   const handleAddAvailability = async () => {
     if (!profile?.id) {
-      toast.error('Créez d’abord votre profil')
+      toast.error(t('Créez d’abord votre profil'))
       return
     }
 
     if (!newAvailability.dateFrom || !newAvailability.dateTo) {
-      toast.error('Sélectionnez une date de début et une date de fin')
+      toast.error(t('Sélectionnez une date de début et une date de fin'))
       return
     }
 
     if (new Date(newAvailability.dateFrom) >= new Date(newAvailability.dateTo)) {
-      toast.error('La date de fin doit suivre la date de début')
+      toast.error(t('La date de fin doit suivre la date de début'))
       return
     }
 
@@ -240,7 +245,7 @@ const ArtistProfile: React.FC = () => {
         dateFrom: new Date(newAvailability.dateFrom).toISOString(),
         dateTo: new Date(newAvailability.dateTo).toISOString()
       })
-      toast.success('Disponibilité ajoutée')
+      toast.success(t('Disponibilité ajoutée'))
       setNewAvailability({ dateFrom: '', dateTo: '' })
       await fetchAvailability()
     } catch (error: any) {
@@ -258,9 +263,9 @@ const ArtistProfile: React.FC = () => {
       // Note: You may need to add a DELETE endpoint for availability
       // For now, we'll just remove it from the local state
       setAvailabilities(prev => prev.filter(a => a.id !== availabilityId))
-      toast.success('Disponibilité retirée')
+      toast.success(t('Disponibilité retirée'))
     } catch (error: any) {
-      toast.error('Impossible de retirer cette disponibilité')
+      toast.error(t('Impossible de retirer cette disponibilité'))
       console.error('Error removing availability:', error)
     }
   }
@@ -286,23 +291,22 @@ const ArtistProfile: React.FC = () => {
       });
     }
     
-    toast.success('Photo de profil enregistrée');
+    toast.success(t('Photo de profil enregistrée'));
   }
 
   const handleDelete = async () => {
-    if (!profile?.id) {
-      toast.error('Aucun profil à supprimer')
-      return
-    }
-    const confirmed = window.confirm('Supprimer votre profil artiste ?')
-    if (!confirmed) return
+    if (!profile?.id) return
+    setDeleting(true)
     try {
       await apiClient.delete(`/artists/${profile.id}`)
-      toast.success('Profil artiste supprimé')
+      toast.success(t('Profil artiste supprimé'))
       setProfile(null)
       await fetchProfile()
     } catch (error: any) {
       toast.error(error?.response?.data?.error?.message || 'Échec de la suppression')
+    } finally {
+      setDeleting(false)
+      setConfirmingDelete(false)
     }
   }
   if (loading) {
@@ -310,7 +314,7 @@ const ArtistProfile: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-          <p className="text-content-secondary">Chargement du profil…</p>
+          <p className="text-content-secondary">{t('Chargement du profil…')}</p>
         </div>
       </div>
     )
@@ -322,10 +326,10 @@ const ArtistProfile: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            Profil de l’artiste
+            {t('Profil de l’artiste')}
           </h1>
           <p className="text-content-secondary">
-            Gérez votre profil et présentez votre travail aux hôtels d’exception
+            {t('Gérez votre profil et présentez votre travail aux hôtels d’exception')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -338,17 +342,17 @@ const ArtistProfile: React.FC = () => {
           </button>
           {profile?.id && (
             <button
-              onClick={handleDelete}
+              onClick={() => setConfirmingDelete(true)}
               className="btn-primary"
             >
-              Supprimer le profil
+              {t('Supprimer le profil')}
             </button>
           )}
         </div>
       </div>
 
       {/* Profile Overview */}
-      <div className="card-luxury">
+      <div className="panel p-6">
         <div className="flex flex-col md:flex-row gap-8">
           {/* Profile Image */}
           <div className="flex-shrink-0">
@@ -387,7 +391,7 @@ const ArtistProfile: React.FC = () => {
           <div className="flex-1">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="form-label">Nom de l’artiste</label>
+                <label className="form-label">{t('Nom de l’artiste')}</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -447,7 +451,7 @@ const ArtistProfile: React.FC = () => {
                   value={profileData.bio}
                   onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
                   className="form-input h-32 resize-none"
-                  placeholder="Racontez aux hôtels votre parcours et vos spécialités…"
+                  placeholder={t('Racontez aux hôtels votre parcours et vos spécialités…')}
                 />
               ) : (
                 <p className="text-content-secondary leading-relaxed">
@@ -470,7 +474,7 @@ const ArtistProfile: React.FC = () => {
                   <Calendar className="w-5 h-5 text-gold mr-1" />
                   <span className="text-lg font-bold text-content">{profileData.totalBookings}</span>
                 </div>
-                <p className="text-sm text-content-secondary">Réservations</p>
+                <p className="text-sm text-content-secondary">{t('Réservations')}</p>
               </div>
               <div className="text-center p-4 bg-surface rounded-card">
                 <div className="flex items-center justify-center mb-2">
@@ -488,21 +492,21 @@ const ArtistProfile: React.FC = () => {
 
       {/* Registration Details */}
       {profile && (
-        <div className="card-luxury">
+        <div className="panel p-6">
           <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
-            Informations d’inscription
+            {t('Informations d’inscription')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {profile.stageName && (
               <div>
-                <label className="form-label">Nom de scène</label>
+                <label className="form-label">{t('Nom de scène')}</label>
                 <p className="text-content font-medium">{profile.stageName}</p>
               </div>
             )}
             
             {profile.birthDate && (
               <div>
-                <label className="form-label">Date de naissance</label>
+                <label className="form-label">{t('Date de naissance')}</label>
                 <p className="text-content font-medium">{profile.birthDate}</p>
               </div>
             )}
@@ -537,21 +541,21 @@ const ArtistProfile: React.FC = () => {
                 <>
                   {artisticProfile.mainCategory && (
                     <div>
-                      <label className="form-label">Catégorie principale</label>
+                      <label className="form-label">{t('Catégorie principale')}</label>
                       <p className="text-content font-medium">{artisticProfile.mainCategory}</p>
                     </div>
                   )}
                   
                   {artisticProfile.secondaryCategory && (
                     <div>
-                      <label className="form-label">Catégorie secondaire</label>
+                      <label className="form-label">{t('Catégorie secondaire')}</label>
                       <p className="text-content font-medium">{artisticProfile.secondaryCategory}</p>
                     </div>
                   )}
                   
                   {artisticProfile.specificCategory && (
                     <div>
-                      <label className="form-label">Spécialité</label>
+                      <label className="form-label">{t('Spécialité')}</label>
                       <p className="text-content font-medium">{artisticProfile.specificCategory}</p>
                     </div>
                   )}
@@ -585,7 +589,7 @@ const ArtistProfile: React.FC = () => {
                   
                   {artisticProfile.audienceType && artisticProfile.audienceType.length > 0 && (
                     <div>
-                      <label className="form-label">Type de public</label>
+                      <label className="form-label">{t('Type de public')}</label>
                       <div className="flex flex-wrap gap-2">
                         {artisticProfile.audienceType.map((aud: string, idx: number) => (
                           <span key={idx} className="px-3 py-1 bg-navy/10 text-content rounded-full text-sm font-medium">
@@ -601,9 +605,9 @@ const ArtistProfile: React.FC = () => {
             
             {profile.membershipStatus && (
               <div>
-                <label className="form-label">Statut de l’adhésion</label>
+                <label className="form-label">{t('Statut de l’adhésion')}</label>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${profile.membershipStatus === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                  <div className={`w-2 h-2 rounded-full ${profile.membershipStatus === 'ACTIVE' ? 'bg-[var(--state-positive)]' : 'bg-[var(--border-strong)]'}`}></div>
                   <p className="text-content font-medium">
                     {profile.membershipStatus === 'ACTIVE' ? 'Active' : profile.membershipStatus}
                   </p>
@@ -615,16 +619,62 @@ const ArtistProfile: React.FC = () => {
       )}
 
       {/* Portfolio Images */}
-      <div className="card-luxury">
+      <div className="panel p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-            Images du portfolio
+            {t('Images du portfolio')}
           </h2>
           {isEditing && (
-            <button className="btn-secondary flex items-center space-x-2">
-              <Upload className="w-4 h-4" />
-              <span>Ajouter des images</span>
-            </button>
+            <>
+              {/* POST /upload/media takes up to ten files per request; the
+                  returned URLs are appended to the portfolio and persisted by
+                  the page's existing save action. */}
+              <input
+                id="portfolio-upload"
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files || [])
+                  if (!files.length) return
+                  const form = new FormData()
+                  files.slice(0, 10).forEach((f) => form.append('media', f))
+                  try {
+                    setUploadingImages(true)
+                    const res = await apiClient.post('/upload/media', form)
+                    const payload = res.data?.data
+                    const urls: string[] = Array.isArray(payload)
+                      ? payload.map((m: any) => m.url ?? m).filter(Boolean)
+                      : (payload?.urls ?? []).filter(Boolean)
+                    if (!urls.length) throw new Error('empty response')
+                    setProfileData((prev: any) => ({
+                      ...prev,
+                      images: [...(prev.images || []), ...urls]
+                    }))
+                    toast.success(
+                      `${urls.length} image(s) ajoutée(s). Enregistrez pour confirmer.`
+                    )
+                  } catch (err: any) {
+                    toast.error(
+                      err?.response?.data?.error?.message || 'Échec du téléversement'
+                    )
+                  } finally {
+                    setUploadingImages(false)
+                    e.target.value = ''
+                  }
+                }}
+              />
+              <button
+                type="button"
+                disabled={uploadingImages}
+                onClick={() => document.getElementById('portfolio-upload')?.click()}
+                className="btn-secondary flex items-center space-x-2"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{uploadingImages ? t('Téléversement…') : 'Ajouter des images'}</span>
+              </button>
+            </>
           )}
         </div>
         {profileData.images.length > 0 ? (
@@ -638,7 +688,7 @@ const ArtistProfile: React.FC = () => {
                 />
                 {isEditing && (
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-card flex items-center justify-center">
-                    <button className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
+                    <button className="bg-[var(--state-critical)] text-white p-2 rounded-full hover:bg-[var(--state-critical)] transition-colors">
                       ×
                     </button>
                   </div>
@@ -647,24 +697,24 @@ const ArtistProfile: React.FC = () => {
             ))}
           </div>
         ) : (
-          <p className="text-content-secondary">Aucune image dans le portfolio. Utilisez « Modifier le profil » pour en ajouter.</p>
+          <p className="text-content-secondary">{t('Aucune image dans le portfolio. Utilisez « Modifier le profil » pour en ajouter.')}</p>
         )}
       </div>
 
       {/* Availability Management */}
-      <div className="card-luxury">
+      <div className="panel p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-              Calendrier de disponibilités
+              {t('Calendrier de disponibilités')}
             </h2>
-            <p className="text-sm text-content-secondary mt-2">Indiquez vos dates disponibles pour les réservations</p>
+            <p className="text-sm text-content-secondary mt-2">{t('Indiquez vos dates disponibles pour les réservations')}</p>
           </div>
         </div>
 
         {/* Add Availability Form */}
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-card">
-          <h3 className="form-label mb-4">Ajouter une période de disponibilité</h3>
+        <div className="mb-6 p-4 bg-[var(--state-info-wash)] border border-[var(--state-info-line)] rounded-card">
+          <h3 className="form-label mb-4">{t('Ajouter une période de disponibilité')}</h3>
           <div className="space-y-4">
             <DateRangePicker
               startDate={newAvailability.dateFrom}
@@ -710,7 +760,7 @@ const ArtistProfile: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleRemoveAvailability(avail.id)}
-                    className="px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-card transition-colors flex items-center gap-2"
+                    className="px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)] rounded-card transition-colors flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
                     Retirer
@@ -721,28 +771,28 @@ const ArtistProfile: React.FC = () => {
         ) : (
           <div className="text-center py-12 px-4 bg-surface rounded-card border-2 border-dashed border-line-strong">
             <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-content mb-2">Aucune disponibilité renseignée</h3>
+            <h3 className="text-lg font-semibold text-content mb-2">{t('Aucune disponibilité renseignée')}</h3>
             <p className="text-content-secondary mb-4">
-              Ajoutez vos dates ci-dessus pour que les hôtels puissent vous solliciter
+              {t('Ajoutez vos dates ci-dessus pour que les hôtels puissent vous solliciter')}
             </p>
           </div>
         )}
       </div>
 
       {/* Performance Videos */}
-      <div className="card-luxury">
+      <div className="panel p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-              Vidéos de performances
+              {t('Vidéos de performances')}
             </h2>
-            <p className="text-sm text-content-secondary mt-2">Ajoutez des liens YouTube ou vidéo pour présenter vos performances</p>
+            <p className="text-sm text-content-secondary mt-2">{t('Ajoutez des liens YouTube ou vidéo pour présenter vos performances')}</p>
           </div>
         </div>
         
         {isEditing && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-card">
-            <label className="form-label">Ajouter un lien YouTube ou vidéo</label>
+          <div className="mb-6 p-4 bg-[var(--state-info-wash)] border border-[var(--state-info-line)] rounded-card">
+            <label className="form-label">{t('Ajouter un lien YouTube ou vidéo')}</label>
             <div className="flex gap-3">
               <input
                 type="text"
@@ -792,7 +842,7 @@ const ArtistProfile: React.FC = () => {
                 <div key={index} className="border border-line rounded-card overflow-hidden">
                   {/* Video Preview */}
                   {isYouTube && videoId ? (
-                    <div className="aspect-video bg-gray-900">
+                    <div className="aspect-video bg-surface-inverse">
                       <iframe
                         src={`https://www.youtube.com/embed/${videoId}`}
                         title={`Performance Video ${index + 1}`}
@@ -819,7 +869,7 @@ const ArtistProfile: React.FC = () => {
                     {isEditing && (
                       <button 
                         onClick={() => handleRemoveVideo(index)}
-                        className="ml-4 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-card transition-colors flex items-center gap-2"
+                        className="ml-4 px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)] rounded-card transition-colors flex items-center gap-2"
                       >
                         <X className="w-4 h-4" />
                         Retirer
@@ -837,7 +887,7 @@ const ArtistProfile: React.FC = () => {
                 <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-content mb-2">Aucune vidéo</h3>
+            <h3 className="text-lg font-semibold text-content mb-2">{t('Aucune vidéo')}</h3>
             <p className="text-content-secondary mb-4">
               {isEditing 
                 ? 'Add your first performance video using the form above' 
@@ -852,10 +902,26 @@ const ArtistProfile: React.FC = () => {
         <div className="flex justify-end">
           <button onClick={handleSave} className="btn-primary flex items-center justify-center space-x-2">
             <Save className="w-4 h-4 flex-shrink-0" />
-            <span className="leading-none">Enregistrer les modifications</span>
+            <span className="leading-none">{t('Enregistrer les modifications')}</span>
           </button>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmingDelete}
+        title={t('Supprimer votre profil d’artiste ?')}
+        body={
+          <>
+            <p>
+              {t('Votre page publique, vos médias, vos disponibilités et votre historique de résidences seront supprimés.')}
+            </p>
+            <p>{t('Cette action est définitive.')}</p>
+          </>
+        }
+        confirmLabel={t('Supprimer définitivement')}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmingDelete(false)}
+        busy={deleting}
+      />
     </div>
   )
 }

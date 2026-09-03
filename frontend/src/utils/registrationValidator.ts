@@ -1,4 +1,5 @@
 import { VALIDATION, PASSWORD_REQUIREMENTS } from '@/types/artistRegistration';
+import { t } from '@/i18n'
 
 export class RegistrationValidator {
   /**
@@ -51,7 +52,7 @@ export class RegistrationValidator {
     }
 
     if (PASSWORD_REQUIREMENTS.special && !/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      errors.push('Au moins un caractère spécial');
+      errors.push(t('Au moins un caractère spécial'));
     }
 
     return {
@@ -148,11 +149,11 @@ export class RegistrationValidator {
 
     // Required fields
     if (!basicInfo.stageName?.trim()) {
-      errors.stageName = 'Le nom de scène est obligatoire';
+      errors.stageName = t('Le nom de scène est obligatoire');
     }
 
     if (!basicInfo.firstName?.trim()) {
-      errors.firstName = 'Le prénom est obligatoire';
+      errors.firstName = t('Le prénom est obligatoire');
     }
 
     if (!basicInfo.lastName?.trim()) {
@@ -169,13 +170,13 @@ export class RegistrationValidator {
     }
 
     if (!basicInfo.phone?.trim()) {
-      errors.phone = 'Le numéro de téléphone est obligatoire';
+      errors.phone = t('Le numéro de téléphone est obligatoire');
     } else if (!this.validatePhone(basicInfo.phone)) {
-      errors.phone = 'Format de numéro de téléphone invalide';
+      errors.phone = t('Format de numéro de téléphone invalide');
     }
 
     if (!basicInfo.email?.trim()) {
-      errors.email = 'L’adresse e-mail est obligatoire';
+      errors.email = t('L’adresse e-mail est obligatoire');
     } else if (!this.validateEmail(basicInfo.email)) {
       errors.email = 'Adresse e-mail invalide';
     }
@@ -206,7 +207,7 @@ export class RegistrationValidator {
     }
 
     if (!basicInfo.agreeToTerms) {
-      errors.agreeToTerms = 'Vous devez accepter les conditions d’utilisation';
+      errors.agreeToTerms = t('Vous devez accepter les conditions d’utilisation');
     }
 
     return {
@@ -225,15 +226,15 @@ export class RegistrationValidator {
     const errors: Record<string, string> = {};
 
     if (!artisticCategory.mainCategory) {
-      errors.mainCategory = 'La catégorie principale est obligatoire';
+      errors.mainCategory = t('La catégorie principale est obligatoire');
     }
 
     if (!artisticCategory.audienceType || artisticCategory.audienceType.length === 0) {
-      errors.audienceType = 'Sélectionnez au moins un type de public';
+      errors.audienceType = t('Sélectionnez au moins un type de public');
     }
 
     if (!artisticCategory.languages || artisticCategory.languages.length === 0) {
-      errors.languages = 'Sélectionnez au moins une langue';
+      errors.languages = t('Sélectionnez au moins une langue');
     }
 
     return {
@@ -252,7 +253,7 @@ export class RegistrationValidator {
     const errors: Record<string, string> = {};
 
     if (!subcategory.categoryType) {
-      errors.categoryType = 'Le type de catégorie est obligatoire';
+      errors.categoryType = t('Le type de catégorie est obligatoire');
     }
 
     if (!subcategory.domain) {
@@ -362,22 +363,22 @@ export function getPasswordStrength(password: string): number {
  * Get password strength label
  */
 export function getPasswordStrengthLabel(strength: number): string {
-  if (strength < 20) return 'Très faible';
+  if (strength < 20) return t('Très faible');
   if (strength < 40) return 'Faible';
   if (strength < 60) return 'Moyen';
   if (strength < 80) return 'Bon';
   if (strength < 100) return 'Robuste';
-  return 'Très robuste';
+  return t('Très robuste');
 }
 
 /**
  * Get password strength color
  */
 export function getPasswordStrengthColor(strength: number): string {
-  if (strength < 20) return 'text-red-600';
-  if (strength < 40) return 'text-orange-600';
-  if (strength < 60) return 'text-amber-600';
-  if (strength < 80) return 'text-lime-600';
-  if (strength < 100) return 'text-green-600';
-  return 'text-green-700';
+  /* Three steps, not six. The old ramp ran red-orange-amber-lime-green-green
+     across a palette that only has three meanings, so two of its bands were
+     indistinguishable to the eye and the last two were identical. */
+  if (strength < 40) return 'text-[var(--state-critical)]';
+  if (strength < 70) return 'text-[var(--state-caution)]';
+  return 'text-[var(--state-positive)]';
 }

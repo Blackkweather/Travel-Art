@@ -5,6 +5,15 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default {
   plugins: [react()],
+  // Debug logging is stripped from production bundles but kept in development.
+  // console.error and console.warn survive: they are how real failures surface.
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+    pure:
+      process.env.NODE_ENV === 'production'
+        ? ['console.log', 'console.debug', 'console.info', 'console.trace']
+        : [],
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -59,6 +68,11 @@ export default {
           // vendor out of the entry chunk, so shipping app code does not
           // invalidate its cached copy.
           'motion': ['framer-motion'],
+          // Charting is ~100KB gzipped and used by exactly one admin screen.
+          // Named so it caches independently of that screen's own code.
+          'charts': ['recharts'],
+          // Same reasoning for the map on the experiences page.
+          'maps': ['leaflet', 'react-leaflet'],
         },
       },
     },

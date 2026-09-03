@@ -7,6 +7,7 @@ import { put, del } from '@vercel/blob';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { prisma } from '../db';
+import { detectImageType, looksLikeMarkup } from '../services/fileType';
 
 const router = Router();
 
@@ -20,14 +21,40 @@ const localUploadDir = path.join(__dirname, '../../uploads/profile-pictures');
 // Files are held in memory and forwarded to Blob, or written to disk locally.
 const storage = multer.memoryStorage();
 
+/**
+ * A cheap first pass only.
+ *
+ * multer runs this before the body is buffered, so the bytes are not available
+ * yet and the declared Content-Type is all there is to test. It rejects the
+ * obviously wrong early to avoid buffering 5MB of nonsense - it is NOT the
+ * control that decides what a file is. That happens in assertRealImage(), once
+ * the bytes exist.
+ */
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  // Allow only images
   const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
+    cb(new Error('Type de fichier invalide. Seules les images JPEG, PNG, GIF et WebP sont acceptées.'));
   }
+};
+
+/**
+ * The control that actually decides. Reads the file's own leading bytes and
+ * returns the type they prove, ignoring everything the request claimed.
+ */
+const assertRealImage = (file: Express.Multer.File) => {
+  const detected = detectImageType(file.buffer);
+  if (!detected) {
+    throw new CustomError(
+      'Ce fichier n’est pas une image valide. Formats acceptés : JPEG, PNG, GIF, WebP.',
+      400
+    );
+  }
+  if (looksLikeMarkup(file.buffer)) {
+    throw new CustomError('Ce fichier a été refusé pour des raisons de sécurité.', 400);
+  }
+  return detected;
 };
 
 const upload = multer({
@@ -44,13 +71,18 @@ const upload = multer({
  * the /uploads static handler.
  */
 const storeFile = async (file: Express.Multer.File): Promise<string> => {
-  const ext = path.extname(file.originalname).toLowerCase();
-  const key = `profile-pictures/${randomUUID()}${ext}`;
+  // Extension and Content-Type both come from the detected type. Taking the
+  // extension from originalname let the uploader choose what the file would be
+  // saved as; passing file.mimetype to put() let them choose what it would be
+  // served as. The filename itself is discarded entirely - a UUID replaces it,
+  // so a crafted name cannot traverse a path or collide with another user's.
+  const detected = assertRealImage(file);
+  const key = `profile-pictures/${randomUUID()}${detected.ext}`;
 
   if (useBlobStorage) {
     const blob = await put(key, file.buffer, {
       access: 'public',
-      contentType: file.mimetype
+      contentType: detected.mime
     });
     return blob.url;
   }
@@ -92,12 +124,11 @@ const handleMulterError = (err: any, req: any, res: any, next: any) => {
       message: err.message || 'File upload error'
     });
   }
+  // Anything that is not a multer error belongs to whoever threw it - most
+  // importantly the 401 from `authenticate`, which used to be rewritten to 400
+  // here and left the client unable to tell "sign in" from "bad file".
   if (err) {
-    console.error('❌ Upload error:', err);
-    return res.status(400).json({
-      success: false,
-      message: err.message || 'File upload failed'
-    });
+    return next(err);
   }
   next();
 };

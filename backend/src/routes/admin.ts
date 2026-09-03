@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { prisma } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { approvedEmail, rejectedEmail } from '../services/email';
+import { config } from '../config';
 
 const router = Router();
 
@@ -108,7 +110,7 @@ router.post('/users/:id/suspend', authenticate, authorize('ADMIN'), asyncHandler
   // Update user status
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: { isActive: false }
+    data: { isActive: false, sessionsValidFrom: new Date() }
   });
 
   // Log admin action
@@ -160,6 +162,109 @@ router.post('/users/:id/activate', authenticate, authorize('ADMIN'), asyncHandle
 }));
 
 // Export data
+/**
+ * Applications awaiting review, oldest first.
+ *
+ * Oldest-first is the point: newest-first quietly buries anyone who applied
+ * during a busy week under everyone who applied after them.
+ */
+router.get('/admissions', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const status = String(req.query.status ?? 'PENDING').toUpperCase();
+  if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+    throw new CustomError('Statut invalide.', 400);
+  }
+
+  const applications = await prisma.user.findMany({
+    where: { approvalStatus: status, role: { in: ['ARTIST', 'HOTEL'] } },
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      country: true,
+      phone: true,
+      createdAt: true,
+      emailVerified: true,
+      approvalStatus: true,
+      approvalNote: true,
+      reviewedAt: true,
+      artist: { select: { discipline: true, bio: true, priceRange: true } },
+      hotel: { select: { name: true, location: true, description: true } }
+    }
+  });
+
+  const pendingCount = await prisma.user.count({
+    where: { approvalStatus: 'PENDING', role: { in: ['ARTIST', 'HOTEL'] } }
+  });
+
+  res.json({ success: true, data: { applications, pendingCount } });
+}));
+
+/** Admit an application. Idempotent, and re-approving a rejected account clears the note. */
+router.post('/admissions/:id/approve', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) throw new CustomError('Utilisateur introuvable.', 404);
+  if (user.role === 'ADMIN') throw new CustomError('Un administrateur n’a pas à être admis.', 400);
+
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      approvalStatus: 'APPROVED',
+      approvalNote: null,
+      reviewedAt: new Date(),
+      reviewedById: req.user!.id,
+      isActive: true
+    }
+  });
+
+  await approvedEmail(updated.email, updated.name, `${config.frontendUrl}/login`);
+
+  await prisma.adminLog.create({
+    data: {
+      actorUserId: req.user!.id,
+      action: 'USER_APPROVED',
+      targetId: user.id
+    }
+  }).catch(() => undefined);
+
+  res.json({ success: true, data: { id: updated.id, approvalStatus: updated.approvalStatus } });
+}));
+
+/** Decline an application, with a reason the applicant is actually told. */
+router.post('/admissions/:id/reject', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+  if (reason.length > 500) throw new CustomError('Motif trop long (500 caractères maximum).', 400);
+
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) throw new CustomError('Utilisateur introuvable.', 404);
+  if (user.role === 'ADMIN') throw new CustomError('Un administrateur ne peut pas être refusé.', 400);
+
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      approvalStatus: 'REJECTED',
+      approvalNote: reason || null,
+      reviewedAt: new Date(),
+      reviewedById: req.user!.id,
+      // A rejected account loses any session it already holds.
+      sessionsValidFrom: new Date()
+    }
+  });
+
+  await rejectedEmail(updated.email, updated.name, reason || undefined);
+
+  await prisma.adminLog.create({
+    data: {
+      actorUserId: req.user!.id,
+      action: 'USER_REJECTED',
+      targetId: user.id
+    }
+  }).catch(() => undefined);
+
+  res.json({ success: true, data: { id: updated.id, approvalStatus: updated.approvalStatus } });
+}));
+
 router.get('/export', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
   const { type } = req.query;
 
@@ -240,9 +345,22 @@ router.get('/users', authenticate, authorize('ADMIN'), asyncHandler(async (req: 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        role: true,
+        email: true,
+        name: true,
+        phone: true,
+        country: true,
+        language: true,
+        isActive: true,
+        createdAt: true,
+        approvalStatus: true,
+        approvalNote: true,
+        reviewedAt: true,
+        emailVerified: true,
         artist: true,
-        hotel: true
+        hotel: true,
       },
       skip,
       take: limitNum,

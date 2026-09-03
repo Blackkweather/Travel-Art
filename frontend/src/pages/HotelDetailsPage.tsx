@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { motion, useInView } from 'framer-motion'
-import { Star, MapPin, Calendar, Music, Users, Building, Clock, Phone, Mail, Globe, ArrowLeft, MessageCircle, Heart } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Star, MapPin, Calendar, Users, Clock, Phone, Mail, ArrowLeft } from 'lucide-react'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
@@ -9,13 +9,14 @@ import HotelContactButtons from '../components/HotelContactButtons'
 import { hotelsApi, bookingsApi, artistsApi } from '@/utils/api'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
 
 const HotelDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [hotel, setHotel] = useState<any>(null)
-  const [isFavorite, setIsFavorite] = useState(false)
   const [hasConfirmedBooking, setHasConfirmedBooking] = useState(false)
 
   useEffect(() => {
@@ -78,9 +79,9 @@ const HotelDetailsPage: React.FC = () => {
     } catch (error: any) {
       console.error('Error fetching hotel details:', error)
       if (error.response?.status === 404) {
-        toast.error('Hôtel introuvable')
+        toast.error(t('Hôtel introuvable'))
       } else {
-        toast.error('Impossible de charger la fiche hôtel')
+        toast.error(t('Impossible de charger la fiche hôtel'))
       }
     } finally {
       setLoading(false)
@@ -94,7 +95,7 @@ const HotelDetailsPage: React.FC = () => {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-            <p className="text-content-secondary">Chargement de la fiche hôtel…</p>
+            <p className="text-content-secondary">{t('Chargement de la fiche hôtel…')}</p>
           </div>
         </div>
         <Footer />
@@ -107,10 +108,10 @@ const HotelDetailsPage: React.FC = () => {
       <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl font-serif font-bold text-content mb-4">Hôtel introuvable</h1>
-          <p className="text-content-secondary mb-8">L’hôtel demandé n’existe pas.</p>
+          <h1 className="text-4xl font-serif font-bold text-content mb-4">{t('Hôtel introuvable')}</h1>
+          <p className="text-content-secondary mb-8">{t('L’hôtel demandé n’existe pas.')}</p>
           <Link to="/top-hotels" className="btn-primary">
-            Retour aux hôtels
+            {t('Retour aux hôtels')}
           </Link>
         </div>
         <Footer />
@@ -161,6 +162,14 @@ const HotelDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={hotel ? `${hotel.name} — Travel Art` : t('Hôtel — Travel Art')}
+        description={
+          hotel
+            ? `${hotel.name} accueille des artistes en résidence. ${(hotel.description ?? '').slice(0, 120)}`
+            : t('Un hôtel d’exception qui accueille des artistes en résidence.')
+        }
+      />
       <SimpleNavbar overMedia />
 
       {/* The hotel's own photograph is the hero, so the type on it stays white
@@ -200,7 +209,7 @@ const HotelDetailsPage: React.FC = () => {
           className="absolute top-[88px] left-5 sm:left-8 lg:left-12 bg-black/35 backdrop-blur-sm text-white px-4 py-2.5 rounded-control hover:bg-black/55 transition-colors flex items-center gap-2 text-sm font-medium"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-          Retour aux hôtels
+          {t('Retour aux hôtels')}
         </Link>
       </header>
 
@@ -209,7 +218,7 @@ const HotelDetailsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-2">
             <ScrollAnimationWrapper animation="fade-up">
-              <div className="card-luxury mb-8">
+              <div className="panel p-6 mb-8">
               <h2 className="text-3xl font-serif font-bold text-content mb-4 gold-underline">
                 About {hotel.name}
               </h2>
@@ -234,7 +243,7 @@ const HotelDetailsPage: React.FC = () => {
                     <Calendar className="w-6 h-6 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary">Réservations</p>
+                    <p className="text-sm text-content-secondary">{t('Réservations')}</p>
                     <p className="text-xl font-bold text-content">{hotel.totalBookings || 0}</p>
                   </div>
                 </div>
@@ -243,7 +252,7 @@ const HotelDetailsPage: React.FC = () => {
               {/* Performance Spots */}
               {performanceSpots.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-xl font-serif font-semibold text-content mb-3">Espaces de représentation</h3>
+                  <h3 className="text-xl font-serif font-semibold text-content mb-3">{t('Espaces de représentation')}</h3>
                   <div className="flex flex-wrap gap-2">
                     {performanceSpots.map((spot: any, index: number) => (
                       <span
@@ -262,9 +271,9 @@ const HotelDetailsPage: React.FC = () => {
             {/* Performance Activities Section */}
             {performanceSpots.length > 0 && (
               <ScrollAnimationWrapper animation="fade-up" delay={0.1}>
-                <div className="card-luxury">
+                <div className="panel p-6">
                 <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
-                  Lieux de représentation
+                  {t('Lieux de représentation')}
                 </h2>
                 <div className="space-y-6">
                   {performanceSpots.map((spot: any, index: number) => {
@@ -308,8 +317,8 @@ const HotelDetailsPage: React.FC = () => {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <ScrollAnimationWrapper animation="slide-left" delay={0.2}>
-              <div className="card-luxury sticky top-6">
-              <h3 className="text-2xl font-serif font-bold text-content mb-6">Coordonnées</h3>
+              <div className="panel p-6 sticky top-6">
+              <h3 className="text-2xl font-serif font-bold text-content mb-6">{t('Coordonnées')}</h3>
               
               <div className="space-y-4 mb-6">
                 {locationString && (
@@ -337,7 +346,7 @@ const HotelDetailsPage: React.FC = () => {
                 )}
                 {!hasConfirmedBooking && user?.role === 'ARTIST' && (
                   <div className="text-sm text-content-secondary italic">
-                    Les coordonnées seront communiquées après confirmation de la réservation.
+                    {t('Les coordonnées seront communiquées après confirmation de la réservation.')}
                   </div>
                 )}
               </div>
@@ -381,27 +390,15 @@ const HotelDetailsPage: React.FC = () => {
                       className="w-full btn-primary flex items-center justify-center gap-2"
                     >
                       <Mail className="w-5 h-5" />
-                      Contacter l’hôtel
+                      {t('Contacter l’hôtel')}
                     </a>
                   ) : (
                     <div className="w-full p-4 bg-[var(--surface-warm)] rounded-card border border-line text-center">
                       <p className="text-sm text-content-secondary">
-                        Les coordonnées seront communiquées après confirmation de la réservation.
+                        {t('Les coordonnées seront communiquées après confirmation de la réservation.')}
                       </p>
                     </div>
                   )}
-                  <button
-                    onClick={() => {
-                      setIsFavorite(!isFavorite)
-                      toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites!')
-                    }}
-                    className={`w-full btn-secondary flex items-center justify-center gap-2 ${
-                      isFavorite ? 'bg-red-50 dark:bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 hover:bg-red-100 dark:bg-red-500/10' : ''
-                    }`}
-                  >
-                    <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                    {isFavorite ? 'Saved' : 'Save to Favorites'}
-                  </button>
                 </div>
               )}
             </div>

@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Building, Calendar, TrendingUp, AlertCircle, CheckCircle, DollarSign, Activity, ArrowUpRight, ArrowDownRight, Eye, Gift } from 'lucide-react'
+import { Users, Building, Calendar, TrendingUp, AlertCircle, Activity, Gift } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import StatusBadge from '@/components/StatusBadge'
 import { adminApi, commonApi, paymentsApi } from '@/utils/api'
+import { extractArray } from '@/utils/apiPayload'
+import { t } from '@/i18n'
+import { formatNumber, formatRelative } from '@/utils/i18n'
 
 type DashboardStats = {
   totalUsers: number
@@ -36,29 +40,18 @@ type HotelPerformer = {
   highlight?: string
 }
 
-const extractArray = (payload: any, key: string): any[] => {
-  if (!payload) return []
-  if (Array.isArray(payload)) return payload
-  if (Array.isArray(payload[key])) return payload[key]
-  if (payload.data) {
-    if (Array.isArray(payload.data[key])) return payload.data[key]
-    if (Array.isArray(payload.data)) return payload.data
-  }
-  return []
-}
 
-const formatDateTimeRelative = (value: string | Date) => {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Recently'
-  const diffMs = Date.now() - date.getTime()
-  const diffMinutes = Math.round(diffMs / 60000)
-  if (diffMinutes < 1) return 'Just now'
-  if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`
-  const diffHours = Math.round(diffMinutes / 60)
-  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
-  const diffDays = Math.round(diffHours / 24)
-  if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
-  return date.toLocaleString('fr-FR')
+// One shared implementation now lives in @/utils/i18n; this page and the
+// activity log each carried their own, in different languages.
+const formatDateTimeRelative = formatRelative
+
+/** Status labels for the activity feed, matching the badge vocabulary. */
+const BOOKING_ACTIVITY_LABEL: Record<string, string> = {
+  PENDING: t('Réservation en attente'),
+  CONFIRMED: t('Réservation confirmée'),
+  COMPLETED: t('Résidence terminée'),
+  CANCELLED: t('Réservation annulée'),
+  REJECTED: t('Réservation refusée'),
 }
 
 const AdminDashboard: React.FC = () => {
@@ -72,11 +65,11 @@ const AdminDashboard: React.FC = () => {
 
   const totalRevenueFormatted = useMemo(() => {
     if (!stats?.totalRevenue) return '€0'
-    return `€${stats.totalRevenue.toLocaleString('fr-FR')}`
+    return `€${formatNumber(stats.totalRevenue)}`
   }, [stats?.totalRevenue])
 
   useEffect(() => {
-    ;(async () => {
+    (async () => {
       try {
         setLoading(true)
         setError(null)
@@ -104,12 +97,23 @@ const AdminDashboard: React.FC = () => {
         const bookingActivity: ActivityItem[] = recentBookings.slice(0, 6).map((booking: any) => {
           const status = (booking?.status || 'PENDING').toString().toUpperCase()
           const friendlyStatus = status === 'PENDING' || status === 'CANCELLED' ? 'warning' : 'success'
-          const hotelName = booking?.hotel?.name || booking?.hotelId || 'Hotel'
-          const artistName = booking?.artist?.name || booking?.artistId || 'Artist'
+          const hotelName = booking?.hotel?.name || 'Hôtel'
+          /* The admin payload carries the artist's name on artist.user.name;
+             the artist record itself only has stageName, which is null for most
+             rows. Reading `artist.name` therefore fell through to `artistId`
+             and printed a raw cuid into the feed. Never fall back to an id -
+             a missing name should read as a missing name, not as internal
+             state. */
+          const artistName =
+            booking?.artist?.user?.name ||
+            booking?.artist?.stageName ||
+            booking?.artist?.name ||
+            'Artiste'
           const start = booking?.startDate || booking?.createdAt
-          const time = start ? formatDateTimeRelative(start) : 'Recently'
+          const time = start ? formatDateTimeRelative(start) : t('Récemment')
           const timestamp = start ? new Date(start).getTime() : 0
-          const message = `Booking ${status.toLowerCase()}: ${artistName} → ${hotelName}`
+          const label = BOOKING_ACTIVITY_LABEL[status] ?? t('Réservation')
+          const message = `${label} : ${artistName} → ${hotelName}`
           return {
             id: `booking-${booking?.id ?? Math.random()}`,
             message,
@@ -121,11 +125,11 @@ const AdminDashboard: React.FC = () => {
 
         const paymentActivity: ActivityItem[] = recentTransactions.slice(0, 4).map((txn: any) => {
           const amount = Number(txn?.amount ?? 0)
-          const hotel = txn?.hotel?.name || txn?.hotelId || 'Hotel'
-          const label = amount >= 0 ? 'Payment captured' : 'Refund issued'
+          const hotel = txn?.hotel?.name || 'Hôtel'
+          const label = amount >= 0 ? t('Paiement encaissé') : t('Remboursement émis')
           const message = `${label}: ${hotel} (${amount >= 0 ? '+' : '-'}€${Math.abs(amount).toLocaleString('fr-FR')})`
           const createdAt = txn?.createdAt
-          const time = createdAt ? formatDateTimeRelative(createdAt) : 'Recently'
+          const time = createdAt ? formatDateTimeRelative(createdAt) : t('Récemment')
           const timestamp = createdAt ? new Date(createdAt).getTime() : 0
           return {
             id: `txn-${txn?.id ?? Math.random()}`,
@@ -181,10 +185,10 @@ const AdminDashboard: React.FC = () => {
   const statsCards = useMemo(() => {
     if (!stats) return []
     return [
-      { label: 'Utilisateurs', value: stats.totalUsers, icon: Users, color: 'text-blue-600' },
-      { label: 'Hôtels actifs', value: stats.totalHotels, icon: Building, color: 'text-green-600 dark:text-green-400' },
-      { label: 'Artistes inscrits', value: stats.totalArtists, icon: Users, color: 'text-purple-600' },
-      { label: 'Réservations', value: stats.totalBookings, icon: Calendar, color: 'text-orange-600' }
+      { label: 'Utilisateurs', value: stats.totalUsers },
+      { label: t('Hôtels actifs'), value: stats.totalHotels },
+      { label: 'Artistes inscrits', value: stats.totalArtists },
+      { label: t('Réservations'), value: stats.totalBookings }
     ]
   }, [stats])
 
@@ -197,271 +201,181 @@ const AdminDashboard: React.FC = () => {
   }
 
   if (error) {
-    return <div className="card-luxury text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10">{error}</div>
+    return <div className="notice-critical">{error}</div>
   }
 
   return (
     <div className="min-h-screen bg-surface" data-testid="dashboard">
-      <div className="max-w-[1600px] mx-auto px-6 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-      <div>
-              <h1 className="text-3xl font-semibold text-content mb-1">
-                Tableau de bord
-        </h1>
-              <p className="text-sm text-content-secondary">
-                Vue d’ensemble et statistiques de la plateforme
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-xs text-content-secondary uppercase tracking-wide mb-1">Total Revenue</div>
-                <div className="text-2xl font-semibold text-content">{totalRevenueFormatted}</div>
-              </div>
+      <div className="shell py-12 md:py-16 space-y-10">
+        <header className="page-head">
+          <span className="eyebrow">Administration</span>
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <h1 className="page-head__title">{t('Tableau de bord')}</h1>
+            <div className="text-right">
+              <span className="stat__label">Revenu total</span>
+              <p className="mt-1 font-serif text-2xl text-content">{totalRevenueFormatted}</p>
             </div>
           </div>
-      </div>
+          <p className="page-head__lede">{t('Vue d’ensemble et statistiques de la plateforme.')}</p>
+          <span className="rule-reveal mt-2" />
+        </header>
 
-      {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statsCards.map((stat, index) => {
-          const Icon = stat.icon
-            const colorMap: Record<string, { bg: string; iconColor: string; border: string }> = {
-              'text-blue-600': {
-                bg: 'bg-blue-50',
-                iconColor: 'text-blue-600',
-                border: 'border-blue-200'
-              },
-              'text-green-600 dark:text-green-400': {
-                bg: 'bg-emerald-50',
-                iconColor: 'text-emerald-600',
-                border: 'border-emerald-200'
-              },
-              'text-purple-600': {
-                bg: 'bg-purple-50',
-                iconColor: 'text-purple-600',
-                border: 'border-purple-200'
-              },
-              'text-orange-600': {
-                bg: 'bg-orange-50',
-                iconColor: 'text-orange-600',
-                border: 'border-orange-200'
-              }
-            }
-            const colors = colorMap[stat.color] || colorMap['text-blue-600']
-            
-          return (
-              <div 
-                key={index} 
-                className="bg-surface-raised rounded-card border border-line p-6 hover:border-line-strong transition-colors"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2 rounded-card ${colors.bg}`}>
-                    <Icon className={`w-5 h-5 ${colors.iconColor}`} />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-content-secondary uppercase tracking-wide mb-1">{stat.label}</p>
-                  <p className="text-2xl font-semibold text-content">{stat.value.toLocaleString('fr-FR')}</p>
-              </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
+          {statsCards.map((stat) => (
+            <div key={stat.label} className="stat rounded-none border-0">
+              <span className="stat__label">{stat.label}</span>
+              <span className="stat__value">{formatNumber(stat.value)}</span>
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Recent Activity */}
-          <div className="lg:col-span-2 bg-surface-raised rounded-card border border-line">
-            <div className="px-6 py-4 border-b border-line">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-content">Activité récente</h2>
-                <button 
-                  onClick={() => navigate('/dashboard/logs')}
-                  className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
-                >
-                  Tout voir <ArrowUpRight className="w-4 h-4" />
-                </button>
-              </div>
+        {/* Activity is the wider column because a log line is a sentence; the
+            artist ranking is a list of names and can hold a narrow measure. */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <section className="panel lg:col-span-2">
+            <div className="panel-head">
+              <h2>{t('Activité récente')}</h2>
+              <button
+                onClick={() => navigate('/dashboard/logs')}
+                className="btn-arrow text-sm text-content-secondary hover:text-content"
+              >
+                {t('Tout voir')}
+              </button>
             </div>
             <div className="divide-y divide-line">
               {activity.length > 0 ? (
                 activity.slice(0, 8).map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="px-6 py-4 hover:bg-surface transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`mt-0.5 flex-shrink-0 w-2 h-2 rounded-full ${
-                        item.status === 'success' ? 'bg-green-500' : 'bg-amber-500'
-                      }`}></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-content mb-1">{item.message}</p>
-                        <p className="text-xs text-content-secondary">{item.time}</p>
-            </div>
-          </div>
+                  <div key={item.id} className="flex items-start gap-3 px-6 py-4">
+                    <span
+                      className="mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45"
+                      style={{
+                        backgroundColor:
+                          item.status === 'success'
+                            ? 'var(--state-positive)'
+                            : 'var(--state-caution)'
+                      }}
+                      aria-hidden="true"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-content">{item.message}</p>
+                      <p className="mt-1 text-[0.8125rem] text-content-secondary">{item.time}</p>
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="px-6 py-12 text-center">
-                  <Activity className="w-8 h-8 text-content-secondary mx-auto mb-2" />
-                  <p className="text-sm text-content-secondary">Aucune activité récente</p>
+                <div className="empty-state">
+                  <Activity className="h-6 w-6 text-content-secondary" aria-hidden="true" />
+                  <p className="empty-state__title">{t('Aucune activité récente')}</p>
                 </div>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
+          </section>
 
-        {/* Top Artists */}
-          <div className="bg-surface-raised rounded-card border border-line">
-            <div className="px-6 py-4 border-b border-line">
-              <h2 className="text-lg font-semibold text-content">Artistes à l’honneur</h2>
+          <section className="panel">
+            <div className="panel-head">
+              <h2>{t('Artistes à l’honneur')}</h2>
             </div>
             <div className="divide-y divide-line">
-            {topArtists.length > 0 ? (
+              {topArtists.length > 0 ? (
                 topArtists.map((artist, idx) => (
-                  <div 
-                    key={artist.id} 
-                    className="px-6 py-4 hover:bg-surface transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-card bg-surface-sunken flex items-center justify-center text-xs font-semibold text-content-secondary">
-                          {idx + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-content truncate">{artist.name}</p>
-                          <p className="text-xs text-content-secondary truncate">{artist.specialty || 'Artist'}</p>
-                        </div>
-                      </div>
-                      <div className="text-right ml-4">
-                        <p className="text-sm font-semibold text-content">{artist.bookings}</p>
-                        <p className="text-xs text-content-secondary">réservations</p>
-                      </div>
-                  </div>
+                  <div key={artist.id} className="flex items-center gap-3 px-6 py-4">
+                    <span className="w-5 shrink-0 font-serif text-base text-content-secondary tabular-nums">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm text-content">{artist.name}</p>
+                      <p className="truncate text-[0.8125rem] text-content-secondary">
+                        {artist.specialty || 'Artiste'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-serif text-base text-content tabular-nums">{artist.bookings}</p>
+                      <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-content-secondary">
+                        {t('rés.')}
+                      </p>
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="px-6 py-12 text-center">
-                  <Users className="w-8 h-8 text-content-secondary mx-auto mb-2" />
-                  <p className="text-sm text-content-secondary">Aucune donnée</p>
+                <div className="empty-state">
+                  <Users className="h-6 w-6 text-content-secondary" aria-hidden="true" />
+                  <p className="empty-state__title">{t('Aucune donnée')}</p>
                 </div>
-            )}
-          </div>
+              )}
+            </div>
+          </section>
         </div>
-      </div>
 
-      {/* Top Hotels */}
-        <div className="bg-surface-raised rounded-card border border-line mb-8">
-          <div className="px-6 py-4 border-b border-line">
-                <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-content">Hôtels actifs</h2>
-              <button 
-                onClick={() => navigate('/dashboard/hotels')}
-                className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
-              >
-                Tout voir <ArrowUpRight className="w-4 h-4" />
-              </button>
-                </div>
-              </div>
+        <section className="panel">
+          <div className="panel-head">
+            <h2>{t('Hôtels actifs')}</h2>
+            <button
+              onClick={() => navigate('/dashboard/hotels')}
+              className="btn-arrow text-sm text-content-secondary hover:text-content"
+            >
+              {t('Tout voir')}
+            </button>
+          </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-surface">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Hôtel</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Lieu</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Réservations</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">Statut</th>
+                  <th scope="col">{t('Hôtel')}</th>
+                  <th scope="col">Lieu</th>
+                  <th scope="col" className="numeric">{t('Réservations')}</th>
+                  <th scope="col">Statut</th>
                 </tr>
               </thead>
-              <tbody className="bg-surface-raised divide-y divide-line">
+              <tbody>
                 {topHotels.length > 0 ? (
                   topHotels.map((hotel) => (
-                    <tr key={hotel.id} className="hover:bg-surface transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-content">{hotel.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-content-secondary">{hotel.location || '—'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-content">{hotel.bookings}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400">
-                          Actif
-                        </span>
+                    <tr key={hotel.id}>
+                      <td className="font-medium">{hotel.name}</td>
+                      <td className="text-content-secondary">{hotel.location || '—'}</td>
+                      <td className="numeric">{hotel.bookings}</td>
+                      <td>
+                        <StatusBadge status="ACTIVE" />
                       </td>
                     </tr>
-            ))
-          ) : (
+                  ))
+                ) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
-                      <Building className="w-8 h-8 text-content-secondary mx-auto mb-2" />
-                      <p className="text-sm text-content-secondary">Aucune donnée hôtelière</p>
+                    <td colSpan={4}>
+                      <div className="empty-state">
+                        <Building className="h-6 w-6 text-content-secondary" aria-hidden="true" />
+                        <p className="empty-state__title">{t('Aucune donnée hôtelière')}</p>
+                      </div>
                     </td>
                   </tr>
-          )}
+                )}
               </tbody>
             </table>
-        </div>
-      </div>
+          </div>
+        </section>
 
-      {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <button 
-            onClick={() => navigate('/dashboard/users')}
-            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
-          >
-            <Users className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Utilisateurs</div>
-            <div className="text-xs text-content-secondary mt-1">Gérer les comptes</div>
-          </button>
-
-          <button 
-            onClick={() => navigate('/dashboard/bookings')}
-            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
-          >
-            <Calendar className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Réservations</div>
-            <div className="text-xs text-content-secondary mt-1">Tout voir</div>
-          </button>
-
-          <button 
-            onClick={() => navigate('/dashboard/analytics')}
-            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
-          >
-            <TrendingUp className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Statistiques</div>
-            <div className="text-xs text-content-secondary mt-1">Platform metrics</div>
-          </button>
-
-          <button 
-            onClick={() => navigate('/dashboard/logs')}
-            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
-          >
-            <Activity className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Logs</div>
-            <div className="text-xs text-content-secondary mt-1">Activity history</div>
-          </button>
-
-          <button 
-            onClick={() => navigate('/dashboard/moderation')}
-            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
-          >
-            <AlertCircle className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Modération</div>
-            <div className="text-xs text-content-secondary mt-1">Review content</div>
-          </button>
-
-          <button 
-            onClick={() => navigate('/dashboard/referrals')}
-            className="bg-surface-raised border border-line rounded-card p-4 hover:border-line-strong hover:shadow-sm transition-all text-left group"
-          >
-            <Gift className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Parrainage</div>
-            <div className="text-xs text-content-secondary mt-1">Track program</div>
-          </button>
-        </div>
+        {/* Six destinations, one shape. These are navigation, not metrics, so
+            they stay uniform - the variance elsewhere on the page is what makes
+            a uniform row here read as deliberate. */}
+        <nav className="grid grid-cols-2 gap-px bg-line border border-line rounded-card overflow-hidden md:grid-cols-3 lg:grid-cols-6">
+          {[
+            { to: '/dashboard/users', Icon: Users, label: 'Utilisateurs', note: t('Gérer les comptes') },
+            { to: '/dashboard/bookings', Icon: Calendar, label: t('Réservations'), note: t('Tout voir') },
+            { to: '/dashboard/analytics', Icon: TrendingUp, label: 'Statistiques', note: t('Mesures de la plateforme') },
+            { to: '/dashboard/logs', Icon: Activity, label: 'Journaux', note: t('Historique d’activité') },
+            { to: '/dashboard/moderation', Icon: AlertCircle, label: t('Modération'), note: t('Vérifier les contenus') },
+            { to: '/dashboard/referrals', Icon: Gift, label: 'Parrainage', note: t('Suivre le programme') }
+          ].map(({ to, Icon, label, note }) => (
+            <button
+              key={to}
+              onClick={() => navigate(to)}
+              className="group bg-surface-raised p-5 text-left transition-colors hover:bg-surface-sunken"
+            >
+              <Icon className="mb-3 h-5 w-5 text-content-secondary transition-colors group-hover:text-gold" aria-hidden="true" />
+              <div className="font-serif text-base text-content">{label}</div>
+              <div className="mt-1 text-[0.8125rem] text-content-secondary">{note}</div>
+            </button>
+          ))}
+        </nav>
       </div>
     </div>
   )

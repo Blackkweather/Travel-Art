@@ -51,6 +51,12 @@ if (!process.env.DATABASE_URL.startsWith('postgresql://') && !process.env.DATABA
 }
 
 // Prisma Client - uses DATABASE_URL from environment
+import { RESORTS, ENVIRONMENT_IMAGES } from './seedResorts';
+
+// The seed creates rows across every hotel and artist, with no session to
+// attribute them to, so it uses the owner connection directly rather than the
+// request-scoped client. DATABASE_URL stays pointed at the owner for exactly
+// this reason; APP_DATABASE_URL is what the running server uses.
 const prisma = new PrismaClient();
 
 async function main() {
@@ -61,182 +67,139 @@ async function main() {
   const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':***@');
   console.log(`📊 Database: ${maskedUrl.substring(0, 50)}...`);
 
+  // ---- Retire the previous seed's rows -----------------------------------
+  // Matched on literal identifiers the old seed wrote, so this can only ever
+  // remove those exact rows. Anything a user created is untouched, and a
+  // database that never held them reports zero.
+  const RETIRED_HOTEL_EMAILS = [
+    'ritz.paris@example.com',
+    'aman.tokyo@example.com',
+    'plaza.newyork@example.com',
+    'ushuaia.ibiza@example.com'
+  ];
+
+  // Read off the previous seed file, not guessed.
+  const RETIRED_TRIP_SLUGS = [
+    'art-gallery-exhibitions',
+    'culinary-arts',
+    'live-performances',
+    'rooftop-jazz-sessions',
+    'sunset-photography',
+    'wellness-sessions'
+  ];
+
+  const prunedTrips = await prisma.trip.deleteMany({
+    where: { slug: { in: RETIRED_TRIP_SLUGS } }
+  });
+
+  // Deleting the user cascades to the hotel row (onDelete: Cascade on
+  // Hotel.user), so this does not leave an orphaned hotel behind.
+  const prunedHotels = await prisma.user.deleteMany({
+    where: { email: { in: RETIRED_HOTEL_EMAILS } }
+  });
+
+  if (prunedTrips.count || prunedHotels.count) {
+    console.log(
+      `🧹 Retired ${prunedHotels.count} legacy hotel account(s) and ${prunedTrips.count} legacy trip(s)`
+    );
+  }
+
   // Create admin user
   const adminPasswordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@travelart.test' },
-    update: {},
+    // Rotating is the whole point of a freshly generated password: without the
+    // hash here, a re-seed printed a new one and left the old one working.
+    update: { passwordHash: adminPasswordHash, language: 'fr' },
     create: {
       role: 'ADMIN',
       email: 'admin@travelart.test',
       passwordHash: adminPasswordHash,
       name: 'Admin User',
       country: 'France',
-      language: 'en'
+      language: 'fr'
     }
   });
 
   console.log('✅ Admin user created');
 
   // Create hotel users
-  const hotels = [
-    {
-      email: 'hotel1@example.com',
-      name: 'Hotel Plaza Athénée',
-      country: 'France',
-      city: 'Paris',
-      description: 'Luxury hotel in the heart of Paris with stunning views of the Eiffel Tower.',
-      contactPhone: '+33 1 53 67 66 65',
-      repName: 'Marie Dubois',
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop'
-      ]),
-      performanceSpots: JSON.stringify([
-        { name: 'Grand Ballroom', type: 'ballroom', capacity: 200, description: 'Elegant ballroom perfect for classical concerts and formal performances' },
-        { name: 'Rooftop Terrace', type: 'lounge', capacity: 50, description: 'Stunning rooftop with Eiffel Tower views - ideal for intimate acoustic sets' }
-      ]),
-      rooms: JSON.stringify([
-        { id: 'room1', name: 'Deluxe Suite', capacity: 2 },
-        { id: 'room2', name: 'Presidential Suite', capacity: 4 }
-      ])
-    },
-    {
-      email: 'hotel2@example.com',
-      name: 'Hotel Negresco',
-      country: 'France',
-      city: 'Nice',
-      description: 'Historic luxury hotel on the French Riviera with Mediterranean views and legendary rooftop performances.',
-      contactPhone: '+33 4 93 16 64 00',
-      repName: 'Jean-Pierre Martin',
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=600&fit=crop'
-      ]),
-      performanceSpots: JSON.stringify([
-        { name: 'Rooftop Jazz Lounge', type: 'lounge', capacity: 30, description: 'Intimate rooftop setting overlooking the Mediterranean - perfect for jazz ensembles' },
-        { name: 'Garden Terrace', type: 'resto', capacity: 80, description: 'Elegant garden space ideal for acoustic performances and dinner shows' }
-      ]),
-      rooms: JSON.stringify([
-        { id: 'room1', name: 'Sea View Room', capacity: 2 },
-        { id: 'room2', name: 'Penthouse Suite', capacity: 6 }
-      ])
-    },
-    {
-      email: 'hotel3@example.com',
-      name: 'La Mamounia',
-      country: 'Morocco',
-      city: 'Marrakech',
-      description: 'Iconic palace hotel with traditional Moroccan architecture and magical rooftop performances under the stars.',
-      contactPhone: '+212 5243 888 00',
-      repName: 'Fatima Alami',
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop'
-      ]),
-      performanceSpots: JSON.stringify([
-        { name: 'Atlas Rooftop Bar', type: 'lounge', capacity: 40, description: 'Breathtaking rooftop with Atlas Mountain views - perfect for traditional music and modern fusion' },
-        { name: 'Pool Deck Stage', type: 'pool', capacity: 100, description: 'Stunning poolside venue ideal for bands and DJ sets under the Moroccan sky' }
-      ]),
-      rooms: JSON.stringify([
-        { id: 'room1', name: 'Riad Suite', capacity: 2 },
-        { id: 'room2', name: 'Royal Suite', capacity: 4 }
-      ])
-    },
-    {
-      email: 'hotel4@example.com',
-      name: 'Palácio Belmonte',
-      country: 'Portugal',
-      city: 'Lisbon',
-      description: 'Boutique palace hotel with panoramic views of Lisbon and intimate rooftop concerts.',
-      contactPhone: '+351 21 881 66 00',
-      repName: 'Carlos Silva',
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&h=600&fit=crop'
-      ]),
-      performanceSpots: JSON.stringify([
-        { name: 'Terrace Bar', type: 'lounge', capacity: 25, description: 'Intimate terrace overlooking Lisbon - perfect for fado singers and acoustic guitarists' },
-        { name: 'Wine Cellar', type: 'resto', capacity: 60, description: 'Historic wine cellar ideal for classical music and intimate performances' }
-      ]),
-      rooms: JSON.stringify([
-        { id: 'room1', name: 'Palace Room', capacity: 2 },
-        { id: 'room2', name: 'Tower Suite', capacity: 3 }
-      ])
-    },
-    {
-      email: 'hotel5@example.com',
-      name: 'Nobu Hotel Ibiza',
-      country: 'Spain',
-      city: 'Ibiza',
-      description: 'Luxury beachfront hotel with world-class dining and legendary rooftop DJ performances.',
-      contactPhone: '+34 971 19 22 22',
-      repName: 'Sofia Rodriguez',
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop'
-      ]),
-      performanceSpots: JSON.stringify([
-        { name: 'Rooftop Beach Club', type: 'pool', capacity: 150, description: 'Epic rooftop venue with Mediterranean views - perfect for DJs and electronic music' },
-        { name: 'Sunset Lounge', type: 'lounge', capacity: 60, description: 'Intimate sunset setting ideal for acoustic performances and live bands' }
-      ]),
-      rooms: JSON.stringify([
-        { id: 'room1', name: 'Ocean View Suite', capacity: 2 },
-        { id: 'room2', name: 'Villa Suite', capacity: 4 }
-      ])
-    }
-  ];
-
+  const hotels = RESORTS;
   const createdHotels = [];
+
   for (const hotelData of hotels) {
     const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
+
+    // Real coordinates. These used to be hardcoded to 0,0 for every property,
+    // which put all of them on Null Island and made the map look broken.
     const location = JSON.stringify({
       city: hotelData.city,
       country: hotelData.country,
-      coords: { lat: 0, lng: 0 } // Placeholder coordinates
+      coords: { lat: hotelData.lat, lng: hotelData.lng },
+      lat: hotelData.lat,
+      lng: hotelData.lng
     });
+
+    const images = JSON.stringify(ENVIRONMENT_IMAGES[hotelData.environment]);
+    const performanceSpots = JSON.stringify(hotelData.spots);
+    const rooms = JSON.stringify([
+      { id: 'room1', name: 'Chambre double', capacity: 2 },
+      { id: 'room2', name: 'Suite', capacity: 4 }
+    ]);
 
     const user = await prisma.user.upsert({
       where: { email: hotelData.email },
-      update: {},
+      update: { name: hotelData.name, country: hotelData.country, passwordHash },
       create: {
         role: 'HOTEL',
         email: hotelData.email,
         passwordHash,
         name: hotelData.name,
         country: hotelData.country,
-        language: 'en'
+        language: 'fr'
       }
     });
 
+    // `update` carries the real fields rather than `{}`. With an empty update
+    // a re-seed silently kept whatever was already stored, so the coordinate
+    // fix would never have reached a database that had been seeded before.
     const hotel = await prisma.hotel.upsert({
       where: { userId: user.id },
-      update: {},
+      update: {
+        name: hotelData.name,
+        description: hotelData.description,
+        location,
+        // Mirrored from the same source as `location`, in the same write, so
+        // the JSON and the queryable columns cannot disagree.
+        latitude: hotelData.lat,
+        longitude: hotelData.lng,
+        contactPhone: hotelData.contactPhone,
+        images,
+        performanceSpots,
+        rooms,
+        repName: hotelData.repName
+      },
       create: {
         userId: user.id,
         name: hotelData.name,
         description: hotelData.description,
         location,
+        latitude: hotelData.lat,
+        longitude: hotelData.lng,
         contactPhone: hotelData.contactPhone,
-        images: hotelData.images,
-        performanceSpots: hotelData.performanceSpots,
-        rooms: hotelData.rooms,
+        images,
+        performanceSpots,
+        rooms,
         repName: hotelData.repName
       }
     });
 
-    // Create credits for hotels
     await prisma.credit.upsert({
       where: { hotelId: hotel.id },
-      update: {},
+      update: { totalCredits: 60, usedCredits: 0 },
       create: {
         hotelId: hotel.id,
-        totalCredits: Math.floor(Math.random() * 10) + 1, // 1-10 credits
+        totalCredits: 60,
         usedCredits: 0
       }
     });
@@ -244,7 +207,7 @@ async function main() {
     createdHotels.push(hotel);
   }
 
-  console.log('✅ Hotels created');
+  console.log(`✅ ${createdHotels.length} resorts created`);
 
   // Create artist users
   const artists = [
@@ -252,13 +215,13 @@ async function main() {
       email: 'artist1@example.com',
       name: 'Sophie Laurent',
       country: 'France',
-      discipline: 'Classical Pianist',
-      bio: 'Award-winning classical pianist with 15 years of experience performing in prestigious venues across Europe. Specializes in intimate rooftop performances and grand ballroom concerts.',
+      discipline: 'Piano classique',
+      bio: 'Pianiste classique primée, quinze ans de scène dans les plus grandes salles européennes. Joue aussi bien en formation intime sur les toits que dans les grands salons.',
       priceRange: '€500-1000',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop'
+        '/images/pillars/creation.webp',
+        '/images/hero/ombre.webp',
+        '/images/headers/experiences.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=example1',
@@ -270,12 +233,12 @@ async function main() {
       name: 'Marco Silva',
       country: 'Portugal',
       discipline: 'DJ',
-      bio: 'International DJ specializing in deep house and electronic music. Resident DJ at top clubs in Lisbon and Ibiza. Creates unforgettable rooftop experiences with stunning sunset sets.',
+      bio: 'DJ international, deep house et musiques électroniques. Résident des clubs de Lisbonne et d’Ibiza. Compose ses sets pour l’heure du coucher de soleil.',
       priceRange: '€300-800',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop'
+        '/images/headers/experiences.webp',
+        '/images/pillars/residence.webp',
+        '/images/pillars/tout-compris.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=example3',
@@ -285,14 +248,14 @@ async function main() {
     {
       email: 'artist3@example.com',
       name: 'Yoga Master Ananda',
-      country: 'India',
-      discipline: 'Yoga Instructor',
-      bio: 'Certified yoga instructor with 20 years of experience. Specializes in sunrise rooftop sessions and meditation workshops in luxury hotel settings.',
+      country: 'Inde',
+      discipline: 'Yoga',
+      bio: 'Professeure de yoga certifiée, vingt ans de pratique. Séances au lever du jour sur les toits et ateliers de méditation en hôtellerie.',
       priceRange: '€200-500',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop'
+        '/images/pillars/tout-compris.webp',
+        '/images/hero/scene.webp',
+        '/images/pillars/creation.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=example5',
@@ -302,14 +265,14 @@ async function main() {
     {
       email: 'artist4@example.com',
       name: 'Isabella Garcia',
-      country: 'Spain',
-      discipline: 'Flamenco Dancer',
-      bio: 'Professional flamenco dancer and choreographer. Performs traditional and contemporary flamenco shows on hotel rooftops and intimate venues.',
+      country: 'Espagne',
+      discipline: 'Danse flamenco',
+      bio: 'Danseuse et chorégraphe de flamenco. Spectacles traditionnels et contemporains, sur les toits comme dans les petites salles.',
       priceRange: '€400-700',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop'
+        '/images/pillars/creation.webp',
+        '/images/hero/ombre.webp',
+        '/images/headers/experiences.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=example7',
@@ -320,13 +283,13 @@ async function main() {
       email: 'artist5@example.com',
       name: 'Jean-Michel Dubois',
       country: 'France',
-      discipline: 'Jazz Saxophonist',
-      bio: 'Professional jazz saxophonist with a passion for bebop and contemporary jazz. Creates magical moments on hotel rooftops with intimate jazz ensembles.',
+      discipline: 'Saxophone jazz',
+      bio: 'Saxophoniste de jazz, du bebop au répertoire contemporain. Joue en petite formation, souvent en fin de soirée sur les terrasses.',
       priceRange: '€350-600',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop'
+        '/images/headers/experiences.webp',
+        '/images/pillars/residence.webp',
+        '/images/pillars/tout-compris.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=example9',
@@ -337,12 +300,13 @@ async function main() {
       email: 'artist6@example.com',
       name: 'Maria Santos',
       country: 'Portugal',
-      discipline: 'Fado Singer',
-      bio: 'Traditional Portuguese fado singer with a hauntingly beautiful voice. Performs authentic fado music.',
+      discipline: 'Chant fado',
+      bio: 'Chanteuse de fado portugais, d’une voix qui ne s’oublie pas. Répertoire traditionnel.',
       priceRange: '€250-450',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800'
+        '/images/pillars/tout-compris.webp',
+        '/images/hero/scene.webp',
+        '/images/pillars/creation.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
@@ -351,13 +315,14 @@ async function main() {
     {
       email: 'artist7@example.com',
       name: 'Ahmed Benali',
-      country: 'Morocco',
-      discipline: 'Oud Player',
-      bio: 'Master of the traditional Arabic oud instrument. Performs classical Arabic music and contemporary fusion.',
+      country: 'Maroc',
+      discipline: 'Oud',
+      bio: 'Maître du oud. Musique arabe classique et fusions contemporaines.',
       priceRange: '€300-550',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800'
+        '/images/pillars/creation.webp',
+        '/images/hero/ombre.webp',
+        '/images/headers/experiences.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
@@ -366,13 +331,14 @@ async function main() {
     {
       email: 'artist8@example.com',
       name: 'Elena Popov',
-      country: 'Russia',
-      discipline: 'Ballet Dancer',
-      bio: 'Former principal dancer with the Bolshoi Ballet. Now performs contemporary ballet and teaches masterclasses.',
+      country: 'Russie',
+      discipline: 'Danse classique',
+      bio: 'Ancienne danseuse étoile du Bolchoi. Interprète aujourd’hui le répertoire contemporain et donne des masterclasses.',
       priceRange: '€600-1200',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800'
+        '/images/headers/experiences.webp',
+        '/images/pillars/residence.webp',
+        '/images/pillars/tout-compris.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
@@ -381,13 +347,14 @@ async function main() {
     {
       email: 'artist9@example.com',
       name: 'Luca Romano',
-      country: 'Italy',
-      discipline: 'Opera Singer',
-      bio: 'Professional opera singer specializing in Italian opera. Performed in major opera houses across Europe.',
+      country: 'Italie',
+      discipline: 'Chant lyrique',
+      bio: 'Chanteuse lyrique, répertoire italien. A chanté sur les grandes scènes d’opéra européennes.',
       priceRange: '€800-1500',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800'
+        '/images/pillars/tout-compris.webp',
+        '/images/hero/scene.webp',
+        '/images/pillars/creation.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
@@ -396,13 +363,14 @@ async function main() {
     {
       email: 'artist10@example.com',
       name: 'Sarah Johnson',
-      country: 'United States',
-      discipline: 'DIY Workshop Leader',
-      bio: 'Creative workshop leader specializing in sustainable crafts and DIY projects. Makes learning fun and engaging.',
+      country: 'États-Unis',
+      discipline: 'Atelier artisanal',
+      bio: 'Animatrice d’ateliers créatifs autour de l’artisanat durable. Transmet en faisant faire.',
       priceRange: '€150-300',
       images: JSON.stringify([
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800',
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800'
+        '/images/pillars/creation.webp',
+        '/images/hero/ombre.webp',
+        '/images/headers/experiences.webp'
       ]),
       videos: JSON.stringify([
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
@@ -416,20 +384,28 @@ async function main() {
 
     const user = await prisma.user.upsert({
       where: { email: artistData.email },
-      update: {},
+      // Reconciles rather than no-ops, so the translated country reaches rows
+      // that already exist. With `{}` the seed silently keeps the old value.
+      update: { name: artistData.name, country: artistData.country, passwordHash },
       create: {
         role: 'ARTIST',
         email: artistData.email,
         passwordHash,
         name: artistData.name,
         country: artistData.country,
-        language: 'en'
+        language: 'fr'
       }
     });
 
     const artist = await prisma.artist.upsert({
       where: { userId: user.id },
-      update: {},
+      // A real update block, so re-seeding reconciles an existing artist. With
+      // `{}` here the discipline translations above would never have reached a
+      // database that had already been seeded.
+      update: {
+        bio: artistData.bio,
+        discipline: artistData.discipline,
+      },
       create: {
         userId: user.id,
         bio: artistData.bio,
@@ -449,8 +425,13 @@ async function main() {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + 6);
 
-    await prisma.artistAvailability.create({
-      data: {
+    // Deterministic id: one seeded availability window per artist, replaced
+    // rather than duplicated on a re-run.
+    await prisma.artistAvailability.upsert({
+      where: { id: `seed-avail-${artist.id}` },
+      update: { dateFrom: startDate, dateTo: endDate },
+      create: {
+        id: `seed-avail-${artist.id}`,
         artistId: artist.id,
         dateFrom: startDate,
         dateTo: endDate
@@ -503,9 +484,12 @@ async function main() {
   ];
 
   const createdBookings = [];
-  for (const bookingData of bookings) {
-    const booking = await prisma.booking.create({
-      data: bookingData
+  for (const [index, bookingData] of bookings.entries()) {
+    const id = `seed-booking-${index}`;
+    const booking = await prisma.booking.upsert({
+      where: { id },
+      update: bookingData,
+      create: { id, ...bookingData }
     });
     createdBookings.push(booking);
   }
@@ -519,14 +503,17 @@ async function main() {
       hotelId: createdBookings[1].hotelId,
       artistId: createdBookings[1].artistId,
       stars: 5,
-      textReview: 'Absolutely fantastic performance! The DJ set was incredible and our guests loved every minute.',
+      textReview: 'Prestation remarquable. Le set a tenu la salle du début à la fin, nos clients en parlent encore.',
       isVisibleToArtist: false
     }
   ];
 
-  for (const ratingData of ratings) {
-    await prisma.rating.create({
-      data: ratingData
+  for (const [index, ratingData] of ratings.entries()) {
+    const id = `seed-rating-${index}`;
+    await prisma.rating.upsert({
+      where: { id },
+      update: ratingData,
+      create: { id, ...ratingData }
     });
   }
 
@@ -551,9 +538,12 @@ async function main() {
     }
   ];
 
-  for (const transactionData of transactions) {
-    await prisma.transaction.create({
-      data: transactionData
+  for (const [index, transactionData] of transactions.entries()) {
+    const id = `seed-transaction-${index}`;
+    await prisma.transaction.upsert({
+      where: { id },
+      update: transactionData,
+      create: { id, ...transactionData }
     });
   }
 
@@ -566,8 +556,8 @@ async function main() {
       name: 'Elena Rodriguez',
       country: 'France',
       city: 'Paris',
-      discipline: 'Jazz Saxophonist',
-      bio: 'Renowned jazz saxophonist creating unforgettable rooftop experiences in Paris. Specializes in intimate jazz sessions under the stars.',
+      discipline: 'Saxophone jazz',
+      bio: 'Saxophoniste de jazz reconnu, habitué des toits parisiens. Sessions intimistes, à la nuit tombée.',
       priceRange: '€500-1000',
       stageName: 'Elena Rodriguez',
       artisticProfile: JSON.stringify({
@@ -583,10 +573,10 @@ async function main() {
     {
       email: 'marcus.chen@example.com',
       name: 'Marcus Chen',
-      country: 'Japan',
+      country: 'Japon',
       city: 'Tokyo',
-      discipline: 'Visual Artist',
-      bio: 'Contemporary visual artist transforming hotel spaces with stunning exhibitions. Creates immersive art experiences in luxury venues.',
+      discipline: 'Arts visuels',
+      bio: 'Artiste plasticien contemporain. Transforme les espaces d’un hôtel en parcours d’exposition immersif.',
       priceRange: '€600-1200',
       stageName: 'Marcus Chen',
       artisticProfile: JSON.stringify({
@@ -602,10 +592,10 @@ async function main() {
     {
       email: 'sophie.laurent@example.com',
       name: 'Sophie Laurent',
-      country: 'United States',
+      country: 'États-Unis',
       city: 'New York',
-      discipline: 'Photographer',
-      bio: 'Award-winning photographer specializing in sunset photography workshops. Captures magical moments in luxury hotel settings.',
+      discipline: 'Photographie',
+      bio: 'Photographe primée, ateliers autour de la lumière du soir. Travaille les lieux autant que les visages.',
       priceRange: '€400-800',
       stageName: 'Sophie Laurent',
       artisticProfile: JSON.stringify({
@@ -621,10 +611,10 @@ async function main() {
     {
       email: 'david.kim@example.com',
       name: 'David Kim',
-      country: 'Spain',
+      country: 'Espagne',
       city: 'Ibiza',
-      discipline: 'DJ & Producer',
-      bio: 'International DJ and producer creating epic rooftop experiences. Resident DJ at top clubs, specializing in deep house and electronic music.',
+      discipline: 'DJ et production',
+      bio: 'DJ et producteur international. Résident de clubs réputés, spécialiste de la deep house.',
       priceRange: '€800-1500',
       stageName: 'David Kim',
       artisticProfile: JSON.stringify({
@@ -644,20 +634,29 @@ async function main() {
 
     const user = await prisma.user.upsert({
       where: { email: artistData.email },
-      update: {},
+      // Reconciles rather than no-ops, so the translated country reaches rows
+      // that already exist. With `{}` the seed silently keeps the old value.
+      update: { name: artistData.name, country: artistData.country, passwordHash },
       create: {
         role: 'ARTIST',
         email: artistData.email,
         passwordHash,
         name: artistData.name,
         country: artistData.country,
-        language: 'en'
+        language: 'fr'
       }
     });
 
     const artist = await prisma.artist.upsert({
       where: { userId: user.id },
-      update: {},
+      // The last upsert still passing `{}`. Its source carried the translated
+      // disciplines all along; they simply never reached an existing row.
+      update: {
+        stageName: artistData.stageName,
+        bio: artistData.bio,
+        discipline: artistData.discipline,
+        priceRange: artistData.priceRange,
+      },
       create: {
         userId: user.id,
         stageName: artistData.stageName,
@@ -667,9 +666,10 @@ async function main() {
         membershipStatus: 'ACTIVE',
         membershipRenewal: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         images: JSON.stringify([
-          'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop',
-          'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&h=600&fit=crop'
-        ]),
+        '/images/headers/experiences.webp',
+        '/images/pillars/residence.webp',
+        '/images/pillars/tout-compris.webp'
+      ]),
         videos: JSON.stringify([
           'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
         ]),
@@ -689,8 +689,11 @@ async function main() {
       const endDate = new Date();
       endDate.setMonth(endDate.getMonth() + 6);
 
-      await prisma.artistAvailability.create({
-        data: {
+      await prisma.artistAvailability.upsert({
+        where: { id: `seed-avail-${artist.id}` },
+        update: { dateFrom: startDate, dateTo: endDate },
+        create: {
+          id: `seed-avail-${artist.id}`,
           artistId: artist.id,
           dateFrom: startDate,
           dateTo: endDate
@@ -701,248 +704,117 @@ async function main() {
 
   console.log('✅ Featured artists created');
 
-  // Add partner hotels from static data
-  const partnerHotels = [
-    {
-      email: 'ritz.paris@example.com',
-      name: 'The Ritz Paris',
-      country: 'France',
-      city: 'Paris',
-      description: 'Iconic luxury hotel in the heart of Paris. Features stunning rooftop terraces perfect for intimate performances with Eiffel Tower views.',
-      contactPhone: '+33 1 43 16 30 30',
-      repName: 'Claire Dubois',
-      performanceSpots: JSON.stringify([
-        { name: 'Rooftop Terrace', type: 'lounge', capacity: 50, description: 'Stunning rooftop with Eiffel Tower views - ideal for intimate acoustic sets' },
-        { name: 'Grand Ballroom', type: 'ballroom', capacity: 200, description: 'Elegant ballroom perfect for classical concerts and formal performances' },
-        { name: 'Live Music', type: 'lounge', capacity: 80, description: 'Premium venue for live performances' }
-      ])
-    },
-    {
-      email: 'aman.tokyo@example.com',
-      name: 'Aman Tokyo',
-      country: 'Japan',
-      city: 'Tokyo',
-      description: 'Luxury hotel with sky lounge and cultural events. Features wellness center and exclusive art exhibitions.',
-      contactPhone: '+81 3 5224 3333',
-      repName: 'Yuki Tanaka',
-      performanceSpots: JSON.stringify([
-        { name: 'Sky Lounge', type: 'lounge', capacity: 60, description: 'Elevated sky lounge with panoramic city views' },
-        { name: 'Cultural Events', type: 'ballroom', capacity: 150, description: 'Space for cultural performances and exhibitions' },
-        { name: 'Wellness Center', type: 'wellness', capacity: 30, description: 'Wellness and meditation space' }
-      ])
-    },
-    {
-      email: 'plaza.newyork@example.com',
-      name: 'The Plaza New York',
-      country: 'United States',
-      city: 'New York',
-      description: 'Historic luxury hotel featuring grand ballroom, extensive art collection, and live performances in iconic settings.',
-      contactPhone: '+1 212 759 3000',
-      repName: 'Sarah Mitchell',
-      performanceSpots: JSON.stringify([
-        { name: 'Grand Ballroom', type: 'ballroom', capacity: 300, description: 'Historic grand ballroom for formal performances' },
-        { name: 'Art Collection', type: 'gallery', capacity: 100, description: 'Curated art space for exhibitions' },
-        { name: 'Live Performances', type: 'lounge', capacity: 120, description: 'Premium venue for live shows' }
-      ])
-    },
-    {
-      email: 'ushuaia.ibiza@example.com',
-      name: 'Ushuaïa Ibiza',
-      country: 'Spain',
-      city: 'Ibiza',
-      description: 'Legendary beach club hotel with epic rooftop DJ sets, sunset views, and world-class electronic music experiences.',
-      contactPhone: '+34 971 19 22 22',
-      repName: 'Carlos Martinez',
-      performanceSpots: JSON.stringify([
-        { name: 'Beach Club', type: 'pool', capacity: 200, description: 'Epic beachfront venue for DJ sets and live music' },
-        { name: 'DJ Sets', type: 'lounge', capacity: 150, description: 'Rooftop DJ venue with state-of-the-art sound' },
-        { name: 'Sunset Views', type: 'lounge', capacity: 80, description: 'Intimate sunset setting for acoustic performances' }
-      ])
-    }
-  ];
-
-  for (const hotelData of partnerHotels) {
-    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
-    const location = JSON.stringify({
-      city: hotelData.city,
-      country: hotelData.country,
-      coords: { lat: 0, lng: 0 }
-    });
-
-    const user = await prisma.user.upsert({
-      where: { email: hotelData.email },
-      update: {},
-      create: {
-        role: 'HOTEL',
-        email: hotelData.email,
-        passwordHash,
-        name: hotelData.name,
-        country: hotelData.country,
-        language: 'en'
-      }
-    });
-
-    const hotel = await prisma.hotel.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: {
-        userId: user.id,
-        name: hotelData.name,
-        description: hotelData.description,
-        location,
-        contactPhone: hotelData.contactPhone,
-        images: JSON.stringify([
-          'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-          'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-          'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80'
-        ]),
-        performanceSpots: hotelData.performanceSpots,
-        rooms: JSON.stringify([]),
-        repName: hotelData.repName
-      }
-    });
-
-    await prisma.credit.upsert({
-      where: { hotelId: hotel.id },
-      update: {},
-      create: {
-        hotelId: hotel.id,
-        totalCredits: Math.floor(Math.random() * 10) + 5,
-        usedCredits: 0
-      }
-    });
-  }
-
-  console.log('✅ Partner hotels created');
 
   // Add immersive experiences (Trips)
-  const experiences = [
-    {
-      title: 'Rooftop Jazz Sessions',
-      slug: 'rooftop-jazz-sessions',
-      description: 'Intimate performances under the stars. Experience world-class jazz musicians in stunning rooftop settings with panoramic city views.',
-      priceFrom: 150,
-      priceTo: 300,
-      location: JSON.stringify({ city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 }),
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1200&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&h=600&fit=crop'
-      ]),
+  // One residency per resort, built from the resort record itself. The map on
+  // the experiences page plots trips, so this is what actually puts thirty-five
+  // pins on it - previously there were eight trips across four cities, and the
+  // hotels they belonged to were all sitting at 0,0 anyway.
+  const RESIDENCY_TYPES = ['residency', 'intimate', 'rooftop', 'workshop'] as const;
+
+  const slugify = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+  const experiences = RESORTS.map((resort, index) => {
+    // Spread the residencies across the coming year so the experiences page
+    // has a real calendar to sort and filter rather than one shared date.
+    const start = new Date();
+    start.setDate(start.getDate() + 14 + index * 9);
+
+    const headline = resort.spots[0];
+    const artist = createdArtists.length
+      ? createdArtists[index % createdArtists.length]
+      : null;
+    const hotel = createdHotels[index] ?? null;
+
+    return {
+      title: `Résidence — ${resort.city}`,
+      slug: `residence-${slugify(resort.city)}-${slugify(resort.name)}`.slice(0, 80),
+      description:
+        `${resort.description} La résidence occupe ${headline.name} : ${headline.description.toLowerCase()}`,
+      priceFrom: 0,
+      priceTo: 0,
+      location: JSON.stringify({
+        city: resort.city,
+        country: resort.country,
+        lat: resort.lat,
+        lng: resort.lng
+      }),
+      latitude: resort.lat,
+      longitude: resort.lng,
+      images: JSON.stringify(ENVIRONMENT_IMAGES[resort.environment]),
       status: 'PUBLISHED',
-      type: 'rooftop',
-      rating: 4.9,
-      duration: '2 hours',
-      capacity: '50 guests'
-    },
-    {
-      title: 'Art Gallery Exhibitions',
-      slug: 'art-gallery-exhibitions',
-      description: 'Curated visual experiences. Discover contemporary art exhibitions in luxury hotel galleries featuring emerging and established artists.',
-      priceFrom: 80,
-      priceTo: 150,
-      location: JSON.stringify({ city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 }),
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop'
-      ]),
-      status: 'PUBLISHED',
-      type: 'workshop',
-      rating: 4.8,
-      duration: '3 hours',
-      capacity: '100 guests'
-    },
-    {
-      title: 'Sunset Photography',
-      slug: 'sunset-photography',
-      description: 'Capture magical moments. Learn professional photography techniques during golden hour on hotel rooftops with expert guidance.',
-      priceFrom: 120,
-      priceTo: 250,
-      location: JSON.stringify({ city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 }),
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1200&h=600&fit=crop'
-      ]),
-      status: 'PUBLISHED',
-      type: 'workshop',
-      rating: 4.9,
-      duration: '2.5 hours',
-      capacity: '25 participants'
-    },
-    {
-      title: 'Live Performances',
-      slug: 'live-performances',
-      description: 'Theater and dance shows. Experience world-class performances including theater, ballet, and contemporary dance in intimate hotel venues.',
-      priceFrom: 100,
-      priceTo: 200,
-      location: JSON.stringify({ city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 }),
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1200&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop'
-      ]),
-      status: 'PUBLISHED',
-      type: 'intimate',
-      rating: 4.7,
-      duration: '1.5 hours',
-      capacity: '80 guests'
-    },
-    {
-      title: 'Culinary Arts',
-      slug: 'culinary-arts',
-      description: 'Interactive cooking experiences. Join master chefs for hands-on culinary workshops featuring local and international cuisine.',
-      priceFrom: 180,
-      priceTo: 350,
-      location: JSON.stringify({ city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 }),
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1200&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&h=600&fit=crop'
-      ]),
-      status: 'PUBLISHED',
-      type: 'workshop',
-      rating: 4.8,
-      duration: '3 hours',
-      capacity: '20 participants'
-    },
-    {
-      title: 'Wellness Sessions',
-      slug: 'wellness-sessions',
-      description: 'Mindfulness and relaxation. Join expert instructors for yoga, meditation, and wellness sessions in serene hotel settings.',
-      priceFrom: 90,
-      priceTo: 180,
-      location: JSON.stringify({ city: 'Ibiza', country: 'Spain', lat: 38.9067, lng: 1.4206 }),
-      images: JSON.stringify([
-        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1200&h=600&fit=crop'
-      ]),
-      status: 'PUBLISHED',
-      type: 'workshop',
-      rating: 4.9,
-      duration: '1.5 hours',
-      capacity: '30 participants'
-    }
-  ];
+      type: RESIDENCY_TYPES[index % RESIDENCY_TYPES.length],
+      rating: Number((4.3 + ((index * 7) % 7) / 10).toFixed(1)),
+      date: start,
+      duration: '7 nuits',
+      capacity: `${headline.capacity} personnes`,
+      artistId: artist ? artist.id : null,
+      hotelId: hotel ? hotel.id : null
+    };
+  });
 
   for (const experienceData of experiences) {
+    // A real `update` block, so re-seeding reconciles an existing row instead
+    // of leaving whatever was written the first time.
+    const payload = {
+      title: experienceData.title,
+      description: experienceData.description,
+      priceFrom: experienceData.priceFrom,
+      priceTo: experienceData.priceTo,
+      location: experienceData.location,
+      latitude: experienceData.latitude,
+      longitude: experienceData.longitude,
+      images: experienceData.images,
+      status: experienceData.status,
+      type: experienceData.type,
+      rating: experienceData.rating,
+      date: experienceData.date,
+      duration: experienceData.duration,
+      capacity: experienceData.capacity,
+      artistId: experienceData.artistId,
+      hotelId: experienceData.hotelId
+    };
+
     await prisma.trip.upsert({
       where: { slug: experienceData.slug },
-      update: {},
-      create: {
-        title: experienceData.title,
-        slug: experienceData.slug,
-        description: experienceData.description,
-        priceFrom: experienceData.priceFrom,
-        priceTo: experienceData.priceTo,
-        location: experienceData.location,
-        images: experienceData.images,
-        status: experienceData.status,
-        type: experienceData.type,
-        rating: experienceData.rating,
-        duration: experienceData.duration,
-        capacity: experienceData.capacity
-      }
+      update: payload,
+      create: { slug: experienceData.slug, ...payload }
     });
   }
 
-  console.log('✅ Immersive experiences created');
+  console.log(`✅ ${experiences.length} residencies created`);
+
+  // Credit packages. These existed only as rows somebody inserted by hand: no
+  // migration and no seed created them, so a fresh database served an empty
+  // purchase page. Keyed by slug, which is what the checkout route looks up.
+  const CREDIT_PACKAGES = [
+    { slug: 'starter', name: 'Formule Découverte', credits: 10, bonusCredits: 0, priceCents: 150000, sortOrder: 1 },
+    { slug: 'professional', name: 'Formule Saison', credits: 25, bonusCredits: 4, priceCents: 350000, sortOrder: 2 },
+    { slug: 'enterprise', name: 'Formule Année', credits: 50, bonusCredits: 10, priceCents: 650000, sortOrder: 3 },
+  ];
+
+  for (const pack of CREDIT_PACKAGES) {
+    await prisma.creditPackage.upsert({
+      where: { slug: pack.slug },
+      update: {
+        name: pack.name,
+        credits: pack.credits,
+        bonusCredits: pack.bonusCredits,
+        priceCents: pack.priceCents,
+        sortOrder: pack.sortOrder,
+        currency: 'EUR',
+        active: true,
+      },
+      create: { ...pack, currency: 'EUR', active: true },
+    });
+  }
+  console.log(`✅ ${CREDIT_PACKAGES.length} credit packages reconciled`);
 
   console.log('🎉 Database seeding completed successfully!');
   console.log('\n📋 Accounts created:');

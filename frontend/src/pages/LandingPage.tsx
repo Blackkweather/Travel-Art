@@ -7,6 +7,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import GalleryPan from '@/components/GalleryPan'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
+import { extractArray } from '@/utils/apiPayload'
+import { t } from '@/i18n'
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -36,22 +38,22 @@ const SLIDE_DURATION = 1.5
 // than staged. Self-hosted, so the CDN round trip and its CSP entry go away.
 const PILLARS = [
   {
-    title: 'Résidence',
-    body: 'Une chambre et une scène dans un hôtel qui programme la culture toute l’année, pas un soir de gala.',
+    title: t('Résidence'),
+    body: t('Une chambre et une scène dans un hôtel qui programme la culture toute l’année, pas un soir de gala.'),
     image: '/images/pillars/residence.webp',
     width: 1792,
     height: 2304,
   },
   {
-    title: 'Création',
-    body: 'Du temps entre deux représentations. Ce que vous produisez sur place vous appartient entièrement.',
+    title: t('Création'),
+    body: t('Du temps entre deux représentations. Ce que vous produisez sur place vous appartient entièrement.'),
     image: '/images/pillars/creation.webp',
     width: 1792,
     height: 2432,
   },
   {
-    title: 'Tout compris',
-    body: 'Voyage, hébergement et repas réglés avant votre arrivée. Aucune commission prélevée côté artiste.',
+    title: t('Tout compris'),
+    body: t('Voyage, hébergement et repas réglés avant votre arrivée. Aucune commission prélevée côté artiste.'),
     image: '/images/pillars/tout-compris.webp',
     width: 2048,
     height: 2048,
@@ -65,6 +67,40 @@ const PILLAR_LAYOUT = [
   { col: 'md:col-span-4', ratio: 'aspect-[3/4]', offset: 'md:mt-16' },
   { col: 'md:col-span-3', ratio: 'aspect-square', offset: 'md:mt-32' },
 ] as const
+
+
+/**
+ * Choose the narrowest hero variant that still covers the viewport.
+ *
+ * Only rewrites paths under /images/hero/, which are the ones that have -960
+ * and -1440 siblings; anything else (a trip photograph from the API) is
+ * returned untouched, because guessing at a variant that does not exist would
+ * render a broken hero.
+ */
+const heroVariant = (src: string): string => {
+  if (typeof window === 'undefined') return src
+  if (!src.startsWith('/images/hero/') || !src.endsWith('.webp')) return src
+  const effective = window.innerWidth * (window.devicePixelRatio || 1)
+  if (effective <= 960) return src.replace('.webp', '-960.webp')
+  if (effective <= 1440) return src.replace('.webp', '-1440.webp')
+  return src
+}
+
+/**
+ * First letter set as a drop cap.
+ *
+ * The initial used to be written into the markup - <span>L</span> followed by
+ * "e voyage..." - which is only ever right in French. Taking it off the front
+ * of the sentence keeps the effect and lets the sentence be translated.
+ */
+function DropCap({ children }: { children: string }) {
+  return (
+    <>
+      <span>{children.charAt(0)}</span>
+      {children.slice(1)}
+    </>
+  )
+}
 
 export default function LandingPage() {
   // States
@@ -91,27 +127,27 @@ export default function LandingPage() {
   // The hero is a full-viewport section, so an empty slide list renders as a
   // black void. These fallbacks keep the landing page presentable whenever the
   // API is unreachable or the catalogue is still too small to fill the
-  // slideshow. Imagery is served from the Unsplash CDN, which the backend CSP
-  // already allows.
+  // slideshow. The three photographs are commissioned to the brand and served
+  // from /public, so the hero no longer depends on a third-party CDN being up.
   const defaultSlides: Slide[] = [
     {
       id: 'fallback-1',
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=70&fit=crop&auto=format',
-      title: 'ENTRE L’OMBRE',
-      subtitle: 'ET LA LUMIÈRE',
-      category: 'Expérience'
+      image: '/images/hero/ombre.webp',
+      title: t('ENTRE L’OMBRE'),
+      subtitle: t('ET LA LUMIÈRE'),
+      category: t('Expérience')
     },
     {
       id: 'fallback-2',
-      image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=70&fit=crop&auto=format',
-      title: 'LÀ OÙ L’ART',
-      subtitle: 'RENÇOIT LE LUXE',
-      category: 'Scène'
+      image: '/images/hero/scene.webp',
+      title: t('LÀ OÙ L’ART'),
+      subtitle: t('RENCONTRE LE LUXE'),
+      category: t('Scène')
     },
     {
       id: 'fallback-3',
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1920&q=70&fit=crop&auto=format',
-      title: 'DES SCÈNES SANS',
+      image: '/images/hero/voyage.webp',
+      title: t('DES SCÈNES SANS'),
       subtitle: 'FRONTIÈRES',
       category: 'Voyage'
     }
@@ -123,16 +159,7 @@ export default function LandingPage() {
       try {
         const tripsRes = await tripsApi.getAll()
         
-        let trips: any[] = []
-        if (Array.isArray(tripsRes.data)) {
-          trips = tripsRes.data
-        } else if (tripsRes.data && Array.isArray(tripsRes.data.data)) {
-          // Also covers the { success: true, data: [...] } envelope: a third
-          // branch tested `data.success` as well, but any response reaching it
-          // had already matched this condition, so it could never run — and it
-          // assigned exactly the same value.
-          trips = tripsRes.data.data
-        }
+        const trips = extractArray(tripsRes.data, 'trips')
 
         const formatted = trips.map((trip: any) => {
           let images: string[] = []
@@ -145,10 +172,10 @@ export default function LandingPage() {
           
           return {
             id: trip.id,
-            title: trip.title || 'Expérience',
+            title: trip.title || t('Expérience'),
             description: trip.description?.substring(0, 100) || '',
-            image: images[0] || trip.image || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&q=70&fit=crop',
-            category: trip.type || trip.category || 'Expérience'
+            image: images[0] || trip.image || '/images/placeholder-experience.webp',
+            category: trip.type || trip.category || t('Expérience')
           }
         })
         
@@ -156,13 +183,28 @@ export default function LandingPage() {
 
         if (formatted.length >= 3) {
           const experienceSlides: Slide[] = formatted.slice(0, 5).map((exp: any) => {
-            const words = (exp.title || 'Expérience').split(' ')
-            const midPoint = Math.floor(words.length / 2)
+            /* Titles arrive as "Résidence — Phuket". Splitting on word count
+               put the em-dash at the head of the second line, so the hero read
+               "RESIDENCE" / "— PHUKET" with an orphaned dash. Where the title
+               already carries that separator it is the natural break; only a
+               title without one falls back to halving by words. */
+            const raw = exp.title || t('Expérience')
+            const [head, tail] = raw.includes('—')
+              ? raw.split('—').map((part: string) => part.trim())
+              : (() => {
+                  const words = raw.split(' ')
+                  const midPoint = Math.max(1, Math.floor(words.length / 2))
+                  return [
+                    words.slice(0, midPoint).join(' '),
+                    words.slice(midPoint).join(' ')
+                  ]
+                })()
+
             return {
               id: exp.id,
               image: exp.image,
-              title: words.slice(0, midPoint).join(' ') || 'ENTRE L’OMBRE',
-              subtitle: words.slice(midPoint).join(' ') || 'ET LA LUMIÈRE',
+              title: head || 'ENTRE L’OMBRE',
+              subtitle: tail || 'ET LA LUMIÈRE',
               category: exp.category
             }
           })
@@ -628,7 +670,7 @@ export default function LandingPage() {
               <div
                 className="slide__img"
                 style={{
-                  backgroundImage: `url(${slide.image})`
+                  backgroundImage: `url(${heroVariant(slide.image)})`
                 }}
               />
               {/* Scrim keeps the headline above AA contrast whatever the photo. */}
@@ -651,7 +693,7 @@ export default function LandingPage() {
             Je suis artiste
           </Link>
           <Link to="/register?role=hotel" className="btn-on-media btn-arrow">
-            Je suis un hôtel
+            {t('Je suis un hôtel')}
           </Link>
         </div>
 
@@ -662,7 +704,7 @@ export default function LandingPage() {
             <button
               type="button"
               onClick={() => navigate(PREV)}
-              aria-label="Expérience précédente"
+              aria-label={t('Expérience précédente')}
               className="w-12 h-12 rounded-control border border-white/60 bg-black/25 backdrop-blur-sm text-white flex items-center justify-center hover:bg-white hover:text-navy hover:border-white transition-colors duration-300 active:translate-y-px"
             >
               <ArrowLeft size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -670,7 +712,7 @@ export default function LandingPage() {
             <button
               type="button"
               onClick={() => navigate(NEXT)}
-              aria-label="Expérience suivante"
+              aria-label={t('Expérience suivante')}
               className="w-12 h-12 rounded-control border border-white/60 bg-black/25 backdrop-blur-sm text-white flex items-center justify-center hover:bg-white hover:text-navy hover:border-white transition-colors duration-300 active:translate-y-px"
             >
               <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -731,9 +773,11 @@ export default function LandingPage() {
                           [&>span:first-child]:text-gold [&>span:first-child]:text-[5.5rem]
                           [&>span:first-child]:leading-[0.78] [&>span:first-child]:pr-4
                           [&>span:first-child]:pt-1">
-              <span>L</span>e voyage et l’immersion culturelle sont le point de départ du
-              travail. Nous installons des artistes dans des hôtels qui méritent qu’on
-              s’y arrête, et ce qui s’y produit devient l’essentiel.
+              <DropCap>
+                {t(
+                  'Le voyage et l’immersion culturelle sont le point de départ du travail. Nous installons des artistes dans des hôtels qui méritent qu’on s’y arrête, et ce qui s’y produit devient l’essentiel.'
+                )}
+              </DropCap>
             </p>
 
             {/* A headline beside a small explainer paragraph is the templated
@@ -745,7 +789,7 @@ export default function LandingPage() {
               <div className="h-px w-full bg-line-strong" />
               <p className="mt-8 font-serif text-6xl text-gold leading-none">30+</p>
               <p className="text-content-secondary text-sm mt-3">
-                Destinations, de Paris à Ibiza
+                {t('Destinations, de Paris à Ibiza')}
               </p>
             </div>
           </div>
@@ -758,8 +802,8 @@ export default function LandingPage() {
             rather than for platform features. */}
         <section className="band">
           <div className="shell">
-            <p className="eyebrow">Le programme</p>
-            <h2 className="mt-5 max-w-[18ch]">Une résidence, pas une prestation.</h2>
+            <p className="eyebrow">{t('Le programme')}</p>
+            <h2 className="mt-5 max-w-[18ch]">{t('Une résidence, pas une prestation.')}</h2>
 
             {/* Three equal columns at identical heights is the single most
                 recognisable generated-layout shape, and it also flattens the
@@ -805,15 +849,14 @@ export default function LandingPage() {
             of the trade at once rather than as three identical cards. */}
         <section ref={experiencesSectionRef} className="band-warm" style={{ opacity: 1 }}>
           <div className="shell">
-            <p className="eyebrow">Comment ça marche</p>
-            <h2 className="mt-5 max-w-[16ch] mb-16">Un échange, deux versants.</h2>
+            <p className="eyebrow">{t('Comment ça marche')}</p>
+            <h2 className="mt-5 max-w-[16ch] mb-16">{t('Un échange, deux versants.')}</h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2">
               <div className="lg:pr-16 lg:border-r border-line-strong">
-                <h3 className="text-gold">Pour les artistes</h3>
+                <h3 className="text-gold">{t('Pour les artistes')}</h3>
                 <p className="mt-6 text-content-secondary leading-relaxed max-w-[42ch]">
-                  Une chambre, une scène et le temps de créer. Vous gardez vos
-                  honoraires et vos œuvres.
+                  {t('Une chambre, une scène et le temps de créer. Vous gardez vos honoraires et vos œuvres.')}
                 </p>
                 <ul className="mt-10 space-y-5">
                   {[
@@ -833,10 +876,9 @@ export default function LandingPage() {
               </div>
 
               <div className="mt-16 lg:mt-0 lg:pl-16">
-                <h3 className="text-gold">Pour les hôtels</h3>
+                <h3 className="text-gold">{t('Pour les hôtels')}</h3>
                 <p className="mt-6 text-content-secondary leading-relaxed max-w-[42ch]">
-                  Une programmation culturelle sans agence, sans producteur et sans
-                  une saison de préparatifs.
+                  {t('Une programmation culturelle sans agence, sans producteur et sans une saison de préparatifs.')}
                 </p>
                 <ul className="mt-10 space-y-5">
                   {[
@@ -851,7 +893,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link to="/register?role=hotel" className="btn-primary btn-arrow mt-10">
-                  Je suis un hôtel
+                  {t('Je suis un hôtel')}
                 </Link>
               </div>
             </div>
@@ -863,10 +905,10 @@ export default function LandingPage() {
         <section ref={experienceImagesSectionRef} className="band-inverse relative overflow-hidden" style={{ opacity: 1 }}>
           <div className="shell text-center">
             <h2 className="mx-auto max-w-[20ch] text-4xl md:text-6xl lg:text-7xl leading-[1.05]">
-              Rejoignez le programme.
+              {t('Rejoignez le programme.')}
             </h2>
             <p className="mt-8 text-content-inverse/70 max-w-[46ch] mx-auto leading-relaxed">
-              Candidatez comme artiste, ou ouvrez votre hôtel au programme.
+              {t('Candidatez comme artiste, ou ouvrez votre hôtel au programme.')}
             </p>
             {/* "Nous rejoindre" here was a third label for the action the hero
                 already names twice. The page asks the same question at the
@@ -878,7 +920,7 @@ export default function LandingPage() {
                 Je suis artiste
               </Link>
               <Link to="/register?role=hotel" className="btn-on-media btn-arrow">
-                Je suis un hôtel
+                {t('Je suis un hôtel')}
               </Link>
             </div>
           </div>
@@ -982,6 +1024,14 @@ export default function LandingPage() {
           letter-spacing: -0.02em;
           transform: translateY(100%);
           opacity: 0;
+          /* The parent masks overflow so each line can slide up from behind an
+             edge. With line-height 1 the line box is exactly the font size, so
+             the accent on an uppercase É - which sits above the cap height -
+             was clipped, and RÉSIDENCE rendered as RESIDENCE. The padding gives
+             the glyph room inside the mask; the negative margin cancels it so
+             the line does not move. */
+          padding-top: 0.14em;
+          margin-top: -0.14em;
         }
         
         .slide-counter {

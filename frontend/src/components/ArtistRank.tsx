@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { t } from '@/i18n'
 
 export type RankTier = 'red' | 'blue' | 'green' | 'gold' | 'platinum' | 'diamond'
 
@@ -27,33 +28,33 @@ interface ArtistRankProps {
 export const RANK_CONFIG = {
   red: {
     color: '#8A93A6',
-    label: 'Révélation',
+    label: t('Révélation'),
     description: 'Premier palier — bienvenue'
   },
   blue: {
     color: '#A8763C',
-    label: 'Confirmé',
-    description: 'Réputation en construction'
+    label: t('Confirmé'),
+    description: t('Réputation en construction')
   },
   green: {
     color: '#B99851',
     label: 'Expert',
-    description: 'Grande expérience'
+    description: t('Grande expérience')
   },
   gold: {
     color: '#DAC189',
     label: 'Artiste',
-    description: 'Professionnel de premier plan'
+    description: t('Professionnel de premier plan')
   },
   platinum: {
     color: '#D6DAE0',
-    label: 'Maître',
-    description: 'Artiste d’élite'
+    label: t('Maître'),
+    description: t('Artiste d’élite')
   },
   diamond: {
     color: '#F0F6FF',
-    label: 'Tête d’affiche',
-    description: 'Sur demande uniquement'
+    label: t('Tête d’affiche'),
+    description: t('Sur demande uniquement')
   }
 }
 

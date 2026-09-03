@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import type Stripe from 'stripe';
-import { prisma } from '../db';
+// Stripe callbacks carry no user, so they use the privileged connection.
+// See db.ts: the request-scoped client would resolve to zero rows here.
+import { prismaAdmin as prisma } from '../db';
 import { config } from '../config';
 import { stripe } from '../stripe';
 

@@ -7,6 +7,7 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string
   icon?: React.ReactNode
   hint?: string
+  required?: boolean
   showPasswordToggle?: boolean
   isLoading?: boolean
 }
@@ -18,6 +19,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
       error,
       icon,
       hint,
+      required = false,
       type = 'text',
       showPasswordToggle = false,
       isLoading = false,
@@ -40,6 +42,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             className="form-label flex items-center gap-2"
           >
             <span>{label}</span>
+            {required && <span className="text-gold -ml-1" aria-hidden="true">*</span>}
             {hint && (
               <span className="text-xs text-content-secondary font-normal ml-auto" title={hint}>
                 ℹ️
@@ -69,7 +72,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
                 input-field
                 ${icon ? 'has-left-icon' : ''}
                 ${isPasswordField && showPasswordToggle ? 'has-right-icon' : ''}
-                ${error ? 'border-red-400 focus:ring-red-500 focus:border-red-500' : ''}
+                ${error ? 'border-[var(--state-critical-line)] focus:ring-[var(--state-critical)] focus:border-[var(--state-critical)]' : ''}
                 ${disabled || isLoading ? 'bg-surface opacity-60 cursor-not-allowed' : 'bg-surface-raised'}
                 ${className}
               `}

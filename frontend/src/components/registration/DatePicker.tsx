@@ -2,10 +2,8 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar, ChevronDown, AlertCircle } from 'lucide-react';
 import { format, parse, isValid, startOfMonth, endOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay, getYear, getMonth, setYear, setMonth } from 'date-fns';
+import { MONTHS_FR, MONTHS_FR_FULL, WEEKDAYS_FR } from '@/utils/frenchDates';
 
-// French month names fallback
-const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-const MONTHS_FR_FULL = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
 interface DatePickerProps {
   label?: string;
@@ -14,9 +12,10 @@ interface DatePickerProps {
   placeholder?: string;
   error?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
-const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeholder = 'JJ/MM/AAAA', error, disabled }) => {
+const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeholder = 'JJ/MM/AAAA', error, disabled, required = false }) => {
   const parsed = useMemo(() => {
     const p = parse(value, 'dd/MM/yyyy', new Date());
     return isValid(p) ? p : new Date(1990, 0, 1);
@@ -59,7 +58,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
 
   // Format input as user types (DD/MM/YYYY)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let inputVal = e.target.value;
+    const inputVal = e.target.value;
     
     // Handle backspace - allow deleting slashes
     if (inputVal.length < inputValue.length) {
@@ -122,6 +121,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
       {label && (
         <motion.label initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="form-input-label flex items-center gap-2">
           <span>{label}</span>
+          {required && <span className="text-gold -ml-1" aria-hidden="true">*</span>}
         </motion.label>
       )}
 
@@ -138,7 +138,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
             maxLength={10}
             className={`
               w-full h-12 px-4 pr-12 rounded-card border-2 transition-all
-              ${error ? 'border-red-400' : 'border-line'}
+              ${error ? 'border-[var(--state-critical-line)]' : 'border-line'}
               ${disabled ? 'bg-surface opacity-60 cursor-not-allowed' : 'bg-surface-raised'}
               focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
               ${inputValue ? 'text-content' : 'text-content-secondary'}
@@ -274,13 +274,9 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
               </div>
 
               <div className="grid grid-cols-7 gap-1 px-3 pt-3 text-xs font-medium text-content-secondary">
-                <div className="text-center">L</div>
-                <div className="text-center">M</div>
-                <div className="text-center">M</div>
-                <div className="text-center">J</div>
-                <div className="text-center">V</div>
-                <div className="text-center">S</div>
-                <div className="text-center">D</div>
+                {WEEKDAYS_FR.map((day, i) => (
+                  <div key={i} className="text-center">{day}</div>
+                ))}
               </div>
 
               <div className="grid grid-cols-7 gap-1 p-3">

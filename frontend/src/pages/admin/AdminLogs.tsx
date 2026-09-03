@@ -18,6 +18,8 @@ import {
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { adminApi } from '@/utils/api'
 import toast from 'react-hot-toast'
+import { t } from '@/i18n'
+import { formatNumber, formatRelative } from '@/utils/i18n'
 
 type ActivityType = 'ALL' | 'USER_REGISTRATION' | 'BOOKING' | 'TRANSACTION' | 'RATING' | 'ADMIN_ACTION'
 
@@ -80,7 +82,7 @@ const AdminLogs: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error fetching activities:', error)
-      toast.error('Impossible de charger le journal d’activité')
+      toast.error(t('Impossible de charger le journal d’activité'))
     } finally {
       setLoading(false)
     }
@@ -132,20 +134,24 @@ const AdminLogs: React.FC = () => {
     }
   }
 
-  const getActivityColor = (type: string) => {
+  /* An activity type is a category, not a state. The five types used to take
+     the four status hues plus gold, which told the reader that a booking was
+     good and an administrator action was an error. They are all neutral now -
+     the icon and the label say which type it is. */
+  const activityLabel = (type: string) => {
     switch (type) {
       case 'USER_REGISTRATION':
-        return 'bg-blue-100 text-blue-700 border-blue-200'
+        return 'Inscription'
       case 'BOOKING':
-        return 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30'
+        return t('Réservation')
       case 'TRANSACTION':
-        return 'bg-purple-100 text-purple-700 border-purple-200'
+        return 'Transaction'
       case 'RATING':
-        return 'bg-amber-100 text-amber-700 border-amber-200'
+        return 'Évaluation'
       case 'ADMIN_ACTION':
-        return 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30'
+        return 'Action admin'
       default:
-        return 'bg-surface-sunken text-content-secondary border-line'
+        return type.replace(/_/g, ' ').toLowerCase()
     }
   }
 
@@ -162,20 +168,9 @@ const AdminLogs: React.FC = () => {
     }
   }
 
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMinutes = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMinutes / 60)
-    const diffDays = Math.floor(diffHours / 24)
-
-    if (diffMinutes < 1) return 'Just now'
-    if (diffMinutes < 60) return `${diffMinutes}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleString('fr-FR')
-  }
+  // Was "3h ago" - English abbreviations on a French-only site, and a second
+  // copy of the admin dashboard's version of the same function.
+  const formatTimestamp = formatRelative
 
   const exportLogs = () => {
     const csv = [
@@ -197,16 +192,16 @@ const AdminLogs: React.FC = () => {
     a.download = `activity-logs-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
-    toast.success('Journal d’activité exporté')
+    toast.success(t('Journal d’activité exporté'))
   }
 
   const activityTypes: { value: ActivityType; label: string; count?: number }[] = [
-    { value: 'ALL', label: 'Toutes les activités', count: summary?.totalActivities },
+    { value: 'ALL', label: t('Toutes les activités'), count: summary?.totalActivities },
     { value: 'USER_REGISTRATION', label: 'Inscriptions', count: summary?.byType?.USER_REGISTRATION },
-    { value: 'BOOKING', label: 'Réservations', count: summary?.byType?.BOOKING },
+    { value: 'BOOKING', label: t('Réservations'), count: summary?.byType?.BOOKING },
     { value: 'TRANSACTION', label: 'Transactions', count: summary?.byType?.TRANSACTION },
     { value: 'RATING', label: 'Évaluations', count: summary?.byType?.RATING },
-    { value: 'ADMIN_ACTION', label: 'Actions d’administration', count: summary?.byType?.ADMIN_ACTION }
+    { value: 'ADMIN_ACTION', label: t('Actions d’administration'), count: summary?.byType?.ADMIN_ACTION }
   ]
 
   return (
@@ -215,10 +210,10 @@ const AdminLogs: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            Journal d’activité
+            {t('Journal d’activité')}
           </h1>
           <p className="text-content-secondary">
-            Suivre l’activité de la plateforme, les actions des utilisateurs et les événements système
+            {t('Suivre l’activité de la plateforme, les actions des utilisateurs et les événements système')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -240,7 +235,7 @@ const AdminLogs: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="card-luxury">
+      <div className="panel p-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gold" />
           <h3 className="text-lg font-semibold text-content">Filtres</h3>
@@ -248,7 +243,7 @@ const AdminLogs: React.FC = () => {
         
         {/* Activity Type Filter */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-content mb-2">Activity Type</label>
+          <label className="block text-sm font-medium text-content mb-2">{t('Type d’activité')}</label>
           <div className="flex flex-wrap gap-2">
             {activityTypes.map((type) => (
               <button
@@ -287,7 +282,7 @@ const AdminLogs: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher par utilisateur, action ou détail…"
+              placeholder={t('Rechercher par utilisateur, action ou détail…')}
               className="w-full pl-10 pr-4 py-3 border border-line rounded-card focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold"
             />
           </div>
@@ -295,13 +290,13 @@ const AdminLogs: React.FC = () => {
       </div>
 
       {/* Activity Logs */}
-      <div className="card-luxury">
+      <div className="panel p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-serif font-semibold text-content">
-            Chronologie d’activité
+            {t('Chronologie d’activité')}
           </h2>
           <span className="text-sm text-content-secondary">
-            Showing {filteredActivities.length} of {activities.length} activities
+            {filteredActivities.length} sur {activities.length}
           </span>
         </div>
 
@@ -312,7 +307,7 @@ const AdminLogs: React.FC = () => {
         ) : filteredActivities.length === 0 ? (
           <div className="text-center py-20">
             <Activity className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-            <p className="text-content-secondary text-lg">Aucune activité</p>
+            <p className="text-content-secondary text-lg">{t('Aucune activité')}</p>
             <p className="text-content-secondary text-sm mt-2">
               {searchTerm || selectedType !== 'ALL' 
                 ? 'Try adjusting your filters' 
@@ -320,14 +315,14 @@ const AdminLogs: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div>
             {filteredActivities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex items-start gap-4 p-5 bg-surface-sunken rounded-card border border-line hover:border-gold/30 hover:shadow-md transition-all"
+                className="flex items-start gap-4 border-b border-line py-5 last:border-b-0"
               >
                 {/* Icon */}
-                <div className={`w-12 h-12 rounded-card flex items-center justify-center border-2 ${getActivityColor(activity.type)} flex-shrink-0`}>
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-card border border-line bg-surface-raised text-content-secondary">
                   {getActivityIcon(activity.type)}
                 </div>
 
@@ -336,10 +331,8 @@ const AdminLogs: React.FC = () => {
                   <div className="flex items-start justify-between gap-4 mb-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-1 rounded-card text-xs font-semibold ${getActivityColor(activity.type)}`}>
-                          {activity.type.replace('_', ' ')}
-                        </span>
-                        <span className="font-semibold text-content">{activity.action}</span>
+                        <span className="badge-neutral">{activityLabel(activity.type)}</span>
+                        <span className="font-serif text-base text-content">{activity.action}</span>
                       </div>
                       
                       {/* Actor */}
@@ -395,17 +388,17 @@ const AdminLogs: React.FC = () => {
               disabled={page === 1}
               className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Précédent
+              {t('Précédent')}
             </button>
             <span className="text-sm text-content-secondary">
-              Page {page} of {totalPages}
+              Page {page} sur {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Suivant
+              {t('Suivant')}
             </button>
           </div>
         )}

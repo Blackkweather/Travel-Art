@@ -1,7 +1,34 @@
+# Travel Art — crawler policy
+#
+# The previous version disallowed /admin, which is not a route this app has.
+# Every administrator screen lives under /dashboard — the admissions queue, the
+# user list, the activity log — so the rule protected nothing and the console
+# was fully crawlable. Authentication still guarded it, but a disallow costs
+# nothing and keeps private URLs out of search results and out of the referrer
+# trail.
+
 User-agent: *
 Allow: /
 
-Disallow: /admin
+# Every signed-in surface. Covers all three roles: this is where the admin
+# console, the hotel booking screens and the artist profile all live.
+Disallow: /dashboard
+Disallow: /dashboard/
+
+# Auth and account flows. Nothing here is useful in an index, and the reset and
+# verification URLs carry single-use tokens that must not be crawled or logged.
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /verify-email
+Disallow: /inscription-envoyee
+
+# The API answers JSON and sets no crawl budget aside for it.
 Disallow: /api/
+
+# Referral links resolve to a redirect and would otherwise be indexed as
+# duplicates of the pages they point at.
+Disallow: /ref/
 
 Sitemap: https://travel-art.vercel.app/sitemap.xml

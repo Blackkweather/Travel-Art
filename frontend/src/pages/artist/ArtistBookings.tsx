@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, MapPin, Clock, CheckCircle, XCircle, AlertCircle, Filter } from 'lucide-react'
+import { Calendar, MapPin, Clock, Filter } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { bookingsApi, hotelsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import StatusBadge from '@/components/StatusBadge'
 import type { Booking as BookingType } from '@/types'
+import { t } from '@/i18n'
+import { formatNumber } from '@/utils/i18n'
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected'
 
@@ -25,7 +28,7 @@ interface BookingCardData {
   notes?: string
 }
 
-const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x300?text=Hotel'
+const PLACEHOLDER_IMAGE = '/images/placeholder-experience.webp'
 
 const ArtistBookings: React.FC = () => {
   const { user } = useAuthStore()
@@ -145,7 +148,7 @@ const ArtistBookings: React.FC = () => {
       setBookings(data)
     } catch (err) {
       console.error('Error fetching bookings:', err)
-      setError('Impossible de charger les réservations pour le moment.')
+      setError(t('Impossible de charger les réservations pour le moment.'))
     } finally {
       setLoading(false)
     }
@@ -182,64 +185,17 @@ const ArtistBookings: React.FC = () => {
     }
   }, [bookings])
 
+  /* Three peers, one treatment. Each tile used to pair an icon with a tinted
+     square in its own hue - info, positive, caution - which read as a status
+     the tile did not have: t('Réservations') is a count, not a healthy state. */
   const statCards = useMemo(
     () => [
-      {
-        label: 'Réservations',
-        value: stats.total,
-        iconBg: 'bg-blue-100',
-        iconColor: 'text-blue-600',
-        Icon: Calendar
-      },
-      {
-        label: 'Confirmée',
-        value: stats.confirmed,
-        iconBg: 'bg-green-100 dark:bg-green-500/10',
-        iconColor: 'text-green-600 dark:text-green-400',
-        Icon: CheckCircle
-      },
-      {
-        label: 'En attente',
-        value: stats.pending,
-        iconBg: 'bg-amber-100',
-        iconColor: 'text-amber-600',
-        Icon: AlertCircle
-      }
+      { label: t('Réservations'), value: stats.total },
+      { label: t('Confirmées'), value: stats.confirmed },
+      { label: 'En attente', value: stats.pending }
     ],
     [stats]
   )
-
-  const getStatusIcon = (status: BookingStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-      case 'pending':
-        return <AlertCircle className="w-5 h-5 text-amber-600" />
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-blue-600" />
-      case 'cancelled':
-      case 'rejected':
-        return <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-      default:
-        return <AlertCircle className="w-5 h-5 text-content-secondary" />
-    }
-  }
-
-  const getStatusColor = (status: BookingStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
-      case 'pending':
-        return 'bg-amber-100 text-amber-800'
-      case 'completed':
-        return 'bg-blue-100 text-blue-800'
-      case 'cancelled':
-      case 'rejected':
-        return 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
-      default:
-        return 'bg-surface-sunken text-content'
-    }
-  }
 
   if (loading) {
     return (
@@ -255,10 +211,10 @@ const ArtistBookings: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            Mes réservations
+            {t('Mes réservations')}
           </h1>
           <p className="text-content-secondary">
-            Gérez vos dates et suivez votre planning
+            {t('Gérez vos dates et suivez votre planning')}
           </p>
         </div>
         <div className="flex items-center space-x-4">
@@ -270,32 +226,28 @@ const ArtistBookings: React.FC = () => {
               className="form-input w-44"
               data-testid="status-filter"
             >
-              <option value="all">Toutes les réservations</option>
-              <option value="confirmed">Confirmée</option>
+              <option value="all">{t('Toutes les réservations')}</option>
+              <option value="confirmed">{t('Confirmée')}</option>
               <option value="pending">En attente</option>
-              <option value="completed">Terminée</option>
-              <option value="cancelled">Annulée</option>
-              <option value="rejected">Refusée</option>
+              <option value="completed">{t('Terminée')}</option>
+              <option value="cancelled">{t('Annulée')}</option>
+              <option value="rejected">{t('Refusée')}</option>
             </select>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="card-luxury border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400">
+        <div className="notice-critical">
           {error}
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {statCards.map(({ label, value, iconBg, iconColor, Icon }) => (
-          <div key={label} className="card-luxury text-center">
-            <div className={`w-12 h-12 ${iconBg} rounded-full flex items-center justify-center mx-auto mb-4`}>
-              <Icon className={`w-6 h-6 ${iconColor}`} />
-            </div>
-            <h3 className="text-2xl font-bold text-content mb-2">{value}</h3>
-            <p className="text-content-secondary">{label}</p>
+      <div className="grid grid-cols-3 gap-px bg-line border border-line rounded-card overflow-hidden">
+        {statCards.map(({ label, value }) => (
+          <div key={label} className="stat rounded-none border-0">
+            <span className="stat__label">{label}</span>
+            <span className="stat__value">{formatNumber(value)}</span>
           </div>
         ))}
       </div>
@@ -308,7 +260,7 @@ const ArtistBookings: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="card-luxury"
+            className="panel p-6"
           >
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Hotel Image */}
@@ -334,31 +286,26 @@ const ArtistBookings: React.FC = () => {
                     </p>
                     <p className="text-content-secondary flex items-center">
                       <Calendar className="w-4 h-4 mr-2" />
-                      {new Date(booking.startDate).toLocaleDateString('fr-FR')} at {booking.startTime}
+                      {new Date(booking.startDate).toLocaleDateString('fr-FR')} à {booking.startTime}
                     </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {getStatusIcon(booking.status)}
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                    </span>
-                  </div>
+                  <StatusBadge status={booking.status} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Espace de représentation</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Espace de représentation')}</p>
                     <p className="text-content font-medium">{booking.performanceSpot}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Durée</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Durée')}</p>
                     <p className="text-content font-medium flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
                       {booking.duration}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Crédits</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Crédits')}</p>
                     <p className="text-gold font-medium">{booking.creditsUsed} credits</p>
                   </div>
                 </div>
@@ -368,7 +315,7 @@ const ArtistBookings: React.FC = () => {
                 )}
 
                 {!booking.notes && (
-                  <p className="text-content-secondary mb-4 italic">En attente de précisions de l’hôtel.</p>
+                  <p className="text-content-secondary mb-4 italic">{t('En attente de précisions de l’hôtel.')}</p>
                 )}
 
                 {/* Action Buttons */}
@@ -378,34 +325,34 @@ const ArtistBookings: React.FC = () => {
                       <>
                         <button
                           onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')}
-                          className="px-4 py-2 bg-green-600 text-white rounded-card hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="btn-primary btn-sm"
                           disabled={isUpdating}
                         >
-                          Accept
+                          Accepter
                         </button>
                         <button
                           onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
-                          className="px-4 py-2 bg-red-600 text-white rounded-card hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="btn-danger btn-sm"
                           disabled={isUpdating}
                         >
-                          Refuser
+                          {t('Refuser')}
                         </button>
                       </>
                     )}
                     {booking.status === 'confirmed' && (
                       <button 
                         onClick={() => setSelectedBooking(booking)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-card hover:bg-blue-700 transition-colors cursor-pointer"
+                        className="btn-outline btn-sm"
                       >
-                        Voir le détail
+                        {t('Voir le détail')}
                       </button>
                     )}
                     {booking.status === 'completed' && (
                       <button 
                         onClick={() => setSelectedBooking(booking)}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-card hover:bg-gray-700 transition-colors cursor-pointer"
+                        className="px-4 py-2 bg-surface-inverse text-white rounded-card hover:opacity-90 transition-colors cursor-pointer"
                       >
-                        Voir les retours
+                        {t('Voir les retours')}
                       </button>
                     )}
                   </div>
@@ -418,24 +365,24 @@ const ArtistBookings: React.FC = () => {
 
       {/* Empty State */}
       {filteredBookings.length === 0 && (
-        <div className="card-luxury text-center py-12">
-          <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-          <h3 className="text-xl font-serif font-semibold text-content mb-2">
-            Aucune réservation
-          </h3>
-          <p className="text-content-secondary mb-6">
-            {filter === 'all'
-              ? "You don't have any bookings yet. Update your availability to get started!"
-              : `No ${filter} bookings found.`}
-          </p>
-          {filter === 'all' && (
-            <button 
-              onClick={() => navigate('/dashboard/profile')}
-              className="btn-primary"
-            >
-              Mettre à jour les disponibilités
-            </button>
-          )}
+        <div className="panel">
+          <div className="empty-state">
+            <Calendar className="h-6 w-6 text-content-secondary" aria-hidden="true" />
+            <h3 className="empty-state__title">{t('Aucune réservation')}</h3>
+            <p className="empty-state__body">
+              {filter === 'all'
+                ? t('Vous n’avez pas encore de réservation. Ouvrez vos disponibilités pour que les hôtels puissent vous proposer des dates.')
+                : t('Aucune réservation ne correspond à ce filtre.')}
+            </p>
+            {filter === 'all' && (
+              <button
+                onClick={() => navigate('/dashboard/profile')}
+                className="btn-primary mt-3"
+              >
+                {t('Mettre à jour les disponibilités')}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -449,7 +396,7 @@ const ArtistBookings: React.FC = () => {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-serif font-bold text-content">Détail de la réservation</h2>
+                <h2 className="text-2xl font-serif font-bold text-content">{t('Détail de la réservation')}</h2>
                 <button
                   onClick={() => setSelectedBooking(null)}
                   className="text-content-secondary hover:text-content text-2xl font-bold"
@@ -471,37 +418,35 @@ const ArtistBookings: React.FC = () => {
                 {/* Booking Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Date et heure de début</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Date et heure de début')}</p>
                     <p className="text-content font-medium">
                       {new Date(selectedBooking.startDate).toLocaleDateString('fr-FR')} at {selectedBooking.startTime}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Date de fin</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Date de fin')}</p>
                     <p className="text-content font-medium">
                       {new Date(selectedBooking.endDate).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Durée</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Durée')}</p>
                     <p className="text-content font-medium flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
                       {selectedBooking.duration}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Espace de représentation</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Espace de représentation')}</p>
                     <p className="text-content font-medium">{selectedBooking.performanceSpot}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-content-secondary">Statut</p>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${getStatusColor(selectedBooking.status)}`}>
-                      {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
-                    </span>
+                    <StatusBadge status={selectedBooking.status} className="mt-1" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Crédits utilisés</p>
-                    <p className="text-gold font-medium">{selectedBooking.creditsUsed} credits</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Crédits utilisés')}</p>
+                    <p className="text-gold font-medium">{selectedBooking.creditsUsed} crédits</p>
                   </div>
                 </div>
 
@@ -519,7 +464,7 @@ const ArtistBookings: React.FC = () => {
                     onClick={() => setSelectedBooking(null)}
                     className="px-4 py-2 bg-surface-sunken text-content-secondary rounded-card hover:bg-surface-warm hover:text-content transition-colors"
                   >
-                    Fermer
+                    {t('Fermer')}
                   </button>
                   {selectedBooking.status === 'confirmed' && (
                     <button
@@ -527,9 +472,9 @@ const ArtistBookings: React.FC = () => {
                         navigate(`/hotel/${selectedBooking.hotelId}`)
                         setSelectedBooking(null)
                       }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-card hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 bg-[var(--state-info)] text-white rounded-card hover:bg-[var(--state-info)] transition-colors"
                     >
-                      Voir la fiche de l’hôtel
+                      {t('Voir la fiche de l’hôtel')}
                     </button>
                   )}
                 </div>

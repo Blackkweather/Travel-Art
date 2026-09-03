@@ -533,6 +533,83 @@ router.post('/:id/rooms', authenticate, authorize('HOTEL'), asyncHandler(async (
   });
 }));
 
+// --- Shortlist -------------------------------------------------------------
+// The client has called these three since before they existed; every request
+// 404'd and the artists page fell back to localStorage, so a hotel's shortlist
+// lived in one browser and never appeared on its own dashboard.
+//
+// Ownership is checked the same way as every other /:id route here: the hotel
+// must belong to the caller, and a mismatch is a 404 rather than a 403 so the
+// endpoint cannot be used to discover which hotel ids exist.
+
+router.get('/:id/favorites', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id } = req.params;
+
+  const hotel = await prisma.hotel.findFirst({ where: { id, userId: req.user!.id } });
+  if (!hotel) {
+    throw new CustomError('Hotel not found or access denied.', 404);
+  }
+
+  const favorites = await prisma.hotelFavorite.findMany({
+    where: { hotelId: id },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      artist: {
+        select: {
+          id: true,
+          stageName: true,
+          discipline: true,
+          profilePicture: true,
+          user: { select: { name: true } },
+        },
+      },
+    },
+  });
+
+  res.json({ success: true, data: favorites });
+}));
+
+router.post('/:id/favorites', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id } = req.params;
+  const { artistId } = z.object({ artistId: z.string().min(1) }).parse(req.body);
+
+  const hotel = await prisma.hotel.findFirst({ where: { id, userId: req.user!.id } });
+  if (!hotel) {
+    throw new CustomError('Hotel not found or access denied.', 404);
+  }
+
+  const artist = await prisma.artist.findUnique({ where: { id: artistId } });
+  if (!artist) {
+    throw new CustomError('Artist not found.', 404);
+  }
+
+  // Shortlisting twice is the same intent as shortlisting once, so the second
+  // request succeeds rather than returning a conflict the UI would have to
+  // special-case.
+  const favorite = await prisma.hotelFavorite.upsert({
+    where: { hotelId_artistId: { hotelId: id, artistId } },
+    create: { hotelId: id, artistId },
+    update: {},
+  });
+
+  res.status(201).json({ success: true, data: favorite });
+}));
+
+router.delete('/:id/favorites/:artistId', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id, artistId } = req.params;
+
+  const hotel = await prisma.hotel.findFirst({ where: { id, userId: req.user!.id } });
+  if (!hotel) {
+    throw new CustomError('Hotel not found or access denied.', 404);
+  }
+
+  // deleteMany, not delete: removing something already removed is success, not
+  // a 404 - the caller's intended end state is reached either way.
+  await prisma.hotelFavorite.deleteMany({ where: { hotelId: id, artistId } });
+
+  res.json({ success: true, data: { hotelId: id, artistId, removed: true } });
+}));
+
 // Get hotel credits
 router.get('/:id/credits', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
   const { id } = req.params;
@@ -643,11 +720,11 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
       if (ratings.length > 0) {
         const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
         if (avgRating >= 4.5) {
-          ratingBadge = 'Top 10% Performer';
+          ratingBadge = 'Top 10 % des artistes';
         } else if (avgRating >= 4.0) {
-          ratingBadge = 'Excellent Performer';
+          ratingBadge = 'Artiste confirmé';
         } else if (avgRating >= 3.5) {
-          ratingBadge = 'Good Performer';
+          ratingBadge = 'Artiste recommandé';
         }
       }
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Edit2 } from 'lucide-react';
 import { BasicInfo, ArtisticCategory, SubcategoryInfo } from '@/types/artistRegistration';
+import { t } from '@/i18n'
 
 interface Step3Props {
   basicInfo: BasicInfo;
@@ -38,7 +39,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Non renseigné';
+    if (!dateString) return t('Non renseigné');
     // Assuming format is DD/MM/YYYY
     return dateString;
   };
@@ -52,7 +53,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
     >
       <div>
         <h2 className="text-3xl font-bold text-navy-900 mb-2">Confirmation</h2>
-        <p className="text-content-secondary">Vérifiez vos informations avant de finaliser votre inscription</p>
+        <p className="text-content-secondary">{t('Vérifiez vos informations avant de finaliser votre inscription')}</p>
       </div>
 
       {/* Basic Info Section */}
@@ -65,16 +66,16 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             className="flex items-center gap-2 text-gold hover:text-gold-600 font-medium transition-colors disabled:opacity-50"
           >
             <Edit2 className="w-4 h-4" />
-            Modifier
+            {t('Modifier')}
           </button>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-content-secondary mb-1">Nom de scène</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Nom de scène')}</p>
             <p className="text-content font-medium">{basicInfo.stageName || 'Non renseigné'}</p>
           </div>
           <div>
-            <p className="text-sm text-content-secondary mb-1">Prénom</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Prénom')}</p>
             <p className="text-content font-medium">{basicInfo.firstName || 'Non renseigné'}</p>
           </div>
           <div>
@@ -82,7 +83,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             <p className="text-content font-medium">{basicInfo.lastName || 'Non renseigné'}</p>
           </div>
           <div>
-            <p className="text-sm text-content-secondary mb-1">Date de naissance</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Date de naissance')}</p>
             <p className="text-content font-medium">{formatDate(basicInfo.birthDate)}</p>
           </div>
           <div>
@@ -90,7 +91,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             <p className="text-content font-medium">{basicInfo.email || 'Non renseigné'}</p>
           </div>
           <div>
-            <p className="text-sm text-content-secondary mb-1">Téléphone</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Téléphone')}</p>
             <p className="text-content font-medium">{basicInfo.phone || 'Non renseigné'}</p>
           </div>
           <div>
@@ -103,29 +104,29 @@ const Step3Confirmation: React.FC<Step3Props> = ({
       {/* Artistic Category Section */}
       <motion.div variants={itemVariants} className="bg-surface rounded-card p-6 border border-line">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-navy-900">Catégorie artistique</h3>
+          <h3 className="text-xl font-semibold text-navy-900">{t('Catégorie artistique')}</h3>
           <button
             onClick={() => onEdit(2)}
             disabled={isLoading}
             className="flex items-center gap-2 text-gold hover:text-gold-600 font-medium transition-colors disabled:opacity-50"
           >
             <Edit2 className="w-4 h-4" />
-            Modifier
+            {t('Modifier')}
           </button>
         </div>
         <div className="space-y-4">
           <div>
-            <p className="text-sm text-content-secondary mb-1">Catégorie principale</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Catégorie principale')}</p>
             <p className="text-content font-medium">{artisticCategory.mainCategory || 'Non renseigné'}</p>
           </div>
           {artisticCategory.secondaryCategory && (
             <div>
-              <p className="text-sm text-content-secondary mb-1">Catégorie secondaire</p>
+              <p className="text-sm text-content-secondary mb-1">{t('Catégorie secondaire')}</p>
               <p className="text-content font-medium">{artisticCategory.secondaryCategory}</p>
             </div>
           )}
           <div>
-            <p className="text-sm text-content-secondary mb-1">Type de public</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Type de public')}</p>
             <div className="flex flex-wrap gap-2 mt-1">
               {artisticCategory.audienceType.length > 0 ? (
                 artisticCategory.audienceType.map((type) => (
@@ -137,7 +138,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
                   </span>
                 ))
               ) : (
-                <p className="text-content-secondary">Non renseigné</p>
+                <p className="text-content-secondary">{t('Non renseigné')}</p>
               )}
             </div>
           </div>
@@ -147,7 +148,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           </div>
           {subcategory.specificCategory && (
             <div>
-              <p className="text-sm text-content-secondary mb-1">Sous-catégorie</p>
+              <p className="text-sm text-content-secondary mb-1">{t('Sous-catégorie')}</p>
               <p className="text-content font-medium">{subcategory.specificCategory}</p>
             </div>
           )}
@@ -156,7 +157,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             <p className="text-content font-medium">{subcategory.domain || 'Non renseigné'}</p>
           </div>
           <div>
-            <p className="text-sm text-content-secondary mb-1">Langues parlées</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Langues parlées')}</p>
             <div className="flex flex-wrap gap-2 mt-1">
               {artisticCategory.languages.length > 0 ? (
                 artisticCategory.languages.map((lang) => (
@@ -168,7 +169,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
                   </span>
                 ))
               ) : (
-                <p className="text-content-secondary">Non renseigné</p>
+                <p className="text-content-secondary">{t('Non renseigné')}</p>
               )}
             </div>
           </div>
@@ -187,11 +188,11 @@ const Step3Confirmation: React.FC<Step3Props> = ({
         <p className="text-sm text-content-secondary">
           J’ai lu et j’accepte les{' '}
           <a href="/terms" className="text-gold-600 hover:underline font-medium">
-            conditions générales d’utilisation
+            {t('conditions générales d’utilisation')}
           </a>{' '}
           et la{' '}
           <a href="/privacy" className="text-gold-600 hover:underline font-medium">
-            politique de confidentialité
+            {t('politique de confidentialité')}
           </a>
         </p>
       </motion.div>
@@ -203,7 +204,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           disabled={isLoading}
           className="btn-outline btn-lg flex-1"
         >
-          Retour
+          {t('Retour')}
         </button>
         <button
           onClick={onSubmit}
@@ -218,7 +219,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           ) : (
             <>
               <Check className="w-5 h-5" />
-              <span>Confirmer l’inscription</span>
+              <span>{t('Confirmer l’inscription')}</span>
             </>
           )}
         </button>

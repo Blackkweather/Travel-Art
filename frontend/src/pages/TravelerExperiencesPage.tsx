@@ -4,9 +4,9 @@ import { MapPin, Calendar, Star, Music, ArrowRight, Globe } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
-import { useInView } from 'framer-motion'
-import { useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+
+
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L, { LatLngTuple } from 'leaflet'
 import { tripsApi } from '@/utils/api'
 import { experienceTypeLabel } from '@/utils/i18n'
@@ -17,6 +17,9 @@ import { experienceTypeLabel } from '@/utils/i18n'
 import 'leaflet/dist/leaflet.css'
 import icon from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
+import { extractArray } from '@/utils/apiPayload'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
 
 const DefaultIcon = L.icon({
   iconUrl: icon,
@@ -48,6 +51,22 @@ interface Experience {
 const EXPERIENCE_TYPES = (['all', 'rooftop', 'intimate', 'workshop', 'residency'] as const)
   .map((value) => ({ value, label: experienceTypeLabel(value) }))
 
+/**
+ * Pans the existing map when the derived centre or zoom changes.
+ *
+ * react-leaflet treats `center` and `zoom` as initial values only, so they
+ * cannot move a map that already exists. Remounting via `key` does move it, at
+ * the cost of destroying every popup and refetching every tile; this does it
+ * through Leaflet's own API instead.
+ */
+const MapView: React.FC<{ center: LatLngTuple; zoom: number }> = ({ center, zoom }) => {
+  const map = useMap()
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true })
+  }, [map, center[0], center[1], zoom])
+  return null
+}
+
 const TravelerExperiencesPage: React.FC = () => {
   const [experiences, setExperiences] = useState<Experience[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,28 +81,9 @@ const TravelerExperiencesPage: React.FC = () => {
         // The trips API always returns PUBLISHED trips, no need for status param
         const res = await tripsApi.getAll()
         
-        console.log('🔍 Trips API Response:', res)
-        console.log('🔍 Response data:', res.data)
-        console.log('🔍 Response data type:', typeof res.data)
-        console.log('🔍 Is array?', Array.isArray(res.data))
-        
-        // The trips API returns an array directly (not wrapped in success/data)
-        // Axios wraps the response, so res.data is the actual array
-        let trips: any[] = []
-        
-        if (Array.isArray(res.data)) {
-          trips = res.data
-          console.log('✅ Using direct array format')
-        } else if (res.data && Array.isArray(res.data.data)) {
-          // Also covers the { success: true, data: [...] } envelope: a third
-          // branch tested `data.success` as well, but any response reaching it
-          // had already matched this condition, so it could never run — and it
-          // assigned exactly the same value. Its log line never printed.
-          trips = res.data.data
-          console.log('✅ Using wrapped data format')
-        } else {
-          console.error('❌ Unknown response format:', res.data)
-        }
+        // One documented envelope now, so no shape-detection: the helper knows
+        // both `data.trips` and a bare `data` array and nothing else is emitted.
+        const trips = extractArray(res.data, 'trips')
         
         console.log('📊 Parsed trips count:', trips.length)
         console.log('📊 Parsed trips:', trips)
@@ -91,7 +91,7 @@ const TravelerExperiencesPage: React.FC = () => {
         if (trips.length > 0) {
           const formattedExperiences = trips.map((trip: any) => {
             // Parse location if it's a string
-            let location = { city: 'Unknown', country: '', lat: 0, lng: 0 }
+            let location = { city: 'Lieu inconnu', country: '', lat: 0, lng: 0 }
             if (trip.location) {
               try {
                 location = typeof trip.location === 'string' 
@@ -99,7 +99,7 @@ const TravelerExperiencesPage: React.FC = () => {
                   : trip.location
               } catch (e) {
                 console.warn('Failed to parse location:', e)
-                location = { city: 'Unknown', country: '', lat: 0, lng: 0 }
+                location = { city: 'Lieu inconnu', country: '', lat: 0, lng: 0 }
               }
             }
             
@@ -120,17 +120,29 @@ const TravelerExperiencesPage: React.FC = () => {
               id: trip.id || String(Math.random()),
               title: trip.title || 'Experience',
               location: {
-                city: location.city || 'Unknown',
+                city: location.city || 'Lieu inconnu',
                 country: location.country || '',
                 lat: location.lat || 0,
                 lng: location.lng || 0
               },
-              artist: trip.artist || 'Featured Artist',
-              hotel: trip.hotel || 'Luxury Venues',
+              /* The two trip endpoints disagree about this field. The list
+                 route projects it to a plain string before responding, while
+                 the detail route and the raw Prisma result carry the related
+                 record. Reading only one shape leaves the other rendering a
+                 placeholder - or, for the object, hands React an object to
+                 render and throws. So both are handled. */
+              artist:
+                typeof trip.artist === 'string'
+                  ? trip.artist
+                  : trip.artist?.user?.name || trip.artist?.name || 'Artiste en résidence',
+              hotel:
+                typeof trip.hotel === 'string'
+                  ? trip.hotel
+                  : trip.hotel?.name || 'Lieu à confirmer',
               date: trip.date || new Date().toISOString().split('T')[0],
               image: images && images.length > 0
                 ? images[0]
-                : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=70&auto=format&fit=crop',
+                : '/images/placeholder-experience.webp',
               type: (trip.type === 'rooftop' || trip.type === 'intimate' || trip.type === 'workshop' || trip.type === 'residency' 
                 ? trip.type 
                 : 'intimate') as Experience['type'],
@@ -220,6 +232,10 @@ const TravelerExperiencesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={t('Expériences et résidences d’artistes — Travel Art')}
+        description={t('Concerts, expositions et résidences dans 35 hôtels d’exception, de Val d’Isère à Phuket. Découvrez les prochaines dates sur la carte.')}
+      />
         <SimpleNavbar overMedia />
       
       {/* The photograph was set at 20% opacity behind a near-opaque navy
@@ -229,7 +245,11 @@ const TravelerExperiencesPage: React.FC = () => {
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img decoding="async"
-            src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920&q=70&fit=crop&auto=format"
+            src="/images/headers/experiences.webp"
+            srcSet="/images/headers/experiences-960.webp 960w, /images/headers/experiences-1440.webp 1440w, /images/headers/experiences.webp 1920w"
+            sizes="100vw"
+            width={1920}
+            height={1097}
             alt=""
             className="w-full h-full object-cover"
             fetchPriority="high"
@@ -243,19 +263,19 @@ const TravelerExperiencesPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <p className="eyebrow text-white/80">Le programme</p>
+            <p className="eyebrow text-white/80">{t('Le programme')}</p>
             <h1 className="mt-5 max-w-[16ch] text-white">
-              Découvrir les expériences
+              {t('Découvrir les expériences')}
             </h1>
             <p className="mt-7 text-lg text-white/80 max-w-[54ch] leading-relaxed">
-              Vivez les performances d’artistes accueillis par les hôtels d’exception du monde entier.
+              {t('Vivez les performances d’artistes accueillis par les hôtels d’exception du monde entier.')}
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <Link to="/register?role=artist" className="btn-gold btn-arrow">
-                Rejoindre en tant qu’artiste
+                {t('Rejoindre en tant qu’artiste')}
               </Link>
               <Link to="/top-artists" className="btn-on-media">
-                Parcourir les artistes
+                {t('Parcourir les artistes')}
               </Link>
             </div>
           </motion.div>
@@ -271,10 +291,10 @@ const TravelerExperiencesPage: React.FC = () => {
             className="text-center mb-12"
           >
             <h2 className="text-4xl font-serif font-bold text-content mb-4">
-              Explorer les expériences dans le monde
+              {t('Explorer les expériences dans le monde')}
             </h2>
             <p className="text-content-secondary max-w-2xl mx-auto">
-              Cliquez sur un lieu pour découvrir les prochaines dates et les résidences d’artistes
+              {t('Cliquez sur un lieu pour découvrir les prochaines dates et les résidences d’artistes')}
             </p>
           </motion.div>
 
@@ -287,8 +307,9 @@ const TravelerExperiencesPage: React.FC = () => {
               maxZoom={18}
               style={{ height: '100%', width: '100%', zIndex: 0 }}
               scrollWheelZoom={true}
-              key={`${mapCenter[0]}-${mapCenter[1]}-${filteredExperiences.length}`} // Force re-render on filter change
             >
+              {/* Moves the live map instead of replacing it. */}
+              <MapView center={mapCenter} zoom={mapZoom} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -307,7 +328,7 @@ const TravelerExperiencesPage: React.FC = () => {
                       <div className="p-2">
                         <h3 className="font-semibold text-content text-sm mb-1">{exp.location.city}</h3>
                         <p className="text-xs text-content-secondary mb-2">{exp.title}</p>
-                        <p className="text-xs text-content-secondary">{exp.artist} at {exp.hotel}</p>
+                        <p className="text-xs text-content-secondary">{exp.artist} — {exp.hotel}</p>
                         <p className="text-xs text-content-secondary mt-1">
                           {new Date(exp.date).toLocaleDateString('fr-FR')}
                         </p>
@@ -329,7 +350,7 @@ const TravelerExperiencesPage: React.FC = () => {
                   : 'bg-surface-sunken text-content-secondary hover:bg-surface-warm'
               }`}
             >
-              Toutes les villes
+              {t('Toutes les villes')}
             </button>
             {locations.map(loc => (
               <button
@@ -377,14 +398,14 @@ const TravelerExperiencesPage: React.FC = () => {
           {loading ? (
             <div className="text-center py-20">
               <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
-              <p className="text-content-secondary text-lg">Chargement des expériences…</p>
+              <p className="text-content-secondary text-lg">{t('Chargement des expériences…')}</p>
             </div>
           ) : filteredExperiences.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-content-secondary text-lg mb-4">Aucune expérience.</p>
+              <p className="text-content-secondary text-lg mb-4">{t('Aucune expérience.')}</p>
               <p className="text-content-secondary mb-2">Total experiences in state: {experiences.length}</p>
               <p className="text-content-secondary mb-2">Filtered experiences: {filteredExperiences.length}</p>
-              <p className="text-content-secondary">Revenez bientôt pour découvrir nos expériences.</p>
+              <p className="text-content-secondary">{t('Revenez bientôt pour découvrir nos expériences.')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -443,7 +464,7 @@ const TravelerExperiencesPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="inline-flex items-center text-gold font-semibold group-hover:text-content transition-colors">
-                    En savoir plus
+                    {t('En savoir plus')}
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -469,17 +490,17 @@ const TravelerExperiencesPage: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="mx-auto max-w-[18ch]">
-              Envie de vivre l’art autrement ?
+              {t('Envie de vivre l’art autrement ?')}
             </h2>
             <p className="mt-7 text-lg text-content-inverse/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
-              Rejoignez la communauté de voyageurs, d’artistes et d’hôtels qui créent ces moments ensemble.
+              {t('Rejoignez la communauté de voyageurs, d’artistes et d’hôtels qui créent ces moments ensemble.')}
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/register" className="btn-gold btn-lg btn-arrow">
                 Commencer
               </Link>
               <Link to="/top-artists" className="btn-on-media btn-lg">
-                Parcourir les artistes
+                {t('Parcourir les artistes')}
               </Link>
             </div>
           </motion.div>

@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Activity
 } from 'lucide-react'
+import { t } from '@/i18n'
 
 interface SidebarProps {
   user: User
@@ -24,29 +25,30 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     switch (user.role) {
       case 'ARTIST':
         return [
-          { path: '/dashboard', label: 'Tableau de bord', icon: Home },
-          { path: '/dashboard/profile', label: 'Mon profil', icon: UserIcon },
-          { path: '/dashboard/bookings', label: 'Mes réservations', icon: Calendar },
-          { path: '/dashboard/membership', label: 'Adhésion', icon: CreditCard },
-          { path: '/dashboard/referrals', label: 'Parrainage', icon: Gift },
+          { path: '/dashboard', label: t('Tableau de bord'), icon: Home },
+          { path: '/dashboard/profile', label: t('Mon profil'), icon: UserIcon },
+          { path: '/dashboard/bookings', label: t('Mes réservations'), icon: Calendar },
+          { path: '/dashboard/membership', label: t('Adhésion'), icon: CreditCard },
+          { path: '/dashboard/referrals', label: t('Parrainage'), icon: Gift },
         ]
       case 'HOTEL':
         return [
-          { path: '/dashboard', label: 'Tableau de bord', icon: Home },
-          { path: '/dashboard/profile', label: 'Profil de l’hôtel', icon: UserIcon },
-          { path: '/dashboard/artists', label: 'Parcourir les artistes', icon: Users },
-          { path: '/dashboard/bookings', label: 'Réservations', icon: Calendar },
-          { path: '/dashboard/credits', label: 'Crédits', icon: CreditCard },
+          { path: '/dashboard', label: t('Tableau de bord'), icon: Home },
+          { path: '/dashboard/profile', label: t('Profil de l’hôtel'), icon: UserIcon },
+          { path: '/dashboard/artists', label: t('Parcourir les artistes'), icon: Users },
+          { path: '/dashboard/bookings', label: t('Réservations'), icon: Calendar },
+          { path: '/dashboard/credits', label: t('Crédits'), icon: CreditCard },
         ]
       case 'ADMIN':
         return [
-          { path: '/dashboard', label: 'Tableau de bord', icon: Home },
-          { path: '/dashboard/users', label: 'Utilisateurs', icon: Users },
-          { path: '/dashboard/bookings', label: 'Réservations', icon: Calendar },
-          { path: '/dashboard/analytics', label: 'Statistiques', icon: TrendingUp },
-          { path: '/dashboard/moderation', label: 'Modération', icon: UserIcon },
-          { path: '/dashboard/logs', label: 'Journal d’activité', icon: Activity },
-          { path: '/dashboard/referrals', label: 'Parrainage', icon: Gift },
+          { path: '/dashboard', label: t('Tableau de bord'), icon: Home },
+          { path: '/dashboard/users', label: t('Utilisateurs'), icon: Users },
+          { path: '/dashboard/bookings', label: t('Réservations'), icon: Calendar },
+          { path: '/dashboard/analytics', label: t('Statistiques'), icon: TrendingUp },
+          { path: '/dashboard/admissions', label: t('Admissions'), icon: UserIcon },
+          { path: '/dashboard/moderation', label: t('Modération'), icon: UserIcon },
+          { path: '/dashboard/logs', label: t('Journal d’activité'), icon: Activity },
+          { path: '/dashboard/referrals', label: t('Parrainage'), icon: Gift },
         ]
       default:
         return []
@@ -69,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                 to={item.path}
                 className={`group flex items-center gap-4 px-4 py-3 rounded-card transition-all duration-300 relative ${
                   isActive
-                    ? 'bg-gradient-to-r from-navy to-navy/95 text-white shadow-md'
+                    ? 'bg-surface-inverse text-content-inverse shadow-md'
                     : 'text-content-secondary hover:bg-gradient-to-r hover:from-gold/10 hover:to-gold/5'
                 }`}
               >
@@ -77,10 +79,10 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gold rounded-r-full"></div>
                 )}
                 <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-300 ${
-                  isActive ? 'text-content' : 'text-content-secondary group-hover:text-gold'
+                  isActive ? 'text-content-inverse' : 'text-content-secondary group-hover:text-gold'
                 } ${isActive ? '' : 'group-hover:scale-110'}`} />
                 <span className={`font-medium text-sm ${
-                  isActive ? 'text-content' : 'text-content-secondary group-hover:text-content'
+                  isActive ? 'text-content-inverse' : 'text-content-secondary group-hover:text-content'
                 }`}>{item.label}</span>
               </Link>
             )

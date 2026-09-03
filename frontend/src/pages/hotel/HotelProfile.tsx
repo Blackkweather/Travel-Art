@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Save, Edit3, MapPin, Building, Plus, Trash2, AlertCircle } from 'lucide-react'
 import { hotelsApi } from '@/utils/api'
+import { t } from '@/i18n'
 
 /**
  * Hotel profile.
@@ -149,9 +150,9 @@ const HotelProfile: React.FC = () => {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl font-serif text-[var(--text-primary)] mb-2">Profil de l’hôtel</h1>
+            <h1 className="text-3xl font-serif text-[var(--text-primary)] mb-2">{t('Profil de l’hôtel')}</h1>
             <p className="text-[var(--text-secondary)]">
-              C’est ce que voient les artistes lorsque vous les sollicitez.
+              {t('C’est ce que voient les artistes lorsque vous les sollicitez.')}
             </p>
           </div>
 
@@ -162,7 +163,7 @@ const HotelProfile: React.FC = () => {
                 disabled={saving}
                 className="btn-secondary"
               >
-                Annuler
+                {t('Annuler')}
               </button>
               <button
                 onClick={handleSave}
@@ -187,7 +188,7 @@ const HotelProfile: React.FC = () => {
         {error && (
           <div
             role="alert"
-            className="flex gap-3 rounded-card border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            className="notice-critical"
           >
             <AlertCircle size={18} strokeWidth={1.5} className="shrink-0 mt-px" aria-hidden="true" />
             <span>{error}</span>
@@ -207,16 +208,16 @@ const HotelProfile: React.FC = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="card-luxury space-y-6"
+          className="panel p-6 space-y-6"
         >
           <h2 className="font-serif text-xl text-[var(--text-primary)] flex items-center gap-2">
             <Building size={18} strokeWidth={1.5} aria-hidden="true" />
-            Détails
+            {t('Détails')}
           </h2>
 
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <label htmlFor="hotel-name" className="form-label">Nom de l’hôtel</label>
+              <label htmlFor="hotel-name" className="form-label">{t('Nom de l’hôtel')}</label>
               <input
                 id="hotel-name"
                 className="form-input"
@@ -271,7 +272,7 @@ const HotelProfile: React.FC = () => {
               onChange={(e) => setDescription(e.target.value)}
             />
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Entre 10 et 1000 caractères.
+              {t('Entre 10 et 1000 caractères.')}
             </p>
           </div>
         </motion.section>
@@ -280,7 +281,7 @@ const HotelProfile: React.FC = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
-          className="card-luxury space-y-6"
+          className="panel p-6 space-y-6"
         >
           <h2 className="font-serif text-xl text-[var(--text-primary)] flex items-center gap-2">
             <MapPin size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -289,7 +290,7 @@ const HotelProfile: React.FC = () => {
 
           {spots.length === 0 && (
             <p className="text-[var(--text-secondary)]">
-              Aucun espace renseigné. Les artistes s’appuient dessus pour juger si votre lieu convient à leur travail.
+              {t('Aucun espace renseigné. Les artistes s’appuient dessus pour juger si votre lieu convient à leur travail.')}
             </p>
           )}
 
@@ -310,7 +311,7 @@ const HotelProfile: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor={`spot-capacity-${index}`} className="form-label">Capacité</label>
+                  <label htmlFor={`spot-capacity-${index}`} className="form-label">{t('Capacité')}</label>
                   <input
                     id={`spot-capacity-${index}`}
                     type="number"
@@ -349,7 +350,7 @@ const HotelProfile: React.FC = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="card-luxury space-y-6"
+          className="panel p-6 space-y-6"
         >
           <h2 className="font-serif text-xl text-[var(--text-primary)]">Contact principal</h2>
 

@@ -15,6 +15,7 @@ import {
   ArtisticCategory,
   SubcategoryInfo
 } from '@/types/artistRegistration';
+import { t } from '@/i18n'
 
 const INITIAL_STATE: ArtistRegistrationData = {
   step: 1,
@@ -107,7 +108,7 @@ const ArtistRegistrationFlow: React.FC = () => {
     try {
       // Validate all data before submission
       if (!state.basicInfo.stageName || !state.basicInfo.email || !state.basicInfo.password) {
-        toast.error('Renseignez tous les champs obligatoires');
+        toast.error(t('Renseignez tous les champs obligatoires'));
         setIsLoading(false);
         return;
       }
@@ -146,14 +147,12 @@ const ArtistRegistrationFlow: React.FC = () => {
         hasUser: !!authState.user
       });
 
-      toast.success('Inscription réussie! Bienvenue sur Travel Arts');
-
-      // Small delay to ensure state is updated
-      setTimeout(() => {
-        console.log('🔄 Redirecting to profile...');
-        // Redirect to profile page for artists to complete their setup
-        navigate('/dashboard/profile');
-      }, 500);
+      toast.success(t('Demande enregistrée'));
+      // No session exists yet - the account is pending review - so this cannot
+      // redirect into the dashboard the way it used to.
+      navigate('/inscription-envoyee', {
+        state: { email: registrationData.email, role: 'ARTIST' }
+      });
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.error?.message ||
@@ -271,9 +270,9 @@ const ArtistRegistrationFlow: React.FC = () => {
           className="max-w-3xl mx-auto mt-8 text-center"
         >
           <p className="text-sm text-content-secondary">
-            Vos informations sont sécurisées et ne seront jamais partagées.
+            {t('Vos informations sont sécurisées et ne seront jamais partagées.')}
             <br />
-            Besoin d’aide ? <a href="mailto:hello@travelart.com" className="text-gold font-semibold hover:underline">Écrivez-nous</a>
+            Besoin d’aide ? <a href="mailto:hello@travelart.com" className="text-gold font-semibold hover:underline">{t('Écrivez-nous')}</a>
           </p>
         </motion.div>
       </main>

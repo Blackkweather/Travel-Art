@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { format, parse, isValid, startOfMonth, endOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay, isAfter, isBefore, startOfDay } from 'date-fns';
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MONTHS_FR_FULL, WEEKDAYS_FR } from '@/utils/frenchDates';
+import { format, parse, startOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay, isAfter, isBefore, startOfDay } from 'date-fns';
+import { t } from '@/i18n'
 
 interface DateRangePickerProps {
   startDate: string;
@@ -88,28 +90,32 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
     <div className="relative" ref={ref}>
       <div className="flex gap-2">
         <div className="flex-1">
-          <label className="form-label">Date de début</label>
-          <div
+          <label className="form-label">{t('Date de début')}</label>
+          <button
+            type="button"
             onClick={() => !disabled && setOpen(true)}
-            className={`form-input cursor-pointer flex items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={disabled}
+            className={`form-input cursor-pointer flex w-full items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <span className={startDate ? 'text-navy' : 'text-content-secondary'}>
-              {startDate ? format(parse(startDate, 'yyyy-MM-dd', new Date()), 'MMM dd, yyyy') : 'Select start date'}
+              {startDate ? format(parse(startDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : t('Choisir la date de début')}
             </span>
             <Calendar className="w-4 h-4 text-content-secondary" />
-          </div>
+          </button>
         </div>
         <div className="flex-1">
-          <label className="form-label">Date de fin</label>
-          <div
+          <label className="form-label">{t('Date de fin')}</label>
+          <button
+            type="button"
             onClick={() => !disabled && setOpen(true)}
-            className={`form-input cursor-pointer flex items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={disabled}
+            className={`form-input cursor-pointer flex w-full items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <span className={endDate ? 'text-navy' : 'text-content-secondary'}>
-              {endDate ? format(parse(endDate, 'yyyy-MM-dd', new Date()), 'MMM dd, yyyy') : 'Select end date'}
+              {endDate ? format(parse(endDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : 'Choisir la date de fin'}
             </span>
             <Calendar className="w-4 h-4 text-content-secondary" />
-          </div>
+          </button>
         </div>
       </div>
 
@@ -130,7 +136,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
                 <ChevronLeft className="w-5 h-5 text-content-secondary" />
               </button>
               <h3 className="font-semibold text-content">
-                {format(currentMonth, 'MMMM yyyy')}
+                {MONTHS_FR_FULL[currentMonth.getMonth()]} {currentMonth.getFullYear()}
               </h3>
               <button
                 type="button"
@@ -142,7 +148,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
             </div>
 
             <div className="grid grid-cols-7 gap-1 mb-2">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+              {WEEKDAYS_FR.map((day) => (
                 <div key={day} className="text-center text-xs font-medium text-content-secondary py-2">
                   {day}
                 </div>
@@ -184,14 +190,14 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
             <div className="mt-4 pt-4 border-t border-line flex items-center justify-between">
               <div className="text-xs text-content-secondary">
-                {selectingStart ? 'Select start date' : 'Select end date'}
+                {selectingStart ? t('Sélectionnez la date de début') : t('Sélectionnez la date de fin')}
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 className="text-sm text-content-secondary hover:text-content transition-colors"
               >
-                Fermer
+                {t('Fermer')}
               </button>
             </div>
           </motion.div>

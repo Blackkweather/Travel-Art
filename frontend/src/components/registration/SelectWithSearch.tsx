@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search, AlertCircle } from 'lucide-react';
+import { t } from '@/i18n'
 
 interface SelectWithSearchProps {
   label?: string;
@@ -15,7 +16,7 @@ interface SelectWithSearchProps {
 
 const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
   label,
-  placeholder = 'Sélectionner une option',
+  placeholder = t('Sélectionner une option'),
   options,
   value,
   onChange,
@@ -42,9 +43,9 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
   return (
     <div className="w-full space-y-2">
       {label && (
-        <label className="block text-sm font-medium text-navy-900">
-          {label}
-          {required && <span className="text-gold ml-1">*</span>}
+        <label className="form-label flex items-center gap-2">
+          <span>{label}</span>
+          {required && <span className="text-gold -ml-1" aria-hidden="true">*</span>}
         </label>
       )}
 
@@ -57,7 +58,7 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
             w-full h-12 px-4 rounded-card border-2 transition-all
             flex items-center justify-between text-left
             ${disabled ? 'bg-surface cursor-not-allowed opacity-60' : 'bg-surface-raised hover:border-gold'}
-            ${error ? 'border-red-400' : isOpen ? 'border-gold' : 'border-line'}
+            ${error ? 'border-[var(--state-critical-line)]' : isOpen ? 'border-gold' : 'border-line'}
             ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
           `}
         >
@@ -114,7 +115,7 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
                 ))
               ) : (
                 <div className="px-4 py-6 text-center text-content-secondary">
-                  Aucune option trouvée
+                  {t('Aucune option trouvée')}
                 </div>
               )}
             </div>
@@ -129,7 +130,8 @@ const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
             className="field-error"
             role="alert"
           >
-            {error}
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <span>{error}</span>
           </motion.p>
         )}
       </div>

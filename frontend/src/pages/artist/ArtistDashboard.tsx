@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import { Calendar, Star, Users, CreditCard, Music } from 'lucide-react'
+import { Calendar, Star } from 'lucide-react'
 import { bookingsApi, artistsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ContactSupport from '@/components/ContactSupport'
+import StatusBadge from '@/components/StatusBadge'
+import { parseJsonField } from '@/utils/apiPayload'
+import { t } from '@/i18n'
+import { formatNumber } from '@/utils/i18n'
 
 interface Booking {
   id: string
@@ -100,178 +104,119 @@ const ArtistDashboard: React.FC = () => {
     )
   }
 
+  /* Four numbers, one treatment. Each tile used to carry an icon in a tinted
+     square - blue, green, amber, purple, assigned in source order - which
+     made the row look like a template and told the reader nothing: the colour
+     did not encode the metric, its rank, or its health. The number itself is
+     now the only thing on the tile that is large or dark. */
   const statsData = [
-    { label: 'Réservations', value: stats.totalBookings, icon: Calendar, color: 'text-blue-600' },
-    { label: 'Hôtels collaborateurs', value: stats.hotelsWorkedWith, icon: Users, color: 'text-green-600 dark:text-green-400' },
-    { label: 'Note moyenne', value: stats.hotelRating > 0 ? stats.hotelRating.toFixed(1) : 'N/A', icon: Star, color: 'text-amber-600' },
-    { label: 'Réservations en cours', value: stats.activeBookings, icon: CreditCard, color: 'text-purple-600' }
+    { label: t('Réservations'), value: stats.totalBookings },
+    { label: t('Hôtels collaborateurs'), value: stats.hotelsWorkedWith },
+    { label: 'Note moyenne', value: stats.hotelRating > 0 ? stats.hotelRating.toFixed(1) : '—' },
+    { label: 'En cours', value: stats.activeBookings }
   ]
 
   return (
     <div className="min-h-screen bg-surface" data-testid="dashboard">
-      <div className="max-w-[1600px] mx-auto px-6 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold text-content mb-1">
-            Tableau de bord
-          </h1>
-          <p className="text-sm text-content-secondary">
-            Bon retour, {user?.name?.split(' ')[0] || 'Artiste'}. Voici l’essentiel de votre activité.
+      <div className="shell py-12 md:py-16">
+        <header className="page-head">
+          <span className="eyebrow">Espace artiste</span>
+          <h1 className="page-head__title">{t('Tableau de bord')}</h1>
+          <p className="page-head__lede">
+            {t('Bon retour, {name}. Voici l’essentiel de votre activité.', {
+              name: user?.name?.split(' ')[0] || t('Artiste'),
+            })}
           </p>
-        </div>
+          <span className="rule-reveal mt-2" />
+        </header>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {statsData.map((stat, index) => {
-            const Icon = stat.icon
-            const colorMap: Record<string, { bg: string; iconColor: string; border: string }> = {
-              'text-blue-600': {
-                bg: 'bg-blue-50',
-                iconColor: 'text-blue-600',
-                border: 'border-blue-200'
-              },
-              'text-green-600 dark:text-green-400': {
-                bg: 'bg-emerald-50',
-                iconColor: 'text-emerald-600',
-                border: 'border-emerald-200'
-              },
-              'text-amber-600': {
-                bg: 'bg-amber-50',
-                iconColor: 'text-amber-600',
-                border: 'border-amber-200'
-              },
-              'text-purple-600': {
-                bg: 'bg-purple-50',
-                iconColor: 'text-purple-600',
-                border: 'border-purple-200'
-              }
-            }
-            const colors = colorMap[stat.color] || colorMap['text-blue-600']
-            
-            return (
-              <div 
-                key={index} 
-                className="bg-surface-raised rounded-card border border-line p-6 hover:border-line-strong transition-colors"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-2 rounded-card ${colors.bg}`}>
-                    <Icon className={`w-5 h-5 ${colors.iconColor}`} />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-content-secondary uppercase tracking-wide mb-1">{stat.label}</p>
-                  <p className="text-2xl font-semibold text-content">
-                    {typeof stat.value === 'number' ? stat.value.toLocaleString('fr-FR') : stat.value}
-                  </p>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Recent Bookings */}
-        <div className="bg-surface-raised rounded-card border border-line mb-8">
-          <div className="px-6 py-4 border-b border-line">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-content">Réservations récentes</h2>
-              <Link 
-                to="/dashboard/bookings" 
-                className="text-sm text-content-secondary hover:text-content flex items-center gap-1"
-              >
-                Tout voir →
-              </Link>
+        {/* Four equal columns is right here and nowhere else on this page: the
+            metrics genuinely are peers, so ranking them by width would be a
+            lie. The rest of the page is deliberately not on this grid. */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden mb-10">
+          {statsData.map((stat) => (
+            <div key={stat.label} className="stat rounded-none border-0">
+              <span className="stat__label">{stat.label}</span>
+              <span className="stat__value">
+                {typeof stat.value === 'number' ? formatNumber(stat.value) : stat.value}
+              </span>
             </div>
+          ))}
+        </div>
+
+        <section className="panel mb-10">
+          <div className="panel-head">
+            <h2>{t('Réservations récentes')}</h2>
+            <Link to="/dashboard/bookings" className="btn-arrow text-sm text-content-secondary hover:text-content">
+              {t('Tout voir')}
+            </Link>
           </div>
           <div className="divide-y divide-line">
             {recentBookings.length > 0 ? (
-              recentBookings.map((booking) => {
-                const statusColor = booking.status === 'CONFIRMED' || booking.status === 'confirmed'
-                  ? 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30'
-                  : booking.status === 'PENDING' || booking.status === 'pending'
-                  ? 'bg-amber-100 text-amber-800 border-amber-200'
-                  : 'bg-surface-sunken text-content border-line'
-                
-                const statusText = booking.status === 'CONFIRMED' || booking.status === 'confirmed'
-                  ? 'Confirmed'
-                  : booking.status === 'PENDING' || booking.status === 'pending'
-                  ? 'Pending'
-                  : booking.status.charAt(0).toUpperCase() + booking.status.slice(1).toLowerCase()
-                
-                return (
-                  <div 
-                    key={booking.id} 
-                    className="px-6 py-4 hover:bg-surface transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-card bg-surface-sunken flex items-center justify-center">
-                          <Calendar className="w-5 h-5 text-content-secondary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-content mb-1 truncate">
-                            {booking.hotel?.name || 'Hotel'}
-                          </h3>
-                          <div className="flex items-center gap-2 text-xs text-content-secondary">
-                            <span>
-                              {booking.hotel?.city && booking.hotel?.country 
-                                ? `${booking.hotel.city}, ${booking.hotel.country}`
-                                : 'Location TBD'}
-                            </span>
-                            {booking.performanceSpot && (
-                              <>
-                                <span>•</span>
-                                <span>{booking.performanceSpot}</span>
-                              </>
-                            )}
-                          </div>
-                          <p className="text-xs text-content-secondary mt-1">
-                            {new Date(booking.startDate).toLocaleDateString('fr-FR', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric' 
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={`px-3 py-1 rounded-card text-xs font-medium border ${statusColor}`}>
-                        {statusText}
-                      </span>
-                    </div>
+              recentBookings.map((booking) => (
+                <div key={booking.id} className="flex items-start justify-between gap-4 px-6 py-5 transition-colors hover:bg-surface-sunken">
+                  <div className="min-w-0">
+                    <h3 className="font-serif text-base text-content truncate">
+                      {booking.hotel?.name || 'Hôtel'}
+                    </h3>
+                    <p className="mt-1 text-[0.8125rem] text-content-secondary">
+                      {(() => {
+                        /* `location` is a JSON string on the wire, so the flat
+                           city/country this used to read never existed. */
+                        const loc = parseJsonField<{ city?: string; country?: string }>(
+                          (booking.hotel as any)?.location,
+                          {}
+                        )
+                        const city = booking.hotel?.city ?? loc.city
+                        const country = booking.hotel?.country ?? loc.country
+                        const where = [city, country].filter(Boolean).join(', ')
+                        const spot = booking.performanceSpot
+                        return [where || 'Lieu à confirmer', spot].filter(Boolean).join(' — ')
+                      })()}
+                    </p>
+                    <p className="mt-1 text-[0.8125rem] text-content-secondary">
+                      {new Date(booking.startDate).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
                   </div>
-                )
-              })
+                  <StatusBadge status={booking.status} />
+                </div>
+              ))
             ) : (
-              <div className="px-6 py-12 text-center">
-                <Calendar className="w-8 h-8 text-content-secondary mx-auto mb-2" />
-                <p className="text-sm text-content-secondary">Aucune réservation</p>
-                <p className="text-xs text-content-secondary mt-1">Entrez en relation avec des hôtels pour voir vos réservations ici</p>
+              <div className="empty-state">
+                <Calendar className="h-6 w-6 text-content-secondary" aria-hidden="true" />
+                <p className="empty-state__title">{t('Aucune réservation')}</p>
+                <p className="empty-state__body">
+                  {t('Entrez en relation avec des hôtels pour voir vos résidences apparaître ici.')}
+                </p>
               </div>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Link 
-            to="/dashboard/profile" 
-            className="bg-surface-raised border border-line rounded-card p-6 hover:border-line-strong hover:shadow-sm transition-all text-left group"
-          >
-            <Calendar className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Mettre à jour les disponibilités</div>
-            <div className="text-xs text-content-secondary mt-1">Gérez votre calendrier et vos disponibilités</div>
+        {/* Two actions, deliberately unequal: the calendar is the one that
+            unblocks a booking, the gallery is housekeeping. */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-10">
+          <Link to="/dashboard/profile" className="panel-interactive group md:col-span-7 p-6">
+            <Calendar className="mb-3 h-5 w-5 text-gold" aria-hidden="true" />
+            <div className="font-serif text-lg text-content">{t('Mettre à jour vos disponibilités')}</div>
+            <p className="mt-1 text-sm text-content-secondary">
+              {t('Les hôtels ne peuvent vous proposer que des dates que vous avez ouvertes.')}
+            </p>
           </Link>
 
-          <Link 
-            to="/dashboard/profile" 
-            className="bg-surface-raised border border-line rounded-card p-6 hover:border-line-strong hover:shadow-sm transition-all text-left group"
-          >
-            <Star className="w-5 h-5 text-content-secondary mb-2 group-hover:text-content" />
-            <div className="text-sm font-medium text-content">Performance Gallery</div>
-            <div className="text-xs text-content-secondary mt-1">Déposez et gérez vos médias</div>
+          <Link to="/dashboard/profile" className="panel-interactive group md:col-span-5 p-6">
+            <Star className="mb-3 h-5 w-5 text-gold" aria-hidden="true" />
+            <div className="font-serif text-lg text-content">{t('Galerie de performances')}</div>
+            <p className="mt-1 text-sm text-content-secondary">
+              {t('Déposez et classez vos médias.')}
+            </p>
           </Link>
         </div>
 
-        {/* Contact Support */}
         <div>
           <ContactSupport
             userRole={user?.role || 'ARTIST'}

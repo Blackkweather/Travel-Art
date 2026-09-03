@@ -128,11 +128,11 @@ router.get('/', asyncHandler(async (req, res) => {
       if (ratings.length > 0) {
         const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
         if (avgRating >= 4.5) {
-          ratingBadge = 'Top 10% Performer';
+          ratingBadge = 'Top 10 % des artistes';
         } else if (avgRating >= 4.0) {
-          ratingBadge = 'Excellent Performer';
+          ratingBadge = 'Artiste confirmé';
         } else if (avgRating >= 3.5) {
-          ratingBadge = 'Good Performer';
+          ratingBadge = 'Artiste recommandé';
         }
       }
 
@@ -342,11 +342,11 @@ router.get('/:id', asyncHandler(async (req, res) => {
   if (ratings.length > 0) {
     const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
     if (avgRating >= 4.5) {
-      ratingBadge = 'Top 10% Performer';
+      ratingBadge = 'Top 10 % des artistes';
     } else if (avgRating >= 4.0) {
-      ratingBadge = 'Excellent Performer';
+      ratingBadge = 'Artiste confirmé';
     } else if (avgRating >= 3.5) {
-      ratingBadge = 'Good Performer';
+      ratingBadge = 'Artiste recommandé';
     }
   }
 

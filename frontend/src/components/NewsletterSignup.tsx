@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Mail, Send, CheckCircle } from 'lucide-react'
+import { t } from '@/i18n'
 
 interface NewsletterSignupProps {
   variant?: 'inline' | 'modal' | 'banner'
@@ -46,11 +47,11 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
           <div className="flex items-center justify-center gap-2 mb-3">
             <Mail className="w-6 h-6 text-gold" />
             <h3 className="text-2xl font-serif font-bold">
-              Restez inspiré avec Travel Art
+              {t('Restez inspiré avec Travel Art')}
             </h3>
           </div>
           <p className="text-white/75 mb-6 max-w-2xl mx-auto">
-            Chaque semaine, les nouvelles résidences, les expériences exclusives et les coulisses de nos hôtels.
+            {t('Chaque semaine, les nouvelles résidences, les expériences exclusives et les coulisses de nos hôtels.')}
           </p>
           <form onSubmit={handleSubmit} className="max-w-md mx-auto flex gap-3">
             <div className="flex-1">
@@ -58,7 +59,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Saisissez votre adresse e-mail"
+                placeholder={t('Saisissez votre adresse e-mail')}
                 className="w-full px-4 py-3 rounded-card text-content focus:outline-none focus:ring-2 focus:ring-gold"
                 required
               />
@@ -71,12 +72,12 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
               {success ? (
                 <>
                   <CheckCircle className="w-5 h-5" />
-                  <span>Inscription confirmée</span>
+                  <span>{t('Inscription confirmée')}</span>
                 </>
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  <span>{submitting ? 'Inscription…' : 'S’inscrire'}</span>
+                  <span>{submitting ? 'Inscription…' : t('S’inscrire')}</span>
                 </>
               )}
             </button>
@@ -92,11 +93,11 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
         <div className="flex items-center gap-2 mb-3">
           <Mail className="w-6 h-6 text-gold" />
           <h3 className="text-2xl font-serif font-bold text-content">
-            Notre lettre d’information
+            {t('Notre lettre d’information')}
           </h3>
         </div>
         <p className="text-content-secondary mb-6">
-          Un accès privilégié aux nouvelles résidences et aux expériences de nos hôtels.
+          {t('Un accès privilégié aux nouvelles résidences et aux expériences de nos hôtels.')}
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -104,7 +105,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Saisissez votre adresse e-mail"
+              placeholder={t('Saisissez votre adresse e-mail')}
               className="form-input w-full"
               required
             />
@@ -117,14 +118,14 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
             {success ? (
               <>
                 <CheckCircle className="w-5 h-5" />
-                <span>Inscription confirmée</span>
+                <span>{t('Inscription confirmée')}</span>
               </>
             ) : submitting ? (
               'Inscription…'
             ) : (
               <>
                 <Send className="w-5 h-5" />
-                <span>S’abonner</span>
+                <span>{t('S’abonner')}</span>
               </>
             )}
           </button>
@@ -142,7 +143,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Saisissez votre adresse e-mail"
+            placeholder={t('Saisissez votre adresse e-mail')}
             className="form-input w-full"
             required
           />

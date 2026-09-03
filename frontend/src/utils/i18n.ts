@@ -1,22 +1,20 @@
 /**
- * Localisation.
+ * Date and number formatting for the active language.
  *
- * Travel Art ships in French only. The artists this product recruits are
- * overwhelmingly French-speaking, and the site copy is written in French
- * rather than translated into it, so there is no second locale to fall back
- * to and no language switcher in the UI.
+ * Copy lives in `@/i18n`; this module is only about how dates, times and
+ * numbers are written. It follows the same language, so an English reader gets
+ * "14 March 2026" and "1,250" rather than French forms in English sentences.
  *
- * This module previously carried five locales (en/fr/es/de/it) and a runtime
- * key-lookup with an English fallback. That was misleading rather than useful:
- * the dictionary only ever covered a dozen nav and button strings, every page
- * in the app hardcoded its copy, and the switcher that drove it was not
- * mounted anywhere. What survives is the part that is actually load-bearing -
- * a single locale tag for `lang`, date and number formatting.
+ * The formatters are built once at module load, which is safe because
+ * switching language reloads the page - see the note in `@/i18n`.
  */
+import { getLocale, t } from '@/i18n'
 
-export const LOCALE = 'fr-FR' as const
+const TAGS = { fr: 'fr-FR', en: 'en-GB' } as const
 
-export type SupportedLanguage = 'fr'
+export const LOCALE = TAGS[getLocale()]
+
+export type SupportedLanguage = 'fr' | 'en'
 
 /** Formatters are built once; constructing Intl objects per call is costly. */
 const dateFormatter = new Intl.DateTimeFormat(LOCALE, {
@@ -66,24 +64,41 @@ export const formatNumber = (value: number | null | undefined): string =>
   typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : '0'
 
 /**
- * French pluralisation: unlike English, 0 takes the singular.
- * `plural(0, 'artiste')` gives "0 artiste", `plural(2, 'artiste')` gives
- * "2 artistes".
+ * Kept for the default export's shape. The `lang` attribute is set by
+ * I18nProvider, which knows the active language; this module used to stamp
+ * 'fr' at import time and would have raced it.
  */
-export const plural = (count: number, singular: string, suffix = 's'): string =>
-  `${formatNumber(count)} ${singular}${Math.abs(count) >= 2 ? suffix : ''}`
+export const initLocale = (): void => {}
 
-/** Applied once at startup so assistive tech and the browser agree on the language. */
-export const initLocale = (): void => {
-  if (typeof document !== 'undefined') {
-    document.documentElement.lang = 'fr'
+
+/**
+ * "il y a 3 heures" / "3 hours ago".
+ *
+ * The admin dashboard and the activity log each had their own copy of this;
+ * one spoke French and the other English ("3h ago") on the same French-only
+ * site. Singular and plural are separate keys because the two languages break
+ * differently at one, and because English puts the unit before "ago".
+ */
+export const formatRelative = (value: string | Date): string => {
+  const date = toDate(value)
+  if (!date) return t('Récemment')
+
+  const minutes = Math.round((Date.now() - date.getTime()) / 60000)
+  if (minutes < 1) return t('À l’instant')
+  if (minutes < 60) {
+    return t(minutes === 1 ? 'il y a {n} minute' : 'il y a {n} minutes', { n: minutes })
   }
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) {
+    return t(hours === 1 ? 'il y a {n} heure' : 'il y a {n} heures', { n: hours })
+  }
+  const days = Math.round(hours / 24)
+  if (days < 7) {
+    return t(days === 1 ? 'il y a {n} jour' : 'il y a {n} jours', { n: days })
+  }
+  // Past a week a date is more useful than a distance.
+  return formatShortDate(date)
 }
-
-if (typeof window !== 'undefined') {
-  initLocale()
-}
-
 
 /**
  * Labels for enum-ish values the API returns.
@@ -96,19 +111,19 @@ if (typeof window !== 'undefined') {
  * to a customer.
  */
 export const EXPERIENCE_TYPE_LABELS: Record<string, string> = {
-  all: 'Tous les types',
-  rooftop: 'Toit-terrasse',
-  intimate: 'Intimiste',
-  workshop: 'Atelier',
-  residency: 'Résidence',
+  all: t('Tous les types'),
+  rooftop: t('Toit-terrasse'),
+  intimate: t('Intimiste'),
+  workshop: t('Atelier'),
+  residency: t('Résidence'),
 }
 
 export const TRANSACTION_TYPE_LABELS: Record<string, string> = {
-  CREDIT_PURCHASE: 'Achat de crédits',
-  REFUND: 'Remboursement',
-  BOOKING: 'Réservation',
-  BOOKING_PAYMENT: 'Paiement de réservation',
-  ADJUSTMENT: 'Ajustement',
+  CREDIT_PURCHASE: t('Achat de crédits'),
+  REFUND: t('Remboursement'),
+  BOOKING: t('Réservation'),
+  BOOKING_PAYMENT: t('Paiement de réservation'),
+  ADJUSTMENT: t('Ajustement'),
 }
 
 /**
@@ -131,7 +146,7 @@ export default {
   formatShortDate,
   formatTime,
   formatNumber,
-  plural,
+  formatRelative,
   initLocale,
   experienceTypeLabel,
   transactionTypeLabel,

@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/authStore'
-import { authApi } from '@/utils/api'
+
 import { LoginCredentials } from '@/types'
 import toast from 'react-hot-toast'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
+import { t } from '@/i18n'
 
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
@@ -27,7 +28,7 @@ const LoginPage: React.FC = () => {
       const { login } = useAuthStore.getState()
       await login(data)
       
-      toast.success('Bon retour')
+      toast.success(t('Bon retour'))
       navigate('/dashboard')
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || 
@@ -72,10 +73,10 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
           <h2 className="text-3xl font-serif font-bold text-content gold-underline">
-            Bon retour
+            {t('Bon retour')}
           </h2>
           <p className="mt-2 text-content-secondary">
-            Connectez-vous à votre compte Travel Art
+            {t('Connectez-vous à votre compte Travel Art')}
           </p>
         </div>
 
@@ -96,16 +97,16 @@ const LoginPage: React.FC = () => {
                 name="email"
                 type="email"
                 className="form-input"
-                placeholder="Saisissez votre e-mail"
+                placeholder={t('Saisissez votre e-mail')}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.email.message}</p>
               )}
             </div>
 
             <div>
               <label htmlFor="password" className="form-label">
-                Mot de passe
+                {t('Mot de passe')}
               </label>
               <input
                 {...register('password', {
@@ -118,10 +119,10 @@ const LoginPage: React.FC = () => {
                 name="password"
                 type="password"
                 className="form-input"
-                placeholder="Saisissez votre mot de passe"
+                placeholder={t('Saisissez votre mot de passe')}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.password.message}</p>
               )}
             </div>
           </div>
@@ -135,13 +136,13 @@ const LoginPage: React.FC = () => {
                 className="h-4 w-4 text-gold focus:ring-gold border-line rounded-card"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-content-secondary">
-                Se souvenir de moi
+                {t('Se souvenir de moi')}
               </label>
             </div>
 
             <div className="text-sm">
               <Link to="/forgot-password" className="text-gold hover:text-gold-600">
-                Mot de passe oublié ?
+                {t('Mot de passe oublié ?')}
               </Link>
             </div>
           </div>
@@ -160,7 +161,7 @@ const LoginPage: React.FC = () => {
             <p className="text-content-secondary">
               Pas encore de compte ?{' '}
               <Link to="/register" className="text-gold hover:text-gold-600 font-medium">
-                Créer un compte
+                {t('Créer un compte')}
               </Link>
             </p>
           </div>
@@ -169,7 +170,7 @@ const LoginPage: React.FC = () => {
         {import.meta.env.DEV && (
           <div className="mt-8 text-center">
             <p className="text-sm text-content-secondary">
-              Identifiants de démonstration (développement) :
+              {t('Identifiants de démonstration (développement) :')}
             </p>
           </div>
         )}

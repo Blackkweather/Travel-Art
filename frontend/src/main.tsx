@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
+import { I18nProvider, t } from './i18n'
 import './index.css'
 
 // Two global error handlers used to sit here. Both existed only to swallow
@@ -13,6 +14,12 @@ import './index.css'
 // YouTube mutating DOM that React believed it owned. One of them monkey-
 // patched window.console.error. The iframe is gone, so what they were
 // suppressing cannot happen; keeping them would only hide real errors.
+
+// index.html carries a static French title, which is right for the default
+// language and wrong once someone switches. Set before the first render, so
+// there is no flash of the other language in the tab; a page that sets its own
+// title through SEOHead still wins, because its effect runs after this.
+document.title = t('Travel Art — Résidences d’artistes en hôtellerie d’exception')
 
 const isDev = import.meta.env.MODE === 'development'
 
@@ -39,7 +46,9 @@ const AppContent = (
   >
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        <I18nProvider>
+          <App />
+        </I18nProvider>
         <Toaster
           position="top-right"
           toastOptions={{

@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, MapPin, Calendar, Heart } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import { plural } from '@/utils/i18n'
+import { formatNumber } from '@/utils/i18n'
 import { bookingsApi, hotelsApi, commonApi, artistsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
+import { extractArray } from '@/utils/apiPayload'
+import { t } from '@/i18n'
 
-const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/400x300?text=Artist'
+const PLACEHOLDER_IMAGE = '/images/placeholder-experience.webp'
 
 type AvailabilityBadge = 'Available' | 'Pending' | 'Unavailable'
 
@@ -121,19 +123,9 @@ const HotelArtists: React.FC = () => {
     return []
   }, [])
 
-  const extractArray = useCallback((payload: any, key: string): any[] => {
-    if (!payload) return []
-    if (Array.isArray(payload)) return payload
-    if (Array.isArray(payload[key])) return payload[key]
-    if (payload.data) {
-      if (Array.isArray(payload.data[key])) return payload.data[key]
-      if (Array.isArray(payload.data)) return payload.data
-    }
-    return []
-  }, [])
 
   useEffect(() => {
-    ;(async () => {
+    (async () => {
       if (!user?.id) return
       try {
         const res = await hotelsApi.getByUser(user.id)
@@ -151,7 +143,7 @@ const HotelArtists: React.FC = () => {
       return
     }
 
-    ;(async () => {
+    (async () => {
       try {
         const res = await hotelsApi.getFavorites(hotelId)
         const favorites = extractArray(res.data?.data, 'favorites')
@@ -211,7 +203,7 @@ const HotelArtists: React.FC = () => {
         }))
       } catch (fallbackError) {
         console.error('Failed to load artists', fallbackError)
-        setError('Impossible de charger les artistes pour le moment. Réessayez plus tard.')
+        setError(t('Impossible de charger les artistes pour le moment. Réessayez plus tard.'))
       } finally {
         setLoading(false)
       }
@@ -385,15 +377,27 @@ const HotelArtists: React.FC = () => {
     }
   }
 
-  const getAvailabilityColor = (availability: string) => {
+  /* Availability arrives from the API in English. It is a status, so it uses
+     the shared badge vocabulary rather than a fourth private colour map. */
+  const availabilityClass = (availability: string) => {
     switch (availability) {
       case 'Available':
-        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
+        return 'badge-positive'
       case 'Pending':
-        return 'bg-amber-100 text-amber-800'
-      case 'Unavailable':
+        return 'badge-caution'
       default:
-        return 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
+        return 'badge-critical'
+    }
+  }
+
+  const availabilityLabel = (availability: string) => {
+    switch (availability) {
+      case 'Available':
+        return 'Disponible'
+      case 'Pending':
+        return 'À confirmer'
+      default:
+        return 'Indisponible'
     }
   }
 
@@ -404,7 +408,7 @@ const HotelArtists: React.FC = () => {
           <div className="h-8 bg-surface-sunken rounded-card w-64 mb-2 animate-pulse" />
           <div className="h-4 bg-surface-sunken rounded-card w-96 animate-pulse" />
         </div>
-        <div className="card-luxury animate-pulse">
+        <div className="panel p-6 animate-pulse">
           <div className="h-10 bg-surface-sunken rounded-card mb-4" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="h-10 bg-surface-sunken rounded-card" />
@@ -415,7 +419,7 @@ const HotelArtists: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="card-luxury animate-pulse">
+            <div key={i} className="panel p-6 animate-pulse">
               <div className="h-64 bg-surface-sunken rounded-card mb-4" />
               <div className="space-y-3">
                 <div className="h-6 bg-surface-sunken rounded-card w-3/4" />
@@ -434,15 +438,15 @@ const HotelArtists: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-          Parcourir les artistes
+          {t('Parcourir les artistes')}
         </h1>
         <p className="text-content-secondary">
-          Découvrez les artistes à inviter dans votre établissement
+          {t('Découvrez les artistes à inviter dans votre établissement')}
         </p>
       </div>
 
       {error && (
-        <div className="card-luxury border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400">
+        <div className="notice-critical">
           {error}
         </div>
       )}
@@ -451,12 +455,12 @@ const HotelArtists: React.FC = () => {
       <div className="search-container">
         <div className="filters-row">
           <div className="md:col-span-2">
-            <label className="form-label">Rechercher des artistes</label>
+            <label className="form-label">{t('Rechercher des artistes')}</label>
             <div className="search-icon-container">
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Rechercher par nom, discipline ou ville…"
+                placeholder={t('Rechercher par nom, discipline ou ville…')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -474,7 +478,7 @@ const HotelArtists: React.FC = () => {
             >
               {disciplines.map(discipline => (
                 <option key={discipline} value={discipline}>
-                  {discipline === 'all' ? 'All Disciplines' : discipline}
+                  {discipline === 'all' ? 'Toutes les disciplines' : discipline}
                 </option>
               ))}
             </select>
@@ -489,7 +493,7 @@ const HotelArtists: React.FC = () => {
             >
               {locations.map(location => (
                 <option key={location} value={location}>
-                  {location === 'all' ? 'All Locations' : location}
+                  {location === 'all' ? 'Tous les lieux' : location}
                 </option>
               ))}
             </select>
@@ -498,42 +502,47 @@ const HotelArtists: React.FC = () => {
         
         <div className="flex items-center justify-between mt-6">
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-content-secondary">Sort by:</span>
+            <span className="text-sm text-content-secondary whitespace-nowrap">{t('Trier par')}</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="form-input w-40"
             >
               <option value="rating">Note</option>
-              <option value="bookings">Réservations</option>
+              <option value="bookings">{t('Réservations')}</option>
               <option value="name">Nom</option>
             </select>
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="text-sm text-gold hover:underline"
+              className="text-sm text-gold hover:underline whitespace-nowrap"
             >
-              {showAdvancedFilters ? 'Hide' : 'Show'} Advanced Filters
+              {showAdvancedFilters ? t('Masquer les filtres avancés') : t('Filtres avancés')}
             </button>
           </div>
           
           <div className="text-sm text-content-secondary">
-            {plural(sortedArtists.length, 'artiste')} trouvé{sortedArtists.length >= 2 ? 's' : ''}
+            {t(
+              sortedArtists.length >= 2
+                ? '{count} artistes trouvés'
+                : '{count} artiste trouvé',
+              { count: formatNumber(sortedArtists.length) }
+            )}
           </div>
         </div>
 
         {showAdvancedFilters && (
           <div className="advanced-filters">
             <div>
-              <label className="form-label">Loyalty Tier</label>
+              <label className="form-label">{t('Niveau de fidélité')}</label>
               <select
                 value={loyaltyTierFilter}
                 onChange={(e) => setLoyaltyTierFilter(e.target.value)}
                 className="form-input"
               >
-                <option value="all">Tous les niveaux</option>
-                <option value="high">Élevé (100 points et plus)</option>
-                <option value="medium">Intermédiaire (50 à 99 points)</option>
-                <option value="low">Débutant (moins de 50 points)</option>
+                <option value="all">{t('Tous les niveaux')}</option>
+                <option value="high">{t('Élevé (100 points et plus)')}</option>
+                <option value="medium">{t('Intermédiaire (50 à 99 points)')}</option>
+                <option value="low">{t('Débutant (moins de 50 points)')}</option>
               </select>
             </div>
             <div>
@@ -543,7 +552,7 @@ const HotelArtists: React.FC = () => {
                 onChange={(e) => setAvailabilityWindow(e.target.value)}
                 className="form-input"
               >
-                <option value="">Toutes les disponibilités</option>
+                <option value="">{t('Toutes les disponibilités')}</option>
                 <option value="available">Disponible maintenant</option>
                 <option value="pending">En attente</option>
               </select>
@@ -561,7 +570,7 @@ const HotelArtists: React.FC = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
-            className="card-luxury overflow-hidden"
+            className="panel p-6 overflow-hidden"
           >
             <div className="relative">
               <img decoding="async"
@@ -578,10 +587,10 @@ const HotelArtists: React.FC = () => {
                            toggleFavorite(artist.id)
                          }
                        }}
-                       aria-label={artist.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                       aria-label={artist.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                        className={`absolute top-4 right-4 p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 ${
                          artist.isFavorite
-                           ? 'bg-red-500 text-white'
+                           ? 'bg-gold text-[var(--text-on-gold)]'
                            : 'bg-surface-raised/80 text-content-secondary hover:bg-surface-raised'
                        }`}
                      >
@@ -619,7 +628,7 @@ const HotelArtists: React.FC = () => {
               )}
 
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-content mb-2">Spécialités :</h4>
+                <h4 className="text-sm font-medium text-content mb-2">{t('Spécialités :')}</h4>
                 <div className="flex flex-wrap gap-2">
                   {artist.specialties.length > 0 ? (
                     artist.specialties.map((specialty, specIndex) => (
@@ -638,46 +647,39 @@ const HotelArtists: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="text-center p-3 bg-surface rounded-card">
                   <div className="text-sm font-medium text-content mb-1">{artist.rank || 'Standard'}</div>
-                  <p className="text-xs text-content-secondary">Rang de l’artiste</p>
+                  <p className="text-xs text-content-secondary">Rang</p>
                 </div>
-                <div className="text-center p-3 bg-surface rounded-card">
-                  <div className="text-sm font-medium text-content mb-1">{artist.loyaltyPoints ?? 0}</div>
-                  <p className="text-xs text-content-secondary">Loyalty points</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="text-center p-3 bg-surface rounded-card">
                   <div className="flex items-center justify-center mb-1">
                     <Calendar className="w-4 h-4 text-gold mr-1" />
                     <span className="text-sm font-medium text-content">{artist.totalBookings}</span>
                   </div>
-                  <p className="text-xs text-content-secondary">Réservations</p>
+                  <p className="text-xs text-content-secondary">{t('Réservations')}</p>
                 </div>
                 <div className="text-center p-3 bg-surface rounded-card">
                   <div className="text-sm font-medium text-content mb-1">{artist.loyaltyPoints ?? 0}</div>
-                  <p className="text-xs text-content-secondary">Points de fidélité</p>
+                  <p className="text-xs text-content-secondary">Points</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between mb-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(artist.availability)}`}>
-                  {artist.availability}
+                <span className={availabilityClass(artist.availability)}>
+                  {availabilityLabel(artist.availability)}
                 </span>
                 <span className="text-xs text-content-secondary">
-                  Next: {artist.nextAvailable ? new Date(artist.nextAvailable).toLocaleDateString('fr-FR') : 'TBD'}
+                  Prochaine date : {artist.nextAvailable ? new Date(artist.nextAvailable).toLocaleDateString('fr-FR') : t('à définir')}
                 </span>
               </div>
 
               <div className="flex space-x-2">
                 <a className="flex-1 btn-primary" href={`/artist/${artist.id}`}>
-                  Voir le profil
+                  {t('Voir le profil')}
                 </a>
                 <button className="btn-secondary" onClick={() => openBooking(artist.id)} data-testid="book-button">
-                  Réserver
+                  {t('Réserver')}
                 </button>
               </div>
             </div>
@@ -689,10 +691,10 @@ const HotelArtists: React.FC = () => {
       {bookingModal.open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-surface-raised rounded-card shadow-soft p-6 w-full max-w-md">
-            <h3 className="text-xl font-serif font-semibold text-content mb-4">Demander une date</h3>
+            <h3 className="text-xl font-serif font-semibold text-content mb-4">{t('Demander une date')}</h3>
             <div className="space-y-3">
               <div>
-                <label className="form-label">Date de début</label>
+                <label className="form-label">{t('Date de début')}</label>
                 <input type="date" name="startDate" className="form-input w-full" value={bookingModal.start || ''} onChange={(e)=>setBookingModal(m=>({...m,start:e.target.value}))} />
               </div>
               <div>
@@ -701,9 +703,9 @@ const HotelArtists: React.FC = () => {
               </div>
               <div>
                 <label className="form-label">Notes (optional)</label>
-                <input type="text" name="notes" className="form-input w-full" placeholder="Demandes particulières ou remarques" onChange={(e)=>setBookingModal(m=>({...m,notes:e.target.value}))} />
+                <input type="text" name="notes" className="form-input w-full" placeholder={t('Demandes particulières ou remarques')} onChange={(e)=>setBookingModal(m=>({...m,notes:e.target.value}))} />
               </div>
-              {bookingError && <div className="text-sm text-red-600 dark:text-red-400">{bookingError}</div>}
+              {bookingError && <div className="text-sm text-[var(--state-critical)]">{bookingError}</div>}
               <div className="flex justify-end space-x-2 pt-2">
                 <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>Annuler</button>
                 <button className="btn-primary" disabled={processing} onClick={createBooking}>{processing? 'Sending…':'Send Request'}</button>
@@ -720,10 +722,10 @@ const HotelArtists: React.FC = () => {
             <Search className="w-12 h-12 text-content-secondary" />
           </div>
           <h3 className="text-xl font-serif font-semibold text-content mb-2">
-            Aucun artiste trouvé
+            {t('Aucun artiste trouvé')}
           </h3>
           <p className="text-content-secondary mb-6">
-            Essayez d’élargir votre recherche ou vos filtres
+            {t('Essayez d’élargir votre recherche ou vos filtres')}
           </p>
           <button
             onClick={() => {
@@ -733,7 +735,7 @@ const HotelArtists: React.FC = () => {
             }}
             className="btn-primary"
           >
-            Réinitialiser les filtres
+            {t('Réinitialiser les filtres')}
           </button>
         </div>
       )}

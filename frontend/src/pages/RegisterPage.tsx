@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { User, Building, ArrowRight } from 'lucide-react'
 import { ArtistRegistrationFlow, HotelRegistrationFlow } from '@/components/registration'
 import { getLogoUrl } from '@/config/assets'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
+import { t } from '@/i18n'
 
 const RegisterPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<'ARTIST' | 'HOTEL' | null>(null)
@@ -72,7 +73,7 @@ const RegisterPage: React.FC = () => {
               Rejoindre Travel Art
             </h1>
             <p className="text-lg md:text-xl text-content-secondary max-w-2xl mx-auto">
-              Choisissez votre rôle et commencez l’aventure
+              {t('Choisissez votre rôle et commencez l’aventure')}
             </p>
           </motion.div>
 
@@ -84,13 +85,14 @@ const RegisterPage: React.FC = () => {
             className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10"
           >
             {/* Artist Option */}
-            <motion.div
+            <motion.button
+              type="button"
               onHoverStart={() => setHoveredRole('ARTIST')}
               onHoverEnd={() => setHoveredRole(null)}
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedRole('ARTIST')}
-              className="group relative overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
+              className="group relative block w-full text-left overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
               <motion.div
@@ -119,11 +121,11 @@ const RegisterPage: React.FC = () => {
                   
                   <div>
                     <h3 className="text-3xl font-bold text-content mb-3 group-hover:text-gold transition-colors duration-300">
-                      Artiste
+                      {t('Artiste')}
                     </h3>
-                    <p className="text-lg text-content-secondary mb-4">Jouer et créer</p>
+                    <p className="text-lg text-content-secondary mb-4">{t('Jouer et créer')}</p>
                     <p className="text-sm text-content-secondary leading-relaxed">
-                      Un formulaire en 3 étapes pour présenter votre profil, vos catégories et vos spécialités
+                      {t('Un formulaire en 3 étapes pour présenter votre profil, vos catégories et vos spécialités')}
                     </p>
                   </div>
 
@@ -140,16 +142,17 @@ const RegisterPage: React.FC = () => {
                   </motion.div>
                 </div>
               </div>
-            </motion.div>
+            </motion.button>
 
             {/* Hotel Option */}
-            <motion.div
+            <motion.button
+              type="button"
               onHoverStart={() => setHoveredRole('HOTEL')}
               onHoverEnd={() => setHoveredRole(null)}
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedRole('HOTEL')}
-              className="group relative overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
+              className="group relative block w-full text-left overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
               <motion.div
@@ -178,11 +181,11 @@ const RegisterPage: React.FC = () => {
                   
                   <div>
                     <h3 className="text-3xl font-bold text-content mb-3 group-hover:text-gold transition-colors duration-300">
-                      Hôtel
+                      {t('Hôtel')}
                     </h3>
-                    <p className="text-lg text-content-secondary mb-4">Accueillir et programmer</p>
+                    <p className="text-lg text-content-secondary mb-4">{t('Accueillir et programmer')}</p>
                     <p className="text-sm text-content-secondary leading-relaxed">
-                      Un formulaire en 7 étapes couvrant l’ambiance, l’équipement, les conditions de collaboration et la logistique
+                      {t('Un formulaire en 7 étapes couvrant l’ambiance, l’équipement, les conditions de collaboration et la logistique')}
                     </p>
                   </div>
 
@@ -199,7 +202,7 @@ const RegisterPage: React.FC = () => {
                   </motion.div>
                 </div>
               </div>
-            </motion.div>
+            </motion.button>
           </motion.div>
 
           {/* Additional Info */}

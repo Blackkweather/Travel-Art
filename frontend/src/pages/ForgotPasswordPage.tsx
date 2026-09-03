@@ -7,6 +7,7 @@ import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
 import { authApi } from '@/utils/api'
+import { t } from '@/i18n'
 
 interface ForgotPasswordForm {
   email: string
@@ -32,7 +33,7 @@ const ForgotPasswordPage: React.FC = () => {
       if (import.meta.env.DEV) {
         const responseData = response.data?.data as any
         if (responseData?.dev?.resetLink) {
-          toast.success('Lien de réinitialisation généré.', {
+          toast.success(t('Lien de réinitialisation généré.'), {
             duration: 10000
           })
           console.log('🔐 Password Reset Link (Dev Mode):')
@@ -41,15 +42,15 @@ const ForgotPasswordPage: React.FC = () => {
           console.log(`Token: ${responseData.dev.token}`)
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
         } else {
-          toast.success('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.')
+          toast.success(t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.'))
         }
       } else {
-        toast.success('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.')
+        toast.success(t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.'))
       }
     } catch {
       // Don't reveal if email exists - always show success for security
       setEmailSent(true)
-      toast.success('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.')
+      toast.success(t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.'))
     } finally {
       setIsLoading(false)
     }
@@ -87,7 +88,7 @@ const ForgotPasswordPage: React.FC = () => {
               </div>
             </div>
             <h2 className="text-3xl font-serif font-bold text-content gold-underline">
-              Mot de passe oublié ?
+              {t('Mot de passe oublié ?')}
             </h2>
             <p className="mt-2 text-content-secondary">
               {emailSent 
@@ -99,16 +100,16 @@ const ForgotPasswordPage: React.FC = () => {
 
           {emailSent ? (
             <div className="text-center space-y-4">
-              <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-card p-4">
-                <p className="text-green-800 dark:text-green-400 text-sm">
-                  Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation sous peu.
+              <div className="bg-[var(--state-positive-wash)] border border-[var(--state-positive-line)] rounded-card p-4">
+                <p className="text-[var(--state-positive)] text-sm">
+                  {t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation sous peu.')}
                 </p>
               </div>
               <Link
                 to="/login"
                 className="block text-center text-gold hover:text-gold/80 font-medium"
               >
-                Retour à la connexion
+                {t('Retour à la connexion')}
               </Link>
             </div>
           ) : (
@@ -127,10 +128,10 @@ const ForgotPasswordPage: React.FC = () => {
                   })}
                   type="email"
                   className="form-input"
-                  placeholder="Saisissez votre e-mail"
+                  placeholder={t('Saisissez votre e-mail')}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+                  <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.email.message}</p>
                 )}
               </div>
 
@@ -146,7 +147,7 @@ const ForgotPasswordPage: React.FC = () => {
 
               <div className="text-center">
                 <Link to="/login" className="text-gold hover:text-gold-600 font-medium text-sm">
-                  Retour à la connexion
+                  {t('Retour à la connexion')}
                 </Link>
               </div>
             </form>

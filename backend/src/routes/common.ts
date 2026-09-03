@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 
@@ -147,9 +147,19 @@ router.post('/referrals', authenticate, asyncHandler(async (req: AuthRequest, re
 router.get('/top', asyncHandler(async (req, res) => {
   const { type } = req.query;
 
+  // Callers may ask for more than the default ten; 50 is the ceiling so this
+  // endpoint can never be made to serialise the entire table.
+  const requested = parseInt(req.query.limit as string, 10);
+  const limit = Number.isFinite(requested)
+    ? Math.min(Math.max(requested, 1), 50)
+    : 10;
+
   if (type === 'artists') {
-    // Get top artists - prioritize those with bookings, but also include artists with images
-    const allArtists = await prisma.artist.findMany({
+    // Ranking is a platform-wide question - "who is most booked" cannot be
+    // answered from one tenant's slice - so the booking counts behind the sort
+    // come from the privileged client. Only the ordering leaves this function;
+    // no booking row is ever returned to the caller.
+    const allArtists = await prismaAdmin.artist.findMany({
       include: {
         user: {
           select: {
@@ -198,7 +208,7 @@ router.get('/top', asyncHandler(async (req, res) => {
       return (b.bookings?.length || 0) - (a.bookings?.length || 0);
     });
 
-    const topArtists = sortedArtists.slice(0, 10);
+    const topArtists = sortedArtists.slice(0, limit);
 
     // Fetch all ratings for top artists in a single query (more efficient)
     const artistIds = topArtists.map(a => a.id);
@@ -223,11 +233,11 @@ router.get('/top', asyncHandler(async (req, res) => {
       if (ratings.length > 0) {
         const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
         if (avgRating >= 4.5) {
-          ratingBadge = 'Top 10% Performer';
+          ratingBadge = 'Top 10 % des artistes';
         } else if (avgRating >= 4.0) {
-          ratingBadge = 'Excellent Performer';
+          ratingBadge = 'Artiste confirmé';
         } else if (avgRating >= 3.5) {
-          ratingBadge = 'Good Performer';
+          ratingBadge = 'Artiste recommandé';
         }
       }
 
@@ -255,7 +265,7 @@ router.get('/top', asyncHandler(async (req, res) => {
   } else if (type === 'hotels') {
     // Get top hotels by booking count
     const topHotels = await prisma.hotel.findMany({
-      take: 10,
+      take: limit,
       include: {
         user: {
           select: {
@@ -327,9 +337,12 @@ router.get('/stats', asyncHandler(async (req, res) => {
   ] = await Promise.all([
     prisma.artist.count(),
     prisma.hotel.count(),
-    prisma.booking.count(),
-    prisma.booking.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } }),
-    prisma.booking.count({ where: { status: 'COMPLETED' } }),
+    // Platform totals, not tenant data. An anonymous caller has no RLS identity,
+    // so the request-scoped client would count only rows it can see - none - and
+    // report 0 bookings on a table holding 12. These return counts, never rows.
+    prismaAdmin.booking.count(),
+    prismaAdmin.booking.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } }),
+    prismaAdmin.booking.count({ where: { status: 'COMPLETED' } }),
     prisma.hotel.findMany({
       select: {
         performanceSpots: true

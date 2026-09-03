@@ -47,10 +47,13 @@ const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
 const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
 const AdminAnalytics = lazy(() => import('@/pages/admin/AdminAnalytics'))
 const AdminModeration = lazy(() => import('@/pages/admin/AdminModeration'))
+const AdminAdmissions = lazy(() => import('@/pages/admin/AdminAdmissions'))
 const AdminReferrals = lazy(() => import('@/pages/admin/AdminReferrals'))
 const AdminLogs = lazy(() => import('@/pages/admin/AdminLogs'))
 const TravelerExperiencesPage = lazy(() => import('@/pages/TravelerExperiencesPage'))
 const ExperienceDetailsPage = lazy(() => import('@/pages/ExperienceDetailsPage'))
+const RegistrationSentPage = lazy(() => import('@/pages/RegistrationSentPage'))
+const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'))
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
@@ -147,6 +150,8 @@ function App() {
       <Route path="/experience/:id" element={<PageTransition><ExperienceDetailsPage /></PageTransition>} />
       <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
       <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+      <Route path="/inscription-envoyee" element={<PageTransition><RegistrationSentPage /></PageTransition>} />
+      <Route path="/verify-email" element={<PageTransition><VerifyEmailPage /></PageTransition>} />
       <Route path="/ref/:code" element={<PageTransition><ReferralRedirectPage /></PageTransition>} />
       <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
       <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
@@ -214,6 +219,14 @@ function App() {
               <AdminModeration />
             </RoleRoute>
           } 
+        />
+        <Route
+          path="admissions"
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminAdmissions />
+            </RoleRoute>
+          }
         />
         <Route 
           path="referrals"

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
 
 /**
  * Copy is the original page content, unchanged. Only the presentation moved:
@@ -11,63 +13,63 @@ import Footer from '../components/Footer'
  */
 const STEPS = [
   {
-    title: 'Rejoindre, comme artiste ou comme hôtel',
-    lede: "Créez votre profil et présentez votre travail ou votre lieu. Les artistes déposent leur portfolio, indiquent leurs disponibilités et précisent leur discipline. Les hôtels décrivent leurs espaces de représentation et leurs conditions d’accueil.",
+    title: t('Rejoindre, comme artiste ou comme hôtel'),
+    lede: t('Créez votre profil et présentez votre travail ou votre lieu. Les artistes déposent leur portfolio, indiquent leurs disponibilités et précisent leur discipline. Les hôtels décrivent leurs espaces de représentation et leurs conditions d’accueil.'),
     points: [
-      'Artistes : photos et vidéos de vos performances',
-      'Hôtels : toits-terrasses, salons et lieux intimistes',
-      'Renseignez votre calendrier de disponibilités',
-      'Précisez votre discipline artistique',
+      t('Artistes : photos et vidéos de vos performances'),
+      t('Hôtels : toits-terrasses, salons et lieux intimistes'),
+      t('Renseignez votre calendrier de disponibilités'),
+      t('Précisez votre discipline artistique'),
     ],
   },
   {
-    title: 'Trouver la bonne rencontre',
-    lede: "Notre système de mise en relation rapproche artistes et hôtels selon le lieu, les dates, l’esthétique et les contraintes de la salle. Parcourez les profils et choisissez la collaboration qui vous ressemble.",
+    title: t('Trouver la bonne rencontre'),
+    lede: t('Notre système de mise en relation rapproche artistes et hôtels selon le lieu, les dates, l’esthétique et les contraintes de la salle. Parcourez les profils et choisissez la collaboration qui vous ressemble.'),
     points: [
-      'Mise en relation par affinités',
-      'Filtres par ville, date et style',
-      'Profils et portfolios détaillés',
-      'Avis et évaluations vérifiés',
+      t('Mise en relation par affinités'),
+      t('Filtres par ville, date et style'),
+      t('Profils et portfolios détaillés'),
+      t('Avis et évaluations vérifiés'),
     ],
   },
   {
-    title: 'Réserver la résidence',
-    lede: "Les hôtels invitent les artistes pour un concert sur les toits, un set intimiste ou un événement particulier. Les artistes reçoivent l’hébergement et une scène dans un cadre d’exception.",
+    title: t('Réserver la résidence'),
+    lede: t('Les hôtels invitent les artistes pour un concert sur les toits, un set intimiste ou un événement particulier. Les artistes reçoivent l’hébergement et une scène dans un cadre d’exception.'),
     points: [
-      'Demande de dates en quelques clics',
-      'Adhésion annuelle pour les artistes',
-      'Réservation sécurisée',
-      'Conditions d’annulation souples',
+      t('Demande de dates en quelques clics'),
+      t('Adhésion annuelle pour les artistes'),
+      t('Réservation sécurisée'),
+      t('Conditions d’annulation souples'),
     ],
   },
   {
-    title: 'Créer ensemble',
-    lede: "Les artistes jouent sur des toits-terrasses, dans des salons feutrés et des espaces hôteliers d’exception. Les hôtels offrent l’hébergement et des moments dont leurs clients se souviennent.",
+    title: t('Créer ensemble'),
+    lede: t('Les artistes jouent sur des toits-terrasses, dans des salons feutrés et des espaces hôteliers d’exception. Les hôtels offrent l’hébergement et des moments dont leurs clients se souviennent.'),
     points: [
-      'Concerts sur les toits, face à la ville',
-      'Sets acoustiques dans des salons intimistes',
-      'Formations jazz en salle de bal',
-      'DJ sets au coucher du soleil',
+      t('Concerts sur les toits, face à la ville'),
+      t('Sets acoustiques dans des salons intimistes'),
+      t('Formations jazz en salle de bal'),
+      t('DJ sets au coucher du soleil'),
     ],
   },
   {
-    title: 'Évaluer et commenter',
-    lede: "Après chaque représentation, l’hôtel évalue l’artiste sur la qualité de la prestation, le professionnalisme et l’accueil reçu par ses clients. L’artiste reçoit ses distinctions et les retours reçus.",
+    title: t('Évaluer et commenter'),
+    lede: t('Après chaque représentation, l’hôtel évalue l’artiste sur la qualité de la prestation, le professionnalisme et l’accueil reçu par ses clients. L’artiste reçoit ses distinctions et les retours reçus.'),
     points: [
-      'Notation de 1 à 5 étoiles par les hôtels',
-      'Distinctions visibles sur le profil artiste',
-      'Retours détaillés après chaque date',
-      'Une réputation qui se construit dans la durée',
+      t('Notation de 1 à 5 étoiles par les hôtels'),
+      t('Distinctions visibles sur le profil artiste'),
+      t('Retours détaillés après chaque date'),
+      t('Une réputation qui se construit dans la durée'),
     ],
   },
   {
-    title: 'Grandir et rayonner',
-    lede: "Les artistes accumulent des nuits d’hébergement et étoffent leur portfolio. Les hôtels enrichissent l’expérience de leurs clients. Les deux élargissent leur réseau.",
+    title: t('Grandir et rayonner'),
+    lede: t('Les artistes accumulent des nuits d’hébergement et étoffent leur portfolio. Les hôtels enrichissent l’expérience de leurs clients. Les deux élargissent leur réseau.'),
     points: [
-      'Artistes : hébergement offert pendant la résidence',
-      'Hôtels : une expérience client singulière',
-      'Programme de parrainage',
-      'Points de fidélité',
+      t('Artistes : hébergement offert pendant la résidence'),
+      t('Hôtels : une expérience client singulière'),
+      t('Programme de parrainage'),
+      t('Points de fidélité'),
     ],
   },
 ]
@@ -77,6 +79,10 @@ const HowItWorksPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={t('Le principe du programme — Travel Art')}
+        description={t('Comment fonctionne une résidence Travel Art : candidature, sélection, séjour tout compris et représentation.')}
+      />
       <SimpleNavbar overMedia />
 
       {/* Asymmetric hero. The headline sits in the grid rather than centred
@@ -84,7 +90,12 @@ const HowItWorksPage: React.FC = () => {
       <section className="relative min-h-[78dvh] flex items-end overflow-hidden">
         <div className="absolute inset-0">
           <img decoding="async"
-            src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=2070&q=70&fit=crop&auto=format"
+            src="/images/headers/how-it-works.webp"
+            srcSet="/images/headers/how-it-works-960.webp 960w, /images/headers/how-it-works-1440.webp 1440w, /images/headers/how-it-works.webp 1920w"
+            sizes="100vw"
+            width={1920}
+            height={1097}
+            fetchPriority="high"
             alt=""
             aria-hidden="true"
             className="w-full h-full object-cover"
@@ -102,7 +113,7 @@ const HowItWorksPage: React.FC = () => {
             transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-7 font-serif text-content text-5xl md:text-6xl lg:text-7xl leading-[1.03]"
           >
-            Le principe
+            {t('Le principe')}
             <span className="block text-gold italic leading-[1.1] pb-1">Travel Art</span>
           </motion.h1>
 
@@ -112,9 +123,7 @@ const HowItWorksPage: React.FC = () => {
             transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-4 lg:col-start-9 text-content-secondary leading-relaxed"
           >
-            Réunir les hôtels d’exception et les artistes, pour des concerts sur
-            les toits et des moments plus intimes. Du saxophone jazz sur une
-            terrasse parisienne au DJ set au coucher du soleil à Ibiza.
+            {t('Réunir les hôtels d’exception et les artistes, pour des concerts sur les toits et des moments plus intimes. Du saxophone jazz sur une terrasse parisienne au DJ set au coucher du soleil à Ibiza.')}
           </motion.p>
         </div>
       </section>
@@ -128,11 +137,10 @@ const HowItWorksPage: React.FC = () => {
                 Pourquoi Travel Art ?
               </h2>
               <p className="mt-5 text-content-secondary leading-relaxed max-w-[34ch]">
-                La rencontre juste entre l’hôtellerie d’exception et l’exigence
-                artistique.
+                {t('La rencontre juste entre l’hôtellerie d’exception et l’exigence artistique.')}
               </p>
               <Link to="/register" className="btn-gold mt-10">
-                Nous rejoindre
+                {t('Nous rejoindre')}
               </Link>
             </div>
           </div>
@@ -169,18 +177,17 @@ const HowItWorksPage: React.FC = () => {
       <section className="shell">
         <div className="border-t border-line py-24 md:py-32 text-center">
           <h2 className="font-serif text-content text-4xl md:text-6xl leading-[1.05]">
-            Prêt à créer ?
+            {t('Prêt à créer ?')}
           </h2>
           <p className="mt-6 text-content-secondary max-w-[52ch] mx-auto leading-relaxed">
-            Rejoignez Travel Art et commencez à faire dialoguer hôtels
-            d’exception et artistes.
+            {t('Rejoignez Travel Art et commencez à faire dialoguer hôtels d’exception et artistes.')}
           </p>
           <div className="mt-12 flex flex-wrap gap-4 justify-center">
             <Link to="/register" className="btn-gold">
               Je suis artiste
             </Link>
             <Link to="/register" className="btn-on-media">
-              Je suis hôtelier
+              {t('Je suis hôtelier')}
             </Link>
           </div>
         </div>

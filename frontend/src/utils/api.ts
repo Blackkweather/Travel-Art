@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/store/authStore'
 import { ApiResponse, LoginCredentials, RegisterData, User } from '@/types'
 
@@ -60,12 +60,25 @@ class ApiClient {
     )
   }
 
-  async get<T = any>(url: string, params?: any): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.get(url, { params })
+  /**
+   * `config` exists for the few calls that legitimately take longer than the
+   * default ten seconds - the admin aggregates, which read several hundred
+   * rows from a serverless database and were timing out on a cold connection.
+   */
+  async get<T = any>(
+    url: string,
+    params?: any,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<ApiResponse<T>>> {
+    return this.client.get(url, { params, ...config })
   }
 
-  async post<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.post(url, data)
+  async post<T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<ApiResponse<T>>> {
+    return this.client.post(url, data, config)
   }
 
   async put<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
@@ -89,7 +102,9 @@ export const authApi = {
     apiClient.post<{ user: User; token: string }>('/auth/login', credentials),
   
   register: (data: RegisterData) =>
-    apiClient.post<{ user: User; token: string }>('/auth/register', data),
+    apiClient.post<{ user: User; token: string }>('/auth/register', data, {
+      timeout: 45000,
+    }),
   
   refresh: () =>
     apiClient.post<{ token: string }>('/auth/refresh'),
@@ -174,11 +189,11 @@ export const hotelsApi = {
 
 // Admin API
 export const adminApi = {
-  getDashboard: () =>
-    apiClient.get('/admin/dashboard'),
+  getDashboard: (config?: any) =>
+    apiClient.get('/admin/dashboard', undefined, config),
   
-  getUsers: (params?: any) =>
-    apiClient.get('/admin/users', params),
+  getUsers: (params?: any, config?: any) =>
+    apiClient.get('/admin/users', params, config),
   
   suspendUser: (id: string, data: any) =>
     apiClient.post(`/admin/users/${id}/suspend`, data),
@@ -186,8 +201,8 @@ export const adminApi = {
   activateUser: (id: string) =>
     apiClient.post(`/admin/users/${id}/activate`),
   
-  getBookings: (params?: any) =>
-    apiClient.get('/admin/bookings', params),
+  getBookings: (params?: any, config?: any) =>
+    apiClient.get('/admin/bookings', params, config),
   
   getLogs: (params?: any) =>
     apiClient.get('/admin/logs', params),
@@ -225,8 +240,10 @@ export const commonApi = {
   getTopArtists: (params?: any) =>
     apiClient.get('/top?type=artists', params),
   
+  // 40 rather than the endpoint's default of 10: the resort network is 35
+  // properties and this page exists to show them.
   getTopHotels: (params?: any) =>
-    apiClient.get('/top?type=hotels', params),
+    apiClient.get('/top?type=hotels&limit=40', params),
   
   getStats: () =>
     apiClient.get('/stats'),
@@ -274,5 +291,6 @@ export const paymentsApi = {
   // offered 'ENTERPRISE', which the schema has never had.
   membership: (artistId: string, membershipType: 'ARTIST' | 'PROFESSIONAL', paymentMethod: string) =>
     apiClient.post('/payments/membership', { artistId, membershipType, paymentMethod }),
-  transactions: (params?: any) => apiClient.get('/payments/transactions', params),
+  transactions: (params?: any, config?: any) =>
+    apiClient.get('/payments/transactions', params, config),
 }

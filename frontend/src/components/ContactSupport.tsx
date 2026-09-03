@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Mail, MessageCircle, Send, Phone, HelpCircle, CheckCircle2, Sparkles } from 'lucide-react'
+import { Mail, MessageCircle, Send, HelpCircle, CheckCircle2, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { t } from '@/i18n'
 
 interface ContactSupportProps {
   userRole?: string
@@ -20,10 +21,10 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('')
 
   const quickCategories = [
-    { value: 'booking', label: 'Problème de réservation' },
-    { value: 'payment', label: 'Question de facturation' },
-    { value: 'profile', label: 'Aide sur le profil' },
-    { value: 'technical', label: 'Problème technique' },
+    { value: 'booking', label: t('Problème de réservation') },
+    { value: 'payment', label: t('Question de facturation') },
+    { value: 'profile', label: t('Aide sur le profil') },
+    { value: 'technical', label: t('Problème technique') },
     { value: 'other', label: 'Autre' }
   ]
 
@@ -39,12 +40,12 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
     e.preventDefault()
     
     if (!subject.trim() || !message.trim()) {
-      toast.error('Renseignez l’objet et le message')
+      toast.error(t('Renseignez l’objet et le message'))
       return
     }
 
     if (message.trim().length < 10) {
-      toast.error('Détaillez un peu plus votre message (10 caractères minimum)')
+      toast.error(t('Détaillez un peu plus votre message (10 caractères minimum)'))
       return
     }
 
@@ -71,7 +72,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
       // Open email client
       window.location.href = `mailto:${supportEmail}?subject=${emailSubject}&body=${emailBody}`
       
-      toast.success('Ouverture de votre messagerie…')
+      toast.success(t('Ouverture de votre messagerie…'))
       setIsSuccess(true)
       
       // Reset form after a delay
@@ -84,20 +85,20 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
       }, 3000)
     } catch (error) {
       console.error('Error sending message:', error)
-      toast.error('Impossible d’ouvrir votre messagerie. Écrivez-nous directement à hello@travelart.com')
+      toast.error(t('Impossible d’ouvrir votre messagerie. Écrivez-nous directement à hello@travelart.com'))
       setIsSubmitting(false)
     }
   }
 
   if (isSuccess) {
     return (
-      <div className="card-luxury fade-in-up-delay-3">
+      <div className="panel p-6 fade-in-up-delay-3">
         <div className="text-center py-8">
           <div className="w-20 h-20 bg-gradient-to-br from-gold to-gold/80 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
             <CheckCircle2 className="w-10 h-10 text-content" />
           </div>
           <h3 className="text-2xl font-serif font-bold text-content mb-3">
-            Message prêt
+            {t('Message prêt')}
           </h3>
           <p className="text-content-secondary mb-6">
             Votre messagerie devrait s’ouvrir dans un instant. Si ce n’est pas le cas, écrivez-nous directement à{' '}
@@ -107,7 +108,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           </p>
           <div className="flex items-center justify-center gap-2 text-sm text-content-secondary">
             <Sparkles className="w-4 h-4 text-gold" />
-            <span>Nous répondons généralement sous 24 heures</span>
+            <span>{t('Nous répondons généralement sous 24 heures')}</span>
           </div>
         </div>
       </div>
@@ -115,7 +116,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
   }
 
   return (
-    <div className="card-luxury fade-in-up-delay-3 relative overflow-hidden">
+    <div className="panel p-6 fade-in-up-delay-3 relative overflow-hidden">
       {/* Decorative gradient overlay */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-gold/5 to-transparent rounded-full blur-3xl -z-0"></div>
       
@@ -127,10 +128,10 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           </div>
           <div className="flex-1">
             <h2 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-              Contacter l’assistance
+              {t('Contacter l’assistance')}
             </h2>
             <p className="text-content-secondary leading-relaxed">
-              Une question, un besoin d’accompagnement ? Notre équipe est à votre disposition.
+              {t('Une question, un besoin d’accompagnement ? Notre équipe est à votre disposition.')}
             </p>
           </div>
         </div>
@@ -158,10 +159,10 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               href="https://wa.me/212764998286"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 bg-surface-raised rounded-card border border-line hover:border-green-500 hover:shadow-md transition-all group"
+              className="flex items-center gap-3 p-4 bg-surface-raised rounded-card border border-line hover:border-[var(--state-positive)] hover:shadow-md transition-all group"
             >
-              <div className="w-10 h-10 bg-green-50 dark:bg-green-500/10 rounded-card flex items-center justify-center group-hover:bg-green-500 transition-colors">
-                <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400 group-hover:text-content" />
+              <div className="w-10 h-10 bg-[var(--state-positive-wash)] rounded-card flex items-center justify-center group-hover:bg-[var(--state-positive)] transition-colors">
+                <MessageCircle className="w-5 h-5 text-[var(--state-positive)] group-hover:text-content" />
               </div>
               <div>
                 <p className="font-semibold text-content text-sm">WhatsApp</p>
@@ -176,7 +177,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           {/* Quick Categories */}
           <div>
             <label className="block text-sm font-semibold text-content mb-3">
-              Comment pouvons-nous vous aider ?
+              {t('Comment pouvons-nous vous aider ?')}
             </label>
             <div className="flex flex-wrap gap-2">
               {quickCategories.map((category) => (
@@ -199,15 +200,15 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           {/* Subject */}
           <div>
             <label htmlFor="subject" className="block text-sm font-semibold text-content mb-2">
-              Objet <span className="text-red-500">*</span>
+              Objet <span className="text-[var(--state-critical)]">*</span>
             </label>
             <input
               type="text"
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="En quelques mots, l’objet de votre demande…"
-              className="w-full px-4 py-3.5 border border-line rounded-card focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all bg-surface-raised text-content placeholder-gray-400"
+              placeholder={t('En quelques mots, l’objet de votre demande…')}
+              className="w-full px-4 py-3.5 border border-line rounded-card focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all bg-surface-raised text-content placeholder:text-content-secondary"
               required
             />
           </div>
@@ -216,9 +217,9 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <label htmlFor="message" className="block text-sm font-semibold text-content">
-                Message <span className="text-red-500">*</span>
+                Message <span className="text-[var(--state-critical)]">*</span>
               </label>
-              <span className={`text-xs ${message.length < 10 ? 'text-red-500' : 'text-content-secondary'}`}>
+              <span className={`text-xs ${message.length < 10 ? 'text-[var(--state-critical)]' : 'text-content-secondary'}`}>
                 {message.length} / 500 {message.length < 10 && '(min 10 characters)'}
               </span>
             </div>
@@ -230,9 +231,9 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
                   setMessage(e.target.value)
                 }
               }}
-              placeholder="Décrivez votre demande aussi précisément que possible…"
+              placeholder={t('Décrivez votre demande aussi précisément que possible…')}
               rows={6}
-              className="w-full px-4 py-3.5 border border-line rounded-card focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all resize-none bg-surface-raised text-content placeholder-gray-400"
+              className="w-full px-4 py-3.5 border border-line rounded-card focus:outline-none focus:ring-2 focus:ring-gold focus:border-gold transition-all resize-none bg-surface-raised text-content placeholder:text-content-secondary"
               required
               maxLength={500}
             />
@@ -248,12 +249,12 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               {isSubmitting ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Préparation…</span>
+                  <span>{t('Préparation…')}</span>
                 </>
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  <span>Envoyer le message</span>
+                  <span>{t('Envoyer le message')}</span>
                 </>
               )}
             </button>
@@ -274,8 +275,8 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
                 <Sparkles className="w-3 h-3 text-gold" />
               </div>
               <div>
-                <p className="font-medium text-content mb-1">Délai de réponse</p>
-                <p>Nous répondons généralement sous 24 heures ouvrées. Pour une urgence, privilégiez WhatsApp ou le téléphone.</p>
+                <p className="font-medium text-content mb-1">{t('Délai de réponse')}</p>
+                <p>{t('Nous répondons généralement sous 24 heures ouvrées. Pour une urgence, privilégiez WhatsApp ou le téléphone.')}</p>
               </div>
             </div>
           </div>

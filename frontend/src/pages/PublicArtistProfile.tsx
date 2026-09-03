@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Star, MapPin, Calendar, Music, ArrowLeft, MessageCircle, Heart, UserPlus, User } from 'lucide-react'
+import { Star, MapPin, Calendar, Music, ArrowLeft, MessageCircle, Heart, User } from 'lucide-react'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
-import { artistsApi } from '@/utils/api'
+import { artistsApi, hotelsApi } from '@/utils/api'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
 
 const PublicArtistProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -15,6 +17,46 @@ const PublicArtistProfile: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [artist, setArtist] = useState<any>(null)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [savingFavorite, setSavingFavorite] = useState(false)
+  const hotelId = user?.role === 'HOTEL' ? user.hotel?.id : undefined
+
+  // Reflect what the shortlist actually holds, rather than starting at "not
+  // saved" every time the page loads.
+  useEffect(() => {
+    if (!hotelId || !id) return
+    let cancelled = false
+    hotelsApi
+      .getFavorites(hotelId)
+      .then((res) => {
+        const rows = Array.isArray(res.data?.data) ? res.data.data : []
+        if (!cancelled) setIsFavorite(rows.some((f: any) => f?.artistId === id))
+      })
+      .catch(() => {
+        /* Leaving the button in its default state is the honest fallback. */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [hotelId, id])
+
+  const toggleFavorite = async () => {
+    if (!hotelId || !id) return
+    const next = !isFavorite
+    setSavingFavorite(true)
+    try {
+      if (next) {
+        await hotelsApi.addFavorite(hotelId, id)
+      } else {
+        await hotelsApi.removeFavorite(hotelId, id)
+      }
+      setIsFavorite(next)
+      toast.success(next ? t('Ajouté à votre sélection') : t('Retiré de votre sélection'))
+    } catch {
+      toast.error(t('La sélection n’a pas pu être mise à jour'))
+    } finally {
+      setSavingFavorite(false)
+    }
+  }
 
   useEffect(() => {
     if (id) {
@@ -30,9 +72,9 @@ const PublicArtistProfile: React.FC = () => {
     } catch (error: any) {
       console.error('Error fetching artist profile:', error)
       if (error.response?.status === 404) {
-        toast.error('Profil d’artiste introuvable')
+        toast.error(t('Profil d’artiste introuvable'))
       } else {
-        toast.error('Impossible de charger le profil de l’artiste')
+        toast.error(t('Impossible de charger le profil de l’artiste'))
       }
     } finally {
       setLoading(false)
@@ -46,7 +88,7 @@ const PublicArtistProfile: React.FC = () => {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-            <p className="text-content-secondary">Chargement du profil de l’artiste…</p>
+            <p className="text-content-secondary">{t('Chargement du profil de l’artiste…')}</p>
           </div>
         </div>
         <Footer />
@@ -61,9 +103,9 @@ const PublicArtistProfile: React.FC = () => {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <h2 className="text-2xl font-serif font-bold text-content mb-4">Artiste introuvable</h2>
-            <p className="text-content-secondary mb-6">Le profil d’artiste demandé n’existe pas.</p>
+            <p className="text-content-secondary mb-6">{t('Le profil d’artiste demandé n’existe pas.')}</p>
             <Link to="/top-artists" className="btn-primary">
-              Parcourir les artistes
+              {t('Parcourir les artistes')}
             </Link>
           </div>
         </div>
@@ -110,6 +152,18 @@ const PublicArtistProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[var(--surface)]" data-testid="artist-profile">
+      <SEOHead
+        title={
+          artist
+            ? `${artist.stageName || artist.user?.name} — Travel Art`
+            : 'Artiste — Travel Art'
+        }
+        description={
+          artist
+            ? `${artist.stageName || artist.user?.name}, ${artist.discipline ?? 'artiste'} en résidence avec Travel Art.`
+            : t('Un artiste en résidence avec Travel Art.')
+        }
+      />
       <SimpleNavbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
@@ -119,14 +173,14 @@ const PublicArtistProfile: React.FC = () => {
           className="inline-flex items-center text-content hover:text-gold mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour aux artistes
+          {t('Retour aux artistes')}
         </Link>
 
         {/* Artist Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="card-luxury mb-8"
+          className="panel p-6 mb-8"
         >
           <div className="flex flex-col md:flex-row gap-8">
             {/* Profile Image */}
@@ -135,7 +189,7 @@ const PublicArtistProfile: React.FC = () => {
                 {images[0] ? (
                   <img decoding="async" loading="lazy"
                     src={images[0]}
-                    alt={artist.user?.name || 'Artist'}
+                    alt=""
                     className="w-full h-full rounded-control object-cover bg-surface-sunken ring-2 ring-gold/20"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
@@ -157,7 +211,7 @@ const PublicArtistProfile: React.FC = () => {
             {/* Artist Info */}
             <div className="flex-1">
               <h1 className="text-3xl md:text-4xl font-serif font-bold text-content mb-2">
-                {artist.stageName || artist.user?.name || 'Artist'}
+                {artist.stageName || artist.user?.name || 'Artiste'}
               </h1>
               {artist.stageName && artist.user?.name && (
                 <p className="text-sm text-content-secondary mb-2">({artist.user.name})</p>
@@ -188,7 +242,7 @@ const PublicArtistProfile: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-control ${artist.membershipStatus === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                  <div className={`w-2 h-2 rounded-control ${artist.membershipStatus === 'ACTIVE' ? 'bg-[var(--state-positive)]' : 'bg-[var(--border-strong)]'}`}></div>
                   <span className="text-sm font-medium text-content">
                     {artist.membershipStatus === 'ACTIVE' ? 'Active' : 'Inactive'}
                   </span>
@@ -202,27 +256,27 @@ const PublicArtistProfile: React.FC = () => {
             <div className="mt-8 pt-6 border-t border-line flex gap-3">
               <button
                 onClick={() => {
-                  toast.success('Demande de contact envoyée à l’artiste')
+                  toast.success(t('Demande de contact envoyée à l’artiste'))
                 }}
                 className="flex-1 bg-navy hover:bg-navy/90 text-white px-6 py-3 rounded-card font-medium transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <MessageCircle className="w-5 h-5" />
-                Contacter l’artiste
+                {t('Contacter l’artiste')}
               </button>
-              <button
-                onClick={() => {
-                  setIsFavorite(!isFavorite)
-                  toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites!')
-                }}
-                className={`px-6 py-3 rounded-card font-medium border-2 transition-all duration-200 flex items-center justify-center gap-2 ${
-                  isFavorite 
-                    ? 'bg-gold/10 border-gold text-gold' 
-                    : 'bg-[var(--surface-raised)] border-line text-content-secondary hover:border-gold hover:text-gold'
-                }`}
-              >
-                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                {isFavorite ? 'Saved' : 'Save'}
-              </button>
+              {hotelId && (
+                <button
+                  onClick={toggleFavorite}
+                  disabled={savingFavorite}
+                  className={`px-6 py-3 rounded-card font-medium border-2 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 ${
+                    isFavorite
+                      ? 'bg-gold/10 border-gold text-gold'
+                      : 'bg-[var(--surface-raised)] border-line text-content-secondary hover:border-gold hover:text-gold'
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                  {isFavorite ? t('Dans ma sélection') : t('Ajouter à ma sélection')}
+                </button>
+              )}
             </div>
           )}
         </motion.div>
@@ -238,7 +292,7 @@ const PublicArtistProfile: React.FC = () => {
               {!artist.bio && (
                 <>
                   <p className="text-content-secondary leading-relaxed text-base mb-4">
-                    Son style et sa vision artistique ont conquis le public {artist.user?.country ? `en ${artist.user.country}` : 'de nombreuses scènes'},
+                    Son style et sa vision artistique ont conquis le public {artist.user?.country ? `en ${artist.user.country}` : t('de nombreuses scènes')},
                     ce qui en fait un artiste recherché par les hôtels d’exception et les événements privés.
                   </p>
                   <p className="text-content-secondary leading-relaxed text-base">
@@ -254,7 +308,7 @@ const PublicArtistProfile: React.FC = () => {
         {/* Artist Details */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.15}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-content mb-6">Informations sur l’artiste</h2>
+            <h2 className="text-2xl font-serif font-bold text-content mb-6">{t('Informations sur l’artiste')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Main Category */}
               {(artist.discipline || artisticProfile.mainCategory) && (
@@ -263,7 +317,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Music className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Catégorie principale</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Catégorie principale')}</p>
                     <p className="text-base font-medium text-content">{artist.discipline || artisticProfile.mainCategory}</p>
                   </div>
                 </div>
@@ -276,7 +330,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Music className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Catégorie secondaire</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Catégorie secondaire')}</p>
                     <p className="text-base font-medium text-content">{artisticProfile.secondaryCategory}</p>
                   </div>
                 </div>
@@ -291,7 +345,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Spécialité</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Spécialité')}</p>
                     <p className="text-base font-medium text-content">{artisticProfile.specificCategory}</p>
                   </div>
                 </div>
@@ -319,7 +373,7 @@ const PublicArtistProfile: React.FC = () => {
                     <MapPin className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Basé à</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Basé à')}</p>
                     <p className="text-base font-medium text-content">{artist.user.country}</p>
                   </div>
                 </div>
@@ -334,7 +388,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Nom de scène</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Nom de scène')}</p>
                     <p className="text-base font-medium text-content">{artist.stageName}</p>
                   </div>
                 </div>
@@ -349,7 +403,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Téléphone</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Téléphone')}</p>
                     <p className="text-base font-medium text-content">{artist.phone}</p>
                   </div>
                 </div>
@@ -362,7 +416,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Calendar className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Date de naissance</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Date de naissance')}</p>
                     <p className="text-base font-medium text-content">{artist.birthDate}</p>
                   </div>
                 </div>
@@ -392,7 +446,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Type de public</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Type de public')}</p>
                     <p className="text-base font-medium text-content">{artisticProfile.audienceType.join(', ')}</p>
                   </div>
                 </div>
@@ -418,8 +472,8 @@ const PublicArtistProfile: React.FC = () => {
         {(videos.length > 0 || !videos.length) && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.2}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-content mb-4">Vidéos de performances</h2>
-              <p className="text-content-secondary mb-6">Découvrez le travail de l’artiste à travers ses performances</p>
+              <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Vidéos de performances')}</h2>
+              <p className="text-content-secondary mb-6">{t('Découvrez le travail de l’artiste à travers ses performances')}</p>
               
               {videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -440,7 +494,7 @@ const PublicArtistProfile: React.FC = () => {
                     }
                     
                     return (
-                      <div key={index} className="relative aspect-video rounded-card overflow-hidden bg-gray-900">
+                      <div key={index} className="relative aspect-video rounded-card overflow-hidden bg-surface-inverse">
                         {isYouTube && videoId ? (
                           <iframe
                             src={`https://www.youtube.com/embed/${videoId}`}
@@ -455,7 +509,7 @@ const PublicArtistProfile: React.FC = () => {
                             controls
                             className="w-full h-full object-cover"
                           >
-                            Votre navigateur ne prend pas en charge la lecture vidéo.
+                            {t('Votre navigateur ne prend pas en charge la lecture vidéo.')}
                           </video>
                         )}
                       </div>
@@ -469,8 +523,8 @@ const PublicArtistProfile: React.FC = () => {
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
                       <Music className="w-8 h-8 text-gold" />
                     </div>
-                    <p className="text-content-secondary text-center font-medium mb-2">En représentation</p>
-                    <p className="text-content-secondary text-sm text-center">Vidéo à venir</p>
+                    <p className="text-content-secondary text-center font-medium mb-2">{t('En représentation')}</p>
+                    <p className="text-content-secondary text-sm text-center">{t('Vidéo à venir')}</p>
                   </div>
                   <div className="relative aspect-video rounded-card overflow-hidden bg-gradient-to-br from-surface-sunken to-surface-sunken flex flex-col items-center justify-center p-8 border-2 border-dashed border-line">
                     <div className="w-16 h-16 rounded-control bg-gold/20 flex items-center justify-center mb-4">
@@ -479,7 +533,7 @@ const PublicArtistProfile: React.FC = () => {
                       </svg>
                     </div>
                     <p className="text-content-secondary text-center font-medium mb-2">Performance live</p>
-                    <p className="text-content-secondary text-sm text-center">Vidéo à venir</p>
+                    <p className="text-content-secondary text-sm text-center">{t('Vidéo à venir')}</p>
                   </div>
                 </div>
               )}
@@ -491,7 +545,7 @@ const PublicArtistProfile: React.FC = () => {
         <ScrollAnimationWrapper animation="fade-up" delay={0.3}>
           <div className="mb-12">
             <h2 className="text-2xl font-serif font-bold text-content mb-4">Portfolio</h2>
-            <p className="text-content-secondary mb-6">Un aperçu des performances passées et des moments de scène</p>
+            <p className="text-content-secondary mb-6">{t('Un aperçu des performances passées et des moments de scène')}</p>
             
             {images.length > 1 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -508,7 +562,7 @@ const PublicArtistProfile: React.FC = () => {
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                      <p className="text-content font-medium">Voir l’image</p>
+                      <p className="text-content font-medium">{t('Voir l’image')}</p>
                     </div>
                   </div>
                 ))}
@@ -534,7 +588,7 @@ const PublicArtistProfile: React.FC = () => {
         {(artisticProfile.mainCategory || artisticProfile.languages?.length > 0 || artisticProfile.audienceType?.length > 0) && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.4}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-content mb-4">Ce que je propose</h2>
+              <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Ce que je propose')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Main Discipline/Category */}
                 {(artisticProfile.mainCategory || artist.discipline) && (
@@ -574,7 +628,7 @@ const PublicArtistProfile: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-content mb-2">Un jeu qui s’adapte au public</h3>
+                    <h3 className="text-lg font-semibold text-content mb-2">{t('Un jeu qui s’adapte au public')}</h3>
                     <p className="text-content-secondary text-sm leading-relaxed">
                       Experienced in performing for {artisticProfile.audienceType.join(', ').toLowerCase()}. Tailored performances that resonate with your specific clientele.
                     </p>
@@ -590,7 +644,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                   <h3 className="text-lg font-semibold text-content mb-2">Excellence professionnelle</h3>
                   <p className="text-content-secondary text-sm leading-relaxed">
-                    Basé {artist.user?.country ? `en ${artist.user.country}` : 'à l’international'}. Un matériel professionnel et une préparation méticuleuse, au service de la qualité.
+                    Basé {artist.user?.country ? `en ${artist.user.country}` : t('à l’international')}. Un matériel professionnel et une préparation méticuleuse, au service de la qualité.
                   </p>
                 </div>
               </div>
@@ -615,7 +669,7 @@ const PublicArtistProfile: React.FC = () => {
         {/* Experience & Achievements */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.5}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-content mb-4">Expérience et distinctions</h2>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Expérience et distinctions')}</h2>
             <div className="space-y-4">
               <div className="p-6 bg-gradient-to-r from-gold/5 to-transparent rounded-card border-l-4 border-gold">
                 <div className="flex items-start gap-4">
@@ -625,7 +679,7 @@ const PublicArtistProfile: React.FC = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-content mb-2">Excellence professionnelle</h3>
                     <p className="text-content-secondary text-sm leading-relaxed">
-                      Avec {artist.bookings?.length || 0} {(artist.bookings?.length || 0) >= 2 ? 'engagements menés à bien' : 'engagement mené à bien'} et {artist.avgRating ? `une note de ${artist.avgRating.toFixed(1)}/5` : 'd’excellents retours'},
+                      Avec {artist.bookings?.length || 0} {(artist.bookings?.length || 0) >= 2 ? t('engagements menés à bien') : t('engagement mené à bien')} et {artist.avgRating ? `une note de ${artist.avgRating.toFixed(1)}/5` : t('d’excellents retours')},
                       {artist.stageName || artist.user?.name} s’est construit une réputation de fiabilité et d’exigence.
                     </p>
                   </div>
@@ -638,9 +692,9 @@ const PublicArtistProfile: React.FC = () => {
                     <MapPin className="w-6 h-6 text-content" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-content mb-2">Présence internationale</h3>
+                    <h3 className="text-lg font-semibold text-content mb-2">{t('Présence internationale')}</h3>
                     <p className="text-content-secondary text-sm leading-relaxed">
-                      Basé {artist.user?.country ? `en ${artist.user.country}` : 'à l’international'}, disponible partout dans le monde.
+                      Basé {artist.user?.country ? `en ${artist.user.country}` : t('à l’international')}, disponible partout dans le monde.
                       Habitué à s’adapter aux lieux, aux cultures et aux attentes de chaque public.
                     </p>
                   </div>
@@ -653,21 +707,21 @@ const PublicArtistProfile: React.FC = () => {
         {/* Availability */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.6}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-content mb-4">Disponibilités</h2>
-            <p className="text-content-secondary mb-6">Disponibilités pour les prochaines dates</p>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Disponibilités')}</h2>
+            <p className="text-content-secondary mb-6">{t('Disponibilités pour les prochaines dates')}</p>
             
             {artist.availability && artist.availability.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {artist.availability.map((avail: any, index: number) => (
                   <div key={index} className="p-5 bg-[var(--surface-raised)] border-2 border-line rounded-card hover:border-gold hover:shadow-md transition-all duration-200">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-card bg-green-50 dark:bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+                      <div className="w-12 h-12 rounded-card bg-[var(--state-positive-wash)] flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-6 h-6 text-[var(--state-positive)]" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 rounded-control bg-green-500"></div>
-                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">Disponible</span>
+                          <div className="w-2 h-2 rounded-control bg-[var(--state-positive)]"></div>
+                          <span className="text-sm font-semibold text-[var(--state-positive)]">Disponible</span>
                         </div>
                         <p className="text-base font-semibold text-content mb-1">
                           {new Date(avail.dateFrom).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -685,16 +739,16 @@ const PublicArtistProfile: React.FC = () => {
                 <div className="w-16 h-16 rounded-control bg-surface-sunken flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-8 h-8 text-content-secondary" />
                 </div>
-                <h3 className="text-lg font-semibold text-content mb-2">Disponibilités bientôt publiées</h3>
+                <h3 className="text-lg font-semibold text-content mb-2">{t('Disponibilités bientôt publiées')}</h3>
                 <p className="text-content-secondary mb-4">
                   Contactez {artist.stageName || artist.user?.name} directement pour échanger sur les dates et les disponibilités.
                 </p>
                 {user && user.role === 'HOTEL' && (
                   <button
-                    onClick={() => toast.success('Demande de contact envoyée')}
+                    onClick={() => toast.success(t('Demande de contact envoyée'))}
                     className="btn-primary mx-auto"
                   >
-                    Demander les disponibilités
+                    {t('Demander les disponibilités')}
                   </button>
                 )}
               </div>
@@ -706,7 +760,7 @@ const PublicArtistProfile: React.FC = () => {
         {artist.bookings && artist.bookings.length > 0 && (
           <ScrollAnimationWrapper animation="fade-up" delay={0.7}>
             <div className="mb-12">
-              <h2 className="text-2xl font-serif font-bold text-content mb-4">Témoignages</h2>
+              <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Témoignages')}</h2>
               <p className="text-content-secondary mb-6">Ce que les lieux disent de leur collaboration avec {artist.stageName || artist.user?.name}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -718,15 +772,15 @@ const PublicArtistProfile: React.FC = () => {
                     ))}
                   </div>
                   <p className="text-content-secondary italic mb-4 leading-relaxed">
-                    «&nbsp;Un talent et un professionnalisme rares. Nos clients ont été conquis par la qualité de la prestation.&nbsp;»
+                    {t('«&nbsp;Un talent et un professionnalisme rares. Nos clients ont été conquis par la qualité de la prestation.&nbsp;»')}
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-control bg-gold/20 flex items-center justify-center">
                       <span className="text-gold font-semibold text-sm">H</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-content text-sm">Hôtel partenaire</p>
-                      <p className="text-content-secondary text-xs">Réservation vérifiée</p>
+                      <p className="font-semibold text-content text-sm">{t('Hôtel partenaire')}</p>
+                      <p className="text-content-secondary text-xs">{t('Réservation vérifiée')}</p>
                     </div>
                   </div>
                 </div>
@@ -738,15 +792,15 @@ const PublicArtistProfile: React.FC = () => {
                     ))}
                   </div>
                   <p className="text-content-secondary italic mb-4 leading-relaxed">
-                    «&nbsp;Un moment vraiment mémorable pour nos clients. Professionnel, ponctuel et remarquablement doué. Nous recommandons sans réserve.&nbsp;»
+                    {t('«&nbsp;Un moment vraiment mémorable pour nos clients. Professionnel, ponctuel et remarquablement doué. Nous recommandons sans réserve.&nbsp;»')}
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-control bg-gold/20 flex items-center justify-center">
                       <span className="text-gold font-semibold text-sm">V</span>
                     </div>
                     <div>
-                      <p className="font-semibold text-content text-sm">Responsable du lieu</p>
-                      <p className="text-content-secondary text-xs">Réservation vérifiée</p>
+                      <p className="font-semibold text-content text-sm">{t('Responsable du lieu')}</p>
+                      <p className="text-content-secondary text-xs">{t('Réservation vérifiée')}</p>
                     </div>
                   </div>
                 </div>

@@ -57,7 +57,7 @@ router.get(
       try {
         location = typeof t.location === 'string' ? JSON.parse(t.location) : t.location;
       } catch {
-        location = { city: 'Unknown', country: '' };
+        location = { city: 'Lieu inconnu', country: '' };
       }
 
       return {
@@ -77,7 +77,9 @@ router.get(
       };
     });
 
-    res.json(safeTrips);
+    // Same envelope as the rest of the API. This endpoint returned a bare
+    // array, which is why every consumer carried shape-detection.
+    res.json({ success: true, data: { trips: safeTrips } });
   }),
 );
 
@@ -131,7 +133,7 @@ router.get(
     try {
       location = typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location;
     } catch {
-      location = { city: 'Unknown', country: '' };
+      location = { city: 'Lieu inconnu', country: '' };
     }
 
     let schedule = [];
@@ -156,37 +158,40 @@ router.get(
     }
 
     res.json({
-      id: trip.id,
-      title: trip.title,
-      slug: trip.slug,
-      description: trip.description,
-      priceFrom: Number(trip.priceFrom),
-      priceTo: Number(trip.priceTo),
-      location: location,
-      images: images,
-      status: trip.status,
-      // Additional fields from database
-      type: trip.type || null,
-      rating: trip.rating ? Number(trip.rating) : null,
-      date: trip.date ? trip.date.toISOString() : null,
-      duration: trip.duration || null,
-      capacity: trip.capacity || null,
-      schedule: schedule,
-      includes: includes,
-      artistBio: trip.artistBio || null,
-      venueDetails: trip.venueDetails || null,
-      reviews: reviews,
-      // Related data
-      artist: trip.artist ? {
-        id: trip.artist.id,
-        name: trip.artist.user?.name || 'Artist',
-        bio: trip.artist.bio || null
-      } : null,
-      hotel: trip.hotel ? {
-        id: trip.hotel.id,
-        name: trip.hotel.name || 'Hotel',
-        description: trip.hotel.description || null
-      } : null,
+      success: true,
+      data: {
+        id: trip.id,
+        title: trip.title,
+        slug: trip.slug,
+        description: trip.description,
+        priceFrom: Number(trip.priceFrom),
+        priceTo: Number(trip.priceTo),
+        location: location,
+        images: images,
+        status: trip.status,
+        // Additional fields from database
+        type: trip.type || null,
+        rating: trip.rating ? Number(trip.rating) : null,
+        date: trip.date ? trip.date.toISOString() : null,
+        duration: trip.duration || null,
+        capacity: trip.capacity || null,
+        schedule: schedule,
+        includes: includes,
+        artistBio: trip.artistBio || null,
+        venueDetails: trip.venueDetails || null,
+        reviews: reviews,
+        // Related data
+        artist: trip.artist ? {
+          id: trip.artist.id,
+          name: trip.artist.user?.name || 'Artiste',
+          bio: trip.artist.bio || null
+        } : null,
+        hotel: trip.hotel ? {
+          id: trip.hotel.id,
+          name: trip.hotel.name || 'Hôtel',
+          description: trip.hotel.description || null
+        } : null,
+      },
     });
   }),
 );

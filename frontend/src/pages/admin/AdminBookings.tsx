@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { adminApi } from '@/utils/api'
-import { Calendar, MapPin, User, Building, Download, Filter, Clock, DollarSign } from 'lucide-react'
+import { Calendar, MapPin, User, Building, Download, Filter, DollarSign } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import StatusBadge from '@/components/StatusBadge'
 import {
   Select,
   SelectContent,
@@ -9,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select'
+import { t } from '@/i18n'
+import { formatNumber } from '@/utils/i18n'
 
 interface BookingData {
   id: string
@@ -92,21 +95,6 @@ const AdminBookings: React.FC = () => {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const configs = {
-      PENDING: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'En attente' },
-      CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Confirmée' },
-      COMPLETED: { bg: 'bg-green-100 dark:bg-green-500/10', text: 'text-green-800 dark:text-green-400', label: 'Terminée' },
-      CANCELLED: { bg: 'bg-red-100 dark:bg-red-500/10', text: 'text-red-800 dark:text-red-400', label: 'Annulée' }
-    }
-    const config = configs[status as keyof typeof configs] || configs.PENDING
-    return (
-      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${config.bg} ${config.text}`}>
-        {config.label}
-      </span>
-    )
-  }
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fr-FR', {
       month: 'short',
@@ -144,10 +132,10 @@ const AdminBookings: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            Gestion des réservations
+            {t('Gestion des réservations')}
           </h1>
           <p className="text-content-secondary">
-            Suivre et gérer l’ensemble des réservations de la plateforme.
+            {t('Suivre et gérer l’ensemble des réservations de la plateforme.')}
           </p>
         </div>
         <button
@@ -159,42 +147,20 @@ const AdminBookings: React.FC = () => {
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* One rule between four peers, not four boxed cards with four coloured
+          icons. The counts are the content; the icons repeated the label. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
         {[
-          { label: 'Réservations', value: bookings.length, icon: Calendar, color: 'text-blue-600' },
-          { 
-            label: 'En attente', 
-            value: bookings.filter(b => b.status === 'PENDING').length, 
-            icon: Clock, 
-            color: 'text-amber-600' 
-          },
-          { 
-            label: 'Confirmée', 
-            value: bookings.filter(b => b.status === 'CONFIRMED').length, 
-            icon: Calendar, 
-            color: 'text-green-600 dark:text-green-400' 
-          },
-          { 
-            label: 'Terminée', 
-            value: bookings.filter(b => b.status === 'COMPLETED').length, 
-            icon: Calendar, 
-            color: 'text-purple-600' 
-          }
-        ].map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <div key={index} className="card-luxury">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-content-secondary">{stat.label}</p>
-                  <p className="text-2xl font-bold text-content">{stat.value}</p>
-                </div>
-                <Icon className={`w-8 h-8 ${stat.color}`} />
-              </div>
-            </div>
-          )
-        })}
+          { label: t('Réservations'), value: bookings.length },
+          { label: 'En attente', value: bookings.filter(b => b.status === 'PENDING').length },
+          { label: t('Confirmées'), value: bookings.filter(b => b.status === 'CONFIRMED').length },
+          { label: t('Terminées'), value: bookings.filter(b => b.status === 'COMPLETED').length }
+        ].map((stat) => (
+          <div key={stat.label} className="stat rounded-none border-0">
+            <span className="stat__label">{stat.label}</span>
+            <span className="stat__value">{formatNumber(stat.value)}</span>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -210,14 +176,14 @@ const AdminBookings: React.FC = () => {
               }}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Tous les statuts" />
+                <SelectValue placeholder={t('Tous les statuts')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="all">{t('Tous les statuts')}</SelectItem>
                 <SelectItem value="PENDING">En attente</SelectItem>
-                <SelectItem value="CONFIRMED">Confirmée</SelectItem>
-                <SelectItem value="COMPLETED">Terminée</SelectItem>
-                <SelectItem value="CANCELLED">Annulée</SelectItem>
+                <SelectItem value="CONFIRMED">{t('Confirmée')}</SelectItem>
+                <SelectItem value="COMPLETED">{t('Terminée')}</SelectItem>
+                <SelectItem value="CANCELLED">{t('Annulée')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -225,7 +191,7 @@ const AdminBookings: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-400 px-4 py-3 rounded-card">
+        <div className="bg-[var(--state-critical-wash)] border border-[var(--state-critical-line)] text-[var(--state-critical)] px-4 py-3 rounded-card">
           {error}
         </div>
       )}
@@ -233,7 +199,7 @@ const AdminBookings: React.FC = () => {
       {/* Bookings List */}
       <div className="space-y-4">
         {bookings.map((booking) => (
-          <div key={booking.id} className="card-luxury hover:shadow-lg transition-shadow">
+          <div key={booking.id} className="panel p-6 hover:shadow-lg transition-shadow">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Left Section - Main Info */}
               <div className="flex-1 space-y-3">
@@ -243,21 +209,21 @@ const AdminBookings: React.FC = () => {
                       <Calendar className="w-6 h-6 text-gold" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-content text-lg">
-                        Booking #{booking.id.slice(0, 8)}
+                      <h3 className="font-serif text-lg text-content">
+                        Réservation {booking.id.slice(0, 8).toUpperCase()}
                       </h3>
                       <p className="text-sm text-content-secondary">
-                        Created {formatDate(booking.createdAt)}
+                        Créée le {formatDate(booking.createdAt)}
                       </p>
                     </div>
                   </div>
-                  {getStatusBadge(booking.status)}
+                  <StatusBadge status={booking.status} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Artist Info */}
                   <div className="flex items-start space-x-3 bg-surface p-3 rounded-card">
-                    <User className="w-5 h-5 text-purple-600 mt-1" />
+                    <User className="w-5 h-5 text-gold mt-1" />
                     <div className="flex-1">
                       <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Artiste</p>
                       <p className="font-medium text-content">{booking.artist.user.name}</p>
@@ -267,9 +233,9 @@ const AdminBookings: React.FC = () => {
 
                   {/* Hotel Info */}
                   <div className="flex items-start space-x-3 bg-surface p-3 rounded-card">
-                    <Building className="w-5 h-5 text-blue-600 mt-1" />
+                    <Building className="w-5 h-5 text-[var(--state-info)] mt-1" />
                     <div className="flex-1">
-                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Hôtel</p>
+                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">{t('Hôtel')}</p>
                       <p className="font-medium text-content">{booking.hotel.name}</p>
                       <div className="flex items-center text-sm text-content-secondary mt-1">
                         <MapPin className="w-3 h-3 mr-1" />
@@ -284,14 +250,14 @@ const AdminBookings: React.FC = () => {
               <div className="lg:w-64 space-y-3">
                 <div className="bg-navy/5 p-4 rounded-card">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-content-secondary">Durée</span>
+                    <span className="text-sm text-content-secondary">{t('Durée')}</span>
                     <span className="font-semibold text-content">
                       {calculateDuration(booking.startDate, booking.endDate)}
                     </span>
                   </div>
                   <div className="text-xs text-content-secondary space-y-1">
                     <div className="flex items-center justify-between">
-                      <span>Début :</span>
+                      <span>{t('Début :')}</span>
                       <span>{formatDate(booking.startDate)}</span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -305,7 +271,7 @@ const AdminBookings: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <DollarSign className="w-4 h-4 text-gold" />
-                      <span className="text-sm text-content-secondary">Crédits utilisés</span>
+                      <span className="text-sm text-content-secondary">{t('Crédits utilisés')}</span>
                     </div>
                     <span className="font-bold text-gold text-lg">
                       {booking.creditsUsed}
@@ -319,9 +285,9 @@ const AdminBookings: React.FC = () => {
       </div>
 
       {bookings.length === 0 && !loading && (
-        <div className="card-luxury text-center py-12">
+        <div className="panel text-center py-12">
           <Calendar className="w-12 h-12 text-content-secondary mx-auto mb-4" />
-          <p className="text-content-secondary">Aucune réservation</p>
+          <p className="text-content-secondary">{t('Aucune réservation')}</p>
         </div>
       )}
 
@@ -333,7 +299,7 @@ const AdminBookings: React.FC = () => {
             disabled={currentPage === 1 || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Précédent
+            {t('Précédent')}
           </button>
           <span className="text-content-secondary">
             Page {currentPage} of {totalPages}
@@ -343,7 +309,7 @@ const AdminBookings: React.FC = () => {
             disabled={currentPage === totalPages || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Suivant
+            {t('Suivant')}
           </button>
         </div>
       )}

@@ -7,6 +7,7 @@ import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { getLogoUrl } from '@/config/assets'
 import { authApi } from '@/utils/api'
+import { t } from '@/i18n'
 
 interface ResetPasswordForm {
   password: string
@@ -30,17 +31,17 @@ const ResetPasswordPage: React.FC = () => {
 
   const onSubmit = async (data: ResetPasswordForm) => {
     if (!token) {
-      toast.error('Lien de réinitialisation invalide')
+      toast.error(t('Lien de réinitialisation invalide'))
       return
     }
 
     setIsLoading(true)
     try {
       await authApi.resetPassword({ token, password: data.password })
-      toast.success('Mot de passe réinitialisé')
+      toast.success(t('Mot de passe réinitialisé'))
       navigate('/login')
     } catch (error: any) {
-      toast.error(error.response?.data?.error?.message || 'Failed to reset password. The token may be invalid or expired.')
+      toast.error(error.response?.data?.error?.message || 'Le mot de passe n’a pas pu être réinitialisé. Le lien est peut-être expiré ou déjà utilisé.')
     } finally {
       setIsLoading(false)
     }
@@ -57,10 +58,10 @@ const ResetPasswordPage: React.FC = () => {
               Lien invalide
             </h2>
             <p className="text-content-secondary mb-4">
-              Ce lien de réinitialisation est invalide ou a expiré.
+              {t('Ce lien de réinitialisation est invalide ou a expiré.')}
             </p>
             <Link to="/forgot-password" className="text-gold hover:text-gold-600 font-medium">
-              Demander un nouveau lien
+              {t('Demander un nouveau lien')}
             </Link>
           </div>
         </div>
@@ -93,17 +94,17 @@ const ResetPasswordPage: React.FC = () => {
                 </div>
               </div>
               <h2 className="text-3xl font-serif font-bold text-content gold-underline">
-                Réinitialiser le mot de passe
+                {t('Réinitialiser le mot de passe')}
               </h2>
               <p className="mt-2 text-content-secondary">
-                Saisissez votre nouveau mot de passe
+                {t('Saisissez votre nouveau mot de passe')}
               </p>
             </div>
 
             <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
                 <label htmlFor="password" className="form-label">
-                  Nouveau mot de passe
+                  {t('Nouveau mot de passe')}
                 </label>
                 <input
                   {...register('password', {
@@ -115,16 +116,16 @@ const ResetPasswordPage: React.FC = () => {
                   })}
                   type="password"
                   className="form-input"
-                  placeholder="Saisissez le nouveau mot de passe"
+                  placeholder={t('Saisissez le nouveau mot de passe')}
                 />
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+                  <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.password.message}</p>
                 )}
               </div>
 
               <div>
                 <label htmlFor="confirmPassword" className="form-label">
-                  Confirmer le mot de passe
+                  {t('Confirmer le mot de passe')}
                 </label>
                 <input
                   {...register('confirmPassword', {
@@ -133,10 +134,10 @@ const ResetPasswordPage: React.FC = () => {
                   })}
                   type="password"
                   className="form-input"
-                  placeholder="Confirmez le nouveau mot de passe"
+                  placeholder={t('Confirmez le nouveau mot de passe')}
                 />
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>
+                  <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.confirmPassword.message}</p>
                 )}
               </div>
 
@@ -152,7 +153,7 @@ const ResetPasswordPage: React.FC = () => {
 
               <div className="text-center">
                 <Link to="/login" className="text-gold hover:text-gold-600 font-medium text-sm">
-                  Retour à la connexion
+                  {t('Retour à la connexion')}
                 </Link>
               </div>
             </form>

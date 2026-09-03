@@ -3,21 +3,22 @@ import { Link } from 'react-router-dom'
 import { Instagram, Linkedin, Facebook } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
 import NewsletterSignup from './NewsletterSignup'
+import { t } from '@/i18n'
 
 const DISCOVER_LINKS = [
-  { to: '/experiences', label: 'Expériences' },
-  { to: '/how-it-works', label: 'Le principe' },
-  { to: '/top-artists', label: 'Artistes' },
-  { to: '/top-hotels', label: 'Hôtels' },
+  { to: '/experiences', label: t('Expériences') },
+  { to: '/how-it-works', label: t('Le principe') },
+  { to: '/top-artists', label: t('Artistes') },
+  { to: '/top-hotels', label: t('Hôtels') },
 ]
 
 const COMPANY_LINKS = [
-  { to: '/about', label: 'À propos' },
-  { to: '/partners', label: 'Partenaires' },
+  { to: '/about', label: t('À propos') },
+  { to: '/partners', label: t('Partenaires') },
 ]
 
 const LEGAL_LINKS = [
-  { to: '/privacy', label: 'Confidentialité' },
+  { to: '/privacy', label: t('Confidentialité') },
   { to: '/terms', label: 'Conditions' },
   { to: '/cookies', label: 'Cookies' },
 ]
@@ -44,9 +45,7 @@ const Footer: React.FC = () => {
               className="h-9 w-auto object-contain brightness-0 invert dark:brightness-100 dark:invert-0"
             />
             <p className="mt-6 text-content-inverse/60 leading-relaxed max-w-[38ch]">
-              Des résidences d’artistes au cœur des hôtels d’exception.
-              Musiciens, plasticiens et interprètes, reçus là où leur travail
-              trouve sa place.
+              {t('Des résidences d’artistes au cœur des hôtels d’exception. Musiciens, plasticiens et interprètes, reçus là où leur travail trouve sa place.')}
             </p>
 
             <div className="mt-8 max-w-sm">
@@ -54,8 +53,8 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          <nav className="lg:col-span-2 lg:col-start-6" aria-label="Découvrir">
-            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">Découvrir</h3>
+          <nav className="lg:col-span-2 lg:col-start-6" aria-label={t('Découvrir')}>
+            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">{t('Découvrir')}</h3>
             <ul className="space-y-3">
               {DISCOVER_LINKS.map((link) => (
                 <li key={link.to}>
@@ -67,8 +66,8 @@ const Footer: React.FC = () => {
             </ul>
           </nav>
 
-          <nav className="lg:col-span-2" aria-label="La maison">
-            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">La maison</h3>
+          <nav className="lg:col-span-2" aria-label={t('La maison')}>
+            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">{t('La maison')}</h3>
             <ul className="space-y-3">
               {COMPANY_LINKS.map((link) => (
                 <li key={link.to}>

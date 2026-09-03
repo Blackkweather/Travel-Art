@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, MapPin, Clock, Star, CheckCircle, XCircle, AlertCircle, Search, User, Music } from 'lucide-react'
+import { Calendar, MapPin, Clock, Star, Search, Music } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { hotelsApi, bookingsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import StatusBadge from '@/components/StatusBadge'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import { personName } from '@/utils/apiPayload'
+import { t } from '@/i18n'
+import { formatNumber } from '@/utils/i18n'
 
 interface Booking {
   id: string
@@ -29,6 +35,11 @@ interface Booking {
 
 const HotelBookings: React.FC = () => {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
+  const [ratingFor, setRatingFor] = useState<Booking | null>(null)
+  const [stars, setStars] = useState(5)
+  const [review, setReview] = useState('')
+  const [savingRating, setSavingRating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -59,9 +70,9 @@ const HotelBookings: React.FC = () => {
           id: b.id,
           artist: {
             id: b.artist?.id || '',
-            name: b.artist?.name || 'Unknown Artist',
+            name: personName(b.artist),
             discipline: b.artist?.discipline || '',
-            image: b.artist?.image || 'https://via.placeholder.com/100?text=Artist',
+            image: b.artist?.image || '/images/placeholder-experience.webp',
             rating: b.artist?.rating || 0
           },
           hotelId: b.hotelId,
@@ -131,9 +142,9 @@ const HotelBookings: React.FC = () => {
         id: b.id,
         artist: {
           id: b.artist?.id || '',
-          name: b.artist?.name || 'Unknown Artist',
+          name: personName(b.artist),
           discipline: b.artist?.discipline || '',
-          image: b.artist?.image || 'https://via.placeholder.com/100?text=Artist',
+          image: b.artist?.image || '/images/placeholder-experience.webp',
           rating: b.artist?.rating || 0
         },
         hotelId: b.hotelId,
@@ -176,41 +187,11 @@ const HotelBookings: React.FC = () => {
     return matchesFilter && matchesSearch
   })
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-      case 'pending':
-        return <AlertCircle className="w-5 h-5 text-amber-600" />
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-blue-600" />
-      case 'cancelled':
-        return <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-      default:
-        return <AlertCircle className="w-5 h-5 text-content-secondary" />
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
-      case 'pending':
-        return 'bg-amber-100 text-amber-800'
-      case 'completed':
-        return 'bg-blue-100 text-blue-800'
-      case 'cancelled':
-        return 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
-      default:
-        return 'bg-surface-sunken text-content'
-    }
-  }
-
   const stats = [
-    { label: 'Réservations', value: bookings.length, icon: Calendar },
-    { label: 'Confirmée', value: bookings.filter(b => b.status === 'confirmed').length, icon: CheckCircle },
-    { label: 'En attente', value: bookings.filter(b => b.status === 'pending').length, icon: AlertCircle },
-    { label: 'Terminée', value: bookings.filter(b => b.status === 'completed').length, icon: Star }
+    { label: t('Réservations'), value: bookings.length },
+    { label: t('Confirmées'), value: bookings.filter(b => b.status === 'confirmed').length },
+    { label: 'En attente', value: bookings.filter(b => b.status === 'pending').length },
+    { label: t('Terminées'), value: bookings.filter(b => b.status === 'completed').length }
   ]
 
   return (
@@ -218,45 +199,32 @@ const HotelBookings: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-          Réservations de l’hôtel
+          {t('Réservations de l’hôtel')}
         </h1>
         <p className="text-content-secondary">
-          Gérez vos réservations d’artistes et votre programmation
+          {t('Gérez vos réservations d’artistes et votre programmation')}
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="card-luxury text-center"
-            >
-              <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Icon className="w-6 h-6 text-gold" />
-              </div>
-              <h3 className="text-2xl font-bold text-content mb-2">{stat.value}</h3>
-              <p className="text-content-secondary">{stat.label}</p>
-            </motion.div>
-          )
-        })}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
+        {stats.map((stat) => (
+          <div key={stat.label} className="stat rounded-none border-0">
+            <span className="stat__label">{stat.label}</span>
+            <span className="stat__value">{formatNumber(stat.value)}</span>
+          </div>
+        ))}
       </div>
 
       {/* Search and Filters */}
       <div className="search-container">
         <div className="filters-row">
           <div className="flex-1">
-            <label className="form-label">Rechercher une réservation</label>
+            <label className="form-label">{t('Rechercher une réservation')}</label>
             <div className="search-icon-container">
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Rechercher par artiste, lieu ou type de prestation…"
+                placeholder={t('Rechercher par artiste, lieu ou type de prestation…')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -265,18 +233,18 @@ const HotelBookings: React.FC = () => {
             </div>
           </div>
           <div className="md:w-48">
-            <label className="form-label">Filter by Status</label>
+            <label className="form-label">{t('Filtrer par statut')}</label>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="filter-select"
               data-testid="status-filter"
             >
-              <option value="all">Tous les statuts</option>
-              <option value="confirmed">Confirmée</option>
+              <option value="all">{t('Tous les statuts')}</option>
+              <option value="confirmed">{t('Confirmée')}</option>
               <option value="pending">En attente</option>
-              <option value="completed">Terminée</option>
-              <option value="cancelled">Annulée</option>
+              <option value="completed">{t('Terminée')}</option>
+              <option value="cancelled">{t('Annulée')}</option>
             </select>
           </div>
         </div>
@@ -291,7 +259,7 @@ const HotelBookings: React.FC = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
-            className="card-luxury"
+            className="panel p-6"
           >
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Artist Info */}
@@ -319,7 +287,7 @@ const HotelBookings: React.FC = () => {
               <div className="flex-1" data-testid="booking-details">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <h4 className="text-sm font-medium text-content mb-2">Performance Details</h4>
+                    <h4 className="mb-2 text-sm font-medium text-content">{t('Détails de la représentation')}</h4>
                     <div className="space-y-1 text-sm text-content-secondary">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
@@ -344,11 +312,11 @@ const HotelBookings: React.FC = () => {
                     {/* Amounts are deliberately not shown on booking cards.
                         The residency length and the settlement state are what a
                         hotel acts on here; the figures live in Credits. */}
-                    <h4 className="text-sm font-medium text-content mb-2">Résidence</h4>
+                    <h4 className="text-sm font-medium text-content mb-2">{t('Résidence')}</h4>
                     <div className="space-y-1 text-sm text-content-secondary">
                       {booking.numberOfWeeks && (
                         <div className="flex items-center justify-between">
-                          <span>Durée :</span>
+                          <span>{t('Durée :')}</span>
                           <span className="font-medium text-content">
                             {booking.numberOfWeeks} semaine{booking.numberOfWeeks >= 2 ? 's' : ''}
                           </span>
@@ -356,15 +324,8 @@ const HotelBookings: React.FC = () => {
                       )}
                       {booking.paymentStatus && (
                         <div className="flex items-center justify-between mt-2">
-                          <span>Status:</span>
-                          <span className={`px-2 py-1 rounded-card text-xs font-semibold ${
-                            booking.paymentStatus === 'PAID' ? 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400' :
-                            booking.paymentStatus === 'PENDING' ? 'bg-amber-100 text-amber-800' :
-                            booking.paymentStatus === 'REFUNDED' ? 'bg-blue-100 text-blue-800' :
-                            'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400'
-                          }`}>
-                            {booking.paymentStatus}
-                          </span>
+                          <span>Paiement :</span>
+                          <StatusBadge status={booking.paymentStatus} />
                         </div>
                       )}
                       {booking.notes && <div className="mt-2 pt-2 border-t border-line">Notes: {booking.notes}</div>}
@@ -382,10 +343,7 @@ const HotelBookings: React.FC = () => {
                 )}
 
                 <div className="flex items-center justify-between">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(booking.status)}`}>
-                    {getStatusIcon(booking.status)}
-                    <span className="ml-1 capitalize">{booking.status}</span>
-                  </span>
+                  <StatusBadge status={booking.status} />
                   
                   <div className="flex space-x-2">
                     {booking.status === 'pending' && (
@@ -394,24 +352,39 @@ const HotelBookings: React.FC = () => {
                           onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')}
                           className="btn-primary text-sm"
                         >
-                          Confirmer
+                          {t('Confirmer')}
                         </button>
                         <button 
                           onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
                           className="btn-secondary text-sm"
                         >
-                          Refuser
+                          {t('Refuser')}
                         </button>
                       </>
                     )}
-                    {booking.status === 'confirmed' && (
-                      <button className="btn-secondary text-sm">Voir le détail</button>
+                    {booking.status === 'confirmed' && booking.artist?.id && (
+                      <button
+                        onClick={() => navigate(`/artist/${booking.artist.id}`)}
+                        className="btn-secondary text-sm"
+                      >
+                        {t('Voir le détail')}
+                      </button>
                     )}
                     {booking.status === 'completed' && (
-                      <button className="btn-primary text-sm">Évaluer l’artiste</button>
+                      <button
+                        onClick={() => { setRatingFor(booking); setStars(5); setReview('') }}
+                        className="btn-primary text-sm"
+                      >
+                        {t('Évaluer l’artiste')}
+                      </button>
                     )}
                     {booking.status === 'cancelled' && (
-                      <button className="btn-secondary text-sm">Reprogrammer</button>
+                      <button
+                        onClick={() => navigate('/dashboard/artists')}
+                        className="btn-secondary text-sm"
+                      >
+                        Reprogrammer
+                      </button>
                     )}
                   </div>
                 </div>
@@ -428,7 +401,7 @@ const HotelBookings: React.FC = () => {
             <Calendar className="w-12 h-12 text-content-secondary" />
           </div>
           <h3 className="text-xl font-serif font-semibold text-content mb-2">
-            Aucune réservation
+            {t('Aucune réservation')}
           </h3>
           <p className="text-content-secondary mb-6">
             {searchTerm || filter !== 'all' 
@@ -444,11 +417,96 @@ const HotelBookings: React.FC = () => {
               }}
               className="btn-primary"
             >
-              Réinitialiser les filtres
+              {t('Réinitialiser les filtres')}
             </button>
           )}
         </div>
       )}
+    {ratingFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="panel w-full max-w-lg p-6">
+            <h3 className="font-serif text-xl text-content">{t('Évaluer l’artiste')}</h3>
+            <p className="mt-1 text-sm text-content-secondary">
+              {ratingFor.artist?.name || 'Artiste'}
+              {ratingFor.performanceSpot ? ` — ${ratingFor.performanceSpot}` : ''}
+            </p>
+
+            <div className="mt-6">
+              <span className="stat__label">Note</span>
+              <div className="mt-2 flex gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setStars(n)}
+                    aria-label={`${n} sur 5`}
+                    aria-pressed={stars === n}
+                    className={`h-10 w-10 rounded-card border text-sm font-semibold transition-colors ${
+                      n <= stars
+                        ? 'border-gold bg-gold text-[var(--text-on-gold)]'
+                        : 'border-line text-content-secondary hover:border-line-strong'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="form-label" htmlFor="rating-review">Commentaire</label>
+              <textarea
+                id="rating-review"
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
+                rows={4}
+                maxLength={500}
+                className="form-input w-full"
+                placeholder={t('Ce qui s’est bien passé, ce qui pourrait être amélioré…')}
+              />
+              {/* The endpoint requires 10 characters minimum, so the button
+                  stays disabled until that is met rather than returning a 400. */}
+              <p className="mt-1 text-[0.8125rem] text-content-secondary">
+                {review.trim().length < 10
+                  ? `Encore ${10 - review.trim().length} caractère(s).`
+                  : `${review.length} / 500`}
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={() => setRatingFor(null)} className="btn-ghost btn-sm">
+                {t('Annuler')}
+              </button>
+              <button
+                disabled={savingRating || review.trim().length < 10}
+                onClick={async () => {
+                  try {
+                    setSavingRating(true)
+                    await bookingsApi.rate({
+                      bookingId: ratingFor.id,
+                      hotelId: ratingFor.hotelId,
+                      artistId: ratingFor.artist.id,
+                      stars,
+                      textReview: review.trim(),
+                      isVisibleToArtist: true
+                    })
+                    toast.success(t('Évaluation enregistrée'))
+                    setRatingFor(null)
+                  } catch (err: any) {
+                    toast.error(err?.response?.data?.error?.message || 'Échec de l’enregistrement')
+                  } finally {
+                    setSavingRating(false)
+                  }
+                }}
+                className="btn-primary btn-sm"
+              >
+                {savingRating ? 'Enregistrement…' : 'Envoyer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

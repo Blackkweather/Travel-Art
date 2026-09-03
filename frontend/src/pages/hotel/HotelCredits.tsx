@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CreditCard, ShoppingCart, TrendingUp, Gift, Star, Calendar, CheckCircle } from 'lucide-react'
+import { CreditCard, ShoppingCart, Gift, Star, Calendar, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { hotelsApi, paymentsApi } from '@/utils/api'
-import { transactionTypeLabel } from '@/utils/i18n'
+import { transactionTypeLabel, formatNumber } from '@/utils/i18n'
+import { t } from '@/i18n'
 
 const HotelCredits: React.FC = () => {
   const { user } = useAuthStore()
@@ -53,11 +54,11 @@ const HotelCredits: React.FC = () => {
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'purchase':
-        return <ShoppingCart className="w-5 h-5 text-green-600 dark:text-green-400" />
+        return <ShoppingCart className="w-5 h-5 text-[var(--state-positive)]" />
       case 'booking':
-        return <Calendar className="w-5 h-5 text-blue-600" />
+        return <Calendar className="w-5 h-5 text-[var(--state-info)]" />
       case 'refund':
-        return <Gift className="w-5 h-5 text-purple-600" />
+        return <Gift className="w-5 h-5 text-gold" />
       default:
         return <CreditCard className="w-5 h-5 text-content-secondary" />
     }
@@ -66,11 +67,11 @@ const HotelCredits: React.FC = () => {
   const getTransactionColor = (type: string) => {
     switch (type) {
       case 'purchase':
-        return 'bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400'
+        return 'bg-[var(--state-positive-wash)] text-[var(--state-positive)]'
       case 'booking':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-[var(--state-info-wash)] text-[var(--state-info)]'
       case 'refund':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-gold/10 text-gold'
       default:
         return 'bg-surface-sunken text-content'
     }
@@ -94,7 +95,7 @@ const HotelCredits: React.FC = () => {
         return
       }
 
-      setError('Impossible de démarrer le paiement. Veuillez réessayer.')
+      setError(t('Impossible de démarrer le paiement. Veuillez réessayer.'))
     } catch (e: any) {
       // The server says why it refused — for example that payment processing
       // is not configured yet, in which case retrying will not help.
@@ -109,62 +110,34 @@ const HotelCredits: React.FC = () => {
       {/* Header */}
       <div className="fade-in-up">
         <h1 className="dashboard-title mb-3 gold-underline">
-          Gestion des crédits
+          {t('Gestion des crédits')}
         </h1>
         <p className="dashboard-subtitle">
-          Gérez vos crédits et vos formules pour réserver des artistes
+          {t('Gérez vos crédits et vos formules pour réserver des artistes')}
         </p>
       </div>
 
       {/* Current Credits Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="dashboard-stat-card text-center"
-        >
-          <div className="w-16 h-16 bg-gradient-to-br from-gold/20 to-gold/10 rounded-card flex items-center justify-center mx-auto mb-4">
-            <CreditCard className="w-8 h-8 text-gold" />
-          </div>
-          <h3 className="text-3xl font-bold text-content mb-2 count-up">{credits ? credits.availableCredits : (loading ? '—' : 0)}</h3>
-          <p className="section-subtitle">Crédits disponibles</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="dashboard-stat-card text-center"
-        >
-          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-50 rounded-card flex items-center justify-center mx-auto mb-4">
-            <TrendingUp className="w-8 h-8 text-green-600 dark:text-green-400" />
-          </div>
-          <h3 className="text-3xl font-bold text-content mb-2 count-up">€{totalSpent.toLocaleString('fr-FR')}</h3>
-          <p className="section-subtitle">Total dépensé</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="dashboard-stat-card text-center"
-        >
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-50 rounded-card flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-blue-600" />
-          </div>
-          <h3 className="text-3xl font-bold text-content mb-2 count-up">{totalBookings}</h3>
-          <p className="section-subtitle">Réservations</p>
-        </motion.div>
+      <div className="grid grid-cols-3 gap-px bg-line border border-line rounded-card overflow-hidden">
+        <div className="stat rounded-none border-0">
+          <span className="stat__label">{t('Crédits disponibles')}</span>
+          <span className="stat__value">{credits ? formatNumber(credits.availableCredits) : (loading ? '—' : 0)}</span>
+        </div>
+        <div className="stat rounded-none border-0">
+          <span className="stat__label">{t('Total dépensé')}</span>
+          <span className="stat__value">€{formatNumber(totalSpent)}</span>
+        </div>
+        <div className="stat rounded-none border-0">
+          <span className="stat__label">{t('Réservations')}</span>
+          <span className="stat__value">{formatNumber(totalBookings)}</span>
+        </div>
       </div>
 
       {/* Credit Packages */}
-      <div className="card-luxury fade-in-up-delay-1">
-        <h2 className="section-title gold-underline">
-          Acheter des crédits
-        </h2>
+      <div className="panel p-6 fade-in-up-delay-1">
+        <h2 className="mb-6 font-serif text-2xl text-content">{t('Acheter des crédits')}</h2>
         {error && (
-          <div className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</div>
+          <div className="notice-critical mb-4">{error}</div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {packages.map((pkg: any, index: number) => (
@@ -173,14 +146,14 @@ const HotelCredits: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={`border-2 rounded-card p-6 relative transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                pkg.popular ? 'border-gold bg-gradient-to-br from-gold/10 to-gold/5 shadow-md' : 'border-line hover:border-gold/30'
+              className={`relative rounded-card border p-6 transition-colors duration-200 ${
+                pkg.popular ? 'border-gold bg-surface-sunken' : 'border-line hover:border-line-strong'
               }`}
             >
               {pkg.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gold text-navy px-4 py-1 rounded-full text-sm font-medium">
-                    Le plus choisi
+                  <span className="badge border-gold bg-gold text-[var(--text-on-gold)]">
+                    {t('Le plus choisi')}
                   </span>
                 </div>
               )}
@@ -190,17 +163,24 @@ const HotelCredits: React.FC = () => {
                   {pkg.name}
                 </h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold text-content">{pkg.credits}</span>
-                  <span className="text-content-secondary ml-2">crédits</span>
+                  <span className="text-4xl font-bold text-content">
+                    {pkg.totalCredits ?? pkg.credits}
+                  </span>
+                  <span className="text-content-secondary ml-2">{t('crédits')}</span>
+                  {pkg.bonusCredits > 0 && (
+                    <p className="mt-1 text-sm text-[var(--state-positive)]">
+                      dont {pkg.bonusCredits} offerts
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center justify-center space-x-2 mb-2">
-                  <span className="text-2xl font-bold text-gold">€{pkg.price.toLocaleString('fr-FR')}</span>
+                  <span className="text-2xl font-bold text-gold">€{formatNumber(pkg.price)}</span>
                   {pkg.originalPrice && (
-                    <span className="text-lg text-content-secondary line-through">€{pkg.originalPrice.toLocaleString('fr-FR')}</span>
+                    <span className="text-lg text-content-secondary line-through">€{formatNumber(pkg.originalPrice)}</span>
                   )}
                 </div>
                 {pkg.savings ? (
-                  <div className="text-sm text-green-600 dark:text-green-400 font-medium">Save €{pkg.savings.toLocaleString('fr-FR')}</div>
+                  <div className="text-sm font-medium text-[var(--state-positive)]">Économie de €{formatNumber(pkg.savings)}</div>
                 ) : null}
               </div>
 
@@ -224,7 +204,7 @@ const HotelCredits: React.FC = () => {
                     : 'bg-navy text-white hover:bg-navy/90'
                 } disabled:opacity-60`}
               >
-                {processing === pkg.id ? 'Processing…' : 'Purchase Package'}
+                {processing === pkg.id ? 'Traitement…' : 'Choisir cette formule'}
               </button>
             </motion.div>
           ))}
@@ -232,10 +212,8 @@ const HotelCredits: React.FC = () => {
       </div>
 
       {/* Transaction History */}
-      <div className="card-luxury fade-in-up-delay-2">
-        <h2 className="section-title gold-underline">
-          Historique des transactions
-        </h2>
+      <div className="panel p-6 fade-in-up-delay-2">
+        <h2 className="mb-6 font-serif text-2xl text-content">{t('Historique des transactions')}</h2>
         <div className="space-y-3">
           {transactions.map((transaction, index) => (
             <motion.div
@@ -263,7 +241,7 @@ const HotelCredits: React.FC = () => {
                 <div className="mt-2">
                   {transaction.amount > 0 && (
                     <div className="text-sm text-content-secondary">
-                      €{transaction.amount.toLocaleString('fr-FR')}
+                      €{formatNumber(transaction.amount)}
                     </div>
                   )}
                 </div>
@@ -274,26 +252,26 @@ const HotelCredits: React.FC = () => {
       </div>
 
       {/* Credit Usage Tips */}
-      <div className="card-luxury">
+      <div className="panel p-6">
         <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
-          Bien utiliser ses crédits
+          {t('Bien utiliser ses crédits')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h3 className="text-lg font-serif font-semibold text-content mb-4">
-              Comment fonctionnent les crédits
+              {t('Comment fonctionnent les crédits')}
             </h3>
             <ul className="space-y-3">
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-content-secondary">
-                  Une réservation coûte généralement 1 à 3 crédits, selon le niveau de l’artiste et la durée
+                  {t('Une réservation coûte généralement 1 à 3 crédits, selon le niveau de l’artiste et la durée')}
                 </span>
               </li>
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-content-secondary">
-                  Les crédits sont débités à la confirmation de la réservation
+                  {t('Les crédits sont débités à la confirmation de la réservation')}
                 </span>
               </li>
               <li className="flex items-start">
@@ -313,19 +291,19 @@ const HotelCredits: React.FC = () => {
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-content-secondary">
-                  Les formules plus importantes sont plus avantageuses
+                  {t('Les formules plus importantes sont plus avantageuses')}
                 </span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-content-secondary">
-                  Surveillez votre solde pour ne pas interrompre vos réservations
+                  {t('Surveillez votre solde pour ne pas interrompre vos réservations')}
                 </span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-content-secondary">
-                  Réservez vos crédits pour les dates les plus importantes
+                  {t('Réservez vos crédits pour les dates les plus importantes')}
                 </span>
               </li>
             </ul>
