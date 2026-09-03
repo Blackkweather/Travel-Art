@@ -110,9 +110,19 @@ async function main() {
     where: { email: 'admin@travelart.test' },
     // Rotating is the whole point of a freshly generated password: without the
     // hash here, a re-seed printed a new one and left the old one working.
-    update: { passwordHash: adminPasswordHash, language: 'fr' },
+    update: {
+      passwordHash: adminPasswordHash,
+      language: 'fr',
+      approvalStatus: 'APPROVED',
+      emailVerified: true,
+    },
     create: {
       role: 'ADMIN',
+      // Seeded accounts are known-good, so they are admitted and verified
+      // outright. Without this they inherit the PENDING default and nobody -
+      // including this administrator - can sign in to a fresh database.
+      approvalStatus: 'APPROVED',
+      emailVerified: true,
       email: 'admin@travelart.test',
       passwordHash: adminPasswordHash,
       name: 'Admin User',
@@ -149,9 +159,20 @@ async function main() {
 
     const user = await prisma.user.upsert({
       where: { email: hotelData.email },
-      update: { name: hotelData.name, country: hotelData.country, passwordHash },
+      update: {
+        name: hotelData.name,
+        country: hotelData.country,
+        passwordHash,
+        approvalStatus: 'APPROVED',
+        emailVerified: true,
+      },
       create: {
         role: 'HOTEL',
+        // Seeded accounts are known-good, so they are admitted and verified
+        // outright. Without this they inherit the PENDING default and nobody -
+        // including this administrator - can sign in to a fresh database.
+        approvalStatus: 'APPROVED',
+        emailVerified: true,
         email: hotelData.email,
         passwordHash,
         name: hotelData.name,
@@ -371,9 +392,20 @@ async function main() {
       where: { email: artistData.email },
       // Reconciles rather than no-ops, so the translated country reaches rows
       // that already exist. With `{}` the seed silently keeps the old value.
-      update: { name: artistData.name, country: artistData.country, passwordHash },
+      update: {
+        name: artistData.name,
+        country: artistData.country,
+        passwordHash,
+        approvalStatus: 'APPROVED',
+        emailVerified: true,
+      },
       create: {
         role: 'ARTIST',
+        // Seeded accounts are known-good, so they are admitted and verified
+        // outright. Without this they inherit the PENDING default and nobody -
+        // including this administrator - can sign in to a fresh database.
+        approvalStatus: 'APPROVED',
+        emailVerified: true,
         email: artistData.email,
         passwordHash,
         name: artistData.name,
@@ -621,9 +653,20 @@ async function main() {
       where: { email: artistData.email },
       // Reconciles rather than no-ops, so the translated country reaches rows
       // that already exist. With `{}` the seed silently keeps the old value.
-      update: { name: artistData.name, country: artistData.country, passwordHash },
+      update: {
+        name: artistData.name,
+        country: artistData.country,
+        passwordHash,
+        approvalStatus: 'APPROVED',
+        emailVerified: true,
+      },
       create: {
         role: 'ARTIST',
+        // Seeded accounts are known-good, so they are admitted and verified
+        // outright. Without this they inherit the PENDING default and nobody -
+        // including this administrator - can sign in to a fresh database.
+        approvalStatus: 'APPROVED',
+        emailVerified: true,
         email: artistData.email,
         passwordHash,
         name: artistData.name,

@@ -131,3 +131,8 @@ backend/demo-accounts-backup-*.json
 frontend/cypress/screenshots/
 frontend/cypress/videos/
 frontend/cypress/downloads/
+
+# Vercel marketplace skill install artifacts
+.agents/
+.claude/skills/
+skills-lock.json
