@@ -11,6 +11,8 @@ export interface GalleryItem {
   image: string
   title: string
   category?: string
+  /** "Phuket, Thailand" - the thing a reader scans a residency card for. */
+  location?: string
 }
 
 interface GalleryPanProps {
@@ -109,6 +111,9 @@ export default function GalleryPan({ items }: GalleryPanProps) {
                 <span className="text-content-secondary text-sm shrink-0">{item.category}</span>
               )}
             </div>
+            {item.location && (
+              <p className="mt-1 text-sm text-content-secondary">{item.location}</p>
+            )}
           </Link>
         ))}
       </div>

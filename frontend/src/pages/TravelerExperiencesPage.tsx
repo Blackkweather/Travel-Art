@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Calendar, Star, Music, ArrowRight, Globe } from 'lucide-react'
+import { MapPin, Calendar, Star, Music, ArrowRight, Globe, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 
 
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L, { LatLngTuple } from 'leaflet'
 import { tripsApi } from '@/utils/api'
 import { experienceTypeLabel } from '@/utils/i18n'
@@ -59,6 +59,41 @@ const EXPERIENCE_TYPES = (['all', 'rooftop', 'intimate', 'workshop', 'residency'
  * the cost of destroying every popup and refetching every tile; this does it
  * through Leaflet's own API instead.
  */
+/**
+ * Narrows the list to whatever country the map is looking at.
+ *
+ * Fires only once the map has settled, and only when the view is tight enough
+ * to mean something: below zoom 5 you are looking at a continent, and every
+ * pin in frame belongs to a different country.
+ *
+ * It reports a country only when the pins in view agree on one. Two countries
+ * in frame is not a country filter, it is a wide shot, so the filter clears.
+ */
+const MapCountryWatcher: React.FC<{
+  points: { lat: number; lng: number; country?: string }[]
+  onChange: (country: string | null) => void
+}> = ({ points, onChange }) => {
+  const settle = (map: L.Map) => {
+    if (map.getZoom() < 5) {
+      onChange(null)
+      return
+    }
+    const bounds = map.getBounds()
+    const inView = points.filter(
+      (p) => p.country && bounds.contains([p.lat, p.lng] as LatLngTuple)
+    )
+    const countries = Array.from(new Set(inView.map((p) => p.country as string)))
+    onChange(countries.length === 1 ? countries[0] : null)
+  }
+
+  const map = useMapEvents({
+    moveend: () => settle(map),
+    zoomend: () => settle(map),
+  })
+
+  return null
+}
+
 const MapView: React.FC<{ center: LatLngTuple; zoom: number }> = ({ center, zoom }) => {
   const map = useMap()
   useEffect(() => {
@@ -72,6 +107,9 @@ const TravelerExperiencesPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
+  const [mapCountry, setMapCountry] = useState<string | null>(null)
+  // Two rows of three. Reset whenever the result set changes underneath.
+  const [page, setPage] = useState(0)
 
   // Fetch experiences from API
   useEffect(() => {
@@ -170,44 +208,47 @@ const TravelerExperiencesPage: React.FC = () => {
     fetchExperiences()
   }, [])
 
-  const filteredExperiences = useMemo(() => {
-    console.log('🔍 Filtering experiences:', {
-      total: experiences.length,
-      filterType,
-      selectedLocation,
-      experiences: experiences.map(e => ({ id: e.id, title: e.title, type: e.type, city: e.location?.city }))
-    })
-    
-    if (experiences.length === 0) {
-      console.log('⚠️ No experiences to filter')
-      return []
-    }
-    
-    const filtered = experiences.filter(exp => {
-      const matchesLocation = !selectedLocation || (exp.location?.city === selectedLocation)
+  /**
+   * The explicit filters only - search box, type, chosen city.
+   *
+   * Kept separate from the map-driven country filter on purpose: the map's
+   * centre and zoom are derived from this, so a filter the map itself sets
+   * cannot move the map, which would move the filter, which would move the map.
+   */
+  const baseFiltered = useMemo(() => {
+    if (experiences.length === 0) return []
+    return experiences.filter((exp) => {
+      const matchesLocation = !selectedLocation || exp.location?.city === selectedLocation
       const matchesType = filterType === 'all' || exp.type === filterType
-      
-      console.log(`🔍 Experience "${exp.title}":`, {
-        type: exp.type,
-        filterType,
-        matchesType,
-        city: exp.location?.city,
-        selectedLocation,
-        matchesLocation,
-        passes: matchesLocation && matchesType
-      })
-      
       return matchesLocation && matchesType
     })
-    
-    console.log('🔍 Filtered result:', filtered.length, 'experiences')
-    return filtered
   }, [experiences, selectedLocation, filterType])
 
+  /** What the grid shows: the explicit filters, narrowed by the map. */
+  const filteredExperiences = useMemo(() => {
+    if (!mapCountry) return baseFiltered
+    return baseFiltered.filter((exp) => exp.location?.country === mapCountry)
+  }, [baseFiltered, mapCountry])
+
+  // Was [] - computed once, before anything had loaded, so the city dropdown
+  // was permanently empty.
+  const PAGE_SIZE = 6
+  const pageCount = Math.max(1, Math.ceil(filteredExperiences.length / PAGE_SIZE))
+  const currentPage = Math.min(page, pageCount - 1)
+  const visibleExperiences = filteredExperiences.slice(
+    currentPage * PAGE_SIZE,
+    currentPage * PAGE_SIZE + PAGE_SIZE
+  )
+
+  // A filter change can leave you on a page that no longer exists.
+  useEffect(() => {
+    setPage(0)
+  }, [selectedLocation, filterType, mapCountry, experiences.length])
+
   const locations = useMemo(() => {
-    const unique = new Set(experiences.map(e => e.location.city))
+    const unique = new Set(experiences.map((e) => e.location?.city).filter(Boolean))
     return Array.from(unique).sort()
-  }, [])
+  }, [experiences])
 
   // Calculate map center based on filtered experiences
   const mapCenter: LatLngTuple = useMemo(() => {
@@ -216,15 +257,15 @@ const TravelerExperiencesPage: React.FC = () => {
     const avgLat = filteredExperiences.reduce((sum, exp) => sum + exp.location.lat, 0) / filteredExperiences.length
     const avgLng = filteredExperiences.reduce((sum, exp) => sum + exp.location.lng, 0) / filteredExperiences.length
     return [avgLat, avgLng] as LatLngTuple
-  }, [filteredExperiences])
+  }, [baseFiltered])
 
   // Calculate zoom level based on number of experiences
   const mapZoom = useMemo(() => {
-    if (filteredExperiences.length === 0) return 4
-    if (filteredExperiences.length === 1) return 8
-    if (filteredExperiences.length <= 3) return 5
+    if (baseFiltered.length === 0) return 4
+    if (baseFiltered.length === 1) return 8
+    if (baseFiltered.length <= 3) return 5
     return 4
-  }, [filteredExperiences])
+  }, [baseFiltered])
 
   const handleMapPinClick = (city: string) => {
     setSelectedLocation(city === selectedLocation ? null : city)
@@ -310,6 +351,14 @@ const TravelerExperiencesPage: React.FC = () => {
             >
               {/* Moves the live map instead of replacing it. */}
               <MapView center={mapCenter} zoom={mapZoom} />
+            <MapCountryWatcher
+              points={baseFiltered.map((e) => ({
+                lat: e.location.lat,
+                lng: e.location.lng,
+                country: e.location.country,
+              }))}
+              onChange={setMapCountry}
+            />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -403,13 +452,11 @@ const TravelerExperiencesPage: React.FC = () => {
           ) : filteredExperiences.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-content-secondary text-lg mb-4">{t('Aucune expérience.')}</p>
-              <p className="text-content-secondary mb-2">Total experiences in state: {experiences.length}</p>
-              <p className="text-content-secondary mb-2">Filtered experiences: {filteredExperiences.length}</p>
               <p className="text-content-secondary">{t('Revenez bientôt pour découvrir nos expériences.')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredExperiences.map((exp, index) => (
+              {visibleExperiences.map((exp, index) => (
               <Link
                 key={exp.id}
                 to={`/experience/${exp.id}`}
@@ -472,6 +519,62 @@ const TravelerExperiencesPage: React.FC = () => {
               </Link>
               ))}
             </div>
+          )}
+
+          {/* Paging. Hidden when everything already fits on one page - a pager
+              that cannot page is furniture. The count is spelled out rather
+              than shown as numbered pages: with six to a page the useful
+              information is where you are, not a row of page numbers. */}
+          {!loading && pageCount > 1 && (
+            <nav
+              className="mt-12 flex items-center justify-center gap-6"
+              aria-label={t('Pagination des expériences')}
+            >
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={currentPage === 0}
+                className="btn-outline btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label={t('Page précédente')}
+              >
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                {t('Précédent')}
+              </button>
+
+              <p className="text-sm text-content-secondary tabular-nums" aria-live="polite">
+                {t('Page {current} sur {total}', {
+                  current: currentPage + 1,
+                  total: pageCount,
+                })}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                disabled={currentPage >= pageCount - 1}
+                className="btn-outline btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label={t('Page suivante')}
+              >
+                {t('Suivant')}
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </nav>
+          )}
+
+          {/* Says why the list is short when the map is doing the narrowing,
+              and offers the way out. Without this a zoomed-in map looks like
+              a site with three experiences. */}
+          {mapCountry && !loading && (
+            <p className="mt-6 text-center text-sm text-content-secondary">
+              {t('Filtré sur {country} par la carte.', { country: mapCountry })}{' '}
+              <button
+                type="button"
+                onClick={() => setMapCountry(null)}
+                className="text-gold hover:underline"
+              >
+                {t('Tout afficher')}
+              </button>
+            </p>
           )}
         </div>
       </section>

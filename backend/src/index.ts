@@ -292,7 +292,6 @@ app.use(errorHandler);
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down gracefully...');
-  const { prisma } = await import('./db');
   try {
     await prisma.$disconnect();
   } catch {
@@ -303,7 +302,6 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
   console.log('Shutting down gracefully...');
-  const { prisma } = await import('./db');
   try {
     await prisma.$disconnect();
   } catch {

@@ -9,6 +9,7 @@ import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import { extractArray } from '@/utils/apiPayload'
 import { t } from '@/i18n'
+import { experienceTypeLabel } from '@/utils/i18n'
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -170,12 +171,25 @@ export default function LandingPage() {
             images = [] 
           }
           
+          // location arrives as {city, country}; the card wants one line.
+          let place = ''
+          try {
+            const loc =
+              typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location
+            place = [loc?.city, loc?.country].filter(Boolean).join(', ')
+          } catch {
+            place = ''
+          }
+
           return {
             id: trip.id,
             title: trip.title || t('Expérience'),
             description: trip.description?.substring(0, 100) || '',
             image: images[0] || trip.image || '/images/placeholder-experience.webp',
-            category: trip.type || trip.category || t('Expérience')
+            // experienceTypeLabel turns the stored value into copy; without it
+            // the card printed the enum, "rooftop", on a French page.
+            category: experienceTypeLabel(trip.type) || trip.category || t('Expérience'),
+            location: place || trip.hotel || '',
           }
         })
         
