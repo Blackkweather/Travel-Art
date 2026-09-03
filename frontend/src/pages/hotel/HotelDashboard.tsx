@@ -31,7 +31,10 @@ interface Booking {
 
 interface PerformanceSpot {
   name: string
-  type: string
+  /** Written by the registration form. */
+  locationType?: string
+  /** Older rows used this name. */
+  type?: string
   capacity: number
   description: string
   image?: string
@@ -308,10 +311,12 @@ const HotelDashboard: React.FC = () => {
                         <dt className="stat__label">{t('Capacité')}</dt>
                         <dd className="mt-1 font-serif text-lg text-content">{spot.capacity || '—'}</dd>
                       </div>
-                      {spot.type && (
+                      {(spot.locationType || spot.type) && (
                         <div>
-                          <dt className="stat__label">Type</dt>
-                          <dd className="mt-1 font-serif text-lg text-content">{spot.type}</dd>
+                          <dt className="stat__label">{t('Type')}</dt>
+                          <dd className="mt-1 font-serif text-lg text-content">
+                            {spot.locationType || spot.type}
+                          </dd>
                         </div>
                       )}
                     </dl>

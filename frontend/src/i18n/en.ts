@@ -817,6 +817,7 @@ export const en: Record<string, string> = {
   "Trouver un artiste": "Find an artist",
   "Très faible": "Very weak",
   "Très robuste": "Very strong",
+  "Type": "Type",
   "Type de collaboration acceptée": "Kind of collaboration accepted",
   "Type de public": "Audience",
   "Type d’activité": "Kind of activity",
