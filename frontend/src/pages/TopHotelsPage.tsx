@@ -160,7 +160,7 @@ const TopHotelsPage: React.FC = () => {
       {/* Hero Section */}
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img decoding="async"
+          <img loading="lazy" decoding="async"
             src="/images/headers/hotels.webp"
             srcSet="/images/headers/hotels-960.webp 960w, /images/headers/hotels-1440.webp 1440w, /images/headers/hotels.webp 1920w"
             sizes="100vw"

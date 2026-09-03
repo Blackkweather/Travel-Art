@@ -54,7 +54,7 @@ const LoginPage: React.FC = () => {
       >
         <div className="text-center">
           <div className="flex justify-center mb-8">
-            <img decoding="async" 
+            <img loading="lazy" decoding="async" 
               src={getLogoUrl('transparent')} 
               alt="Travel Art" 
               className="h-24 w-auto"

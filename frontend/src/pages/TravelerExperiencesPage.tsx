@@ -244,7 +244,7 @@ const TravelerExperiencesPage: React.FC = () => {
           the type. */}
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img decoding="async"
+          <img loading="lazy" decoding="async"
             src="/images/headers/experiences.webp"
             srcSet="/images/headers/experiences-960.webp 960w, /images/headers/experiences-1440.webp 1440w, /images/headers/experiences.webp 1920w"
             sizes="100vw"

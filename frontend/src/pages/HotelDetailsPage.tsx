@@ -176,7 +176,7 @@ const HotelDetailsPage: React.FC = () => {
           regardless of the page theme. The back link sat at top-6, directly
           under the fixed 72px navigation bar; it is now clear of it. */}
       <header className="relative h-[52vh] min-h-[380px] overflow-hidden">
-        <img decoding="async"
+        <img loading="lazy" decoding="async"
           src={images[0] || '/placeholder-hotel.jpg'}
           alt=""
           className="w-full h-full object-cover"

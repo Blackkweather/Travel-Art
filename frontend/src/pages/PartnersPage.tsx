@@ -180,7 +180,7 @@ const PartnersPage: React.FC = () => {
 
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img decoding="async"
+          <img loading="lazy" decoding="async"
             src="/images/headers/partners.webp"
             srcSet="/images/headers/partners-960.webp 960w, /images/headers/partners-1440.webp 1440w, /images/headers/partners.webp 1920w"
             sizes="100vw"

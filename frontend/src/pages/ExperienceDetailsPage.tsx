@@ -211,7 +211,7 @@ const ExperienceDetailsPage: React.FC = () => {
       {/* The experience photograph is the hero, so type on it stays white. The
           back link sat at top-6, underneath the fixed 72px navigation bar. */}
       <header className="relative h-[52vh] min-h-[380px] overflow-hidden">
-        <img decoding="async"
+        <img loading="lazy" decoding="async"
           src={experience.image}
           alt=""
           className="w-full h-full object-cover"

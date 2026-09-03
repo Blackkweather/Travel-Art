@@ -89,7 +89,7 @@ const HowItWorksPage: React.FC = () => {
           over a darkened photograph, which is the default this page had. */}
       <section className="relative min-h-[78dvh] flex items-end overflow-hidden">
         <div className="absolute inset-0">
-          <img decoding="async"
+          <img loading="lazy" decoding="async"
             src="/images/headers/how-it-works.webp"
             srcSet="/images/headers/how-it-works-960.webp 960w, /images/headers/how-it-works-1440.webp 1440w, /images/headers/how-it-works.webp 1920w"
             sizes="100vw"
