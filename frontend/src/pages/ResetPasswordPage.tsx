@@ -129,8 +129,8 @@ const ResetPasswordPage: React.FC = () => {
                 </label>
                 <input
                   {...register('confirmPassword', {
-                    required: 'Please confirm your password',
-                    validate: value => value === password || 'Passwords do not match'
+                    required: t('Confirmez votre mot de passe'),
+                    validate: value => value === password || t('Les deux mots de passe ne correspondent pas')
                   })}
                   type="password"
                   className="form-input"

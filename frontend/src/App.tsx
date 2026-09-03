@@ -54,6 +54,7 @@ const TravelerExperiencesPage = lazy(() => import('@/pages/TravelerExperiencesPa
 const ExperienceDetailsPage = lazy(() => import('@/pages/ExperienceDetailsPage'))
 const RegistrationSentPage = lazy(() => import('@/pages/RegistrationSentPage'))
 const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
@@ -264,7 +265,7 @@ function App() {
       <Route path="/artist/:id" element={<PageTransition><PublicArtistProfile /></PageTransition>} />
 
       {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
       )}

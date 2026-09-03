@@ -144,6 +144,37 @@ router.post('/referrals', authenticate, asyncHandler(async (req: AuthRequest, re
 }));
 
 // Get top artists/hotels
+/**
+ * Newsletter signup, from the footer form on every page.
+ *
+ * The client had this path commented out behind a one-second timer that
+ * reported success, so every address a visitor gave was thrown away while they
+ * were told they had subscribed.
+ *
+ * Subscribing twice is success, not a conflict: the caller is unauthenticated,
+ * so a 409 would say whether an address is already on the list.
+ */
+router.post('/newsletter/subscribe', asyncHandler(async (req, res) => {
+  const { email, locale, source } = z
+    .object({
+      email: z.string().email('Adresse e-mail invalide').max(254),
+      locale: z.enum(['fr', 'en']).optional(),
+      source: z.string().max(60).optional(),
+    })
+    .parse(req.body);
+
+  const normalised = email.trim().toLowerCase();
+
+  await prismaAdmin.newsletterSubscriber.upsert({
+    where: { email: normalised },
+    create: { email: normalised, locale: locale ?? 'fr', source: source ?? null },
+    // Re-subscribing after unsubscribing puts them back on the list.
+    update: { unsubscribedAt: null, locale: locale ?? 'fr' },
+  });
+
+  res.status(201).json({ success: true, data: { subscribed: true } });
+}));
+
 router.get('/top', asyncHandler(async (req, res) => {
   const { type } = req.query;
 

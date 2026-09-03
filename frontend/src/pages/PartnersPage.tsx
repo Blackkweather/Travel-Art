@@ -138,7 +138,7 @@ const PartnersPage: React.FC = () => {
     {
       icon: <Building className="w-8 h-8 text-gold" />,
       title: t('Accès exclusif'),
-      description: 'Partner with the world\'s most prestigious hotels and luxury venues'
+      description: t('Rejoignez les adresses les plus prestigieuses et les lieux d’exception.')
     },
     {
       icon: <Star className="w-8 h-8 text-gold" />,
@@ -153,7 +153,7 @@ const PartnersPage: React.FC = () => {
     {
       icon: <Award className="w-8 h-8 text-gold" />,
       title: t('Le rayonnement de votre maison'),
-      description: 'Enhance your hotel\'s reputation with curated artistic experiences'
+      description: t('Renforcez la réputation de votre maison avec une programmation choisie.')
     }
   ]
 

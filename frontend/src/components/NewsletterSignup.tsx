@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Mail, Send, CheckCircle } from 'lucide-react'
-import { t } from '@/i18n'
+import { t, getLocale } from '@/i18n'
+import toast from 'react-hot-toast'
+import { apiClient } from '@/utils/api'
 
 interface NewsletterSignupProps {
   variant?: 'inline' | 'modal' | 'banner'
@@ -21,20 +23,21 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
 
     setSubmitting(true)
     try {
-      // In production, this would call an API endpoint
-      // await apiClient.post('/newsletter/subscribe', { email })
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      // This used to be a one-second timer with the call commented out, so the
+      // form reported success and threw the address away.
+      await apiClient.post('/newsletter/subscribe', {
+        email,
+        locale: getLocale(),
+        source: variant,
+      })
+
       setSuccess(true)
       setEmail('')
-      
-      // Reset success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000)
     } catch (error) {
-      console.error('Failed to subscribe:', error)
-      alert('L’inscription a échoué. Veuillez réessayer.')
+      // A native alert() is the wrong register for this and blocks the page;
+      // the rest of the app reports failures as toasts.
+      toast.error(t('L’inscription a échoué. Veuillez réessayer.'))
     } finally {
       setSubmitting(false)
     }

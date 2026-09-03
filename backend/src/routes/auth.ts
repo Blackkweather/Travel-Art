@@ -426,9 +426,28 @@ router.get('/me', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   // getUserByEmail returns the whole row, passwordHash included, and this
   // handler used to serialise it straight to the client — so every session
   // handed the browser the bcrypt hash of its own password, ready to be taken
-  // offline and attacked at leisure. Register and login already strip it; /me
-  // was the one that did not.
-  const { passwordHash: _passwordHash, ...safeUser } = user as typeof user & { passwordHash?: string };
+  // offline and attacked at leisure.
+  //
+  // Naming the fields rather than deleting the one known to be secret: with a
+  // denylist, the next column added to User ships to the client by default.
+  // clerkId, sessionsValidFrom and reviewedById were reaching it that way.
+  const u = user as Record<string, unknown>;
+  const safeUser = {
+    id: u.id,
+    role: u.role,
+    email: u.email,
+    name: u.name,
+    phone: u.phone,
+    country: u.country,
+    language: u.language,
+    isActive: u.isActive,
+    createdAt: u.createdAt,
+    approvalStatus: u.approvalStatus,
+    approvalNote: u.approvalNote,
+    emailVerified: u.emailVerified,
+    artist: u.artist,
+    hotel: u.hotel,
+  };
 
   res.json({
     success: true,

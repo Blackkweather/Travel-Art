@@ -8,6 +8,7 @@ import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 import DateRangePicker from '@/components/DateRangePicker'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { t } from '@/i18n'
+import { formatShortDate } from '@/utils/i18n'
 
 const ArtistProfile: React.FC = () => {
   const [uploadingImages, setUploadingImages] = useState(false)
@@ -338,7 +339,7 @@ const ArtistProfile: React.FC = () => {
             className="btn-secondary flex items-center space-x-2"
           >
             <Edit3 className="w-4 h-4" />
-            <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
+            <span>{isEditing ? t('Annuler') : t('Modifier le profil')}</span>
           </button>
           {profile?.id && (
             <button
@@ -438,7 +439,7 @@ const ArtistProfile: React.FC = () => {
               <div>
                 <label className="form-label">Note moyenne</label>
                 <p className="text-lg font-semibold text-content">
-                  {profileData.rating > 0 ? profileData.rating.toFixed(1) : 'No ratings yet'}
+                  {profileData.rating > 0 ? profileData.rating.toFixed(1) : t('Pas encore d’avis')}
                 </p>
               </div>
             </div>
@@ -455,7 +456,7 @@ const ArtistProfile: React.FC = () => {
                 />
               ) : (
                 <p className="text-content-secondary leading-relaxed">
-                  {profileData.bio || 'No bio yet. Click "Edit Profile" to add your bio.'}
+                  {profileData.bio || t('Aucune biographie. Utilisez « Modifier le profil » pour en ajouter une.')}
                 </p>
               )}
             </div>
@@ -479,10 +480,10 @@ const ArtistProfile: React.FC = () => {
               <div className="text-center p-4 bg-surface rounded-card">
                 <div className="flex items-center justify-center mb-2">
                   <Music className="w-5 h-5 text-gold mr-1" />
-                  <span className="text-lg font-bold text-content">Member</span>
+                  <span className="text-lg font-bold text-content">{t('Membre')}</span>
                 </div>
                 <p className="text-sm text-content-secondary">
-                  Since {profileData.memberSince ? new Date(profileData.memberSince).toLocaleDateString('fr-FR') : 'Recently'}
+                  {t('Depuis {date}', { date: profileData.memberSince ? formatShortDate(profileData.memberSince) : t('Récemment') })}
                 </p>
               </div>
             </div>
@@ -609,7 +610,7 @@ const ArtistProfile: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${profile.membershipStatus === 'ACTIVE' ? 'bg-[var(--state-positive)]' : 'bg-[var(--border-strong)]'}`}></div>
                   <p className="text-content font-medium">
-                    {profile.membershipStatus === 'ACTIVE' ? 'Active' : profile.membershipStatus}
+                    {profile.membershipStatus === 'ACTIVE' ? t('Active') : profile.membershipStatus}
                   </p>
                 </div>
               </div>
@@ -730,7 +731,7 @@ const ArtistProfile: React.FC = () => {
                 className="btn-primary flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                {loadingAvailability ? 'Adding...' : 'Add Availability'}
+                {loadingAvailability ? t('Ajout…') : t('Ajouter la disponibilité')}
               </button>
             </div>
           </div>
@@ -890,8 +891,8 @@ const ArtistProfile: React.FC = () => {
             <h3 className="text-lg font-semibold text-content mb-2">{t('Aucune vidéo')}</h3>
             <p className="text-content-secondary mb-4">
               {isEditing 
-                ? 'Add your first performance video using the form above' 
-                : 'Click "Edit Profile" to add performance videos from YouTube or other sources'}
+                ? t('Ajoutez votre première vidéo avec le formulaire ci-dessus') 
+                : t('Utilisez « Modifier le profil » pour ajouter des vidéos de vos performances')}
             </p>
           </div>
         )}

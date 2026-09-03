@@ -7,6 +7,7 @@ import { createReferralLink } from '@/utils/referralCode'
 import toast from 'react-hot-toast'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
+import { formatNumber } from '@/utils/i18n'
 
 const ArtistReferrals: React.FC = () => {
   const { user } = useAuthStore()
@@ -93,7 +94,7 @@ const ArtistReferrals: React.FC = () => {
   const statsDisplay = [
     { label: 'Parrainages', value: stats.totalReferrals.toString(), icon: Users },
     { label: 'Artistes actifs', value: stats.activeReferrals.toString(), icon: CheckCircle },
-    { label: t('Crédits gagnés'), value: `€${stats.totalCreditsEarned}`, icon: Gift },
+    { label: t('Crédits gagnés'), value: formatNumber(stats.totalCreditsEarned), icon: Gift },
     { label: 'Validations en attente', value: stats.pendingReferrals.toString(), icon: Calendar }
   ]
 
@@ -172,7 +173,7 @@ const ArtistReferrals: React.FC = () => {
                       className="btn-secondary flex items-center space-x-2"
                     >
                       <Copy className="w-4 h-4" />
-                      <span>{copied ? 'Copied!' : 'Copy'}</span>
+                      <span>{copied ? t('Copié') : t('Copier')}</span>
                     </button>
                   </div>
                 </div>
@@ -192,7 +193,7 @@ const ArtistReferrals: React.FC = () => {
                         className="btn-secondary flex items-center space-x-2"
                       >
                         <Copy className="w-4 h-4" />
-                        <span>{copied ? 'Copied!' : 'Copy'}</span>
+                        <span>{copied ? t('Copié') : t('Copier')}</span>
                       </button>
                     </div>
                   </div>
@@ -284,7 +285,9 @@ const ArtistReferrals: React.FC = () => {
                 
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gold">€{referral.creditsEarned} gagnés</p>
+                    <p className="text-sm font-medium text-gold">
+                      {t('{n} crédits gagnés', { n: referral.creditsEarned })}
+                    </p>
                     <StatusBadge status={referral.status} className="mt-1" />
                   </div>
                 </div>

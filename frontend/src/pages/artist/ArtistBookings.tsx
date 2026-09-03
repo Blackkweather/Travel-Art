@@ -82,6 +82,14 @@ const ArtistBookings: React.FC = () => {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
 
+    // Past a day, say days: a week-long residency read "168 heures".
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays > 0) {
+      const rest = diffHours % 24
+      if (rest === 0) return t(diffDays >= 2 ? '{n} jours' : '{n} jour', { n: diffDays })
+      return t('{d} j {h} h', { d: diffDays, h: rest })
+    }
+
     if (diffHours > 0) {
       return diffMins > 0 ? `${diffHours} h ${diffMins}` : `${diffHours} heure${diffHours >= 2 ? 's' : ''}`
     }
@@ -130,8 +138,10 @@ const ArtistBookings: React.FC = () => {
         startTime,
         status,
         duration: calculateDuration(booking.startDate, booking.endDate),
-        creditsUsed: booking.creditsUsed,
-        performanceSpot: booking.performanceSpot || 'TBD',
+        // creditCost is the frozen price; creditsUsed is the deprecated
+        // column the API always writes as 0.
+        creditsUsed: booking.creditCost ?? booking.creditsUsed ?? 0,
+        performanceSpot: booking.performanceSpot || t('À préciser'),
         image: getHotelImage(hotel.images),
         notes: booking.notes
       }
@@ -306,7 +316,9 @@ const ArtistBookings: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-content-secondary">{t('Crédits')}</p>
-                    <p className="text-gold font-medium">{booking.creditsUsed} credits</p>
+                    <p className="text-gold font-medium">
+                      {t('{n} crédits', { n: booking.creditsUsed })}
+                    </p>
                   </div>
                 </div>
 
@@ -314,7 +326,7 @@ const ArtistBookings: React.FC = () => {
                   <p className="text-content-secondary mb-4">{booking.notes}</p>
                 )}
 
-                {!booking.notes && (
+                {!booking.notes && booking.status === 'pending' && (
                   <p className="text-content-secondary mb-4 italic">{t('En attente de précisions de l’hôtel.')}</p>
                 )}
 

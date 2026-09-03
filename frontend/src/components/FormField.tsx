@@ -1,6 +1,7 @@
 import React, { useState, InputHTMLAttributes } from 'react'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { t } from '@/i18n'
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
@@ -86,7 +87,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
                 onClick={() => setShowPassword(!showPassword)}
                 className="password-toggle"
                 tabIndex={-1}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('Masquer le mot de passe') : t('Afficher le mot de passe')}
               >
                 {showPassword ? (
                   <EyeOff className="w-5 h-5" />

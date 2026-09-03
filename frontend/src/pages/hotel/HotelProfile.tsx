@@ -82,8 +82,8 @@ const HotelProfile: React.FC = () => {
         if (cancelled) return
         setError(
           err?.response?.status === 404
-            ? 'No hotel profile exists for this account yet. Fill this in and save to create one.'
-            : 'Could not load your profile. Please try again.'
+            ? t('Aucun profil d’hôtel pour ce compte. Complétez ce formulaire et enregistrez pour le créer.')
+            : t('Votre profil n’a pas pu être chargé. Veuillez réessayer.')
         )
       } finally {
         if (!cancelled) setLoading(false)
@@ -171,7 +171,7 @@ const HotelProfile: React.FC = () => {
                 className="btn-gold flex items-center gap-2 disabled:opacity-60"
               >
                 <Save size={16} strokeWidth={1.5} aria-hidden="true" />
-                {saving ? 'Saving...' : 'Save changes'}
+                {saving ? t('Enregistrement…') : t('Enregistrer les modifications')}
               </button>
             </div>
           ) : (

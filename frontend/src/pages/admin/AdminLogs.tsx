@@ -310,7 +310,7 @@ const AdminLogs: React.FC = () => {
             <p className="text-content-secondary text-lg">{t('Aucune activité')}</p>
             <p className="text-content-secondary text-sm mt-2">
               {searchTerm || selectedType !== 'ALL' 
-                ? 'Try adjusting your filters' 
+                ? t('Essayez d’élargir vos filtres') 
                 : 'Activity logs will appear here as users interact with the platform'}
             </p>
           </div>

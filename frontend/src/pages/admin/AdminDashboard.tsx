@@ -310,7 +310,7 @@ const AdminDashboard: React.FC = () => {
           <div className="panel-head">
             <h2>{t('Hôtels actifs')}</h2>
             <button
-              onClick={() => navigate('/dashboard/hotels')}
+              onClick={() => navigate('/dashboard/users')}
               className="btn-arrow text-sm text-content-secondary hover:text-content"
             >
               {t('Tout voir')}

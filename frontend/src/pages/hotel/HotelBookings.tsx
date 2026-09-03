@@ -79,8 +79,8 @@ const HotelBookings: React.FC = () => {
           startDate: b.startDate,
           endDate: b.endDate,
           status: b.status.toLowerCase(),
-          creditsUsed: b.creditsUsed || 0,
-          performanceSpot: b.performanceSpot || 'TBD',
+          creditsUsed: b.creditCost ?? b.creditsUsed ?? 0,
+          performanceSpot: b.performanceSpot || t('À préciser'),
           notes: b.notes || '',
           // Calculate duration
           duration: calculateDuration(b.startDate, b.endDate),
@@ -151,8 +151,8 @@ const HotelBookings: React.FC = () => {
         startDate: b.startDate,
         endDate: b.endDate,
         status: b.status.toLowerCase(),
-        creditsUsed: b.creditsUsed || 0,
-        performanceSpot: b.performanceSpot || 'TBD',
+        creditsUsed: b.creditCost ?? b.creditsUsed ?? 0,
+        performanceSpot: b.performanceSpot || t('À préciser'),
         notes: b.notes || '',
         duration: calculateDuration(b.startDate, b.endDate),
         date: b.startDate,
@@ -299,7 +299,7 @@ const HotelBookings: React.FC = () => {
                       </div>
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2" />
-                        <span>{booking.performanceSpot || 'TBD'}</span>
+                        <span>{booking.performanceSpot || t('À préciser')}</span>
                       </div>
                       <div className="flex items-center">
                         <Music className="w-4 h-4 mr-2" />
@@ -405,8 +405,8 @@ const HotelBookings: React.FC = () => {
           </h3>
           <p className="text-content-secondary mb-6">
             {searchTerm || filter !== 'all' 
-              ? 'Try adjusting your search criteria or filters'
-              : 'You haven\'t made any bookings yet'
+              ? t('Essayez d’élargir votre recherche ou vos filtres')
+              : t('Vous n’avez encore aucune réservation')
             }
           </p>
           {(searchTerm || filter !== 'all') && (

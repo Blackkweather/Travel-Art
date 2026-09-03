@@ -259,22 +259,13 @@ export const tripsApi = {
   
   getById: (id: string) =>
     apiClient.get(`/trips/${id}`),
-  
-  create: (data: any) =>
-    apiClient.post('/trips', data),
-  
-  update: (id: string, data: any) =>
-    apiClient.put(`/trips/${id}`, data),
-  
-  delete: (id: string) =>
-    apiClient.delete(`/trips/${id}`),
 }
 
 // Bookings API
 export const bookingsApi = {
   list: (params?: any) => apiClient.get('/bookings', params),
   getById: (id: string) => apiClient.get(`/bookings/${id}`),
-  create: (data: { hotelId: string; artistId: string; startDate: string; endDate: string; creditsUsed: number; notes?: string }) =>
+  create: (data: { hotelId: string; artistId: string; startDate: string; endDate: string; notes?: string }) =>
     apiClient.post('/bookings', data),
   updateStatus: (id: string, status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED') =>
     apiClient.patch(`/bookings/${id}/status`, { status }),

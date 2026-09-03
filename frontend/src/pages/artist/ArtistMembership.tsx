@@ -6,6 +6,7 @@ import { paymentsApi, artistsApi } from '@/utils/api'
 import { toast } from 'react-hot-toast'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
+import { formatDate, formatShortDate } from '@/utils/i18n'
 
 function showToast(message: string) {
   try {
@@ -92,7 +93,7 @@ const ArtistMembership: React.FC = () => {
     {
       name: 'Artiste',
       price: '€50',
-      period: '/year',
+      period: t('/an'),
       description: t('Pensé pour les artistes qui se lancent'),
       features: [
         t('Un profil d’artiste détaillé'),
@@ -108,9 +109,9 @@ const ArtistMembership: React.FC = () => {
       current: currentPlan === 'ARTIST'
     },
     {
-      name: 'Professional Artist',
+      name: t('Artiste confirmé'),
       price: '€100',
-      period: '/year',
+      period: t('/an'),
       description: t('Pour les artistes confirmés qui veulent plus de dates'),
       features: [
         t('Tout ce que comprend la formule Artiste'),
@@ -141,7 +142,7 @@ const ArtistMembership: React.FC = () => {
     },
     { 
       label: t('Statut de l’adhésion'), 
-      value: membershipStatus === 'ACTIVE' ? 'Active' : 'Inactive', 
+      value: membershipStatus === 'ACTIVE' ? t('Active') : t('Inactive'), 
       icon: Users 
     }
   ]
@@ -201,18 +202,21 @@ const ArtistMembership: React.FC = () => {
             </h2>
             <p className="text-sm text-content-secondary">
               {membershipStatus === 'ACTIVE' 
-                ? `${currentPlan === 'PROFESSIONAL' ? 'Professional' : 'Artist'} Plan • Active since ${memberSince ? new Date(memberSince).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Recently'}`
-                : 'No active membership • Choose a plan below to get started'}
+                ? t('Formule {plan} • active depuis le {date}', {
+                    plan: currentPlan === 'PROFESSIONAL' ? t('Artiste confirmé') : t('Artiste'),
+                    date: memberSince ? formatDate(memberSince) : t('Récemment'),
+                  })
+                : t('Aucune adhésion active • choisissez une formule ci-dessous pour commencer')}
             </p>
           </div>
           {membershipStatus === 'ACTIVE' && (
             <div className="text-right">
               <p className="text-2xl font-bold text-content">
-                {currentPlan === 'PROFESSIONAL' ? '€100' : '€50'}/year
+                {currentPlan === 'PROFESSIONAL' ? '€100' : '€50'}{t('/an')}
               </p>
               {artist?.membershipRenewal && (
                 <p className="text-xs text-content-secondary mt-1">
-                  Next billing: {new Date(artist.membershipRenewal).toLocaleDateString('fr-FR')}
+                  {t('Prochaine échéance : {date}', { date: formatShortDate(artist.membershipRenewal) })}
                 </p>
               )}
             </div>
@@ -243,7 +247,7 @@ const ArtistMembership: React.FC = () => {
       {/* Membership Plans */}
       <div>
         <h2 className="text-2xl font-semibold text-content mb-6">
-          {membershipStatus === 'ACTIVE' ? 'Upgrade Your Membership' : 'Choose Your Membership Plan'}
+          {membershipStatus === 'ACTIVE' ? t('Faire évoluer votre adhésion') : t('Choisir votre formule')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
           {plans.map((plan, index) => (
@@ -314,7 +318,13 @@ const ArtistMembership: React.FC = () => {
                   disabled={processing || plan.current}
                   onClick={() => handleUpgrade(plan.tier)}
                 >
-                  {plan.current ? 'Current Plan' : (processing ? 'Processing…' : membershipStatus === 'ACTIVE' ? 'Upgrade Plan' : 'Choose Plan')}
+                  {plan.current
+                    ? t('Formule actuelle')
+                    : processing
+                      ? t('Traitement…')
+                      : membershipStatus === 'ACTIVE'
+                        ? t('Changer de formule')
+                        : t('Choisir cette formule')}
                 </button>
               </div>
             </motion.div>
@@ -408,9 +418,7 @@ const ArtistMembership: React.FC = () => {
                     navigator.clipboard.writeText(referralCode)
                     toast.success(t('Code de parrainage copié'))
                   }}
-                >
-                  Copy
-                </button>
+                >{t('Copier')}</button>
               </div>
               <p className="text-xs text-content-secondary">
                 {t('Partagez ce code avec d’autres artistes : vous y gagnez tous les deux lorsqu’ils nous rejoignent.')}

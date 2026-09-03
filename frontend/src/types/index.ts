@@ -84,7 +84,9 @@ export interface Booking {
   startDate: string
   endDate: string
   status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED'
-  creditsUsed?: number // Deprecated - kept for backward compatibility
+  /** What the booking actually cost, frozen when it was created. */
+  creditCost?: number
+  creditsUsed?: number // Deprecated - the API always writes 0
   weeklyPaymentAmount?: number // Weekly payment in EUR (default: 200)
   numberOfWeeks?: number // Number of weeks for this booking
   totalPaymentAmount?: number // Total payment amount

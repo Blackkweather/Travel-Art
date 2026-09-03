@@ -223,10 +223,7 @@ async function main() {
         '/images/hero/ombre.webp',
         '/images/headers/experiences.webp'
       ]),
-      videos: JSON.stringify([
-        'https://www.youtube.com/watch?v=example1',
-        'https://www.youtube.com/watch?v=example2'
-      ])
+      videos: JSON.stringify([])
     },
     {
       email: 'artist2@example.com',
@@ -240,10 +237,7 @@ async function main() {
         '/images/pillars/residence.webp',
         '/images/pillars/tout-compris.webp'
       ]),
-      videos: JSON.stringify([
-        'https://www.youtube.com/watch?v=example3',
-        'https://www.youtube.com/watch?v=example4'
-      ])
+      videos: JSON.stringify([])
     },
     {
       email: 'artist3@example.com',
@@ -257,10 +251,7 @@ async function main() {
         '/images/hero/scene.webp',
         '/images/pillars/creation.webp'
       ]),
-      videos: JSON.stringify([
-        'https://www.youtube.com/watch?v=example5',
-        'https://www.youtube.com/watch?v=example6'
-      ])
+      videos: JSON.stringify([])
     },
     {
       email: 'artist4@example.com',
@@ -274,10 +265,7 @@ async function main() {
         '/images/hero/ombre.webp',
         '/images/headers/experiences.webp'
       ]),
-      videos: JSON.stringify([
-        'https://www.youtube.com/watch?v=example7',
-        'https://www.youtube.com/watch?v=example8'
-      ])
+      videos: JSON.stringify([])
     },
     {
       email: 'artist5@example.com',
@@ -291,10 +279,7 @@ async function main() {
         '/images/pillars/residence.webp',
         '/images/pillars/tout-compris.webp'
       ]),
-      videos: JSON.stringify([
-        'https://www.youtube.com/watch?v=example9',
-        'https://www.youtube.com/watch?v=example10'
-      ])
+      videos: JSON.stringify([])
     },
     {
       email: 'artist6@example.com',
@@ -670,9 +655,7 @@ async function main() {
         '/images/pillars/residence.webp',
         '/images/pillars/tout-compris.webp'
       ]),
-        videos: JSON.stringify([
-          'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-        ]),
+        videos: JSON.stringify([]),
         mediaUrls: JSON.stringify([]),
         artisticProfile: artistData.artisticProfile,
         loyaltyPoints: Math.floor(Math.random() * 500) + 100

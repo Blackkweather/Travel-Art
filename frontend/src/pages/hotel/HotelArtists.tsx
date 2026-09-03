@@ -366,7 +366,6 @@ const HotelArtists: React.FC = () => {
         artistId: bookingModal.artistId,
         startDate: new Date(bookingModal.start).toISOString(),
         endDate: new Date(bookingModal.end).toISOString(),
-        creditsUsed: 1
       })
       setBookingModal({ open: false })
       // Booking created successfully - receipt will be available after payment
@@ -698,17 +697,17 @@ const HotelArtists: React.FC = () => {
                 <input type="date" name="startDate" className="form-input w-full" value={bookingModal.start || ''} onChange={(e)=>setBookingModal(m=>({...m,start:e.target.value}))} />
               </div>
               <div>
-                <label className="form-label">End date</label>
+                <label className="form-label">{t('Date de fin')}</label>
                 <input type="date" name="endDate" className="form-input w-full" value={bookingModal.end || ''} onChange={(e)=>setBookingModal(m=>({...m,end:e.target.value}))} />
               </div>
               <div>
-                <label className="form-label">Notes (optional)</label>
+                <label className="form-label">{t('Notes (facultatif)')}</label>
                 <input type="text" name="notes" className="form-input w-full" placeholder={t('Demandes particulières ou remarques')} onChange={(e)=>setBookingModal(m=>({...m,notes:e.target.value}))} />
               </div>
               {bookingError && <div className="text-sm text-[var(--state-critical)]">{bookingError}</div>}
               <div className="flex justify-end space-x-2 pt-2">
                 <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>Annuler</button>
-                <button className="btn-primary" disabled={processing} onClick={createBooking}>{processing? 'Sending…':'Send Request'}</button>
+                <button className="btn-primary" disabled={processing} onClick={createBooking}>{processing ? t('Envoi…') : t('Envoyer la demande')}</button>
               </div>
             </div>
           </div>

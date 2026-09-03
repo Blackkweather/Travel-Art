@@ -92,8 +92,8 @@ const ForgotPasswordPage: React.FC = () => {
             </h2>
             <p className="mt-2 text-content-secondary">
               {emailSent 
-                ? 'Check your email for reset instructions'
-                : 'Enter your email and we\'ll send you reset instructions'
+                ? t('Consultez votre boîte mail : les instructions vous y attendent.')
+                : t('Indiquez votre adresse e-mail et nous vous enverrons les instructions.')
               }
             </p>
           </div>

@@ -19,6 +19,7 @@ interface BookingData {
   endDate: string
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
   creditsUsed: number
+  creditCost?: number
   createdAt: string
   artist: {
     id: string
@@ -274,7 +275,7 @@ const AdminBookings: React.FC = () => {
                       <span className="text-sm text-content-secondary">{t('Crédits utilisés')}</span>
                     </div>
                     <span className="font-bold text-gold text-lg">
-                      {booking.creditsUsed}
+                      {booking.creditCost ?? booking.creditsUsed}
                     </span>
                   </div>
                 </div>

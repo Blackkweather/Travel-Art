@@ -552,3 +552,20 @@ model HotelFavorite {
   @@index([hotelId])
   @@index([artistId])
 }
+
+// Newsletter signups from the footer form.
+//
+// That form used to resolve a one-second timer and report success with the API
+// call commented out, so every visitor who subscribed was told it had worked
+// and their address went nowhere.
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  locale         String    @default("fr")
+  // Which surface it came from, so the list can be read later.
+  source         String?
+  createdAt      DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  @@index([createdAt])
+}

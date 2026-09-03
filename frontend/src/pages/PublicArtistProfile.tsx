@@ -238,7 +238,8 @@ const PublicArtistProfile: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gold" />
                   <span className="text-sm font-medium text-content">
-                    {artist.bookings?.length || 0} {(artist.bookings?.length || 0) === 1 ? 'Booking' : 'Bookings'}
+                    {t((artist.bookings?.length || 0) === 1 ? '{n} réservation' : '{n} réservations',
+                      { n: artist.bookings?.length || 0 })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
