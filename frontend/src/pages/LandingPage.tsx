@@ -104,27 +104,6 @@ function DropCap({ children }: { children: string }) {
 }
 
 export default function LandingPage() {
-  // States
-  const [experiences, setExperiences] = useState<any[]>([])
-  const [isLoadingExperiences, setIsLoadingExperiences] = useState(true)
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
-  const [slides, setSlides] = useState<Slide[]>([])
-  const [showSlideshowCursor, setShowSlideshowCursor] = useState(true)
-  
-  // Refs
-  const heroRef = useRef<HTMLElement>(null)
-  const slideshowRef = useRef<HTMLDivElement>(null)
-  const counterStripRef = useRef<HTMLDivElement>(null)
-  const cursorRef = useRef<HTMLDivElement>(null)
-  const isAnimatingRef = useRef(false)
-  const mouseXRef = useRef(0)
-  const weLoveSectionRef = useRef<HTMLElement>(null)
-  const descriptionRef = useRef<HTMLElement>(null)
-  const experienceImagesSectionRef = useRef<HTMLElement>(null)
-  const experiencesSectionRef = useRef<HTMLElement>(null)
-  
-  const weLovetags = ['MUSIQUE', 'ART', 'VOYAGE', 'LUXE', 'CULTURE', 'RENCONTRE', 'CRÉATION', 'SCÈNE']
-
   // The hero is a full-viewport section, so an empty slide list renders as a
   // black void. These fallbacks keep the landing page presentable whenever the
   // API is unreachable or the catalogue is still too small to fill the
@@ -153,6 +132,33 @@ export default function LandingPage() {
       category: 'Voyage'
     }
   ]
+
+  // States
+  const [experiences, setExperiences] = useState<any[]>([])
+  const [isLoadingExperiences, setIsLoadingExperiences] = useState(true)
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+  // Seeded, not empty: the hero paints on the first render instead of
+  // showing a black full-height void until the trips request resolves. Only
+  // the opening slide is seeded - seeding all three made the phone fetch two
+  // more full-bleed photographs (144 kB) that the API slides then replaced
+  // without either ever being seen.
+  const [slides, setSlides] = useState<Slide[]>(() => defaultSlides.slice(0, 1))
+  const [showSlideshowCursor, setShowSlideshowCursor] = useState(true)
+  
+  // Refs
+  const heroRef = useRef<HTMLElement>(null)
+  const slideshowRef = useRef<HTMLDivElement>(null)
+  const counterStripRef = useRef<HTMLDivElement>(null)
+  const cursorRef = useRef<HTMLDivElement>(null)
+  const isAnimatingRef = useRef(false)
+  const mouseXRef = useRef(0)
+  const weLoveSectionRef = useRef<HTMLElement>(null)
+  const descriptionRef = useRef<HTMLElement>(null)
+  const experienceImagesSectionRef = useRef<HTMLElement>(null)
+  const experiencesSectionRef = useRef<HTMLElement>(null)
+  
+  const weLovetags = ['MUSIQUE', 'ART', 'VOYAGE', 'LUXE', 'CULTURE', 'RENCONTRE', 'CRÉATION', 'SCÈNE']
+
 
   // Fetch experiences and create slides
   useEffect(() => {
@@ -222,7 +228,10 @@ export default function LandingPage() {
               category: exp.category
             }
           })
-          setSlides(experienceSlides)
+          // Keep the opening slide. It is already on screen and already
+          // decoded, so replacing the whole array would swap the image the
+          // reader is looking at a second after they arrived.
+          setSlides([defaultSlides[0], ...experienceSlides])
         } else {
           // Too few experiences to fill the slideshow - fall back rather than
           // leaving the hero blank.
@@ -439,12 +448,14 @@ export default function LandingPage() {
 
       // Animate in first slide text
       const firstSlideTextLines = firstSlide.querySelectorAll('.slide__text-line')
+      // No delay: the reveal is the first thing on the page, and the hero
+      // already costs a hydration pass before it can run at all.
       gsap.to(firstSlideTextLines, {
         y: 0,
         opacity: 1,
-        duration: 1.2,
-        stagger: 0.1,
-        delay: 0.5,
+        duration: 0.9,
+        stagger: 0.08,
+        delay: 0,
         ease: 'textReveal'
       })
     }

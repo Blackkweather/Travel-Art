@@ -128,7 +128,7 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
         </div>
 
         <div className="flex items-center gap-5">
-          <LanguageSwitcher />
+          <LanguageSwitcher onMedia={onMedia} />
           <Link
             to="/login"
             className={`hidden sm:block text-sm font-medium whitespace-nowrap transition-colors duration-300 ${

@@ -209,7 +209,7 @@ const AdminLogs: React.FC = () => {
     <div className="space-y-6">
       <SEOHead title={t('Journal d’activité') + ' — Travel Art'} />
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
             {t('Journal d’activité')}
@@ -218,7 +218,7 @@ const AdminLogs: React.FC = () => {
             {t('Suivre l’activité de la plateforme, les actions des utilisateurs et les événements système')}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={fetchActivities}
             className="btn-secondary flex items-center gap-2"

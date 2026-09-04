@@ -134,7 +134,7 @@ const AdminReferrals: React.FC = () => {
       <div className="shell py-12 md:py-16">
         {/* Header */}
         <div className="mb-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
               <h1 className="page-head__title">
             {t('Suivi des parrainages')}
@@ -145,7 +145,7 @@ const AdminReferrals: React.FC = () => {
         </div>
         <button
           onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
+              className="flex flex-wrap items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
         >
           <Download className="w-4 h-4" />
               Exporter en CSV

@@ -13,8 +13,17 @@
     <title>Travel Art — Résidences d’artistes en hôtellerie d’exception</title>
     <meta name="description" content="Travel Art réunit les hôtels d’exception et les artistes : résidences, concerts et expositions, accueillis là où le travail trouve sa place." />
     
-    <!-- Preload critical hero image - matches LandingPageNewV3 -->
-    <!-- Removed preload to avoid unused resource warning - image loads when component mounts -->
+    <!-- The opening hero photograph. imagesrcset selects on width x DPR,
+         the same rule heroVariant() uses, so this fetches the file the CSS
+         will ask for and not a second copy of it. -->
+    <link
+      rel="preload"
+      as="image"
+      fetchpriority="high"
+      href="/images/hero/ombre-1440.webp"
+      imagesrcset="/images/hero/ombre-960.webp 960w, /images/hero/ombre-1440.webp 1440w, /images/hero/ombre.webp 2400w"
+      imagesizes="100vw"
+    />
     
     <!-- Fonts are self-hosted via fontsource and imported from src/index.css,
          so there is no render-blocking third-party stylesheet here. -->

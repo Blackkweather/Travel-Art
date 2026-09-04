@@ -10,7 +10,16 @@ import { LOCALES, useI18n } from '@/i18n'
  * language is always visible, so nobody has to open the menu to find out which
  * one they are in.
  */
-export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
+export default function LanguageSwitcher({
+  compact = false,
+  onMedia = false,
+}: {
+  compact?: boolean
+  /** True when the bar is transparent over photography, where every other
+   *  control in the header turns white. Without it this was the one child that
+   *  stayed navy, and on the hero it read as a smudge rather than a control. */
+  onMedia?: boolean
+}) {
   const { locale, setLocale } = useI18n()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -64,7 +73,9 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`Langue : ${active.label}`}
-        className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-content hover:text-gold transition-colors"
+        className={`flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium transition-colors ${
+          onMedia ? 'text-white/85 hover:text-white' : 'text-content hover:text-gold'
+        }`}
       >
         <Globe className="w-4 h-4" aria-hidden="true" />
         {active.short}

@@ -326,7 +326,7 @@ const ArtistProfile: React.FC = () => {
     <div className="space-y-8">
       <SEOHead title={t('Mon profil') + ' — Travel Art'} />
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
             {t('Profil de l’artiste')}
@@ -335,7 +335,7 @@ const ArtistProfile: React.FC = () => {
             {t('Gérez votre profil et présentez votre travail aux hôtels d’exception')}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setIsEditing(!isEditing)}
             className="btn-secondary flex items-center space-x-2"

@@ -159,7 +159,7 @@ const AdminModeration: React.FC = () => {
       <SEOHead title={t('Modération') + ' — Travel Art'} />
       <div className="shell py-12 md:py-16">
         <div className="mb-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
               <h1 className="page-head__title">
                 {t('Modération des contenus')}
@@ -168,7 +168,7 @@ const AdminModeration: React.FC = () => {
                 {t('Examiner les artistes et les hôtels ; suspendre ou réactiver un compte.')}
               </p>
         </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2 bg-surface-raised border border-line rounded-card p-1">
             <button 
               onClick={() => setTab('artists')} 
@@ -219,7 +219,7 @@ const AdminModeration: React.FC = () => {
               ) : (
                 artists.map((a) => (
                 <div key={a.id} className="flex items-center justify-between p-6 hover:bg-surface transition-colors">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-surface-sunken flex items-center justify-center">
                       <User className="w-6 h-6 text-content-secondary" />
                     </div>
@@ -228,7 +228,7 @@ const AdminModeration: React.FC = () => {
                       <div className="text-sm text-content-secondary">{a.discipline || t('Discipline non renseignée')}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <a 
                       href={`/artist/${a.id}`}
                       className="btn-ghost btn-sm"
@@ -270,7 +270,7 @@ const AdminModeration: React.FC = () => {
               ) : (
                 hotels.map((h) => (
                 <div key={h.id} className="flex items-center justify-between p-6 hover:bg-surface transition-colors">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-surface-sunken flex items-center justify-center">
                       <Building className="w-6 h-6 text-content-secondary" />
                     </div>
@@ -281,7 +281,7 @@ const AdminModeration: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <a 
                       href={`/hotel/${h.id}`}
                       className="btn-ghost btn-sm"

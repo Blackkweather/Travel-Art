@@ -347,7 +347,7 @@ const HotelBookings: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <StatusBadge status={booking.status} />
                   
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     {booking.status === 'pending' && (
                       <>
                         <button 
