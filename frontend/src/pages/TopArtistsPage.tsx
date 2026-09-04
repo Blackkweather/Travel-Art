@@ -10,6 +10,8 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import ArtistBenefits from '@/components/sections/ArtistBenefits'
+import Disciplines from '@/components/sections/Disciplines'
 
 interface TopArtist {
   id: string
@@ -300,6 +302,11 @@ const TopArtistsPage: React.FC = () => {
           button was .btn-primary - a navy fill - sitting on a navy band, so
           only its label could be seen. Gold is the correct fill on an inverse
           surface, and it is the only place on the page gold fills anything. */}
+      {/* The page listed the artists and never said why an artist would be
+          on it, nor what the roster covers. /partners does both for hotels. */}
+      <ArtistBenefits />
+      <Disciplines />
+
       <section className="band-inverse">
         <div className="shell text-center">
           <motion.div

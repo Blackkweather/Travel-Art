@@ -4,6 +4,8 @@ import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import ProofBand from '@/components/landing/ProofBand'
+import HowWeWork from '@/components/sections/HowWeWork'
 
 /* The page was a single column of seven identical h2-plus-list blocks. The copy
    was fine; the presentation gave a reader no way to tell the mission from the
@@ -77,6 +79,10 @@ const AboutPage: React.FC = () => {
 
         {/* Two audiences, two columns. They read this page for different reasons
             and were previously made to queue in one. */}
+        {/* The same figures the landing page opens with: a page about who we
+            are should say how much of it exists. */}
+        <ProofBand />
+
         <section className="band-warm">
           <div className="shell grid gap-12 md:grid-cols-2 md:gap-16">
             {AUDIENCES.map(({ eyebrow, lines, to, cta }) => (
@@ -122,6 +128,8 @@ const AboutPage: React.FC = () => {
 
         {/* The one inverse band on the page, which is where every page on this
             site puts its closing ask. */}
+        <HowWeWork />
+
         <section className="band-inverse">
           <div className="shell text-center">
             <h2 className="mx-auto max-w-[20ch] font-serif text-3xl md:text-4xl">
