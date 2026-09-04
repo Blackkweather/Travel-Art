@@ -330,8 +330,8 @@ const AdminLogs: React.FC = () => {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-4 mb-2">
-                    <div className="flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 mb-2">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="badge-neutral">{activityLabel(activity.type)}</span>
                         <span className="font-serif text-base text-content">{activity.action}</span>
@@ -339,10 +339,10 @@ const AdminLogs: React.FC = () => {
                       
                       {/* Actor */}
                       {activity.actor && (
-                        <div className="flex items-center gap-2 text-sm text-content-secondary mb-1">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-content-secondary mb-1 min-w-0">
                           {getRoleIcon(activity.actor.role)}
                           <span className="font-medium">{activity.actor.name}</span>
-                          <span className="text-content-secondary">({activity.actor.email})</span>
+                          <span className="text-content-secondary break-all">({activity.actor.email})</span>
                           {activity.target && (
                             <>
                               <span className="text-content-secondary">→</span>
@@ -356,11 +356,11 @@ const AdminLogs: React.FC = () => {
                       {/* Details */}
                       {activity.details && Object.keys(activity.details).length > 0 && (
                         <div className="mt-2 p-3 bg-surface-raised rounded-card border border-line text-xs">
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                             {Object.entries(activity.details).map(([key, value]) => (
-                              <div key={key} className="flex items-center gap-1">
+                              <div key={key} className="flex items-baseline gap-1 min-w-0">
                                 <span className="font-semibold text-content-secondary">{key}:</span>
-                                <span className="text-content-secondary">
+                                <span className="text-content-secondary break-all">
                                   {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                                 </span>
                               </div>
