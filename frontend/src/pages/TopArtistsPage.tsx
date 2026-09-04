@@ -57,7 +57,9 @@ const TopArtistsPage: React.FC = () => {
           const statsData = statsResponse.data.data
           setStats({
             totalArtists: statsData.totalArtists || 0,
-            averageRating: 4.8, // Calculate from ratings if available
+            // /api/stats returns the real platform average; this used to be
+            // the literal 4.8 with a note to calculate it one day.
+            averageRating: statsData.averageRating ?? 0,
             totalBookings: statsData.totalBookings || 0,
             totalHotels: statsData.totalHotels || 0
           })

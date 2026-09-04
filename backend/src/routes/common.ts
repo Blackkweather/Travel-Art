@@ -261,8 +261,13 @@ router.get('/top', asyncHandler(async (req, res) => {
     const artistsWithBadges = topArtists.map((artist) => {
       const ratings = ratingsByArtist[artist.id] || [];
       let ratingBadge = null;
+      // Returned alongside the badge. It was computed here, used to pick the
+      // badge and then dropped, so the client tried to read the number back
+      // out of the badge text - and got it wrong for every artist.
+      let averageRating: number | null = null;
       if (ratings.length > 0) {
         const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+        averageRating = Math.round(avgRating * 10) / 10;
         if (avgRating >= 4.5) {
           ratingBadge = 'Top 10 % des artistes';
         } else if (avgRating >= 4.0) {
@@ -284,6 +289,8 @@ router.get('/top', asyncHandler(async (req, res) => {
       return {
         ...artist,
         ratingBadge,
+        averageRating,
+        ratingCount: ratings.length,
         bookingCount: artist.bookings?.length || 0,
         images: images
       };
