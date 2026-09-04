@@ -1,27 +1,17 @@
 {
   "name": "Travel Art",
   "short_name": "Travel Art",
-  "description": "Luxury hotel and artist exchange platform",
+  "description": "Résidences d’artistes dans des hôtels d’exception : concerts, expositions et scènes, accueillis là où le travail trouve sa place.",
+  "lang": "fr",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F9F8F3",
   "theme_color": "#0B1F3F",
   "icons": [
-    {
-      "src": "/favicon-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png"
-    },
-    {
-      "src": "/logo-1-final.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

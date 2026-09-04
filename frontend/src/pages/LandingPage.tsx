@@ -5,6 +5,11 @@ import { tripsApi } from '@/utils/api'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import GalleryPan from '@/components/GalleryPan'
+import ProofBand from '@/components/landing/ProofBand'
+import ProcessSteps from '@/components/landing/ProcessSteps'
+import FeaturedArtists from '@/components/landing/FeaturedArtists'
+import Testimonials from '@/components/landing/Testimonials'
+import LandingFaq from '@/components/landing/LandingFaq'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import { extractArray } from '@/utils/apiPayload'
@@ -758,6 +763,9 @@ export default function LandingPage() {
             read a paragraph. Outlined type rather than a near-invisible tint:
             on a white page a 7%-opacity fill is not decoration, it is nothing,
             whereas an outline reads as deliberate display lettering. */}
+        {/* The first thing after the photograph: proof the catalogue is real. */}
+        <ProofBand />
+
         <section ref={weLoveSectionRef} className="py-16 md:py-24 relative overflow-hidden border-b border-line" style={{ opacity: 1 }}>
           <div aria-hidden="true" className="space-y-2 select-none">
             <div className="flex animate-scroll-right" style={{ willChange: 'transform', width: 'fit-content' }}>
@@ -870,6 +878,9 @@ export default function LandingPage() {
         {/* Signature moment: the work travels sideways while the page holds. */}
         <GalleryPan items={experiences.slice(0, 6)} />
 
+        {/* The gallery shows the places; this shows who plays them. */}
+        <FeaturedArtists />
+
         {/* The exchange, set as two facing columns. A different layout family
             from the gallery above and the band below, and it states both sides
             of the trade at once rather than as three identical cards. */}
@@ -925,6 +936,13 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* The band above states what each side gets; these state how it
+            happens, how it went for the hotels that have done it, and the
+            questions a visitor still has when they reach the bottom. */}
+        <ProcessSteps />
+        <Testimonials />
+        <LandingFaq />
 
         {/* Closing band. The only inverse surface below the hero, so the final
             action carries the most contrast on the page. */}
