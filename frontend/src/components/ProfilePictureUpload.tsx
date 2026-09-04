@@ -122,7 +122,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
         {displayImage ? (
           <img decoding="async" loading="lazy"
             src={displayImage}
-            alt="Profil"
+            alt={t('Profil')}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -171,7 +171,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
               handleRemove();
             }}
             className="bg-[var(--state-critical)] text-white p-2 rounded-full hover:bg-[var(--state-critical)] transition-colors shadow-lg"
-            title="Retirer"
+            title={t('Retirer')}
           >
             <X className="w-4 h-4" />
           </button>

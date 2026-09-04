@@ -231,7 +231,7 @@ const AdminLogs: React.FC = () => {
             className="btn-primary flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Exporter en CSV
+            {t('Exporter en CSV')}
           </button>
         </div>
       </div>
@@ -240,7 +240,7 @@ const AdminLogs: React.FC = () => {
       <div className="panel p-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gold" />
-          <h3 className="text-lg font-semibold text-content">Filtres</h3>
+          <h3 className="text-lg font-semibold text-content">{t('Filtres')}</h3>
         </div>
         
         {/* Activity Type Filter */}
@@ -277,7 +277,7 @@ const AdminLogs: React.FC = () => {
 
         {/* Search */}
         <div>
-          <label className="block text-sm font-medium text-content mb-2">Rechercher</label>
+          <label className="block text-sm font-medium text-content mb-2">{t('Rechercher')}</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-content-secondary" />
             <input

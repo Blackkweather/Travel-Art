@@ -299,7 +299,7 @@ const ArtistReferrals: React.FC = () => {
         ) : (
           <div className="text-center py-12">
             <Users className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-            <p className="text-content-secondary mb-2">Aucun parrainage</p>
+            <p className="text-content-secondary mb-2">{t('Aucun parrainage')}</p>
             <p className="text-sm text-content-secondary">
               {t('Partagez votre code pour inviter d’autres artistes et commencer à gagner des crédits.')}
             </p>
@@ -342,7 +342,7 @@ const ArtistReferrals: React.FC = () => {
               <Star className="w-8 h-8 text-gold" />
             </div>
             <h3 className="text-lg font-serif font-semibold text-content mb-2">
-              Aider ses pairs
+              {t('Aider ses pairs')}
             </h3>
             <p className="text-content-secondary">
               {t('Aidez d’autres artistes à trouver de nouvelles scènes et à faire grandir leur carrière')}

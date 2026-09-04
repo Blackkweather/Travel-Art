@@ -112,7 +112,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
             className={`form-input cursor-pointer flex w-full items-center justify-between ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <span className={endDate ? 'text-navy' : 'text-content-secondary'}>
-              {endDate ? format(parse(endDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : 'Choisir la date de fin'}
+              {endDate ? format(parse(endDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : t('Choisir la date de fin')}
             </span>
             <Calendar className="w-4 h-4 text-content-secondary" />
           </button>

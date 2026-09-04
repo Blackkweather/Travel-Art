@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
+import { t } from '@/i18n'
 
 /**
  * Referral redirect page
@@ -29,7 +30,7 @@ const ReferralRedirectPage: React.FC = () => {
     <div className="min-h-screen bg-[var(--surface)] flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-control h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-        <p className="text-content-secondary">Redirection…</p>
+        <p className="text-content-secondary">{t('Redirection…')}</p>
       </div>
     </div>
   )

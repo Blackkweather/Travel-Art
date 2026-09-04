@@ -123,7 +123,7 @@ const ArtistDashboard: React.FC = () => {
       <SEOHead title={t('Tableau de bord') + ' — Travel Art'} />
       <div className="shell py-12 md:py-16">
         <header className="page-head">
-          <span className="eyebrow">Espace artiste</span>
+          <span className="eyebrow">{t('Espace artiste')}</span>
           <h1 className="page-head__title">{t('Tableau de bord')}</h1>
           <p className="page-head__lede">
             {t('Bon retour, {name}. Voici l’essentiel de votre activité.', {
@@ -174,7 +174,7 @@ const ArtistDashboard: React.FC = () => {
                         const country = booking.hotel?.country ?? loc.country
                         const where = [city, countryLabel(country)].filter(Boolean).join(', ')
                         const spot = booking.performanceSpot
-                        return [where || 'Lieu à confirmer', spot].filter(Boolean).join(' — ')
+                        return [where || t('Lieu à confirmer'), spot].filter(Boolean).join(' — ')
                       })()}
                     </p>
                     <p className="mt-1 text-[0.8125rem] text-content-secondary">

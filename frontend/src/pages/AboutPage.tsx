@@ -51,7 +51,7 @@ const AboutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[var(--surface)]">
       <SEOHead
-        title="À propos — Travel Art"
+        title={t('À propos — Travel Art')}
         description={t('Travel Art réunit les artistes et les hôtels d’exception : notre mission, nos valeurs et le fonctionnement du programme.')}
       />
       <SimpleNavbar />
@@ -60,7 +60,7 @@ const AboutPage: React.FC = () => {
         {/* The position, stated once, at the size it deserves. */}
         <section className="band pt-32 md:pt-40">
           <div className="shell">
-            <span className="eyebrow">À propos</span>
+            <span className="eyebrow">{t('À propos')}</span>
             <h1 className="mt-6 max-w-[18ch] font-serif text-[2.75rem] leading-[1.05] text-content md:text-[4.5rem]">
               {t('Réunir les artistes et les hôtels d’exception.')}
             </h1>
@@ -101,7 +101,7 @@ const AboutPage: React.FC = () => {
         <section className="band">
           <div className="shell">
             <div className="flex items-end justify-between gap-6">
-              <h2 className="font-serif text-3xl text-content md:text-4xl">Nos valeurs</h2>
+              <h2 className="font-serif text-3xl text-content md:text-4xl">{t('Nos valeurs')}</h2>
             </div>
             <span className="rule-reveal mt-6" />
             <ol className="mt-12 grid gap-x-12 gap-y-10 sm:grid-cols-2">

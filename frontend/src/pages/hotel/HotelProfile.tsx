@@ -124,7 +124,7 @@ const HotelProfile: React.FC = () => {
       const detail =
         err?.response?.data?.message ??
         err?.response?.data?.error ??
-        'Vos modifications n’ont pas été enregistrées. Veuillez réessayer.'
+        t('Vos modifications n’ont pas été enregistrées. Veuillez réessayer.')
       setError(detail)
     } finally {
       setSaving(false)
@@ -182,7 +182,7 @@ const HotelProfile: React.FC = () => {
               className="btn-gold flex items-center gap-2"
             >
               <Edit3 size={16} strokeWidth={1.5} aria-hidden="true" />
-              Edit profile
+              {t('Modifier le profil')}
             </button>
           )}
         </div>
@@ -230,7 +230,7 @@ const HotelProfile: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="hotel-phone" className="form-label">Contact phone</label>
+              <label htmlFor="hotel-phone" className="form-label">{t('Téléphone de contact')}</label>
               <input
                 id="hotel-phone"
                 className="form-input"
@@ -241,7 +241,7 @@ const HotelProfile: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="hotel-city" className="form-label">City</label>
+              <label htmlFor="hotel-city" className="form-label">{t('Ville')}</label>
               <input
                 id="hotel-city"
                 className="form-input"
@@ -252,7 +252,7 @@ const HotelProfile: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="hotel-country" className="form-label">Country</label>
+              <label htmlFor="hotel-country" className="form-label">{t('Pays')}</label>
               <input
                 id="hotel-country"
                 className="form-input"
@@ -287,7 +287,7 @@ const HotelProfile: React.FC = () => {
         >
           <h2 className="font-serif text-xl text-[var(--text-primary)] flex items-center gap-2">
             <MapPin size={18} strokeWidth={1.5} aria-hidden="true" />
-            Performance spaces
+            {t('Espaces de représentation')}
           </h2>
 
           {spots.length === 0 && (
@@ -303,7 +303,7 @@ const HotelProfile: React.FC = () => {
                 className="grid gap-4 md:grid-cols-[2fr_1fr_auto] items-end border-t border-[var(--border-subtle)] pt-5 first:border-0 first:pt-0"
               >
                 <div>
-                  <label htmlFor={`spot-name-${index}`} className="form-label">Nom</label>
+                  <label htmlFor={`spot-name-${index}`} className="form-label">{t('Nom')}</label>
                   <input
                     id={`spot-name-${index}`}
                     className="form-input"
@@ -343,7 +343,7 @@ const HotelProfile: React.FC = () => {
               className="btn-secondary flex items-center gap-2"
             >
               <Plus size={16} strokeWidth={1.5} aria-hidden="true" />
-              Add a space
+              {t('Ajouter un espace')}
             </button>
           )}
         </motion.section>
@@ -354,11 +354,11 @@ const HotelProfile: React.FC = () => {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="panel p-6 space-y-6"
         >
-          <h2 className="font-serif text-xl text-[var(--text-primary)]">Contact principal</h2>
+          <h2 className="font-serif text-xl text-[var(--text-primary)]">{t('Contact principal')}</h2>
 
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <label htmlFor="rep-name" className="form-label">Nom</label>
+              <label htmlFor="rep-name" className="form-label">{t('Nom')}</label>
               <input
                 id="rep-name"
                 className="form-input"

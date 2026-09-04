@@ -169,12 +169,12 @@ const HotelRegistrationFlow: React.FC = () => {
   const { register: registerUser } = useAuthStore();
 
   const stepTitles = [
-    'Infos générales',
-    'Ambiance & identité',
-    "Espace d’expression & équipement technique",
+    t('Infos générales'),
+    t('Ambiance & identité'),
+    t('Espace d’expression & équipement technique'),
     'Conditions de collaboration',
     'Logistique',
-    'Liberté artistique',
+    t('Liberté artistique'),
     'Validation & process'
   ];
 
@@ -192,10 +192,10 @@ const HotelRegistrationFlow: React.FC = () => {
     if (!g.country) errors.push('le pays');
     if (!g.city) errors.push('la ville');
     if (!g.hotelType) errors.push(t('le type d’établissement'));
-    if (!g.roomCount) errors.push('le nombre de chambres');
+    if (!g.roomCount) errors.push(t('le nombre de chambres'));
     if (!g.contactEmail) errors.push(t('l’email de contact'));
-    else if (!VALIDATION.email.test(g.contactEmail)) errors.push('un email de contact valide');
-    if (!g.password) errors.push('un mot de passe');
+    else if (!VALIDATION.email.test(g.contactEmail)) errors.push(t('un email de contact valide'));
+    if (!g.password) errors.push(t('un mot de passe'));
     else if (!VALIDATION.password.test(g.password)) {
       errors.push(t('un mot de passe d’au moins 8 caractères avec majuscule, minuscule, chiffre et caractère spécial'));
     }
@@ -334,7 +334,7 @@ const HotelRegistrationFlow: React.FC = () => {
       navigate('/inscription-envoyee', { state: { role: 'HOTEL' } });
     } catch (error: unknown) {
       const apiError = error as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(apiError.response?.data?.error?.message || 'Échec de l’inscription');
+      toast.error(apiError.response?.data?.error?.message || t('Échec de l’inscription'));
     } finally {
       setIsLoading(false);
     }
@@ -384,14 +384,14 @@ const HotelRegistrationFlow: React.FC = () => {
                   </motion.div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <motion.div variants={itemVariants}>
-                      <SelectWithSearch label="Pays" options={countryOptions} value={state.general.country} onChange={(v) => updateGeneral({ country: v })} />
+                      <SelectWithSearch label={t('Pays')} options={countryOptions} value={state.general.country} onChange={(v) => updateGeneral({ country: v })} />
                     </motion.div>
                     <motion.div variants={itemVariants}>
-                      <FormField label="Ville" value={state.general.city} onChange={(e) => updateGeneral({ city: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                      <FormField label={t('Ville')} value={state.general.city} onChange={(e) => updateGeneral({ city: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                     </motion.div>
                   </div>
                   <motion.div variants={itemVariants}>
-                    <FormField label="Localisation" placeholder={t('Adresse ou description')} value={state.general.location || ''} onChange={(e) => updateGeneral({ location: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                    <FormField label={t('Localisation')} placeholder={t('Adresse ou description')} value={state.general.location || ''} onChange={(e) => updateGeneral({ location: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   </motion.div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <motion.div variants={itemVariants}>
@@ -415,7 +415,7 @@ const HotelRegistrationFlow: React.FC = () => {
                   <motion.div variants={itemVariants}>
                     <CheckboxGroup
                       name="general-public-primary"
-                      label="Public principal"
+                      label={t('Public principal')}
                       options={[
                         { value: 'Familles', label: 'Familles' },
                         { value: 'Couples', label: 'Couples' },
@@ -427,7 +427,7 @@ const HotelRegistrationFlow: React.FC = () => {
                     />
                   </motion.div>
                   <motion.div variants={itemVariants}>
-                    <FormField inputMode="url" label="Site web" placeholder="https://..." value={state.general.website || ''} onChange={(e) => updateGeneral({ website: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                    <FormField inputMode="url" label={t('Site web')} placeholder="https://..." value={state.general.website || ''} onChange={(e) => updateGeneral({ website: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   </motion.div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField inputMode="url" label="Instagram" placeholder="https://instagram.com/..." value={state.general.socials?.instagram || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), instagram: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
@@ -435,7 +435,7 @@ const HotelRegistrationFlow: React.FC = () => {
                     <FormField inputMode="url" label="YouTube" placeholder="https://youtube.com/..." value={state.general.socials?.youtube || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), youtube: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField label="Contact responsable" placeholder="Nom" value={state.general.contactName || ''} onChange={(e) => updateGeneral({ contactName: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                    <FormField label={t('Contact responsable')} placeholder={t('Nom')} value={state.general.contactName || ''} onChange={(e) => updateGeneral({ contactName: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                     <FormField type="email" label={t('E-mail de contact *')} placeholder={t('contact@votre-hotel.com')} value={state.general.contactEmail} onChange={(e) => updateGeneral({ contactEmail: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                     <FormField type="tel" label={t('Téléphone contact')} placeholder="+33 ..." value={state.general.contactPhone || ''} onChange={(e) => updateGeneral({ contactPhone: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   </div>
@@ -528,8 +528,8 @@ const HotelRegistrationFlow: React.FC = () => {
                     <FormField label={t('Ce que l’hôtel ne veut pas')} placeholder={t('Précisez les styles ou formats non souhaités')} value={state.ambiance.disliked || ''} onChange={(e) => updateAmbiance({ disliked: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   </motion.div>
                   <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">Retour</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">Continuer</button>
+                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
+                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
                   </div>
                 </motion.div>
               </motion.div>
@@ -563,12 +563,12 @@ const HotelRegistrationFlow: React.FC = () => {
                         />
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <FormField inputMode="numeric" label={t('Capacité')} placeholder={t('Nombre de personnes')} value={space.capacity} onChange={(e) => updateSpace(index, { capacity: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                          <FormField label="Horaires possibles" placeholder="Ex: 18h-22h" value={space.hours} onChange={(e) => updateSpace(index, { hours: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                          <FormField label={t('Horaires possibles')} placeholder="Ex: 18h-22h" value={space.hours} onChange={(e) => updateSpace(index, { hours: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                           <FormField label={t('Niveau sonore autorisé')} placeholder={t('Bas, moyen, élevé')} value={space.noiseLevel} onChange={(e) => updateSpace(index, { noiseLevel: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                         </div>
                         <FormField inputMode="url" label={t('Photos ou vidéos (URLs, séparées par des virgules)')} placeholder="https://..., https://..." value={(space.media || []).join(', ')} onChange={(e) => updateSpace(index, { media: (e.target as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean) })} disabled={isLoading} />
                         <div className="flex justify-between">
-                          <button type="button" onClick={() => removeSpace(index)} className="btn-secondary">Supprimer</button>
+                          <button type="button" onClick={() => removeSpace(index)} className="btn-secondary">{t('Supprimer')}</button>
                         </div>
                       </div>
                     ))}
@@ -587,19 +587,19 @@ const HotelRegistrationFlow: React.FC = () => {
                     <FormField label={t('Dimensions de la scène')} placeholder="Ex: 6m x 4m" value={state.equipment.stage.dimensions || ''} onChange={(e) => updateEquipment({ stage: { ...state.equipment.stage, dimensions: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
                     <RadioGroup
                       name="equipment-sound"
-                      label="Sonorisation"
+                      label={t('Sonorisation')}
                       options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]}
                       value={state.equipment.sound.has ? 'true' : 'false'}
                       onChange={(v) => updateEquipment({ sound: { ...state.equipment.sound, has: v === 'true' } })}
                     />
-                    <FormField label={t('Détails sonorisation')} placeholder="Marque, puissance, console, micros…" value={state.equipment.sound.details || ''} onChange={(e) => updateEquipment({ sound: { ...state.equipment.sound, details: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                    <SelectWithSearch label="Éclairage" options={[{ value: 'Basique', label: 'Basique' }, { value: 'Pro', label: 'Pro' }]} value={state.equipment.lighting} onChange={(v) => updateEquipment({ lighting: v as Equipment['lighting'] })} />
+                    <FormField label={t('Détails sonorisation')} placeholder={t('Marque, puissance, console, micros…')} value={state.equipment.sound.details || ''} onChange={(e) => updateEquipment({ sound: { ...state.equipment.sound, details: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
+                    <SelectWithSearch label={t('Éclairage')} options={[{ value: 'Basique', label: 'Basique' }, { value: 'Pro', label: 'Pro' }]} value={state.equipment.lighting} onChange={(v) => updateEquipment({ lighting: v as Equipment['lighting'] })} />
                     <RadioGroup name="equipment-screens" label={t('Écran / vidéo / LED')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.equipment.screens.has ? 'true' : 'false'} onChange={(v) => updateEquipment({ screens: { has: v === 'true' } })} />
                     <RadioGroup name="equipment-crew" label={t('Régie technique sur place')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.equipment.crew.has ? 'true' : 'false'} onChange={(v) => updateEquipment({ crew: { has: v === 'true' } })} />
                   </div>
                   <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">Retour</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">Continuer</button>
+                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
+                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
                   </div>
                 </motion.div>
               </motion.div>
@@ -629,11 +629,11 @@ const HotelRegistrationFlow: React.FC = () => {
                   />
                   <FormField label={t('Conditions pour l’artiste (à remplir)')} placeholder={t('Décrivez les conditions précises pour l’artiste venant')} value={state.collaboration.conditionsText || ''} onChange={(e) => updateCollab({ conditionsText: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <RadioGroup name="collab-duration" label={t('Durée des prestations')} options={[{ value: 'One shot', label: 'Ponctuel' }, { value: 'Résidence', label: t('Résidence') }]} value={state.collaboration.durationType} onChange={(v) => updateCollab({ durationType: v as Collaboration['durationType'] })} />
-                  <FormField label={t('Résidence (durée)')} placeholder="1 semaine, 1 mois…" value={state.collaboration.residenceDuration || ''} onChange={(e) => updateCollab({ residenceDuration: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                  <FormField label={t('Résidence (durée)')} placeholder={t('1 semaine, 1 mois…')} value={state.collaboration.residenceDuration || ''} onChange={(e) => updateCollab({ residenceDuration: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <FormField label={t('Dates ou périodes ouvertes')} placeholder={t('Périodes ouvertes')} value={state.collaboration.openDates || ''} onChange={(e) => updateCollab({ openDates: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">Retour</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">Continuer</button>
+                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
+                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
                   </div>
                 </motion.div>
               </motion.div>
@@ -652,12 +652,12 @@ const HotelRegistrationFlow: React.FC = () => {
                     <p className="text-content-secondary">{t('Précisez les éléments qui aident l’artiste à se projeter.')}</p>
                   </div>
                   <RadioGroup name="logistics-lodging" label={t('Hébergement fourni')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.lodging ? 'true' : 'false'} onChange={(v) => updateLogistics({ lodging: v === 'true' })} />
-                  <RadioGroup name="logistics-meals" label="Repas inclus" options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.meals ? 'true' : 'false'} onChange={(v) => updateLogistics({ meals: v === 'true' })} />
-                  <RadioGroup name="logistics-transport" label="Transport pris en charge" options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.transport ? 'true' : 'false'} onChange={(v) => updateLogistics({ transport: v === 'true' })} />
-                  <FormField label={t('Accès aux installations de l’hôtel')} placeholder="Piscine, gym, spa, etc." value={state.logistics.facilities || ''} onChange={(e) => updateLogistics({ facilities: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                  <RadioGroup name="logistics-meals" label={t('Repas inclus')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.meals ? 'true' : 'false'} onChange={(v) => updateLogistics({ meals: v === 'true' })} />
+                  <RadioGroup name="logistics-transport" label={t('Transport pris en charge')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.transport ? 'true' : 'false'} onChange={(v) => updateLogistics({ transport: v === 'true' })} />
+                  <FormField label={t('Accès aux installations de l’hôtel')} placeholder={t('Piscine, salle de sport, spa, etc.')} value={state.logistics.facilities || ''} onChange={(e) => updateLogistics({ facilities: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">Retour</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">Continuer</button>
+                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
+                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
                   </div>
                 </motion.div>
               </motion.div>
@@ -679,20 +679,20 @@ const HotelRegistrationFlow: React.FC = () => {
                   <CheckboxGroup name="freedom-expectations" label={t('Attentes spécifiques de l’hôtel')} options={[{ value: 'Interaction avec les clients', label: t('Interaction avec les clients') }, { value: 'Image de marque à respecter', label: t('Image de marque à respecter') }]} values={state.freedom.expectations} onChange={(vals) => updateFreedom({ expectations: vals as Freedom['expectations'] })} />
                   <CheckboxGroup name="freedom-possibilities" label={t('Possibilités de proposer')} options={[{ value: 'Concepts originaux', label: 'Concepts originaux' }, { value: 'Collaborations avec d’autres artistes', label: t('Collaborations avec d’autres artistes') }, { value: 'Workshops / expériences uniques', label: t('Workshops / expériences uniques') }]} values={state.freedom.possibilities} onChange={(vals) => updateFreedom({ possibilities: vals as Freedom['possibilities'] })} />
                   <div className="flex items-center gap-3">
-                    <button type="button" className="btn-outline" onClick={() => updateFreedom({ otherEnabled: !state.freedom.otherEnabled })}>Autre</button>
+                    <button type="button" className="btn-outline" onClick={() => updateFreedom({ otherEnabled: !state.freedom.otherEnabled })}>{t('Autre')}</button>
                   </div>
                   {state.freedom.otherEnabled && (
                     <FormField label={t('Autre (précisez)')} placeholder={t('Ajoutez vos attentes ou possibilités spécifiques')} value={state.freedom.otherDetails || ''} onChange={(e) => updateFreedom({ otherDetails: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   )}
-                  <FormField label={t('Types d’artistes recherchés')} placeholder="Musiciens, DJs, danseurs…" value={state.freedom.artistTypesNeeded || ''} onChange={(e) => updateFreedom({ artistTypesNeeded: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                  <FormField label={t('Types d’artistes recherchés')} placeholder={t('Musiciens, DJs, danseurs…')} value={state.freedom.artistTypesNeeded || ''} onChange={(e) => updateFreedom({ artistTypesNeeded: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <FormField label={t('Comment ça va se passer pour eux')} placeholder={t('Décrivez l’organisation et le déroulé')} value={state.freedom.flowDescription || ''} onChange={(e) => updateFreedom({ flowDescription: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField label={t('Combien par semaine')} placeholder="Ex: 2" value={state.freedom.frequency?.perWeek || ''} onChange={(e) => updateFreedom({ frequency: { ...(state.freedom.frequency || {}), perWeek: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
                     <FormField label={t('Combien par mois')} placeholder="Ex: 8" value={state.freedom.frequency?.perMonth || ''} onChange={(e) => updateFreedom({ frequency: { ...(state.freedom.frequency || {}), perMonth: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
                   </div>
                   <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">Retour</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">Continuer</button>
+                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
+                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
                   </div>
                 </motion.div>
               </motion.div>
@@ -707,14 +707,14 @@ const HotelRegistrationFlow: React.FC = () => {
               >
                 <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
                   <div>
-                    <h2 className="text-3xl font-bold text-navy-900 mb-2">Validation & process</h2>
+                    <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Validation et processus')}</h2>
                     <p className="text-content-secondary">{t('Fluidifiez la plateforme avec un process clair.')}</p>
                   </div>
                   <FormField label={t('Délai de réponse moyen')} placeholder="Ex: 48h" value={state.validation.delay || ''} onChange={(e) => updateValidation({ delay: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <RadioGroup name="validation-process" label={t('Process de validation')} options={[{ value: 'Validation simple', label: 'Validation simple' }, { value: 'Validation après échange', label: t('Validation après échange') }]} value={state.validation.process} onChange={(v) => updateValidation({ process: v as ValidationProcess['process'] })} />
                   <FormField label={t('Personne décisionnaire')} placeholder={t('Nom et rôle')} value={state.validation.decisionMaker || ''} onChange={(e) => updateValidation({ decisionMaker: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">Retour</button>
+                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
                     <button type="button" onClick={handleSubmit} className="btn-primary" disabled={isLoading}>{isLoading ? 'Envoi…' : 'Terminer'}</button>
                   </div>
                 </motion.div>

@@ -146,7 +146,7 @@ const AdminBookings: React.FC = () => {
           className="btn-secondary flex items-center space-x-2"
         >
           <Download className="w-4 h-4" />
-          <span>Exporter en CSV</span>
+          <span>{t('Exporter en CSV')}</span>
         </button>
       </div>
 
@@ -183,7 +183,7 @@ const AdminBookings: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('Tous les statuts')}</SelectItem>
-                <SelectItem value="PENDING">En attente</SelectItem>
+                <SelectItem value="PENDING">{t('En attente')}</SelectItem>
                 <SelectItem value="CONFIRMED">{t('Confirmée')}</SelectItem>
                 <SelectItem value="COMPLETED">{t('Terminée')}</SelectItem>
                 <SelectItem value="CANCELLED">{t('Annulée')}</SelectItem>
@@ -228,7 +228,7 @@ const AdminBookings: React.FC = () => {
                   <div className="flex items-start space-x-3 bg-surface p-3 rounded-card">
                     <User className="w-5 h-5 text-gold mt-1" />
                     <div className="flex-1">
-                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">Artiste</p>
+                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">{t('Artiste')}</p>
                       <p className="font-medium text-content">{booking.artist.user.name}</p>
                       <p className="text-sm text-content-secondary">{booking.artist.discipline}</p>
                     </div>

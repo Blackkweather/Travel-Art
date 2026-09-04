@@ -279,7 +279,7 @@ const HotelCredits: React.FC = () => {
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-content-secondary">
-                  Cancellations within 48 hours receive full credit refunds
+                  {t('Les annulations moins de 48 heures à l’avance sont remboursées intégralement en crédits.')}
                 </span>
               </li>
             </ul>
@@ -287,7 +287,7 @@ const HotelCredits: React.FC = () => {
           
           <div>
             <h3 className="text-lg font-serif font-semibold text-content mb-4">
-              Bonnes pratiques
+              {t('Bonnes pratiques')}
             </h3>
             <ul className="space-y-3">
               <li className="flex items-start">

@@ -50,7 +50,7 @@ const VerifyEmailPage: React.FC = () => {
           kind: 'failed',
           message:
             err?.response?.data?.error?.message ??
-            'Ce lien de confirmation est invalide ou a expiré.',
+            t('Ce lien de confirmation est invalide ou a expiré.'),
         })
       })
   }, [token])
@@ -61,12 +61,12 @@ const VerifyEmailPage: React.FC = () => {
 
       <main className="shell pb-24 pt-32 md:pt-40">
         <div className="max-w-prose">
-          <span className="eyebrow">Confirmation</span>
+          <span className="eyebrow">{t('Confirmation')}</span>
 
           {state.kind === 'working' && (
             <>
               <h1 className="mt-6 font-serif text-[2.25rem] leading-tight text-content md:text-[3rem]">
-                Confirmation en cours
+                {t('Confirmation en cours')}
               </h1>
               <div className="mt-10">
                 <LoadingSpinner />
@@ -84,7 +84,7 @@ const VerifyEmailPage: React.FC = () => {
               <div className="mt-10 flex flex-wrap gap-4">
                 {state.approved ? (
                   <Link to="/login" className="btn-primary">
-                    Se connecter
+                    {t('Se connecter')}
                   </Link>
                 ) : (
                   <Link to="/" className="btn-secondary">
@@ -98,7 +98,7 @@ const VerifyEmailPage: React.FC = () => {
           {state.kind === 'failed' && (
             <>
               <h1 className="mt-6 font-serif text-[2.25rem] leading-tight text-content md:text-[3rem]">
-                Lien invalide
+                {t('Lien invalide')}
               </h1>
               <div className="notice-critical mt-6">{state.message}</div>
               <p className="mt-6 text-content-secondary">

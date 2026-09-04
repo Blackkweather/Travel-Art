@@ -137,7 +137,7 @@ const RegisterPage: React.FC = () => {
                     transition={{ type: "spring", stiffness: 400 }}
                     className="flex items-center justify-center gap-2 text-gold font-semibold mt-6"
                   >
-                    <span>Commencer</span>
+                    <span>{t('Commencer')}</span>
                     <ArrowRight className="w-5 h-5" />
                   </motion.div>
                 </div>
@@ -197,7 +197,7 @@ const RegisterPage: React.FC = () => {
                     transition={{ type: "spring", stiffness: 400 }}
                     className="flex items-center justify-center gap-2 text-gold font-semibold mt-6"
                   >
-                    <span>Commencer</span>
+                    <span>{t('Commencer')}</span>
                     <ArrowRight className="w-5 h-5" />
                   </motion.div>
                 </div>
@@ -215,7 +215,7 @@ const RegisterPage: React.FC = () => {
             <p className="text-sm text-content-secondary">
               Déjà un compte ?{' '}
               <a href="/login" className="text-gold font-semibold hover:underline transition-colors">
-                Se connecter
+                {t('Se connecter')}
               </a>
             </p>
           </motion.div>

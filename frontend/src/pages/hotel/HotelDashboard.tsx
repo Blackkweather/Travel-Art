@@ -136,7 +136,7 @@ const HotelDashboard: React.FC = () => {
             discipline: b.artist?.discipline || '',
             date: new Date(b.startDate).toLocaleDateString('fr-FR'),
             time: new Date(b.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            spot: b.performanceSpot || 'Espace à confirmer',
+            spot: b.performanceSpot || t('Espace à confirmer'),
             status: b.status.toLowerCase()
           }))
 
@@ -190,7 +190,7 @@ const HotelDashboard: React.FC = () => {
       toast.success(t('Profil hôtel supprimé'))
       navigate('/')
     } catch (error: any) {
-      toast.error(error?.response?.data?.error?.message || 'Échec de la suppression')
+      toast.error(error?.response?.data?.error?.message || t('Échec de la suppression'))
       setDeleting(false)
       setConfirmingDelete(false)
     }

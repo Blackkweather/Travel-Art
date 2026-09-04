@@ -26,7 +26,7 @@ interface Application {
 type Tab = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 const TABS: Array<{ key: Tab; label: string }> = [
-  { key: 'PENDING', label: 'À examiner' },
+  { key: 'PENDING', label: t('À examiner') },
   { key: 'APPROVED', label: 'Admises' },
   { key: 'REJECTED', label: t('Refusées') },
 ]
@@ -74,7 +74,7 @@ const AdminAdmissions: React.FC = () => {
       setApplications((prev) => prev.filter((a) => a.id !== app.id))
       setPendingCount((n) => Math.max(0, n - 1))
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Échec de l’admission')
+      toast.error(err?.response?.data?.error?.message || t('Échec de l’admission'))
     } finally {
       setBusyId(null)
     }
@@ -93,14 +93,14 @@ const AdminAdmissions: React.FC = () => {
       setRejecting(null)
       setReason('')
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || 'Échec du refus')
+      toast.error(err?.response?.data?.error?.message || t('Échec du refus'))
     } finally {
       setBusyId(null)
     }
   }
 
   const detail = (app: Application) => {
-    if (app.role === 'ARTIST') return app.artist?.discipline || 'Discipline non renseignée'
+    if (app.role === 'ARTIST') return app.artist?.discipline || t('Discipline non renseignée')
     let where = ''
     try {
       const loc = app.hotel?.location ? JSON.parse(app.hotel.location) : null
@@ -118,8 +118,8 @@ const AdminAdmissions: React.FC = () => {
           sidebar layout pushed the decision column off the panel. */}
       <div className="mx-auto w-full max-w-[1600px] px-6 py-12 md:px-10 md:py-16">
         <header className="page-head">
-          <span className="eyebrow">Administration</span>
-          <h1 className="page-head__title">Admissions</h1>
+          <span className="eyebrow">{t('Administration')}</span>
+          <h1 className="page-head__title">{t('Admissions')}</h1>
           <p className="page-head__lede">
             {t('Chaque nouvelle inscription attend ici jusqu’à ce qu’elle soit admise ou refusée. Les demandes les plus anciennes apparaissent en premier.')}
           </p>
@@ -166,8 +166,8 @@ const AdminAdmissions: React.FC = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th scope="col">Candidat</th>
-                    <th scope="col">Type</th>
+                    <th scope="col">{t('Candidat')}</th>
+                    <th scope="col">{t('Type')}</th>
                     <th scope="col">{t('Détails')}</th>
                     <th scope="col">E-mail</th>
                     <th scope="col">{t('Déposée le')}</th>
@@ -176,7 +176,7 @@ const AdminAdmissions: React.FC = () => {
                         {t('Décision')}
                       </th>
                     )}
-                    {tab === 'REJECTED' && <th scope="col">Motif</th>}
+                    {tab === 'REJECTED' && <th scope="col">{t('Motif')}</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -211,7 +211,7 @@ const AdminAdmissions: React.FC = () => {
                               disabled={busyId === app.id}
                               className="btn-primary btn-sm"
                             >
-                              Admettre
+                              {t('Admettre')}
                             </button>
                             <button
                               onClick={() => {
@@ -248,7 +248,7 @@ const AdminAdmissions: React.FC = () => {
 
             <div className="mt-6">
               <label className="form-label" htmlFor="reject-reason">
-                Motif (facultatif)
+                {t('Motif (facultatif)')}
               </label>
               <textarea
                 id="reject-reason"

@@ -75,7 +75,7 @@ const Header: React.FC = () => {
             <Link
               to={user ? '/dashboard' : '/'}
               className="shrink-0 hover:opacity-80 transition-opacity duration-300"
-              aria-label="Travel Art, accueil"
+              aria-label={t('Travel Art, accueil')}
             >
               {/* The mark is navy and gold, which disappears against the dark
                   surface. It inverts only in dark mode - inverting it in light
@@ -87,7 +87,7 @@ const Header: React.FC = () => {
               />
             </Link>
 
-            <nav className="hidden lg:flex gap-8" aria-label="Navigation principale">
+            <nav className="hidden lg:flex gap-8" aria-label={t('Navigation principale')}>
               {NAV_ITEMS.map((item) => (
                 <Link
                   key={item.to}
@@ -117,7 +117,7 @@ const Header: React.FC = () => {
             ) : (
               <>
                 <Link to="/login" className={`${linkClass} hidden sm:block`}>
-                  Connexion
+                  {t('Connexion')}
                   <span className={underline(pathname === '/login')} />
                 </Link>
                 <Link to="/register" className="btn-gold btn-sm">
@@ -147,7 +147,7 @@ const Header: React.FC = () => {
           id="header-mobile-nav"
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          aria-label="Navigation principale"
+          aria-label={t('Navigation principale')}
           /* This was pinned to top-[88px] while the bar is 72px tall, leaving a
              16px strip of the page showing through between the two. */
           className="fixed top-[72px] left-0 right-0 z-40 lg:hidden border-b border-line bg-surface-raised/98 backdrop-blur-md"

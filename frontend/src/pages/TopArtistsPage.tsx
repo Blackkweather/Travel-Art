@@ -17,6 +17,8 @@ interface TopArtist {
   images?: string[]
   bookingCount?: number
   ratingBadge?: string | null
+  averageRating?: number | null
+  ratingCount?: number
   user: {
     name: string
     country?: string
@@ -144,7 +146,7 @@ const TopArtistsPage: React.FC = () => {
                 <Star className="w-8 h-8 text-content" />
               </div>
               <h3 className="text-3xl font-bold text-content mb-2">{stats.averageRating.toFixed(1)}</h3>
-              <p className="text-content-secondary">Note moyenne</p>
+              <p className="text-content-secondary">{t('Note moyenne')}</p>
             </motion.div>
 
             <motion.div
@@ -209,15 +211,19 @@ const TopArtistsPage: React.FC = () => {
               {t('Revenez bientôt pour découvrir nos artistes à l’honneur.')}
             </p>
             <Link to="/register" className="btn-primary">
-              Devenir artiste
+              {t('Devenir artiste')}
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" data-testid="artists-grid">
             {topArtists.map((artist, index) => {
-              const rating = artist.ratingBadge ? 
-                (artist.ratingBadge.includes('Top 10%') ? 4.9 : 
-                 artist.ratingBadge.includes('Excellent') ? 4.5 : 4.0) : 4.0
+              // The average now comes from the API. It used to be read back out
+              // of the badge text, and read wrong: the test was for 'Top 10%'
+              // against a string that says 'Top 10 % des artistes', and for
+              // 'Excellent', which the server never sends. Every artist
+              // therefore scored exactly 4.0, and since getQuickRank gates its
+              // tiers at 4.6 and 4.8, none could ever rank above the first.
+              const rating = typeof artist.averageRating === 'number' ? artist.averageRating : null
               const bookings = artist.bookingCount || 0
               
               return (
@@ -241,9 +247,9 @@ const TopArtistsPage: React.FC = () => {
                     {/* The rank sits on the photograph because it qualifies the
                         person pictured, not the text below. */}
                     <div className="absolute right-3 top-3 flex items-center gap-2 rounded-control bg-surface-raised/90 px-2.5 py-1.5 backdrop-blur-sm">
-                      <ArtistRank tier={getQuickRank(rating, bookings)} size="sm" />
+                      <ArtistRank tier={getQuickRank(rating ?? 0, bookings)} size="sm" />
                       <span className="text-sm font-semibold text-content tabular-nums">
-                        {rating.toFixed(1)}
+                        {rating !== null ? rating.toFixed(1) : '—'}
                       </span>
                     </div>
                   </div>
@@ -264,7 +270,7 @@ const TopArtistsPage: React.FC = () => {
                     </p>
 
                     {artist.ratingBadge && (
-                      <p className="text-[0.8125rem] text-content-secondary">{artist.ratingBadge}</p>
+                      <p className="text-[0.8125rem] text-content-secondary">{t(artist.ratingBadge)}</p>
                     )}
 
                     <dl className="mt-auto flex items-baseline gap-6 border-t border-line pt-4 text-sm">
@@ -273,9 +279,9 @@ const TopArtistsPage: React.FC = () => {
                         <dd className="font-serif text-base text-content tabular-nums">{bookings}</dd>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <dt className="text-content-secondary">Note</dt>
+                        <dt className="text-content-secondary">{t('Note')}</dt>
                         <dd className="font-serif text-base text-content tabular-nums">
-                          {rating.toFixed(1)}
+                          {rating !== null ? rating.toFixed(1) : t('Pas encore noté')}
                         </dd>
                       </div>
                     </dl>
@@ -307,7 +313,7 @@ const TopArtistsPage: React.FC = () => {
               {t('Rejoignez notre communauté d’artistes et jouez dans les plus belles adresses du monde.')}
             </p>
             <Link to="/register?role=artist" className="btn-gold btn-lg btn-arrow">
-              Devenir artiste
+              {t('Devenir artiste')}
             </Link>
           </motion.div>
         </div>

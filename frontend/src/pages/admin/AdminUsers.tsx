@@ -92,7 +92,7 @@ const AdminUsers: React.FC = () => {
       await adminApi.activateUser(userId)
       fetchUsers()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Impossible de réactiver cet utilisateur')
+      alert(err.response?.data?.message || t('Impossible de réactiver cet utilisateur'))
     } finally {
       setProcessing(null)
     }
@@ -154,7 +154,7 @@ const AdminUsers: React.FC = () => {
           className="btn-secondary flex items-center space-x-2"
         >
           <Download className="w-4 h-4" />
-          <span>Exporter en CSV</span>
+          <span>{t('Exporter en CSV')}</span>
         </button>
       </div>
 
@@ -188,9 +188,9 @@ const AdminUsers: React.FC = () => {
               className="filter-select"
             >
               <option value="all">{t('Tous les rôles')}</option>
-              <option value="ARTIST">Artistes</option>
+              <option value="ARTIST">{t('Artistes')}</option>
               <option value="HOTEL">{t('Hôtels')}</option>
-              <option value="ADMIN">Administrateurs</option>
+              <option value="ADMIN">{t('Administrateurs')}</option>
             </select>
           </div>
         </div>
@@ -206,12 +206,12 @@ const AdminUsers: React.FC = () => {
           <table className="data-table">
             <thead>
               <tr>
-                <th scope="col">Utilisateur</th>
+                <th scope="col">{t('Utilisateur')}</th>
                 <th scope="col">{t('Rôle')}</th>
                 <th scope="col">{t('Détails')}</th>
-                <th scope="col">Statut</th>
-                <th scope="col">Inscription</th>
-                <th scope="col" className="numeric">Actions</th>
+                <th scope="col">{t('Statut')}</th>
+                <th scope="col">{t('Inscription')}</th>
+                <th scope="col" className="numeric">{t('Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -292,7 +292,7 @@ const AdminUsers: React.FC = () => {
         {users.length === 0 && !loading && (
           <div className="empty-state">
             <User className="h-6 w-6 text-content-secondary" aria-hidden="true" />
-            <p className="empty-state__title">Aucun utilisateur</p>
+            <p className="empty-state__title">{t('Aucun utilisateur')}</p>
           </div>
         )}
       </div>

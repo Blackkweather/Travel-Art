@@ -96,7 +96,7 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
       <div className="relative">
       <div className="shell h-[72px] flex items-center justify-between">
         <div className="flex items-center gap-10">
-          <Link to="/" aria-label="Travel Art, accueil" className="shrink-0">
+          <Link to="/" aria-label={t('Travel Art, accueil')} className="shrink-0">
             <img decoding="async"
               src={getLogoUrl('transparent')}
               alt="Travel Art"
@@ -106,7 +106,7 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
             />
           </Link>
 
-          <nav className="hidden lg:flex gap-8" aria-label="Principal">
+          <nav className="hidden lg:flex gap-8" aria-label={t('Principal')}>
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.to}
@@ -160,7 +160,7 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
       {menuOpen && (
         <nav
           id="mobile-nav"
-          aria-label="Principal"
+          aria-label={t('Principal')}
           className="lg:hidden border-t border-line bg-[var(--surface)]"
         >
           <ul className="shell py-6 flex flex-col">

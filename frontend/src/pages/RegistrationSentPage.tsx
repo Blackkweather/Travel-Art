@@ -45,7 +45,7 @@ const RegistrationSentPage: React.FC = () => {
 
       <main className="shell pb-24 pt-32 md:pt-40">
         <div className="max-w-prose">
-          <span className="eyebrow">Candidature</span>
+          <span className="eyebrow">{t('Candidature')}</span>
           <h1 className="mt-6 font-serif text-[2.25rem] leading-tight text-content md:text-[3rem]">
             {t('Votre demande est enregistrée')}
           </h1>
@@ -72,7 +72,7 @@ const RegistrationSentPage: React.FC = () => {
             {t('Retour à l’accueil')}
           </Link>
           <Link to="/login" className="btn-ghost">
-            Se connecter
+            {t('Se connecter')}
           </Link>
         </div>
 

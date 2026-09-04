@@ -244,7 +244,7 @@ const HotelBookings: React.FC = () => {
             >
               <option value="all">{t('Tous les statuts')}</option>
               <option value="confirmed">{t('Confirmée')}</option>
-              <option value="pending">En attente</option>
+              <option value="pending">{t('En attente')}</option>
               <option value="completed">{t('Terminée')}</option>
               <option value="cancelled">{t('Annulée')}</option>
             </select>
@@ -385,7 +385,7 @@ const HotelBookings: React.FC = () => {
                         onClick={() => navigate('/dashboard/artists')}
                         className="btn-secondary text-sm"
                       >
-                        Reprogrammer
+                        {t('Reprogrammer')}
                       </button>
                     )}
                   </div>
@@ -434,7 +434,7 @@ const HotelBookings: React.FC = () => {
             </p>
 
             <div className="mt-6">
-              <span className="stat__label">Note</span>
+              <span className="stat__label">{t('Note')}</span>
               <div className="mt-2 flex gap-2">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
@@ -456,7 +456,7 @@ const HotelBookings: React.FC = () => {
             </div>
 
             <div className="mt-6">
-              <label className="form-label" htmlFor="rating-review">Commentaire</label>
+              <label className="form-label" htmlFor="rating-review">{t('Commentaire')}</label>
               <textarea
                 id="rating-review"
                 value={review}
@@ -495,7 +495,7 @@ const HotelBookings: React.FC = () => {
                     toast.success(t('Évaluation enregistrée'))
                     setRatingFor(null)
                   } catch (err: any) {
-                    toast.error(err?.response?.data?.error?.message || 'Échec de l’enregistrement')
+                    toast.error(err?.response?.data?.error?.message || t('Échec de l’enregistrement'))
                   } finally {
                     setSavingRating(false)
                   }

@@ -225,7 +225,7 @@ export default function LandingPage() {
               id: exp.id,
               image: exp.image,
               title: head || 'ENTRE L’OMBRE',
-              subtitle: tail || 'ET LA LUMIÈRE',
+              subtitle: tail || t('ET LA LUMIÈRE'),
               category: exp.category
             }
           })
@@ -716,7 +716,7 @@ export default function LandingPage() {
             than asking. */}
         <div className="absolute bottom-24 sm:bottom-10 left-5 sm:left-8 lg:left-12 z-20 flex flex-wrap gap-3">
           <Link to="/register?role=artist" className="btn-gold btn-arrow">
-            Je suis artiste
+            {t('Je suis artiste')}
           </Link>
           <Link to="/register?role=hotel" className="btn-on-media btn-arrow">
             {t('Je suis un hôtel')}
@@ -886,9 +886,9 @@ export default function LandingPage() {
                 </p>
                 <ul className="mt-10 space-y-5">
                   {[
-                    'Des résidences dans des hôtels qui programment sérieusement la culture',
-                    'Aucune commission prélevée côté artiste',
-                    'Voyage et hébergement réglés avant votre arrivée',
+                    t('Des résidences dans des hôtels qui programment sérieusement la culture'),
+                    t('Aucune commission prélevée côté artiste'),
+                    t('Voyage et hébergement réglés avant votre arrivée'),
                   ].map((line) => (
                     <li key={line} className="flex gap-4 text-content">
                       <span aria-hidden="true" className="spark mt-2" />
@@ -897,7 +897,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link to="/register?role=artist" className="btn-primary btn-arrow mt-10">
-                  Je suis artiste
+                  {t('Je suis artiste')}
                 </Link>
               </div>
 
@@ -908,9 +908,9 @@ export default function LandingPage() {
                 </p>
                 <ul className="mt-10 space-y-5">
                   {[
-                    'Des artistes sélectionnés en musique, arts visuels et scène',
-                    'Un seul solde de crédits pour toutes vos réservations',
-                    'Des dates que vous maîtrisez, confirmées ou annulées en un clic',
+                    t('Des artistes sélectionnés en musique, arts visuels et scène'),
+                    t('Un seul solde de crédits pour toutes vos réservations'),
+                    t('Des dates que vous maîtrisez, confirmées ou annulées en un clic'),
                   ].map((line) => (
                     <li key={line} className="flex gap-4 text-content">
                       <span aria-hidden="true" className="spark mt-2" />
@@ -943,7 +943,7 @@ export default function LandingPage() {
                 than a new one they have to re-read. */}
             <div className="mt-12 flex flex-wrap gap-4 justify-center">
               <Link to="/register?role=artist" className="btn-gold btn-arrow">
-                Je suis artiste
+                {t('Je suis artiste')}
               </Link>
               <Link to="/register?role=hotel" className="btn-on-media btn-arrow">
                 {t('Je suis un hôtel')}

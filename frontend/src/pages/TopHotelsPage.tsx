@@ -232,7 +232,7 @@ const TopHotelsPage: React.FC = () => {
                 <Star className="w-8 h-8 text-content" />
               </div>
               <h3 className="text-3xl font-bold text-content mb-2">{stats.averageRating.toFixed(1)}</h3>
-              <p className="text-content-secondary">Note moyenne</p>
+              <p className="text-content-secondary">{t('Note moyenne')}</p>
             </motion.div>
 
             <motion.div
@@ -360,7 +360,7 @@ const TopHotelsPage: React.FC = () => {
                         <dd className="font-serif text-base text-content tabular-nums">{bookings}</dd>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <dt className="text-content-secondary">Note</dt>
+                        <dt className="text-content-secondary">{t('Note')}</dt>
                         <dd className="font-serif text-base text-content tabular-nums">
                           {stats.averageRating.toFixed(1)}
                         </dd>
@@ -397,7 +397,7 @@ const TopHotelsPage: React.FC = () => {
                 <Building className="w-10 h-10 text-content" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-content mb-4">
-                Toits-terrasses
+                {t('Toits-terrasses')}
               </h3>
               <p className="text-content-secondary">
                 {t('Des espaces en plein air face à la ville, parfaits pour l’acoustique et les sets au coucher du soleil.')}
@@ -414,7 +414,7 @@ const TopHotelsPage: React.FC = () => {
                 <Music className="w-10 h-10 text-content" />
               </div>
               <h3 className="text-xl font-serif font-semibold text-content mb-4">
-                Salons jazz
+                {t('Salons jazz')}
               </h3>
               <p className="text-content-secondary">
                 {t('Des salles intérieures à l’acoustique soignée, pour les formations jazz et les concerts intimistes.')}

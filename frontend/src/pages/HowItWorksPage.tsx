@@ -134,7 +134,7 @@ const HowItWorksPage: React.FC = () => {
           <div className="lg:col-span-4">
             <div className="lg:sticky lg:top-32">
               <h2 className="font-serif text-content text-3xl md:text-4xl leading-[1.1]">
-                Pourquoi Travel Art ?
+                {t('Pourquoi Travel Art ?')}
               </h2>
               <p className="mt-5 text-content-secondary leading-relaxed max-w-[34ch]">
                 {t('La rencontre juste entre l’hôtellerie d’exception et l’exigence artistique.')}
@@ -184,7 +184,7 @@ const HowItWorksPage: React.FC = () => {
           </p>
           <div className="mt-12 flex flex-wrap gap-4 justify-center">
             <Link to="/register" className="btn-gold">
-              Je suis artiste
+              {t('Je suis artiste')}
             </Link>
             <Link to="/register" className="btn-on-media">
               {t('Je suis hôtelier')}

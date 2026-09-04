@@ -210,11 +210,11 @@ const AdminDashboard: React.FC = () => {
       <SEOHead title={t('Tableau de bord') + ' — Travel Art'} />
       <div className="shell py-12 md:py-16 space-y-10">
         <header className="page-head">
-          <span className="eyebrow">Administration</span>
+          <span className="eyebrow">{t('Administration')}</span>
           <div className="flex flex-wrap items-end justify-between gap-6">
             <h1 className="page-head__title">{t('Tableau de bord')}</h1>
             <div className="text-right">
-              <span className="stat__label">Revenu total</span>
+              <span className="stat__label">{t('Revenu total')}</span>
               <p className="mt-1 font-serif text-2xl text-content">{totalRevenueFormatted}</p>
             </div>
           </div>
@@ -323,9 +323,9 @@ const AdminDashboard: React.FC = () => {
               <thead>
                 <tr>
                   <th scope="col">{t('Hôtel')}</th>
-                  <th scope="col">Lieu</th>
+                  <th scope="col">{t('Lieu')}</th>
                   <th scope="col" className="numeric">{t('Réservations')}</th>
-                  <th scope="col">Statut</th>
+                  <th scope="col">{t('Statut')}</th>
                 </tr>
               </thead>
               <tbody>

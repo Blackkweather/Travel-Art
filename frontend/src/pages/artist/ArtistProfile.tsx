@@ -305,7 +305,7 @@ const ArtistProfile: React.FC = () => {
       setProfile(null)
       await fetchProfile()
     } catch (error: any) {
-      toast.error(error?.response?.data?.error?.message || 'Échec de la suppression')
+      toast.error(error?.response?.data?.error?.message || t('Échec de la suppression'))
     } finally {
       setDeleting(false)
       setConfirmingDelete(false)
@@ -408,7 +408,7 @@ const ArtistProfile: React.FC = () => {
               </div>
 
               <div>
-                <label className="form-label">Discipline</label>
+                <label className="form-label">{t('Discipline')}</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -422,7 +422,7 @@ const ArtistProfile: React.FC = () => {
               </div>
 
               <div>
-                <label className="form-label">Lieu</label>
+                <label className="form-label">{t('Lieu')}</label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -439,7 +439,7 @@ const ArtistProfile: React.FC = () => {
               </div>
 
               <div>
-                <label className="form-label">Note moyenne</label>
+                <label className="form-label">{t('Note moyenne')}</label>
                 <p className="text-lg font-semibold text-content">
                   {profileData.rating > 0 ? profileData.rating.toFixed(1) : t('Pas encore d’avis')}
                 </p>
@@ -470,7 +470,7 @@ const ArtistProfile: React.FC = () => {
                   <span className="text-gold font-bold mr-1">◆</span>
                   <span className="text-lg font-bold text-content">{profileData.rating > 0 ? profileData.rating.toFixed(1) : '0'}</span>
                 </div>
-                <p className="text-sm text-content-secondary">Note moyenne</p>
+                <p className="text-sm text-content-secondary">{t('Note moyenne')}</p>
               </div>
               <div className="text-center p-4 bg-surface rounded-card">
                 <div className="flex items-center justify-center mb-2">
@@ -516,7 +516,7 @@ const ArtistProfile: React.FC = () => {
             
             {profile.phone && (
               <div>
-                <label className="form-label">Phone</label>
+                <label className="form-label">{t('Téléphone')}</label>
                 <p className="text-content font-medium">{profile.phone}</p>
               </div>
             )}
@@ -565,21 +565,21 @@ const ArtistProfile: React.FC = () => {
                   
                   {artisticProfile.domain && (
                     <div>
-                      <label className="form-label">Domaine</label>
+                      <label className="form-label">{t('Domaine')}</label>
                       <p className="text-content font-medium">{artisticProfile.domain}</p>
                     </div>
                   )}
                   
                   {artisticProfile.categoryType && (
                     <div>
-                      <label className="form-label">Category Type</label>
+                      <label className="form-label">{t('Type de catégorie')}</label>
                       <p className="text-content font-medium">{artisticProfile.categoryType}</p>
                     </div>
                   )}
                   
                   {artisticProfile.languages && artisticProfile.languages.length > 0 && (
                     <div>
-                      <label className="form-label">Langues</label>
+                      <label className="form-label">{t('Langues')}</label>
                       <div className="flex flex-wrap gap-2">
                         {artisticProfile.languages.map((lang: string, idx: number) => (
                           <span key={idx} className="px-3 py-1 bg-gold/20 text-gold rounded-full text-sm font-medium">
@@ -660,7 +660,7 @@ const ArtistProfile: React.FC = () => {
                     )
                   } catch (err: any) {
                     toast.error(
-                      err?.response?.data?.error?.message || 'Échec du téléversement'
+                      err?.response?.data?.error?.message || t('Échec du téléversement')
                     )
                   } finally {
                     setUploadingImages(false)
@@ -766,7 +766,7 @@ const ArtistProfile: React.FC = () => {
                     className="px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)] rounded-card transition-colors flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Retirer
+                    {t('Retirer')}
                   </button>
                 </div>
               ))}
@@ -815,7 +815,7 @@ const ArtistProfile: React.FC = () => {
                 className="btn-primary flex items-center gap-2"
               >
                 <Upload className="w-4 h-4" />
-                Add Video
+                {t('Ajouter une vidéo')}
               </button>
             </div>
             <p className="text-xs text-content-secondary mt-2">
@@ -858,7 +858,7 @@ const ArtistProfile: React.FC = () => {
                     <div className="aspect-video bg-surface-sunken flex items-center justify-center">
                       <div className="text-center">
                         <Music className="w-12 h-12 text-content-secondary mx-auto mb-2" />
-                        <p className="text-sm text-content-secondary">Video Preview</p>
+                        <p className="text-sm text-content-secondary">{t('Aperçu vidéo')}</p>
                       </div>
                     </div>
                   )}
@@ -875,7 +875,7 @@ const ArtistProfile: React.FC = () => {
                         className="ml-4 px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)] rounded-card transition-colors flex items-center gap-2"
                       >
                         <X className="w-4 h-4" />
-                        Retirer
+                        {t('Retirer')}
                       </button>
                     )}
                   </div>

@@ -8,7 +8,7 @@ const CookiePolicyPage: React.FC = () => {
     <LegalLayout
       eyebrow="Cookies"
       title={t('Politique relative aux cookies')}
-      lede="Comment nous utilisons les cookies et les technologies similaires."
+      lede={t('Comment nous utilisons les cookies et les technologies similaires.')}
     >
       <SEOHead
         title={t('Politique relative aux cookies — Travel Art')}

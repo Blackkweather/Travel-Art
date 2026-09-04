@@ -123,7 +123,7 @@ const ExperienceDetailsPage: React.FC = () => {
           artist:
             typeof trip.artist === 'string'
               ? trip.artist
-              : trip.artist?.name || trip.artist?.user?.name || trip.artistName || 'Artiste en résidence',
+              : trip.artist?.name || trip.artist?.user?.name || trip.artistName || t('Artiste en résidence'),
           hotelId: trip.hotelId ?? trip.hotel?.id ?? null,
           hotel:
             typeof trip.hotel === 'string'
@@ -143,7 +143,7 @@ const ExperienceDetailsPage: React.FC = () => {
             'Accueil et cocktail',
             'Représentation',
             'Rafraîchissements',
-            'Accès au lieu'
+            t('Accès au lieu')
           ],
           schedule: trip.schedule || [],
           artistBio: trip.artist?.bio || trip.artistBio || 'Talented artist with years of experience.',
@@ -271,7 +271,7 @@ const ExperienceDetailsPage: React.FC = () => {
                   <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Star className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-content-secondary">Note</p>
+                  <p className="text-sm text-content-secondary">{t('Note')}</p>
                   <p className="text-xl font-bold text-content">{experience.rating}</p>
                 </div>
                 <div className="text-center">
@@ -299,7 +299,7 @@ const ExperienceDetailsPage: React.FC = () => {
               className="panel p-6"
             >
               <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
-                Programme
+                {t('Programme')}
               </h2>
               <div className="space-y-4">
                 {experience.schedule.map((item: any, index: number) => (

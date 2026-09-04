@@ -125,8 +125,14 @@ router.get('/', asyncHandler(async (req, res) => {
       });
 
       let ratingBadge = null;
+      // The average is returned alongside the badge. It used to be computed
+      // here and then dropped, which left the client trying to read a number
+      // back out of the badge text - and reading it wrong, since it tested for
+      // 'Top 10%' against a string that says 'Top 10 % des artistes'.
+      let averageRating: number | null = null;
       if (ratings.length > 0) {
         const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
+        averageRating = Math.round(avgRating * 10) / 10;
         if (avgRating >= 4.5) {
           ratingBadge = 'Top 10 % des artistes';
         } else if (avgRating >= 4.0) {
@@ -167,6 +173,8 @@ router.get('/', asyncHandler(async (req, res) => {
       return {
         ...artist,
         ratingBadge,
+        averageRating,
+        ratingCount: ratings.length,
         images: images,
         videos: videos,
         mediaUrls: mediaUrls

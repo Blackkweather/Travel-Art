@@ -34,7 +34,7 @@ const LoginPage: React.FC = () => {
       const errorMessage = error.response?.data?.error?.message || 
                           error.errors?.[0]?.message || 
                           error.message || 
-                          'Connexion impossible. Vérifiez vos identifiants.'
+                          t('Connexion impossible. Vérifiez vos identifiants.')
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -84,7 +84,7 @@ const LoginPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="form-label">
-                Adresse e-mail
+                {t('Adresse e-mail')}
               </label>
               <input
                 {...register('email', {

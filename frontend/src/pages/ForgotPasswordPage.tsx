@@ -116,7 +116,7 @@ const ForgotPasswordPage: React.FC = () => {
             <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
                 <label htmlFor="email" className="form-label">
-                  Adresse e-mail
+                  {t('Adresse e-mail')}
                 </label>
                 <input
                   {...register('email', {

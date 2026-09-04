@@ -317,7 +317,7 @@ const AdminAnalytics: React.FC = () => {
     <div className="space-y-8">
       <SEOHead title={t('Statistiques') + ' — Travel Art'} />
       <header className="page-head">
-        <span className="eyebrow">Administration</span>
+        <span className="eyebrow">{t('Administration')}</span>
         <h1 className="page-head__title">{t('Statistiques de la plateforme')}</h1>
         <p className="page-head__lede">{t('Indicateurs et visualisations de l’activité Travel Art.')}</p>
         <span className="rule-reveal mt-2" />

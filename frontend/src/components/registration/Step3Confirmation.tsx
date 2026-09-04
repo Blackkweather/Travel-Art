@@ -52,14 +52,14 @@ const Step3Confirmation: React.FC<Step3Props> = ({
       className="space-y-8"
     >
       <div>
-        <h2 className="text-3xl font-bold text-navy-900 mb-2">Confirmation</h2>
+        <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Confirmation')}</h2>
         <p className="text-content-secondary">{t('Vérifiez vos informations avant de finaliser votre inscription')}</p>
       </div>
 
       {/* Basic Info Section */}
       <motion.div variants={itemVariants} className="bg-surface rounded-card p-6 border border-line">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-navy-900">Informations personnelles</h3>
+          <h3 className="text-xl font-semibold text-navy-900">{t('Informations personnelles')}</h3>
           <button
             onClick={() => onEdit(1)}
             disabled={isLoading}
@@ -79,7 +79,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             <p className="text-content font-medium">{basicInfo.firstName || t('Non renseigné')}</p>
           </div>
           <div>
-            <p className="text-sm text-content-secondary mb-1">Nom</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Nom')}</p>
             <p className="text-content font-medium">{basicInfo.lastName || t('Non renseigné')}</p>
           </div>
           <div>
@@ -95,7 +95,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             <p className="text-content font-medium">{basicInfo.phone || t('Non renseigné')}</p>
           </div>
           <div>
-            <p className="text-sm text-content-secondary mb-1">Pays</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Pays')}</p>
             <p className="text-content font-medium">{basicInfo.country || t('Non renseigné')}</p>
           </div>
         </div>
@@ -143,7 +143,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             </div>
           </div>
           <div>
-            <p className="text-sm text-content-secondary mb-1">Tribu Artistique</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Tribu artistique')}</p>
             <p className="text-content font-medium">{subcategory.categoryType || t('Non renseigné')}</p>
           </div>
           {subcategory.specificCategory && (
@@ -153,7 +153,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
             </div>
           )}
           <div>
-            <p className="text-sm text-content-secondary mb-1">Domaine</p>
+            <p className="text-sm text-content-secondary mb-1">{t('Domaine')}</p>
             <p className="text-content font-medium">{subcategory.domain || t('Non renseigné')}</p>
           </div>
           <div>
@@ -175,7 +175,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           </div>
           {artisticCategory.otherLanguages && (
             <div>
-              <p className="text-sm text-content-secondary mb-1">Autres langues</p>
+              <p className="text-sm text-content-secondary mb-1">{t('Autres langues')}</p>
               <p className="text-content font-medium">{artisticCategory.otherLanguages}</p>
             </div>
           )}
@@ -214,7 +214,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           {isLoading ? (
             <>
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Inscription en cours...</span>
+              <span>{t('Inscription en cours…')}</span>
             </>
           ) : (
             <>

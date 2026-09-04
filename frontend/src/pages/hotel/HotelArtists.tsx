@@ -395,7 +395,7 @@ const HotelArtists: React.FC = () => {
       case 'Available':
         return 'Disponible'
       case 'Pending':
-        return 'À confirmer'
+        return t('À confirmer')
       default:
         return 'Indisponible'
     }
@@ -471,7 +471,7 @@ const HotelArtists: React.FC = () => {
           </div>
           
           <div>
-            <label className="form-label">Discipline</label>
+            <label className="form-label">{t('Discipline')}</label>
             <select
               value={selectedDiscipline}
               onChange={(e) => setSelectedDiscipline(e.target.value)}
@@ -486,7 +486,7 @@ const HotelArtists: React.FC = () => {
           </div>
           
           <div>
-            <label className="form-label">Lieu</label>
+            <label className="form-label">{t('Lieu')}</label>
             <select
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
@@ -494,7 +494,7 @@ const HotelArtists: React.FC = () => {
             >
               {locations.map(location => (
                 <option key={location} value={location}>
-                  {location === 'all' ? 'Tous les lieux' : location}
+                  {location === 'all' ? t('Tous les lieux') : location}
                 </option>
               ))}
             </select>
@@ -509,9 +509,9 @@ const HotelArtists: React.FC = () => {
               onChange={(e) => setSortBy(e.target.value)}
               className="form-input w-40"
             >
-              <option value="rating">Note</option>
+              <option value="rating">{t('Note')}</option>
               <option value="bookings">{t('Réservations')}</option>
-              <option value="name">Nom</option>
+              <option value="name">{t('Nom')}</option>
             </select>
             <button
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
@@ -547,15 +547,15 @@ const HotelArtists: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="form-label">Availability</label>
+              <label className="form-label">{t('Disponibilité')}</label>
               <select
                 value={availabilityWindow}
                 onChange={(e) => setAvailabilityWindow(e.target.value)}
                 className="form-input"
               >
                 <option value="">{t('Toutes les disponibilités')}</option>
-                <option value="available">Disponible maintenant</option>
-                <option value="pending">En attente</option>
+                <option value="available">{t('Disponible maintenant')}</option>
+                <option value="pending">{t('En attente')}</option>
               </select>
             </div>
           </div>
@@ -624,7 +624,7 @@ const HotelArtists: React.FC = () => {
                 </p>
               ) : (
                 <p className="text-content-secondary text-sm mb-4 italic">
-                  Artist biography coming soon.
+                  {t('Biographie de l’artiste à venir.')}
                 </p>
               )}
 
@@ -642,7 +642,7 @@ const HotelArtists: React.FC = () => {
                     ))
                   ) : (
                     <span className="px-2 py-1 bg-surface-sunken text-content-secondary text-xs rounded-full">
-                      Luxury Performances
+                      {t('Performances d’exception')}
                     </span>
                   )}
                 </div>
@@ -651,7 +651,7 @@ const HotelArtists: React.FC = () => {
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="text-center p-3 bg-surface rounded-card">
                   <div className="text-sm font-medium text-content mb-1">{artist.rank || 'Standard'}</div>
-                  <p className="text-xs text-content-secondary">Rang</p>
+                  <p className="text-xs text-content-secondary">{t('Rang')}</p>
                 </div>
                 <div className="text-center p-3 bg-surface rounded-card">
                   <div className="flex items-center justify-center mb-1">
@@ -662,7 +662,7 @@ const HotelArtists: React.FC = () => {
                 </div>
                 <div className="text-center p-3 bg-surface rounded-card">
                   <div className="text-sm font-medium text-content mb-1">{artist.loyaltyPoints ?? 0}</div>
-                  <p className="text-xs text-content-secondary">Points</p>
+                  <p className="text-xs text-content-secondary">{t('Points')}</p>
                 </div>
               </div>
 
@@ -717,7 +717,7 @@ const HotelArtists: React.FC = () => {
               </div>
               {bookingError && <div className="text-sm text-[var(--state-critical)]">{bookingError}</div>}
               <div className="flex justify-end space-x-2 pt-2">
-                <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>Annuler</button>
+                <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>{t('Annuler')}</button>
                 <button className="btn-primary" disabled={processing} onClick={createBooking}>{processing ? t('Envoi…') : t('Envoyer la demande')}</button>
               </div>
             </div>

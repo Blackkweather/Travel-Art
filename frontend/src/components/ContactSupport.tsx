@@ -140,7 +140,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
         <div className="mb-8 p-6 bg-surface-sunken rounded-card border border-gold/20">
           <div className="flex items-center gap-2 mb-4">
             <HelpCircle className="w-5 h-5 text-gold" />
-            <h3 className="text-lg font-semibold text-content">Contact rapide</h3>
+            <h3 className="text-lg font-semibold text-content">{t('Contact rapide')}</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
@@ -264,7 +264,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               className="btn-secondary flex items-center justify-center gap-2 min-h-[48px]"
             >
               <Mail className="w-5 h-5" />
-              <span>Écrire directement</span>
+              <span>{t('Écrire directement')}</span>
             </a>
           </div>
 

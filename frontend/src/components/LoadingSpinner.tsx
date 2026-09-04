@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { t } from '@/i18n'
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg'
@@ -22,7 +23,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   return (
     <div
       role="status"
-      aria-label="Chargement"
+      aria-label={t('Chargement')}
       className={`flex items-center justify-center ${className}`}
     >
       <motion.div
@@ -35,7 +36,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           ease: "linear"
         }}
       />
-      <span className="sr-only">Chargement…</span>
+      <span className="sr-only">{t('Chargement…')}</span>
     </div>
   )
 }

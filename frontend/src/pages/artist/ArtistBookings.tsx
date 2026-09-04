@@ -241,7 +241,7 @@ const ArtistBookings: React.FC = () => {
             >
               <option value="all">{t('Toutes les réservations')}</option>
               <option value="confirmed">{t('Confirmée')}</option>
-              <option value="pending">En attente</option>
+              <option value="pending">{t('En attente')}</option>
               <option value="completed">{t('Terminée')}</option>
               <option value="cancelled">{t('Annulée')}</option>
               <option value="rejected">{t('Refusée')}</option>
@@ -343,7 +343,7 @@ const ArtistBookings: React.FC = () => {
                           className="btn-primary btn-sm"
                           disabled={isUpdating}
                         >
-                          Accepter
+                          {t('Accepter')}
                         </button>
                         <button
                           onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
@@ -456,7 +456,7 @@ const ArtistBookings: React.FC = () => {
                     <p className="text-content font-medium">{selectedBooking.performanceSpot}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-content-secondary">Statut</p>
+                    <p className="text-sm font-medium text-content-secondary">{t('Statut')}</p>
                     <StatusBadge status={selectedBooking.status} className="mt-1" />
                   </div>
                   <div>

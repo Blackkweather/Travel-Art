@@ -194,10 +194,10 @@ const AdminModeration: React.FC = () => {
           <button
             onClick={() => exportToCSV(tab === 'artists' ? artists : hotels, tab)}
             className="btn-ghost btn-sm"
-            title="Exporter en CSV"
+            title={t('Exporter en CSV')}
           >
             <Download className="w-4 h-4" />
-            Exporter
+            {t('Exporter')}
           </button>
         </div>
         </div>
@@ -214,7 +214,7 @@ const AdminModeration: React.FC = () => {
               {artists.length === 0 ? (
                 <div className="text-center py-12 text-content-secondary">
                   <User className="w-12 h-12 mx-auto mb-4 text-content-secondary" />
-                  <p>Aucun artiste</p>
+                  <p>{t('Aucun artiste')}</p>
                 </div>
               ) : (
                 artists.map((a) => (
@@ -234,7 +234,7 @@ const AdminModeration: React.FC = () => {
                       className="btn-ghost btn-sm"
                     >
                       <Eye className="w-4 h-4" />
-                      Examiner
+                      {t('Examiner')}
                     </a>
                     {(a.user?.isActive ?? a.isActive ?? true) ? (
                       <button
@@ -287,7 +287,7 @@ const AdminModeration: React.FC = () => {
                       className="btn-ghost btn-sm"
                     >
                       <Eye className="w-4 h-4" />
-                      Examiner
+                      {t('Examiner')}
                     </a>
                     {(h.user?.isActive ?? h.isActive ?? true) ? (
                       <button

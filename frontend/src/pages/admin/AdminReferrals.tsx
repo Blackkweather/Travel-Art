@@ -72,7 +72,7 @@ const AdminReferrals: React.FC = () => {
           pages: 1
         })
       } catch (err: any) {
-        setError(err?.response?.data?.message || 'Impossible de charger les parrainages')
+        setError(err?.response?.data?.message || t('Impossible de charger les parrainages'))
       } finally {
         setLoading(false)
       }
@@ -148,7 +148,7 @@ const AdminReferrals: React.FC = () => {
               className="flex flex-wrap items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
         >
           <Download className="w-4 h-4" />
-              Exporter en CSV
+              {t('Exporter en CSV')}
         </button>
           </div>
       </div>
@@ -195,7 +195,7 @@ const AdminReferrals: React.FC = () => {
               >
                 <option value="">{t('Tous les statuts')}</option>
                 <option value="COMPLETED">{t('Terminée')}</option>
-                <option value="PENDING">En attente</option>
+                <option value="PENDING">{t('En attente')}</option>
               </select>
           </div>
         </div>
@@ -204,7 +204,7 @@ const AdminReferrals: React.FC = () => {
       {/* Referrals Table */}
         <div className="panel">
           <div className="panel-head">
-            <h2>Parrainages</h2>
+            <h2>{t('Parrainages')}</h2>
           </div>
         {referrals.length > 0 ? (
             <>
@@ -212,11 +212,11 @@ const AdminReferrals: React.FC = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th scope="col">Parrain</th>
-                  <th scope="col">Type</th>
-                  <th scope="col">Filleul</th>
-                  <th scope="col">Statut</th>
-                  <th scope="col">Date</th>
+                  <th scope="col">{t('Parrain')}</th>
+                  <th scope="col">{t('Type')}</th>
+                  <th scope="col">{t('Filleul')}</th>
+                  <th scope="col">{t('Statut')}</th>
+                  <th scope="col">{t('Date')}</th>
                   <th scope="col" className="numeric">{t('Récompense')}</th>
                 </tr>
               </thead>

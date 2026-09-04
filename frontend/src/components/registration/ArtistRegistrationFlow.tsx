@@ -58,7 +58,7 @@ const ArtistRegistrationFlow: React.FC = () => {
 
   const stepTitles = [
     'Informations de base',
-    'Catégorie artistique',
+    t('Catégorie artistique'),
     'Confirmation'
   ];
 

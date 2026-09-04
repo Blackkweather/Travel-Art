@@ -41,7 +41,7 @@ const ResetPasswordPage: React.FC = () => {
       toast.success(t('Mot de passe réinitialisé'))
       navigate('/login')
     } catch (error: any) {
-      toast.error(error.response?.data?.error?.message || 'Le mot de passe n’a pas pu être réinitialisé. Le lien est peut-être expiré ou déjà utilisé.')
+      toast.error(error.response?.data?.error?.message || t('Le mot de passe n’a pas pu être réinitialisé. Le lien est peut-être expiré ou déjà utilisé.'))
     } finally {
       setIsLoading(false)
     }
@@ -55,7 +55,7 @@ const ResetPasswordPage: React.FC = () => {
         <div className="flex items-center justify-center py-20 pt-32 px-4">
           <div className="text-center">
             <h2 className="text-3xl font-serif font-bold text-content mb-4">
-              Lien invalide
+              {t('Lien invalide')}
             </h2>
             <p className="text-content-secondary mb-4">
               {t('Ce lien de réinitialisation est invalide ou a expiré.')}

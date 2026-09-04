@@ -283,7 +283,7 @@ const ArtistMembership: React.FC = () => {
               {plan.current && (
                 <div className="absolute -top-3 right-4">
                   <span className="badge-positive">
-                    Formule actuelle
+                    {t('Formule actuelle')}
                   </span>
                 </div>
               )}

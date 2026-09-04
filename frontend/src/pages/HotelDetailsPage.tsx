@@ -233,7 +233,7 @@ const HotelDetailsPage: React.FC = () => {
                       <Star className="w-6 h-6 text-gold" />
                     </div>
                     <div>
-                      <p className="text-sm text-content-secondary">Note</p>
+                      <p className="text-sm text-content-secondary">{t('Note')}</p>
                       <p className="text-xl font-bold text-content">{rating.toFixed(1)}</p>
                     </div>
                   </div>
@@ -366,7 +366,7 @@ const HotelDetailsPage: React.FC = () => {
               {/* Performance Spots Summary */}
               {performanceSpots.length > 0 && (
                 <div className="border-t border-line pt-6">
-                  <h4 className="text-lg font-serif font-semibold text-content mb-4">Espaces disponibles</h4>
+                  <h4 className="text-lg font-serif font-semibold text-content mb-4">{t('Espaces disponibles')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {performanceSpots.map((spot: any, index: number) => (
                       <span

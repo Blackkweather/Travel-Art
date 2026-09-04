@@ -48,7 +48,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
     if (!data.stageName.trim()) newErrors.stageName = t('Indiquez votre nom de scène');
     if (!data.firstName.trim()) newErrors.firstName = t('Indiquez votre prénom');
     if (!data.lastName.trim()) newErrors.lastName = 'Indiquez votre nom';
-    if (!data.birthDate.trim()) newErrors.birthDate = 'Indiquez votre date de naissance';
+    if (!data.birthDate.trim()) newErrors.birthDate = t('Indiquez votre date de naissance');
     else if (!validateDate(data.birthDate)) newErrors.birthDate = 'Format attendu : JJ/MM/AAAA';
 
     if (!data.phone.trim()) newErrors.phone = t('Indiquez votre numéro de téléphone');
@@ -57,18 +57,18 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
     if (!data.email.trim()) newErrors.email = 'Indiquez votre adresse e-mail';
     else if (!validateEmail(data.email)) newErrors.email = 'Adresse e-mail invalide';
 
-    if (!data.password) newErrors.password = 'Choisissez un mot de passe';
+    if (!data.password) newErrors.password = t('Choisissez un mot de passe');
     else if (!validatePassword(data.password)) {
       newErrors.password = t('8 caractères minimum, avec une majuscule, une minuscule, un chiffre et un caractère spécial');
     }
 
-    if (!data.confirmPassword) newErrors.confirmPassword = 'Confirmez votre mot de passe';
+    if (!data.confirmPassword) newErrors.confirmPassword = t('Confirmez votre mot de passe');
     else if (data.password !== data.confirmPassword) {
-      newErrors.confirmPassword = 'Les deux mots de passe ne correspondent pas';
+      newErrors.confirmPassword = t('Les deux mots de passe ne correspondent pas');
     }
 
     if (!data.country) newErrors.country = t('Sélectionnez votre pays');
-    if (!data.agreeToTerms) newErrors.agreeToTerms = 'Vous devez accepter les conditions pour continuer';
+    if (!data.agreeToTerms) newErrors.agreeToTerms = t('Vous devez accepter les conditions pour continuer');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -159,7 +159,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Last Name */}
         <motion.div variants={itemVariants}>
           <FormField
-            label="Nom"
+            label={t('Nom')}
             placeholder={t('Votre nom')}
             value={data.lastName}
             onChange={(e) => update({ lastName: e.target.value })}
@@ -200,7 +200,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             type="email"
-            label="Adresse e-mail"
+            label={t('Adresse e-mail')}
             placeholder={t('vous@exemple.com')}
             value={data.email}
             onChange={(e) => update({ email: e.target.value })}

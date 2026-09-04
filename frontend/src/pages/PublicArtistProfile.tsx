@@ -102,7 +102,7 @@ const PublicArtistProfile: React.FC = () => {
         <SimpleNavbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <h2 className="text-2xl font-serif font-bold text-content mb-4">Artiste introuvable</h2>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Artiste introuvable')}</h2>
             <p className="text-content-secondary mb-6">{t('Le profil d’artiste demandé n’existe pas.')}</p>
             <Link to="/top-artists" className="btn-primary">
               {t('Parcourir les artistes')}
@@ -361,7 +361,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Domaine</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Domaine')}</p>
                     <p className="text-base font-medium text-content">{artisticProfile.domain}</p>
                   </div>
                 </div>
@@ -432,7 +432,7 @@ const PublicArtistProfile: React.FC = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Langues</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Langues')}</p>
                     <p className="text-base font-medium text-content">{artisticProfile.languages.join(', ')}</p>
                   </div>
                 </div>
@@ -460,7 +460,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Star className="w-5 h-5 text-gold fill-current" />
                   </div>
                   <div>
-                    <p className="text-sm text-content-secondary mb-1">Note moyenne</p>
+                    <p className="text-sm text-content-secondary mb-1">{t('Note moyenne')}</p>
                     <p className="text-base font-medium text-content">{artist.avgRating.toFixed(1)} / 5.0</p>
                   </div>
                 </div>
@@ -533,7 +533,7 @@ const PublicArtistProfile: React.FC = () => {
                         <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
                       </svg>
                     </div>
-                    <p className="text-content-secondary text-center font-medium mb-2">Performance live</p>
+                    <p className="text-content-secondary text-center font-medium mb-2">{t('Performance live')}</p>
                     <p className="text-content-secondary text-sm text-center">{t('Vidéo à venir')}</p>
                   </div>
                 </div>
@@ -614,7 +614,7 @@ const PublicArtistProfile: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-semibold text-content mb-2">Performances multilingues</h3>
+                    <h3 className="text-lg font-semibold text-content mb-2">{t('Performances multilingues')}</h3>
                     <p className="text-content-secondary text-sm leading-relaxed">
                       Fluent in {artisticProfile.languages.join(', ')}. Able to connect with international audiences and adapt performances to different cultural contexts.
                     </p>
@@ -643,7 +643,7 @@ const PublicArtistProfile: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-content mb-2">Excellence professionnelle</h3>
+                  <h3 className="text-lg font-semibold text-content mb-2">{t('Excellence professionnelle')}</h3>
                   <p className="text-content-secondary text-sm leading-relaxed">
                     Basé {artist.user?.country ? `en ${artist.user.country}` : t('à l’international')}. Un matériel professionnel et une préparation méticuleuse, au service de la qualité.
                   </p>
@@ -660,7 +660,7 @@ const PublicArtistProfile: React.FC = () => {
               <div className="inline-flex items-center gap-2 px-6 py-3 bg-gold/10 border border-gold/30 rounded-control">
                 <Star className="w-5 h-5 text-gold fill-current" />
                 <span className="text-sm font-medium text-content">
-                  {artist.ratingBadge}
+                  {t(artist.ratingBadge)}
                 </span>
               </div>
             </div>
@@ -678,7 +678,7 @@ const PublicArtistProfile: React.FC = () => {
                     <Star className="w-6 h-6 text-gold fill-current" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-content mb-2">Excellence professionnelle</h3>
+                    <h3 className="text-lg font-semibold text-content mb-2">{t('Excellence professionnelle')}</h3>
                     <p className="text-content-secondary text-sm leading-relaxed">
                       Avec {artist.bookings?.length || 0} {(artist.bookings?.length || 0) >= 2 ? t('engagements menés à bien') : t('engagement mené à bien')} et {artist.avgRating ? `une note de ${artist.avgRating.toFixed(1)}/5` : t('d’excellents retours')},
                       {artist.stageName || artist.user?.name} s’est construit une réputation de fiabilité et d’exigence.
@@ -722,7 +722,7 @@ const PublicArtistProfile: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-control bg-[var(--state-positive)]"></div>
-                          <span className="text-sm font-semibold text-[var(--state-positive)]">Disponible</span>
+                          <span className="text-sm font-semibold text-[var(--state-positive)]">{t('Disponible')}</span>
                         </div>
                         <p className="text-base font-semibold text-content mb-1">
                           {new Date(avail.dateFrom).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}

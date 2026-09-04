@@ -202,7 +202,7 @@ const PartnersPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <p className="eyebrow text-white/80">Nos partenaires</p>
+            <p className="eyebrow text-white/80">{t('Nos partenaires')}</p>
             <h1 className="mt-5 max-w-[14ch] text-white">
               {t('Nos hôtels')}
               <span className="block text-gold">partenaires</span>
@@ -326,7 +326,7 @@ const PartnersPage: React.FC = () => {
                       </dd>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <dt className="text-content-secondary">Note</dt>
+                      <dt className="text-content-secondary">{t('Note')}</dt>
                       <dd className="font-serif text-base text-content tabular-nums">
                         {partner.rating}
                       </dd>

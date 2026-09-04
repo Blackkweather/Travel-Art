@@ -198,11 +198,11 @@ const TravelerExperiencesPage: React.FC = () => {
               artist:
                 typeof trip.artist === 'string'
                   ? trip.artist
-                  : trip.artist?.user?.name || trip.artist?.name || 'Artiste en résidence',
+                  : trip.artist?.user?.name || trip.artist?.name || t('Artiste en résidence'),
               hotel:
                 typeof trip.hotel === 'string'
                   ? trip.hotel
-                  : trip.hotel?.name || 'Lieu à confirmer',
+                  : trip.hotel?.name || t('Lieu à confirmer'),
               date: trip.date || new Date().toISOString().split('T')[0],
               image: images && images.length > 0
                 ? images[0]
@@ -630,7 +630,7 @@ const TravelerExperiencesPage: React.FC = () => {
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/register" className="btn-gold btn-lg btn-arrow">
-                Commencer
+                {t('Commencer')}
               </Link>
               <Link to="/top-artists" className="btn-on-media btn-lg">
                 {t('Parcourir les artistes')}

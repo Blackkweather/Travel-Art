@@ -181,7 +181,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
             {t('Choisissez votre catégorie principale')}
           </h3>
           <SelectWithSearch
-            placeholder="Tribu Artistique"
+            placeholder={t('Tribu artistique')}
             options={MAIN_CATEGORIES}
             value={data.mainCategory}
             onChange={(value) => onChange({ ...data, mainCategory: value })}
@@ -199,7 +199,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
             {t('Précisez un autre domaine si vous en avez un')}
           </h3>
           <SelectWithSearch
-            placeholder="Tribu Artistique (optionnel)"
+            placeholder={t('Tribu artistique (facultatif)')}
             options={MAIN_CATEGORIES}
             value={data.secondaryCategory || ''}
             onChange={(value) => onChange({ ...data, secondaryCategory: value || undefined })}
@@ -229,7 +229,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           {/* Category Type Selection */}
           <motion.div variants={itemVariants}>
             <SelectWithSearch
-              label="Tribu Artistique"
+              label={t('Tribu artistique')}
               placeholder={t('Sélectionner le type de catégorie')}
               options={categoryTypeOptions}
               value={subcategoryData.categoryType}
@@ -261,7 +261,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
             <motion.div variants={itemVariants}>
               <RadioGroup
                 name="domain"
-                label="Domaine"
+                label={t('Domaine')}
                 options={domainOptions}
                 value={subcategoryData.domain}
                 onChange={(value) => onSubcategoryChange({ ...subcategoryData, domain: value })}
@@ -305,7 +305,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
               type="text"
               value={data.otherLanguages || ''}
               onChange={(e) => onChange({ ...data, otherLanguages: e.target.value })}
-              placeholder="Ex: Espagnol, Italien, Allemand..."
+              placeholder={t('Ex : espagnol, italien, allemand…')}
               disabled={isLoading}
               className={`
                 w-full h-12 px-4 rounded-card border-2 transition-all
