@@ -156,6 +156,17 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
  * benefit no one was charged for. Activating a membership here would make an
  * artist ACTIVE, and therefore priority-placed, for free.
  */
+/**
+ * Annual membership tiers.
+ *
+ * Priced here, never from the request: a tier is two words on the wire and the
+ * amount charged must not be one of them.
+ */
+const MEMBERSHIP_TIERS = {
+  ARTIST: { priceCents: 5000, label: 'Formule Artiste' },
+  PROFESSIONAL: { priceCents: 10000, label: 'Formule Artiste confirme' },
+} as const;
+
 router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
   const { artistId, membershipType } = req.body;
 
@@ -163,9 +174,8 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
     throw new CustomError('artistId and membershipType are required', 400);
   }
 
-  // Tiers are constrained by the MembershipTier enum; anything else is a
-  // client bug and should not reach the payment step.
-  if (!['ARTIST', 'PROFESSIONAL'].includes(membershipType)) {
+  const tier = MEMBERSHIP_TIERS[membershipType as keyof typeof MEMBERSHIP_TIERS];
+  if (!tier) {
     throw new CustomError('Unknown membership tier', 400);
   }
 
@@ -177,15 +187,75 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
     throw new CustomError('Artist not found or access denied', 404);
   }
 
-  console.warn(
-    `Blocked membership purchase: no payment processor configured (artist ${artistId}, tier ${membershipType})`
-  );
+  if (!isStripeConfigured() || !stripe) {
+    console.warn(
+      `Blocked membership purchase: ${stripeUnavailableReason()} (artist ${artistId}, tier ${membershipType})`
+    );
+    throw new CustomError(
+      'Les adhesions ne sont pas encore disponibles a l\u2019achat en ligne. ' +
+      'Aucune carte n\u2019a ete debitee et votre adhesion est inchangee. Ecrivez-nous pour la mettre en place.',
+      503
+    );
+  }
 
-  throw new CustomError(
-    'Les adhésions ne sont pas encore disponibles à l’achat en ligne. ' +
-    'Aucune carte n’a été débitée et votre adhésion est inchangée. Écrivez-nous pour la mettre en place.',
-    503
-  );
+  // Both rows exist before the redirect, so a charge that completes while the
+  // customer has closed the tab still has something to attach itself to.
+  const membership = await prisma.membership.create({
+    data: {
+      artistId: artist.id,
+      tier: membershipType as 'ARTIST' | 'PROFESSIONAL',
+      priceCents: tier.priceCents,
+      currency: 'EUR',
+      status: 'PENDING',
+    },
+  });
+
+  const payment = await prisma.payment.create({
+    data: {
+      actorUserId: req.user!.id,
+      amountCents: tier.priceCents,
+      currency: 'EUR',
+      status: 'PENDING',
+      membershipId: membership.id,
+    },
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    client_reference_id: payment.id,
+    // Echoed back on the webhook, which is the only place the tier is granted.
+    metadata: {
+      paymentId: payment.id,
+      membershipId: membership.id,
+      artistId: artist.id,
+      tier: membershipType,
+    },
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: tier.priceCents,
+          product_data: {
+            name: tier.label,
+            description: 'Adhesion annuelle Travel Art',
+          },
+        },
+      },
+    ],
+    success_url: `${config.frontendUrl}/dashboard/membership?checkout=success`,
+    cancel_url: `${config.frontendUrl}/dashboard/membership?checkout=cancelled`,
+  });
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { stripeSessionId: session.id },
+  });
+
+  res.json({
+    success: true,
+    data: { checkoutUrl: session.url, sessionId: session.id, membershipId: membership.id },
+  });
 }));
 
 // Get transactions for a user

@@ -107,6 +107,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   const paymentId = session.metadata?.paymentId ?? session.client_reference_id ?? undefined;
   const hotelId = session.metadata?.hotelId;
   const packageId = session.metadata?.packageId;
+  const membershipId = session.metadata?.membershipId;
+
+  // Two things are bought through Checkout. A membership session carries a
+  // membershipId and no package.
+  if (membershipId) {
+    await grantMembership(session, membershipId, paymentId);
+    return;
+  }
 
   if (!hotelId || !packageId) {
     throw new Error(`Checkout session ${session.id} is missing hotelId or packageId metadata`);
@@ -153,6 +161,63 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
   });
 
   console.log(`Granted ${credits} credits to hotel ${hotelId} for session ${session.id}`);
+}
+
+/**
+ * Activate a membership whose charge has settled.
+ *
+ * The tier and the term come from the Membership row written before the
+ * redirect, never from the session metadata, which only echoes what we sent.
+ * Artist.membershipStatus is denormalised from this so the dashboards can read
+ * it without a join.
+ */
+async function grantMembership(
+  session: Stripe.Checkout.Session,
+  membershipId: string,
+  paymentId?: string
+): Promise<void> {
+  const membership = await prisma.membership.findUnique({ where: { id: membershipId } });
+  if (!membership) {
+    throw new Error(`Checkout session ${session.id} references unknown membership ${membershipId}`);
+  }
+
+  // Stripe retries a webhook until it is acknowledged, so this has to be safe
+  // to run twice: a membership already active is not extended again.
+  if (membership.status === 'ACTIVE') {
+    console.log(`Membership ${membershipId} already active; ignoring repeat of ${session.id}`);
+    return;
+  }
+
+  const startsAt = new Date();
+  const endsAt = new Date(startsAt);
+  endsAt.setFullYear(endsAt.getFullYear() + 1);
+
+  await prisma.$transaction(async (tx) => {
+    if (paymentId) {
+      await tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          status: 'SUCCEEDED',
+          stripePaymentIntentId:
+            typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
+        },
+      });
+    }
+
+    await tx.membership.update({
+      where: { id: membershipId },
+      data: { status: 'ACTIVE', startsAt, endsAt },
+    });
+
+    await tx.artist.update({
+      where: { id: membership.artistId },
+      data: { membershipStatus: 'ACTIVE', membershipRenewal: endsAt },
+    });
+  });
+
+  console.log(
+    `Activated ${membership.tier} membership ${membershipId} for artist ${membership.artistId} until ${endsAt.toISOString()}`
+  );
 }
 
 export { router as webhookRoutes };
