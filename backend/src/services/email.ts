@@ -26,6 +26,9 @@ const resend = apiKey ? new Resend(apiKey) : null;
 /** Resend's sandbox sender works with no domain set up; a real domain overrides it. */
 const FROM = process.env.RESEND_FROM || 'Travel Art <onboarding@resend.dev>';
 
+/** Where a new-registration alert goes. Unset means no one is notified. */
+const ADMIN_NOTIFY_EMAIL = process.env.ADMIN_NOTIFY_EMAIL;
+
 const isProd = process.env.NODE_ENV === 'production';
 
 export interface SendResult {
@@ -207,6 +210,32 @@ export function rejectedEmail(to: string, name: string, reason?: string) {
     ],
     footnote:
       'Vous pouvez répondre à ce message si vous souhaitez des précisions ou soumettre une nouvelle demande plus tard.',
+  });
+}
+
+export function newRegistrationAdminAlert(applicant: {
+  name: string;
+  email: string;
+  role: 'ARTIST' | 'HOTEL';
+  country?: string | null;
+}) {
+  if (!ADMIN_NOTIFY_EMAIL) {
+    // Same rule as everything else here: an unconfigured recipient skips
+    // silently rather than failing the registration it is reporting on.
+    console.warn('[email] ADMIN_NOTIFY_EMAIL not set — skipped new-registration alert');
+    return Promise.resolve<SendResult>({ sent: false, skipped: 'no-api-key' });
+  }
+  const roleLabel = applicant.role === 'ARTIST' ? 'artiste' : 'hôtel';
+  return send(ADMIN_NOTIFY_EMAIL, {
+    subject: `Nouvelle candidature ${roleLabel} : ${applicant.name}`,
+    heading: 'Nouvelle candidature à examiner',
+    body: [
+      `${applicant.name} (${applicant.email}) vient de s’inscrire en tant que ${roleLabel}${
+        applicant.country ? ` — ${applicant.country}` : ''
+      }.`,
+      'Le compte reste en attente tant qu’il n’a pas été admis depuis la console d’administration.',
+    ],
+    action: { label: 'Ouvrir les admissions', url: `${config.frontendUrl}/dashboard/admissions` },
   });
 }
 

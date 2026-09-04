@@ -7,6 +7,7 @@ import { config } from '../config';
 import {
   verificationEmail,
   passwordResetEmail,
+  newRegistrationAdminAlert,
 } from '../services/email';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
@@ -273,6 +274,15 @@ router.post('/register', asyncHandler(async (req, res) => {
     // long enough for the browser to time out on it.
     void verificationEmail(user.email, user.name, verifyLink).catch((err) => {
       console.error('verification email failed for', user.email, err);
+    });
+
+    void newRegistrationAdminAlert({
+      name: user.name,
+      email: user.email,
+      role: user.role as 'ARTIST' | 'HOTEL',
+      country,
+    }).catch((err) => {
+      console.error('admin registration alert failed for', user.email, err);
     });
 
     // Deliberately no token. The account is PENDING until an administrator
