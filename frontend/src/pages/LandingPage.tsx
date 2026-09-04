@@ -10,6 +10,7 @@ import Footer from '@/components/Footer'
 import { extractArray } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { experienceTypeLabel } from '@/utils/i18n'
+import { countryLabel } from '@/i18n/countries'
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -182,7 +183,7 @@ export default function LandingPage() {
           try {
             const loc =
               typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location
-            place = [loc?.city, loc?.country].filter(Boolean).join(', ')
+            place = [loc?.city, countryLabel(loc?.country)].filter(Boolean).join(', ')
           } catch {
             place = ''
           }

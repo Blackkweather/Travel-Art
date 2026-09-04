@@ -30,7 +30,11 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
       </div>
 
       {/* Step Labels with Enhanced Animations */}
-      <div className="flex justify-between relative">
+      {/* Hidden on phones: seven circles with 120px labels measured 450px
+          against a 390px screen, so the row pushed the whole signup page
+          sideways and step 7 fell off the edge. The bar above and the
+          named counter below say the same thing in the space available. */}
+      <div className="hidden sm:flex justify-between relative">
         {/* Connection Lines */}
         <div className="absolute top-5 left-0 right-0 h-0.5 bg-surface-sunken -z-10">
           <motion.div
@@ -136,7 +140,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
         key={currentStep}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mt-8"
+        className="text-center mt-4 sm:mt-8"
       >
         {/* Was "Step N of M" - the one English string left in the signup flow.
             The animated colour also hardcoded #C9A63C, a gold from an earlier
@@ -154,6 +158,11 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
           </motion.span>
           {' '}sur{' '}
           <span className="font-bold text-content">{totalSteps}</span>
+        </p>
+        {/* The circle row is hidden here, so name the current step instead of
+            leaving the reader with a bare number. */}
+        <p className="sm:hidden mt-1 text-base font-semibold text-gold">
+          {steps[currentStep - 1]}
         </p>
       </motion.div>
     </div>

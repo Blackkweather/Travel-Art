@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { countryLabel } from '@/i18n/countries'
 
 interface TopHotel {
   id: string
@@ -78,13 +79,13 @@ const TopHotelsPage: React.FC = () => {
     if (typeof location === 'string') {
       try {
         const parsed = JSON.parse(location)
-        const parts = [parsed.city, parsed.country].filter(Boolean)
+        const parts = [parsed.city, countryLabel(parsed.country)].filter(Boolean)
         return parts.length ? parts.join(', ') : 'Location TBA'
       } catch {
         return location
       }
     }
-    const parts = [location.city, location.country].filter(Boolean)
+    const parts = [location.city, countryLabel(location.country)].filter(Boolean)
     return parts.length ? parts.join(', ') : 'Location TBA'
   }
 

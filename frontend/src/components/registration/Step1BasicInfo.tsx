@@ -5,6 +5,7 @@ import FormField from '../FormField';
 import SelectWithSearch from './SelectWithSearch';
 import DatePicker from './DatePicker';
 import { BasicInfo, COUNTRIES, VALIDATION } from '@/types/artistRegistration';
+import { countryOptions } from '@/i18n/countries';
 import useRevealFirstError from '@/hooks/useRevealFirstError';
 import { t } from '@/i18n'
 
@@ -214,7 +215,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
           <SelectWithSearch
             label={t('Choisir un pays')}
             placeholder={t('Sélectionner votre pays')}
-            options={COUNTRIES.map(country => ({ value: country, label: country }))}
+            options={countryOptions(COUNTRIES)}
             value={data.country}
             onChange={(value) => update({ country: value })}
             error={errors.country}

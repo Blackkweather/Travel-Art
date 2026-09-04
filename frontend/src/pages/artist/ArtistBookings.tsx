@@ -10,6 +10,7 @@ import type { Booking as BookingType } from '@/types'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
+import { countryLabel } from '@/i18n/countries'
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected'
 
@@ -67,7 +68,7 @@ const ArtistBookings: React.FC = () => {
 
   const getLocationString = (location: any): string => {
     const parsed = parseJson<{ city?: string; country?: string }>(location, {})
-    const parts = [parsed.city, parsed.country].filter(Boolean)
+    const parts = [parsed.city, countryLabel(parsed.country)].filter(Boolean)
     return parts.length ? parts.join(', ') : 'Location TBA'
   }
 

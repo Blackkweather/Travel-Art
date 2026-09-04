@@ -11,6 +11,7 @@ import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
 import { useAuthStore } from '@/store/authStore';
 import { COUNTRIES, VALIDATION } from '@/types/artistRegistration';
+import { countryOptions as buildCountryOptions } from '@/i18n/countries';
 import { t } from '@/i18n'
 
 type PublicType = 'Familles' | 'Couples' | 'Adult only' | 'Corporate';
@@ -177,7 +178,9 @@ const HotelRegistrationFlow: React.FC = () => {
     'Validation & process'
   ];
 
-  const countryOptions = useMemo(() => COUNTRIES.map(c => ({ value: c, label: c })), []);
+  // Labels in the reader's language, ordered by what they actually see;
+  // the stored value stays the English name the API expects.
+  const countryOptions = useMemo(() => buildCountryOptions(COUNTRIES), []);
 
   // Step 1 carries the credentials, so it gates on them. Everything the account
   // needs to exist and be reachable by exactly one person is checked here rather
@@ -406,7 +409,7 @@ const HotelRegistrationFlow: React.FC = () => {
                       />
                     </motion.div>
                     <motion.div variants={itemVariants}>
-                      <FormField label={t('Nombre de chambres')} placeholder="Ex: 150" value={state.general.roomCount} onChange={(e) => updateGeneral({ roomCount: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                      <FormField inputMode="numeric" label={t('Nombre de chambres')} placeholder="Ex: 150" value={state.general.roomCount} onChange={(e) => updateGeneral({ roomCount: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                     </motion.div>
                   </div>
                   <motion.div variants={itemVariants}>
@@ -424,17 +427,17 @@ const HotelRegistrationFlow: React.FC = () => {
                     />
                   </motion.div>
                   <motion.div variants={itemVariants}>
-                    <FormField label="Site web" placeholder="https://..." value={state.general.website || ''} onChange={(e) => updateGeneral({ website: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                    <FormField inputMode="url" label="Site web" placeholder="https://..." value={state.general.website || ''} onChange={(e) => updateGeneral({ website: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   </motion.div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField label="Instagram" placeholder="https://instagram.com/..." value={state.general.socials?.instagram || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), instagram: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                    <FormField label="Facebook" placeholder="https://facebook.com/..." value={state.general.socials?.facebook || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), facebook: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                    <FormField label="YouTube" placeholder="https://youtube.com/..." value={state.general.socials?.youtube || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), youtube: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
+                    <FormField inputMode="url" label="Instagram" placeholder="https://instagram.com/..." value={state.general.socials?.instagram || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), instagram: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
+                    <FormField inputMode="url" label="Facebook" placeholder="https://facebook.com/..." value={state.general.socials?.facebook || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), facebook: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
+                    <FormField inputMode="url" label="YouTube" placeholder="https://youtube.com/..." value={state.general.socials?.youtube || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), youtube: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField label="Contact responsable" placeholder="Nom" value={state.general.contactName || ''} onChange={(e) => updateGeneral({ contactName: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                    <FormField label={t('E-mail de contact *')} placeholder={t('contact@votre-hotel.com')} value={state.general.contactEmail} onChange={(e) => updateGeneral({ contactEmail: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                    <FormField label={t('Téléphone contact')} placeholder="+33 ..." value={state.general.contactPhone || ''} onChange={(e) => updateGeneral({ contactPhone: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                    <FormField type="email" label={t('E-mail de contact *')} placeholder={t('contact@votre-hotel.com')} value={state.general.contactEmail} onChange={(e) => updateGeneral({ contactEmail: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                    <FormField type="tel" label={t('Téléphone contact')} placeholder="+33 ..." value={state.general.contactPhone || ''} onChange={(e) => updateGeneral({ contactPhone: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   </div>
                   <motion.div variants={itemVariants}>
                     <p className="text-sm text-content-secondary mb-3">
@@ -559,11 +562,11 @@ const HotelRegistrationFlow: React.FC = () => {
                           onChange={(v) => updateSpace(index, { locationType: v as Space['locationType'] })}
                         />
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <FormField label={t('Capacité')} placeholder={t('Nombre de personnes')} value={space.capacity} onChange={(e) => updateSpace(index, { capacity: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                          <FormField inputMode="numeric" label={t('Capacité')} placeholder={t('Nombre de personnes')} value={space.capacity} onChange={(e) => updateSpace(index, { capacity: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                           <FormField label="Horaires possibles" placeholder="Ex: 18h-22h" value={space.hours} onChange={(e) => updateSpace(index, { hours: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                           <FormField label={t('Niveau sonore autorisé')} placeholder={t('Bas, moyen, élevé')} value={space.noiseLevel} onChange={(e) => updateSpace(index, { noiseLevel: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                         </div>
-                        <FormField label={t('Photos ou vidéos (URLs, séparées par des virgules)')} placeholder="https://..., https://..." value={(space.media || []).join(', ')} onChange={(e) => updateSpace(index, { media: (e.target as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean) })} disabled={isLoading} />
+                        <FormField inputMode="url" label={t('Photos ou vidéos (URLs, séparées par des virgules)')} placeholder="https://..., https://..." value={(space.media || []).join(', ')} onChange={(e) => updateSpace(index, { media: (e.target as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean) })} disabled={isLoading} />
                         <div className="flex justify-between">
                           <button type="button" onClick={() => removeSpace(index)} className="btn-secondary">Supprimer</button>
                         </div>

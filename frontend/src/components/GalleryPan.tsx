@@ -89,10 +89,18 @@ export default function GalleryPan({ items }: GalleryPanProps) {
             to={`/experience/${item.id}`}
             className="group shrink-0 snap-start w-[78vw] sm:w-[52vw] lg:w-[34vw]"
           >
-            {/* Alternating heights keep the run from reading as a filmstrip. */}
+            {/* Alternating heights keep the run from reading as a filmstrip.
+                Above `lg` the track is one viewport tall and pinned, so the
+                image is sized against the viewport rather than by aspect
+                ratio: a 34vw card at 3/4 is ~850px tall on a 1878px screen,
+                which overflowed a 800px track, and since the section is
+                overflow-hidden the title and location below the photograph
+                were cut in half. The heights leave room for that caption. */}
             <div
               className={`relative overflow-hidden bg-surface-sunken rounded-card ${
-                i % 2 === 0 ? 'aspect-[3/4]' : 'aspect-[4/5] lg:mt-24'
+                i % 2 === 0
+                  ? 'aspect-[3/4] lg:aspect-auto lg:h-[62vh]'
+                  : 'aspect-[4/5] lg:aspect-auto lg:h-[54vh] lg:mt-20'
               }`}
             >
               <img decoding="async"

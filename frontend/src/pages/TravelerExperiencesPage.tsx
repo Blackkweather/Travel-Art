@@ -20,6 +20,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 import { extractArray } from '@/utils/apiPayload'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { countryLabel } from '@/i18n/countries'
 
 const DefaultIcon = L.icon({
   iconUrl: icon,
@@ -508,7 +509,7 @@ const TravelerExperiencesPage: React.FC = () => {
                     <div className="flex items-center space-x-2 mb-2">
                       <MapPin className="w-4 h-4" />
                       <span className="text-sm font-medium">
-                        {exp.location.city}, {exp.location.country}
+                        {exp.location.city}, {countryLabel(exp.location.country)}
                       </span>
                     </div>
                     <h3 className="text-xl font-serif font-bold mb-1">{exp.title}</h3>
@@ -595,7 +596,7 @@ const TravelerExperiencesPage: React.FC = () => {
               a site with three experiences. */}
           {mapCountry && !loading && (
             <p className="mt-6 text-center text-sm text-content-secondary">
-              {t('Filtré sur {country} par la carte.', { country: mapCountry })}{' '}
+              {t('Filtré sur {country} par la carte.', { country: countryLabel(mapCountry) })}{' '}
               <button
                 type="button"
                 onClick={() => setMapCountry(null)}

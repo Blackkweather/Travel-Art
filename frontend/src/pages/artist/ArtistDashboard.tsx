@@ -10,6 +10,7 @@ import { parseJsonField } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
+import { countryLabel } from '@/i18n/countries'
 
 interface Booking {
   id: string
@@ -171,7 +172,7 @@ const ArtistDashboard: React.FC = () => {
                         )
                         const city = booking.hotel?.city ?? loc.city
                         const country = booking.hotel?.country ?? loc.country
-                        const where = [city, country].filter(Boolean).join(', ')
+                        const where = [city, countryLabel(country)].filter(Boolean).join(', ')
                         const spot = booking.performanceSpot
                         return [where || 'Lieu à confirmer', spot].filter(Boolean).join(' — ')
                       })()}

@@ -5,6 +5,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
+import { countryLabel } from '@/i18n/countries'
 
 interface Application {
   id: string
@@ -103,7 +104,7 @@ const AdminAdmissions: React.FC = () => {
     let where = ''
     try {
       const loc = app.hotel?.location ? JSON.parse(app.hotel.location) : null
-      where = loc ? [loc.city, loc.country].filter(Boolean).join(', ') : ''
+      where = loc ? [loc.city, countryLabel(loc.country)].filter(Boolean).join(', ') : ''
     } catch {
       where = app.hotel?.location ?? ''
     }
