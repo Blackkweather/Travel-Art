@@ -74,16 +74,41 @@ const MapCountryWatcher: React.FC<{
   onChange: (country: string | null) => void
 }> = ({ points, onChange }) => {
   const settle = (map: L.Map) => {
-    if (map.getZoom() < 5) {
+    // Below this the frame still holds most of a continent, and narrowing the
+    // list would be a surprise rather than an answer to a gesture.
+    if (map.getZoom() < 6) {
       onChange(null)
       return
     }
+
     const bounds = map.getBounds()
     const inView = points.filter(
       (p) => p.country && bounds.contains([p.lat, p.lng] as LatLngTuple)
     )
-    const countries = Array.from(new Set(inView.map((p) => p.country as string)))
-    onChange(countries.length === 1 ? countries[0] : null)
+    if (inView.length === 0) {
+      onChange(null)
+      return
+    }
+
+    // The country of the pin nearest the centre of the map. Taking the country
+    // holding the most pins instead reported France when you centred on
+    // Cortina, because France has more of the Alps - and flickered as pins
+    // crossed the edge of the frame. What you put in the middle of the screen
+    // is what you meant.
+    const centre = map.getCenter()
+    const scale = Math.cos((centre.lat * Math.PI) / 180)
+    let nearest = inView[0]
+    let best = Infinity
+    for (const p of inView) {
+      const dLat = p.lat - centre.lat
+      const dLng = (p.lng - centre.lng) * scale
+      const d = dLat * dLat + dLng * dLng
+      if (d < best) {
+        best = d
+        nearest = p
+      }
+    }
+    onChange(nearest.country ?? null)
   }
 
   const map = useMapEvents({
@@ -363,7 +388,11 @@ const TravelerExperiencesPage: React.FC = () => {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              {filteredExperiences.map((exp) => {
+              {/* baseFiltered, not filteredExperiences: the map keeps every
+                  pin the explicit filters allow. Narrowing the pins by the
+                  country the map itself picked would erase everywhere else
+                  the moment you zoomed in. */}
+              {baseFiltered.map((exp) => {
                 const isActive = selectedLocation === exp.location.city
                 return (
                   <Marker
