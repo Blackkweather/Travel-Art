@@ -49,11 +49,12 @@ export const config = {
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
   uploadPath: process.env.UPLOAD_PATH || './uploads',
-  smtpHost: process.env.SMTP_HOST,
-  smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
-  smtpUser: process.env.SMTP_USER,
-  smtpPass: process.env.SMTP_PASS,
-  fromEmail: process.env.FROM_EMAIL || 'noreply@travelart.com',
+  // Email is sent over Resend (see services/email.ts), which reads
+  // RESEND_API_KEY, RESEND_FROM and ADMIN_NOTIFY_EMAIL directly from
+  // process.env - there used to be an SMTP config here from before that
+  // migration, unread by anything, which left render.yaml and the docs
+  // describing SMTP_HOST/SMTP_USER/SMTP_PASS as how to configure email
+  // when setting them would have done nothing at all.
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   // Regex matching additional allowed CORS origins, e.g. Vercel preview URLs:

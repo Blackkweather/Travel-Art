@@ -95,16 +95,22 @@ services:
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
 
-      # ---- Email -----------------------------------------------------------
-      - key: FROM_EMAIL
-        value: noreply@travelart.com
-      - key: SMTP_HOST
+      # ---- Email -------------------------------------------------------------
+      # Sent over Resend (services/email.ts), not SMTP - this used to list
+      # SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS, which nothing in the app
+      # reads. Setting those did nothing; verification, password-reset and
+      # admin-alert emails all silently no-op without RESEND_API_KEY, which
+      # is the one that actually matters here.
+      - key: RESEND_API_KEY
         sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USER
+      # Optional: defaults to Resend's sandbox sender (onboarding@resend.dev),
+      # which works with no domain set up but is visibly not travelart.com.
+      - key: RESEND_FROM
         sync: false
-      - key: SMTP_PASS
+      # Optional: who gets a "new application to review" email. Unset means
+      # no one is notified and applications rely on someone checking the
+      # admissions console.
+      - key: ADMIN_NOTIFY_EMAIL
         sync: false
 
       # ---- Frontend build-time values --------------------------------------
