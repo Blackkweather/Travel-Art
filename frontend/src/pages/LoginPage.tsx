@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
@@ -14,6 +14,7 @@ import { t } from '@/i18n'
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
 
   const {
     register,
@@ -21,15 +22,27 @@ const LoginPage: React.FC = () => {
     formState: { errors }
   } = useForm<LoginCredentials>()
 
+  // Pressing the browser back button can land here on the stale /login
+  // history entry left over from before a previous sign-in - send an
+  // already-authenticated visitor straight back to their dashboard instead
+  // of showing them an empty login form that looks like they were logged out.
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, navigate])
+
   const onSubmit = async (data: LoginCredentials) => {
     setIsLoading(true)
     try {
       // Use local database authentication
       const { login } = useAuthStore.getState()
       await login(data)
-      
+
       toast.success(t('Bon retour'))
-      navigate('/dashboard')
+      // replace: true keeps /login out of history so the back button can't
+      // land on it again after a successful sign-in
+      navigate('/dashboard', { replace: true })
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || 
                           error.errors?.[0]?.message || 
