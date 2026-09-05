@@ -369,7 +369,9 @@ router.post('/login', asyncHandler(async (req, res) => {
 
     if (!user.isActive) {
       throw new CustomError(
-        'Ce compte a été suspendu. Contactez l’administrateur du programme.',
+        user.approvalNote
+          ? `Ce compte a été suspendu. Motif : ${user.approvalNote}`
+          : 'Ce compte a été suspendu. Contactez l’administrateur du programme.',
         403
       );
     }

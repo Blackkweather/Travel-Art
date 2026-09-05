@@ -107,10 +107,14 @@ router.post('/users/:id/suspend', authenticate, authorize('ADMIN'), asyncHandler
     throw new CustomError('Cannot suspend admin users.', 403);
   }
 
-  // Update user status
+  // Update user status. approvalNote already carries "why this account can't
+  // sign in" for a rejected application (see auth.ts /login); reusing it here
+  // means a suspension reason is shown to the user the same way instead of
+  // being validated and then thrown away, which is what happened before -
+  // `reason` was required on the request and never written anywhere.
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: { isActive: false, sessionsValidFrom: new Date() }
+    data: { isActive: false, sessionsValidFrom: new Date(), approvalNote: reason }
   });
 
   // Log admin action
@@ -140,10 +144,12 @@ router.post('/users/:id/activate', authenticate, authorize('ADMIN'), asyncHandle
     throw new CustomError('User not found.', 404);
   }
 
-  // Update user status
+  // Update user status. Clears any suspension note left by a previous
+  // suspend, so a reactivated account doesn't still report the old reason if
+  // it's ever suspended again without one.
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: { isActive: true }
+    data: { isActive: true, approvalNote: null }
   });
 
   // Log admin action

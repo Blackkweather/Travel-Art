@@ -73,11 +73,19 @@ const AdminUsers: React.FC = () => {
   }
 
   const handleSuspendUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to suspend this user?')) return
-    
+    // The backend stores this and shows it to the user the next time they try
+    // to sign in, so it's worth asking for rather than sending the same
+    // placeholder string every time.
+    const reason = prompt('Pourquoi suspendre ce compte ? (visible par l’utilisateur)')
+    if (reason === null) return
+    if (reason.trim().length < 5) {
+      alert('Le motif doit contenir au moins 5 caractères.')
+      return
+    }
+
     try {
       setProcessing(userId)
-      await adminApi.suspendUser(userId, { reason: 'Suspended by admin' })
+      await adminApi.suspendUser(userId, { reason: reason.trim() })
       fetchUsers()
     } catch (err: any) {
       alert(err.response?.data?.message || 'Impossible de suspendre cet utilisateur')
