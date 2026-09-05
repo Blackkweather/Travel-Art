@@ -7,7 +7,6 @@ describe('Accessibility Tests', () => {
     // Check that h2 comes after h1, not h3
     cy.get('body').then(($body) => {
       const h1Count = $body.find('h1').length
-      const h3BeforeH2 = $body.find('h3').length
       // This is a simplified check - in real scenario, use axe-core
       expect(h1Count).to.be.greaterThan(0)
     })

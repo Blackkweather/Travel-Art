@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -106,7 +106,7 @@ async function main() {
 
   // Create admin user
   const adminPasswordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
-  const adminUser = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: 'admin@travelart.test' },
     // Rotating is the whole point of a freshly generated password: without the
     // hash here, a re-seed printed a new one and left the old one working.

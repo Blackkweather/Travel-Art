@@ -4,7 +4,6 @@ import { Search, MapPin, Calendar, Heart } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { formatNumber } from '@/utils/i18n'
 import { bookingsApi, hotelsApi, commonApi, artistsApi } from '@/utils/api'
-import LoadingSpinner from '@/components/LoadingSpinner'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
 import { extractArray } from '@/utils/apiPayload'
 import { t } from '@/i18n'
@@ -362,7 +361,7 @@ const HotelArtists: React.FC = () => {
     try {
       setProcessing(true)
       setBookingError(null)
-      const res = await bookingsApi.create({
+      await bookingsApi.create({
         hotelId,
         artistId: bookingModal.artistId,
         startDate: new Date(bookingModal.start).toISOString(),

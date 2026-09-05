@@ -19,7 +19,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { adminApi } from '@/utils/api'
 import toast from 'react-hot-toast'
 import { t } from '@/i18n'
-import { formatNumber, formatRelative } from '@/utils/i18n'
+import { formatRelative } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
 
 type ActivityType = 'ALL' | 'USER_REGISTRATION' | 'BOOKING' | 'TRANSACTION' | 'RATING' | 'ADMIN_ACTION'

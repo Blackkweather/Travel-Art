@@ -44,7 +44,9 @@ router.get('/packages', asyncHandler(async (req, res) => {
 
 // Purchase credits
 router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { hotelId, packageId, paymentMethod } = req.body;
+  // paymentMethod is accepted from the client for backward compatibility but
+  // ignored: Stripe Checkout collects the payment method itself.
+  const { hotelId, packageId } = req.body;
 
   if (!hotelId || !packageId) {
     throw new CustomError('hotelId and packageId are required', 400);

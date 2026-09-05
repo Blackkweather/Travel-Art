@@ -28,7 +28,7 @@ describe('Admin API - bookings overview', () => {
       where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
-    const admin = await createAdmin(adminEmail, password);
+    await createAdmin(adminEmail, password);
 
     // Seed hotel + artist + bookings
     const passwordHash = await bcrypt.hash('SecureP@ss123', 10);

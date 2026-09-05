@@ -141,7 +141,6 @@ export default function LandingPage() {
 
   // States
   const [experiences, setExperiences] = useState<any[]>([])
-  const [isLoadingExperiences, setIsLoadingExperiences] = useState(true)
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
   // Seeded, not empty: the hero paints on the first render instead of
   // showing a black full-height void until the trips request resolves. Only
@@ -149,13 +148,11 @@ export default function LandingPage() {
   // more full-bleed photographs (144 kB) that the API slides then replaced
   // without either ever being seen.
   const [slides, setSlides] = useState<Slide[]>(() => defaultSlides.slice(0, 1))
-  const [showSlideshowCursor, setShowSlideshowCursor] = useState(true)
-  
+
   // Refs
   const heroRef = useRef<HTMLElement>(null)
   const slideshowRef = useRef<HTMLDivElement>(null)
   const counterStripRef = useRef<HTMLDivElement>(null)
-  const cursorRef = useRef<HTMLDivElement>(null)
   const isAnimatingRef = useRef(false)
   const mouseXRef = useRef(0)
   const weLoveSectionRef = useRef<HTMLElement>(null)
@@ -247,8 +244,6 @@ export default function LandingPage() {
         console.error('Failed to fetch experiences:', error)
         setExperiences([])
         setSlides(defaultSlides)
-      } finally {
-        setIsLoadingExperiences(false)
       }
     }
     fetchData()
@@ -657,29 +652,6 @@ export default function LandingPage() {
   }, [experiences])
 
   // Hide slideshow cursor and counter when scrolled past slideshow
-  useEffect(() => {
-    const handleScroll = () => {
-      const slideshowElement = slideshowRef.current
-      if (!slideshowElement) return
-      
-      const rect = slideshowElement.getBoundingClientRect()
-      // If slideshow is completely scrolled past (bottom is above viewport top)
-      // Or if we're on the last slide and scrolled down significantly
-      const isPastSlideshow = rect.bottom < window.innerHeight * 0.5
-      
-      if (isPastSlideshow) {
-        setShowSlideshowCursor(false)
-      } else {
-        setShowSlideshowCursor(true)
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Check initial state
-    
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
   return (
     <div className="overflow-x-hidden relative bg-[var(--surface)]">
       {/* The site navigation, not a third copy of it. This page carried its

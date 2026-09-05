@@ -394,7 +394,6 @@ const TravelerExperiencesPage: React.FC = () => {
                   country the map itself picked would erase everywhere else
                   the moment you zoomed in. */}
               {baseFiltered.map((exp) => {
-                const isActive = selectedLocation === exp.location.city
                 return (
                   <Marker
                     key={exp.id}

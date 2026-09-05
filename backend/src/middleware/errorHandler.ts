@@ -83,8 +83,10 @@ export const errorHandler = (
   });
 };
 
-export const asyncHandler = (fn: Function) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+export const asyncHandler = <ReqType extends Request = Request>(
+  fn: (req: ReqType, res: Response, next: NextFunction) => Promise<unknown> | unknown
+) => {
+  return (req: ReqType, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };

@@ -8,13 +8,11 @@ import { t } from '@/i18n'
 interface ProfilePictureUploadProps {
   currentImage?: string;
   onUploadSuccess: (imageUrl: string) => void;
-  role: 'ARTIST' | 'HOTEL';
 }
 
 const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   currentImage,
-  onUploadSuccess,
-  role
+  onUploadSuccess
 }) => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);

@@ -34,7 +34,6 @@ const AboutPage = lazy(() => import('@/pages/AboutPage'))
 
 // Protected pages - lazy loaded
 const ArtistDashboard = lazy(() => import('@/pages/artist/ArtistDashboard'))
-const ArtistProfile = lazy(() => import('@/pages/artist/ArtistProfile'))
 const PublicArtistProfile = lazy(() => import('@/pages/PublicArtistProfile'))
 const ArtistMembership = lazy(() => import('@/pages/artist/ArtistMembership'))
 const ArtistReferrals = lazy(() => import('@/pages/artist/ArtistReferrals'))
@@ -96,7 +95,7 @@ const ReferralsRoute = () => {
 }
 
 function App() {
-  const { isLoading, checkAuth, user, token } = useAuthStore()
+  const { checkAuth, user, token } = useAuthStore()
   const location = useLocation()
   const [initialAuthChecked, setInitialAuthChecked] = useState(false)
   

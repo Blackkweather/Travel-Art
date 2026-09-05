@@ -51,7 +51,7 @@ export class RegistrationValidator {
       errors.push('Au moins un chiffre');
     }
 
-    if (PASSWORD_REQUIREMENTS.special && !/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    if (PASSWORD_REQUIREMENTS.special && !/[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
       errors.push(t('Au moins un caractère spécial'));
     }
 

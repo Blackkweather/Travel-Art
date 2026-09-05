@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar, ChevronDown, AlertCircle } from 'lucide-react';
-import { format, parse, isValid, startOfMonth, endOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay, getYear, getMonth, setYear, setMonth } from 'date-fns';
+import { format, parse, isValid, startOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay, getYear, getMonth, setYear, setMonth } from 'date-fns';
 import { MONTHS_FR, MONTHS_FR_FULL, WEEKDAYS_FR } from '@/utils/frenchDates';
 
 
@@ -102,7 +102,6 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
-    const end = endOfMonth(currentMonth);
     const grid: Date[] = [];
     for (let d = 0; d < 42; d++) {
       grid.push(addDays(start, d));
@@ -215,7 +214,6 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                       className="grid grid-cols-3 gap-2 mt-2"
                     >
                       {Array.from({ length: 12 }, (_, i) => {
-                        const monthDate = new Date(currentMonth.getFullYear(), i, 1);
                         const monthName = MONTHS_FR[i];
                         const isSelected = getMonth(currentMonth) === i;
                         return (

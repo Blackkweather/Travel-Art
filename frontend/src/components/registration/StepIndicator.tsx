@@ -48,7 +48,6 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
         {steps.map((step, index) => {
           const isCompleted = index + 1 < currentStep;
           const isCurrent = index + 1 === currentStep;
-          const isUpcoming = index + 1 > currentStep;
 
           return (
             <motion.div

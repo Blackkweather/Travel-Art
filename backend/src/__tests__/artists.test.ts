@@ -167,7 +167,7 @@ describe('Artists API', () => {
   it('TC-ART-007: should require ARTIST role for profile update', async () => {
     // Create hotel user
     const hotelEmail = `hotel-${Date.now()}@suite.test`;
-    const hotelUser = await createUserWithRole('HOTEL', hotelEmail, password);
+    await createUserWithRole('HOTEL', hotelEmail, password);
     
     const loginRes = await request(app)
       .post('/api/auth/login')

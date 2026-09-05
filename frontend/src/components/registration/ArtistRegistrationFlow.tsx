@@ -54,7 +54,6 @@ const ArtistRegistrationFlow: React.FC = () => {
   const [state, setState] = useState<ArtistRegistrationData>(INITIAL_STATE);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { register: registerUser } = useAuthStore();
 
   const stepTitles = [
     'Informations de base',

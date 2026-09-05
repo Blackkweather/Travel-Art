@@ -363,7 +363,6 @@ const ArtistProfile: React.FC = () => {
               <ProfilePictureUpload
                 currentImage={profileData.images[0]}
                 onUploadSuccess={handleProfilePictureUpload}
-                role="ARTIST"
               />
             ) : (
               <div className="relative w-48 h-48">

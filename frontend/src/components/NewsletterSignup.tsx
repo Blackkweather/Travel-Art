@@ -34,7 +34,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
       setSuccess(true)
       setEmail('')
       setTimeout(() => setSuccess(false), 3000)
-    } catch (error) {
+    } catch {
       // A native alert() is the wrong register for this and blocks the page;
       // the rest of the app reports failures as toasts.
       toast.error(t('L’inscription a échoué. Veuillez réessayer.'))

@@ -92,11 +92,6 @@ const roomAvailabilitySchema = z.object({
   price: z.number().optional()
 });
 
-const creditPurchaseSchema = z.object({
-  amount: z.number().positive(),
-  credits: z.number().positive()
-});
-
 // Get hotel by user ID
 router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   const { userId } = req.params;
