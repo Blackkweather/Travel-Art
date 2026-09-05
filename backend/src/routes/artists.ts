@@ -35,15 +35,6 @@ const availabilitySchema = z.object({
   dateTo: z.string().datetime()
 });
 
-const searchSchema = z.object({
-  discipline: z.string().optional(),
-  location: z.string().optional(),
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
-  page: z.string().optional().default('1'),
-  limit: z.string().optional().default('10')
-});
-
 // Search and filter artists (must come before /:id route)
 router.get('/', asyncHandler(async (req, res) => {
   try {
@@ -74,11 +65,14 @@ router.get('/', asyncHandler(async (req, res) => {
       prisma.artist.findMany({
         where,
         include: {
+          // This list is public and unauthenticated - no email here. The
+          // single-artist route below and the hotel-scoped browse endpoint
+          // already withhold it; this one used to hand out every artist's
+          // address to anyone who paginated through it.
           user: {
             select: {
               id: true,
               name: true,
-              email: true,
               country: true
             }
           },
@@ -401,7 +395,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
 // Update artist profile (own profile)
 router.put('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
   const profileData = artistProfileSchema.parse(req.body);
-  const { country, ...artistData } = req.body; // Extract country separately
+  // Country lives on User, not Artist, so it's handled separately below.
+  const { country } = req.body;
 
   const artist = await prisma.artist.findUnique({
     where: { userId: req.user!.id }

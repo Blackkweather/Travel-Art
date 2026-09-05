@@ -191,19 +191,30 @@ router.get('/top', asyncHandler(async (req, res) => {
     // come from the privileged client. Only the ordering leaves this function;
     // no booking row is ever returned to the caller.
     const allArtists = await prismaAdmin.artist.findMany({
-      include: {
+      select: {
+        id: true,
+        discipline: true,
+        images: true,
+        createdAt: true,
         user: {
           select: {
             name: true,
             country: true
           }
         },
+        // Only the count is used below; the comment above promised no
+        // booking row would leave this function, but the old `...artist`
+        // spread in the response handed the full rows (hotelId, dates,
+        // notes, payment amounts) to anyone hitting this public,
+        // unauthenticated endpoint. Selecting just `id` here makes that
+        // impossible to regress into.
         bookings: {
           where: {
             createdAt: {
               gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
             }
-          }
+          },
+          select: { id: true }
         }
       }
     });
@@ -286,13 +297,20 @@ router.get('/top', asyncHandler(async (req, res) => {
         }
       }
       
+      // Named fields only - never spread the Prisma row here. This is a
+      // public, unauthenticated endpoint; the full row carries referralCode,
+      // loyaltyPoints, bookingCreditCost and phone, none of which belong on
+      // a landing-page ranking.
       return {
-        ...artist,
+        id: artist.id,
+        discipline: artist.discipline,
+        images,
+        createdAt: artist.createdAt,
+        user: artist.user,
         ratingBadge,
         averageRating,
         ratingCount: ratings.length,
-        bookingCount: artist.bookings?.length || 0,
-        images: images
+        bookingCount: artist.bookings?.length || 0
       };
     });
 
@@ -304,19 +322,30 @@ router.get('/top', asyncHandler(async (req, res) => {
     // Get top hotels by booking count
     const topHotels = await prisma.hotel.findMany({
       take: limit,
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        location: true,
+        images: true,
+        performanceSpots: true,
+        createdAt: true,
         user: {
           select: {
             name: true,
             country: true
           }
         },
+        // Only the count is used below; see the equivalent note on the
+        // artists branch above about why this must stay `select: { id }`
+        // rather than the full row.
         bookings: {
           where: {
             createdAt: {
               gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
             }
-          }
+          },
+          select: { id: true }
         }
       },
       orderBy: {
@@ -346,11 +375,19 @@ router.get('/top', asyncHandler(async (req, res) => {
         }
       }
       
+      // Named fields only - never spread the Prisma row here. This is a
+      // public, unauthenticated endpoint; the full row carries
+      // responsibleEmail, responsiblePhone and contactPhone.
       return {
-        ...hotel,
+        id: hotel.id,
+        name: hotel.name,
+        description: hotel.description,
+        performanceSpots: hotel.performanceSpots,
+        createdAt: hotel.createdAt,
+        user: hotel.user,
         bookingCount: hotel.bookings.length,
-        location: location,
-        images: images
+        location,
+        images
       };
     });
 
