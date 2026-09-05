@@ -122,9 +122,15 @@ const MapCountryWatcher: React.FC<{
 
 const MapView: React.FC<{ center: LatLngTuple; zoom: number }> = ({ center, zoom }) => {
   const map = useMap()
+  // Depend on the primitive lat/lng, not the `center` tuple's identity: a new
+  // [lat, lng] array with the same values (recreated by the parent on every
+  // render) must not re-trigger the animated setView.
+  const [lat, lng] = center
   useEffect(() => {
     map.setView(center, zoom, { animate: true })
-  }, [map, center[0], center[1], zoom])
+    // Depends on the unpacked lat/lng above, deliberately not on `center`
+    // itself (see comment above) - eslint can't see that they're equivalent.
+  }, [map, lat, lng, zoom]) // eslint-disable-line react-hooks/exhaustive-deps
   return null
 }
 
@@ -276,14 +282,19 @@ const TravelerExperiencesPage: React.FC = () => {
     return Array.from(unique).sort()
   }, [experiences])
 
-  // Calculate map center based on filtered experiences
+  // Calculate map center based on filtered experiences. Depends on
+  // filteredExperiences (not baseFiltered, unlike mapZoom below): this
+  // centers the view on what clicking a map pin narrowed to, even though
+  // every baseFiltered pin stays visible. Previously depended on baseFiltered
+  // while reading filteredExperiences, so clicking a country pin never
+  // re-centered the map onto it.
   const mapCenter: LatLngTuple = useMemo(() => {
     if (filteredExperiences.length === 0) return [45, 2] as LatLngTuple // Default center of Europe
-    
+
     const avgLat = filteredExperiences.reduce((sum, exp) => sum + exp.location.lat, 0) / filteredExperiences.length
     const avgLng = filteredExperiences.reduce((sum, exp) => sum + exp.location.lng, 0) / filteredExperiences.length
     return [avgLat, avgLng] as LatLngTuple
-  }, [baseFiltered])
+  }, [filteredExperiences])
 
   // Calculate zoom level based on number of experiences
   const mapZoom = useMemo(() => {

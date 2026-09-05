@@ -239,24 +239,23 @@ const AdminAnalytics: React.FC = () => {
         const hotelsArray = usersArray.filter((user: any) => user?.role === 'HOTEL' || user?.hotel)
 
         // Booking trends
-        setBookingTrend(
-          buildMonthlySeries(bookingsArray, MONTHS_TO_DISPLAY, (item: any) => item?.startDate || item?.createdAt)
+        const bookingTrendData = buildMonthlySeries(
+          bookingsArray, MONTHS_TO_DISPLAY, (item: any) => item?.startDate || item?.createdAt
         )
+        setBookingTrend(bookingTrendData)
 
         // Revenue trends
-        setRevenueTrend(
-          buildMonthlySeries(
-            transactionsArray,
-            MONTHS_TO_DISPLAY,
-            (item: any) => item?.createdAt,
-            (item: any) => Number(item?.amount ?? 0)
-          )
+        const revenueTrendData = buildMonthlySeries(
+          transactionsArray,
+          MONTHS_TO_DISPLAY,
+          (item: any) => item?.createdAt,
+          (item: any) => Number(item?.amount ?? 0)
         )
+        setRevenueTrend(revenueTrendData)
 
         // User growth
-        setUserGrowth(
-          buildUserGrowthSeries(usersArray, MONTHS_TO_DISPLAY)
-        )
+        const userGrowthData = buildUserGrowthSeries(usersArray, MONTHS_TO_DISPLAY)
+        setUserGrowth(userGrowthData)
 
         // Artist growth
         setArtistGrowth(
@@ -285,10 +284,10 @@ const AdminAnalytics: React.FC = () => {
 
         setBookingStatusData(statusData)
         console.log('✅ Analytics data loaded:', {
-          bookingTrend: bookingTrend.length,
-          revenueTrend: revenueTrend.length,
-          userGrowth: userGrowth.length,
-          bookingStatus: bookingStatusData.length
+          bookingTrend: bookingTrendData.length,
+          revenueTrend: revenueTrendData.length,
+          userGrowth: userGrowthData.length,
+          bookingStatus: statusData.length
         })
       } catch (e: any) {
         console.error('❌ Analytics error:', e)

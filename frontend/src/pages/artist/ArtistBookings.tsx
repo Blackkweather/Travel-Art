@@ -32,6 +32,67 @@ interface BookingCardData {
 
 const PLACEHOLDER_IMAGE = '/images/placeholder-experience.webp'
 
+// Pure helpers with no dependency on component state or props - hoisted out
+// of the component so they aren't recreated every render, and so the
+// useCallback below that calls them doesn't need them in its dependency
+// array (their identity never changes).
+const extractBookings = (data: any): (BookingType & { notes?: string; performanceSpot?: string })[] => {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  if (Array.isArray(data.bookings)) return data.bookings
+  if (Array.isArray(data.data)) return data.data
+  return []
+}
+
+const parseJson = <T,>(value: unknown, fallback: T): T => {
+  if (!value) {
+    return fallback
+  }
+
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as T
+    } catch {
+      return fallback
+    }
+  }
+
+  return value as T
+}
+
+const getLocationString = (location: any): string => {
+  const parsed = parseJson<{ city?: string; country?: string }>(location, {})
+  const parts = [parsed.city, countryLabel(parsed.country)].filter(Boolean)
+  return parts.length ? parts.join(', ') : 'Location TBA'
+}
+
+const getHotelImage = (images: any): string => {
+  const parsedImages = parseJson<string[]>(images, [])
+  return parsedImages[0] || PLACEHOLDER_IMAGE
+}
+
+const calculateDuration = (start: string, end: string): string => {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  const diffMs = endDate.getTime() - startDate.getTime()
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+
+  // Past a day, say days: a week-long residency read "168 heures".
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays > 0) {
+    const rest = diffHours % 24
+    if (rest === 0) return t(diffDays >= 2 ? '{n} jours' : '{n} jour', { n: diffDays })
+    return t('{d} j {h} h', { d: diffDays, h: rest })
+  }
+
+  if (diffHours > 0) {
+    return diffMins > 0 ? `${diffHours} h ${diffMins}` : `${diffHours} heure${diffHours >= 2 ? 's' : ''}`
+  }
+
+  return `${diffMins} minute${diffMins >= 2 ? 's' : ''}`
+}
+
 const ArtistBookings: React.FC = () => {
   const { user } = useAuthStore()
   const navigate = useNavigate()
@@ -41,63 +102,6 @@ const ArtistBookings: React.FC = () => {
   const [bookings, setBookings] = useState<BookingCardData[]>([])
   const [isUpdating, setIsUpdating] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<BookingCardData | null>(null)
-
-  const extractBookings = (data: any): (BookingType & { notes?: string; performanceSpot?: string })[] => {
-    if (!data) return []
-    if (Array.isArray(data)) return data
-    if (Array.isArray(data.bookings)) return data.bookings
-    if (Array.isArray(data.data)) return data.data
-    return []
-  }
-
-  const parseJson = <T,>(value: unknown, fallback: T): T => {
-    if (!value) {
-      return fallback
-    }
-
-    if (typeof value === 'string') {
-      try {
-        return JSON.parse(value) as T
-      } catch {
-        return fallback
-      }
-    }
-
-    return value as T
-  }
-
-  const getLocationString = (location: any): string => {
-    const parsed = parseJson<{ city?: string; country?: string }>(location, {})
-    const parts = [parsed.city, countryLabel(parsed.country)].filter(Boolean)
-    return parts.length ? parts.join(', ') : 'Location TBA'
-  }
-
-  const getHotelImage = (images: any): string => {
-    const parsedImages = parseJson<string[]>(images, [])
-    return parsedImages[0] || PLACEHOLDER_IMAGE
-  }
-
-  const calculateDuration = (start: string, end: string): string => {
-    const startDate = new Date(start)
-    const endDate = new Date(end)
-    const diffMs = endDate.getTime() - startDate.getTime()
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-
-    // Past a day, say days: a week-long residency read "168 heures".
-    const diffDays = Math.floor(diffHours / 24)
-    if (diffDays > 0) {
-      const rest = diffHours % 24
-      if (rest === 0) return t(diffDays >= 2 ? '{n} jours' : '{n} jour', { n: diffDays })
-      return t('{d} j {h} h', { d: diffDays, h: rest })
-    }
-
-    if (diffHours > 0) {
-      return diffMins > 0 ? `${diffHours} h ${diffMins}` : `${diffHours} heure${diffHours >= 2 ? 's' : ''}`
-    }
-
-    return `${diffMins} minute${diffMins >= 2 ? 's' : ''}`
-  }
 
   const loadBookings = useCallback(async () => {
     if (!user?.id) return []
