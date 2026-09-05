@@ -271,6 +271,28 @@ router.post('/admissions/:id/reject', authenticate, authorize('ADMIN'), asyncHan
   res.json({ success: true, data: { id: updated.id, approvalStatus: updated.approvalStatus } });
 }));
 
+/**
+ * Quotes one CSV field and neutralises it against both CSV-structure and
+ * spreadsheet-formula injection.
+ *
+ * Every string interpolated below (name, country, ...) is user-controlled -
+ * set at open self-registration, no login required. Unescaped, a name
+ * containing a `"` broke out of its quoted field and let a registrant forge
+ * extra columns or rows into an admin's export. Worse, a name starting with
+ * `=`, `+`, `-` or `@` is a live formula to Excel/Sheets/LibreOffice the
+ * moment the admin opens the file - the classic CSV/formula-injection class
+ * (CWE-1236). Doubling embedded quotes is standard CSV escaping; prefixing a
+ * leading trigger character with a straight quote is OWASP's recommended
+ * mitigation and keeps the visible value intact.
+ */
+const csvCell = (value: unknown): string => {
+  let str = String(value ?? '');
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
+  return `"${str.replace(/"/g, '""')}"`;
+};
+
 router.get('/export', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
   const { type } = req.query;
 
@@ -296,8 +318,19 @@ router.get('/export', authenticate, authorize('ADMIN'), asyncHandler(async (req:
 
     const csvData = [
       'Booking ID,Hotel Name,Artist Name,Start Date,End Date,Status,Payment Amount,Payment Status,Weeks,Created At',
-      ...bookings.map(booking => 
-        `${booking.id},"${booking.hotel.user.name}","${booking.artist.user.name}",${booking.startDate.toISOString()},${booking.endDate.toISOString()},${booking.status},€${booking.totalPaymentAmount || 0},${booking.paymentStatus || 'PENDING'},${booking.numberOfWeeks || 0},${booking.createdAt.toISOString()}`
+      ...bookings.map(booking =>
+        [
+          csvCell(booking.id),
+          csvCell(booking.hotel.user.name),
+          csvCell(booking.artist.user.name),
+          csvCell(booking.startDate.toISOString()),
+          csvCell(booking.endDate.toISOString()),
+          csvCell(booking.status),
+          csvCell(`€${booking.totalPaymentAmount || 0}`),
+          csvCell(booking.paymentStatus || 'PENDING'),
+          csvCell(booking.numberOfWeeks || 0),
+          csvCell(booking.createdAt.toISOString())
+        ].join(',')
       )
     ].join('\n');
 
@@ -314,8 +347,17 @@ router.get('/export', authenticate, authorize('ADMIN'), asyncHandler(async (req:
 
     const csvData = [
       'User ID,Name,Email,Role,Country,Language,Is Active,Created At',
-      ...users.map(user => 
-        `${user.id},"${user.name}","${user.email}",${user.role},"${user.country || ''}","${user.language}",${user.isActive},${user.createdAt.toISOString()}`
+      ...users.map(user =>
+        [
+          csvCell(user.id),
+          csvCell(user.name),
+          csvCell(user.email),
+          csvCell(user.role),
+          csvCell(user.country || ''),
+          csvCell(user.language),
+          csvCell(user.isActive),
+          csvCell(user.createdAt.toISOString())
+        ].join(',')
       )
     ].join('\n');
 
