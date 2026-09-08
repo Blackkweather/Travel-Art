@@ -121,14 +121,44 @@ const baseClient = appDbUrl
     })
   : prismaAdmin;
 
+/**
+ * Relation field names, on models that are themselves unprotected, whose
+ * target model is one of RLS_MODELS. `include: { bookings: {...} }` on an
+ * Artist query never has `model === 'Booking'` - the extension below only
+ * ever sees 'Artist' - but the join still reads the bookings table, so
+ * without this the policy silently filtered it to zero rows regardless of
+ * who was asking.
+ *
+ * Keep in step with prisma/schema.prisma.
+ */
+const RLS_RELATION_FIELDS = new Set([
+  'bookings',
+  'transactions',
+  'credits',
+  'creditLedger',
+  'payments',
+  'payment',
+  'ledgerEntries',
+]);
+
+function touchesProtectedRelation(value: unknown, depth = 0): boolean {
+  if (!value || typeof value !== 'object' || depth > 6) return false;
+  for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+    if (RLS_RELATION_FIELDS.has(key)) return true;
+    if (touchesProtectedRelation(val, depth + 1)) return true;
+  }
+  return false;
+}
+
 const prisma = appDbUrl
   ? baseClient.$extends({
       query: {
         async $allOperations({ model, args, query }: any) {
-          // Unprotected tables skip the round trip entirely. Setting a variable
-          // no policy reads would add a transaction to the great majority of
-          // traffic - catalogue reads - for nothing.
-          if (!model || !RLS_MODELS.has(model)) {
+          // Unprotected queries skip the round trip entirely. Setting a
+          // variable no policy reads would add a transaction to the great
+          // majority of traffic - catalogue reads - for nothing.
+          const touchesRls = (!!model && RLS_MODELS.has(model)) || touchesProtectedRelation(args);
+          if (!touchesRls) {
             return query(args);
           }
 
