@@ -238,8 +238,8 @@ const PublicArtistProfile: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gold" />
                   <span className="text-sm font-medium text-content">
-                    {t((artist.bookings?.length || 0) === 1 ? '{n} réservation' : '{n} réservations',
-                      { n: artist.bookings?.length || 0 })}
+                    {t((artist.bookingCount || 0) === 1 ? '{n} réservation' : '{n} réservations',
+                      { n: artist.bookingCount || 0 })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -680,7 +680,7 @@ const PublicArtistProfile: React.FC = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-content mb-2">{t('Excellence professionnelle')}</h3>
                     <p className="text-content-secondary text-sm leading-relaxed">
-                      Avec {artist.bookings?.length || 0} {(artist.bookings?.length || 0) >= 2 ? t('engagements menés à bien') : t('engagement mené à bien')} et {artist.avgRating ? `une note de ${artist.avgRating.toFixed(1)}/5` : t('d’excellents retours')},
+                      Avec {artist.bookingCount || 0} {(artist.bookingCount || 0) >= 2 ? t('engagements menés à bien') : t('engagement mené à bien')} et {artist.avgRating ? `une note de ${artist.avgRating.toFixed(1)}/5` : t('d’excellents retours')},
                       {artist.stageName || artist.user?.name} s’est construit une réputation de fiabilité et d’exigence.
                     </p>
                   </div>

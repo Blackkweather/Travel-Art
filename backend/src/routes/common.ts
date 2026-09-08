@@ -208,6 +208,12 @@ router.get('/top', asyncHandler(async (req, res) => {
         // notes, payment amounts) to anyone hitting this public,
         // unauthenticated endpoint. Selecting just `id` here makes that
         // impossible to regress into.
+        //
+        // This filtered relation exists only to break ties in the sort
+        // below (recently-booked artists first). The number shown to a
+        // visitor as "Réservations" is the lifetime total in `_count`,
+        // fetched here too so it can never drift from what the artist's own
+        // public profile page shows for the same artist.
         bookings: {
           where: {
             createdAt: {
@@ -215,6 +221,9 @@ router.get('/top', asyncHandler(async (req, res) => {
             }
           },
           select: { id: true }
+        },
+        _count: {
+          select: { bookings: true }
         }
       }
     });
@@ -310,7 +319,7 @@ router.get('/top', asyncHandler(async (req, res) => {
         ratingBadge,
         averageRating,
         ratingCount: ratings.length,
-        bookingCount: artist.bookings?.length || 0
+        bookingCount: artist._count.bookings
       };
     });
 
@@ -319,8 +328,12 @@ router.get('/top', asyncHandler(async (req, res) => {
       data: artistsWithBadges
     });
   } else if (type === 'hotels') {
-    // Get top hotels by booking count
-    const topHotels = await prisma.hotel.findMany({
+    // Get top hotels by booking count. Same reasoning as the artists branch
+    // above: an anonymous caller has no RLS identity, so querying through
+    // the request-scoped client would see zero bookings on every hotel
+    // regardless of how many exist, and both the sort and the displayed
+    // count would be meaningless.
+    const topHotels = await prismaAdmin.hotel.findMany({
       take: limit,
       select: {
         id: true,
@@ -336,16 +349,8 @@ router.get('/top', asyncHandler(async (req, res) => {
             country: true
           }
         },
-        // Only the count is used below; see the equivalent note on the
-        // artists branch above about why this must stay `select: { id }`
-        // rather than the full row.
-        bookings: {
-          where: {
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-            }
-          },
-          select: { id: true }
+        _count: {
+          select: { bookings: true }
         }
       },
       orderBy: {
@@ -355,10 +360,25 @@ router.get('/top', asyncHandler(async (req, res) => {
       }
     });
 
+    // One query for every listed hotel's ratings, grouped below - the same
+    // shape as the artists branch's rating lookup, and for the same reason:
+    // per-card "Note" was reading the page-wide average instead of this
+    // hotel's own, so every card showed an identical number.
+    const hotelIds = topHotels.map(h => h.id);
+    const allHotelRatings = await prisma.rating.findMany({
+      where: { hotelId: { in: hotelIds } },
+      select: { hotelId: true, stars: true }
+    });
+    const ratingsByHotel = allHotelRatings.reduce((acc, rating) => {
+      if (!acc[rating.hotelId]) acc[rating.hotelId] = [];
+      acc[rating.hotelId].push(rating.stars);
+      return acc;
+    }, {} as Record<string, number[]>);
+
     const hotelsWithStats = topHotels.map(hotel => {
       let location = null;
       let images = [];
-      
+
       if (hotel.location) {
         try {
           location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
@@ -366,7 +386,7 @@ router.get('/top', asyncHandler(async (req, res) => {
           location = null;
         }
       }
-      
+
       if (hotel.images) {
         try {
           images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
@@ -374,7 +394,12 @@ router.get('/top', asyncHandler(async (req, res) => {
           images = [];
         }
       }
-      
+
+      const ratings = ratingsByHotel[hotel.id] || [];
+      const averageRating = ratings.length > 0
+        ? Math.round((ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10) / 10
+        : null;
+
       // Named fields only - never spread the Prisma row here. This is a
       // public, unauthenticated endpoint; the full row carries
       // responsibleEmail, responsiblePhone and contactPhone.
@@ -385,7 +410,9 @@ router.get('/top', asyncHandler(async (req, res) => {
         performanceSpots: hotel.performanceSpots,
         createdAt: hotel.createdAt,
         user: hotel.user,
-        bookingCount: hotel.bookings.length,
+        bookingCount: hotel._count.bookings,
+        averageRating,
+        ratingCount: ratings.length,
         location,
         images
       };

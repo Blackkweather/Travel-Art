@@ -72,6 +72,11 @@ router.get(
         status: t.status,
         type: t.type || null,
         rating: t.rating ? Number(t.rating) : null,
+        // Was missing entirely, so every card on /experiences fell back to
+        // "today" client-side regardless of the trip's real scheduled date -
+        // while the detail page, which does select it, showed the actual
+        // date. Same field, same format as the detail route below.
+        date: t.date ? t.date.toISOString() : null,
         artist: t.artist?.user?.name || null,
         hotel: t.hotel?.name || null,
       };

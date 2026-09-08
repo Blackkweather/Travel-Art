@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 
@@ -334,15 +334,16 @@ router.get('/:id', asyncHandler(async (req, res) => {
     throw new CustomError('Artist not found.', 404);
   }
 
-  // Calculate aggregated rating badge (not numeric rating)
+  // Calculate aggregated rating badge and numeric average
   const ratings = await prisma.rating.findMany({
     where: { artistId: id },
     select: { stars: true }
   });
 
   let ratingBadge = null;
+  let avgRating: number | null = null;
   if (ratings.length > 0) {
-    const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
+    avgRating = Math.round((ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length) * 10) / 10;
     if (avgRating >= 4.5) {
       ratingBadge = 'Top 10 % des artistes';
     } else if (avgRating >= 4.0) {
@@ -351,6 +352,14 @@ router.get('/:id', asyncHandler(async (req, res) => {
       ratingBadge = 'Artiste recommandé';
     }
   }
+
+  // This is a public, unauthenticated route, so the request-scoped client
+  // has no RLS identity and would silently count zero bookings regardless
+  // of how many exist - the same gap that made this page disagree with the
+  // artist's card on /top-artists (which already reads this count through
+  // the privileged client). Only the count crosses this boundary, never a
+  // booking row.
+  const bookingCount = await prismaAdmin.booking.count({ where: { artistId: id } });
 
   let images = [];
   let videos = [];
@@ -385,6 +394,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
     data: {
       ...artist,
       ratingBadge,
+      avgRating,
+      bookingCount,
       images: images,
       videos: videos,
       mediaUrls: mediaUrls

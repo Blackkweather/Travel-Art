@@ -16,6 +16,7 @@ interface TopHotel {
   name: string
   location?: { city?: string; country?: string } | string
   bookingCount?: number
+  averageRating?: number | null
   images?: string[]
   description?: string
   performanceSpots?: string
@@ -362,7 +363,7 @@ const TopHotelsPage: React.FC = () => {
                       <div className="flex items-baseline gap-2">
                         <dt className="text-content-secondary">{t('Note')}</dt>
                         <dd className="font-serif text-base text-content tabular-nums">
-                          {stats.averageRating.toFixed(1)}
+                          {typeof hotel.averageRating === 'number' ? hotel.averageRating.toFixed(1) : t('Pas encore noté')}
                         </dd>
                       </div>
                     </dl>

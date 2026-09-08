@@ -7,6 +7,7 @@ import Footer from '../components/Footer'
 import { tripsApi } from '@/utils/api'
 import { useAuthStore } from '@/store/authStore'
 import { experienceTypeLabel } from '@/utils/i18n'
+import { countryLabel } from '@/i18n/countries'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
@@ -233,7 +234,7 @@ const ExperienceDetailsPage: React.FC = () => {
               </h1>
               <p className="mt-4 text-lg text-white/85 flex items-center gap-2">
                 <MapPin className="w-5 h-5" aria-hidden="true" />
-                {experience.location.city}, {experience.location.country}
+                {experience.location.city}, {countryLabel(experience.location.country)}
               </p>
             </motion.div>
           </div>
@@ -419,7 +420,7 @@ const ExperienceDetailsPage: React.FC = () => {
                 <div className="text-content-secondary mb-6">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <MapPin className="w-4 h-4" />
-                    {experience.location.city}, {experience.location.country}
+                    {experience.location.city}, {countryLabel(experience.location.country)}
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <Music className="w-4 h-4" />
