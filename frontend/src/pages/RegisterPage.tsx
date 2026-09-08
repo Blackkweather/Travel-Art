@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { User, Building, ArrowRight } from 'lucide-react'
 import { ArtistRegistrationFlow, HotelRegistrationFlow } from '@/components/registration'
@@ -7,8 +8,19 @@ import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import { t } from '@/i18n'
 
+const ROLE_FROM_PARAM: Record<string, 'ARTIST' | 'HOTEL'> = {
+  artist: 'ARTIST',
+  hotel: 'HOTEL',
+}
+
 const RegisterPage: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState<'ARTIST' | 'HOTEL' | null>(null)
+  const [searchParams] = useSearchParams()
+  // Every "Je suis artiste" / "Je suis un hôtel" CTA across the site links
+  // here with ?role=..., but nothing ever read it: visitors landed on the
+  // picker regardless and had to choose their role a second time.
+  const [selectedRole, setSelectedRole] = useState<'ARTIST' | 'HOTEL' | null>(
+    () => ROLE_FROM_PARAM[searchParams.get('role') || ''] || null
+  )
   const [hoveredRole, setHoveredRole] = useState<'ARTIST' | 'HOTEL' | null>(null)
 
   // If role is selected, show the appropriate registration flow with smooth transition
