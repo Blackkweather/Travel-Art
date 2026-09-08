@@ -119,22 +119,22 @@ export default function LandingPage() {
     {
       id: 'fallback-1',
       image: '/images/hero/ombre.webp',
-      title: t('ENTRE L’OMBRE'),
-      subtitle: t('ET LA LUMIÈRE'),
+      title: t('Entre l’ombre'),
+      subtitle: t('et la lumière'),
       category: t('Expérience')
     },
     {
       id: 'fallback-2',
       image: '/images/hero/scene.webp',
-      title: t('LÀ OÙ L’ART'),
-      subtitle: t('RENCONTRE LE LUXE'),
+      title: t('Là où l’art'),
+      subtitle: t('rencontre le luxe'),
       category: t('Scène')
     },
     {
       id: 'fallback-3',
       image: '/images/hero/voyage.webp',
-      title: t('DES SCÈNES SANS'),
-      subtitle: 'FRONTIÈRES',
+      title: t('Des scènes sans'),
+      subtitle: 'frontières',
       category: 'Voyage'
     }
   ]
@@ -226,8 +226,8 @@ export default function LandingPage() {
             return {
               id: exp.id,
               image: exp.image,
-              title: head || 'ENTRE L’OMBRE',
-              subtitle: tail || t('ET LA LUMIÈRE'),
+              title: head || t('Entre l’ombre'),
+              subtitle: tail || t('et la lumière'),
               category: exp.category
             }
           })
@@ -686,6 +686,20 @@ export default function LandingPage() {
           ))}
         </div>
 
+        {/* The brand mark, stamped large and near-transparent onto the photograph
+            itself rather than confined to the 36px nav logo. The compass alone
+            (not the wordmark, already legible top-left) reads as an emblem at
+            this scale instead of a second, redundant "TRAVEL ART". Cropped off
+            the top-right corner so it sits in the frame like a watermark, not a
+            sticker; hidden below lg where the hero has no room to spare. */}
+        <img
+          src="/logo-mark.png"
+          alt=""
+          aria-hidden="true"
+          className="hidden lg:block absolute -top-16 right-0 w-[26rem] xl:w-[32rem] h-auto
+                     brightness-0 invert opacity-[0.16] pointer-events-none select-none z-[2]"
+        />
+
         {/* The hero had no call to action at all: the first screen of the site
             named the product and then asked the visitor for nothing. Both
             audiences are addressed here because the homepage serves two
@@ -1033,11 +1047,10 @@ export default function LandingPage() {
         
         .slide__text-line {
           display: block;
-          font-size: clamp(3rem, 8vw, 8rem);
+          font-size: clamp(2.75rem, 7vw, 7rem);
           line-height: 1;
           font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: -0.02em;
+          letter-spacing: -0.015em;
           transform: translateY(100%);
           opacity: 0;
           /* The parent masks overflow so each line can slide up from behind an
