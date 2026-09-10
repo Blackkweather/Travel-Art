@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma, prismaAdmin } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { parseJsonField } from '../utils/parseJsonField';
 
 const router = Router();
 
@@ -136,33 +137,9 @@ router.get('/', asyncHandler(async (req, res) => {
         }
       }
 
-      let images = [];
-      let videos = [];
-      let mediaUrls = [];
-      
-      if (artist.images) {
-        try {
-          images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-        } catch {
-          images = [];
-        }
-      }
-      
-      if (artist.videos) {
-        try {
-          videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-        } catch {
-          videos = [];
-        }
-      }
-      
-      if (artist.mediaUrls) {
-        try {
-          mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-        } catch {
-          mediaUrls = [];
-        }
-      }
+      const images = parseJsonField<string[]>(artist.images, []);
+      const videos = parseJsonField<string[]>(artist.videos, []);
+      const mediaUrls = parseJsonField<string[]>(artist.mediaUrls, []);
 
       return {
         ...artist,
@@ -264,33 +241,9 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
   }
 
   // Parse JSON strings
-  let images = [];
-  let videos = [];
-  let mediaUrls = [];
-  
-  if (artist.images) {
-    try {
-      images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-    } catch {
-      images = [];
-    }
-  }
-  
-  if (artist.videos) {
-    try {
-      videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-    } catch {
-      videos = [];
-    }
-  }
-  
-  if (artist.mediaUrls) {
-    try {
-      mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-    } catch {
-      mediaUrls = [];
-    }
-  }
+  const images = parseJsonField<string[]>(artist.images, []);
+  const videos = parseJsonField<string[]>(artist.videos, []);
+  const mediaUrls = parseJsonField<string[]>(artist.mediaUrls, []);
 
   res.json({
     success: true,
@@ -361,33 +314,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
   // booking row.
   const bookingCount = await prismaAdmin.booking.count({ where: { artistId: id } });
 
-  let images = [];
-  let videos = [];
-  let mediaUrls = [];
-  
-  if (artist.images) {
-    try {
-      images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-    } catch {
-      images = [];
-    }
-  }
-  
-  if (artist.videos) {
-    try {
-      videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-    } catch {
-      videos = [];
-    }
-  }
-  
-  if (artist.mediaUrls) {
-    try {
-      mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-    } catch {
-      mediaUrls = [];
-    }
-  }
+  const images = parseJsonField<string[]>(artist.images, []);
+  const videos = parseJsonField<string[]>(artist.videos, []);
+  const mediaUrls = parseJsonField<string[]>(artist.mediaUrls, []);
 
   res.json({
     success: true,

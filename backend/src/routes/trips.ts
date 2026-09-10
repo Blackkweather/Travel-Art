@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { parseJsonField } from '../utils/parseJsonField';
 
 const router = Router();
 
@@ -44,21 +45,8 @@ router.get(
 
     // Do not expose internal fields like createdAt/updatedAt
     const safeTrips = trips.map((t) => {
-      // Parse images JSON string to array
-      let images = [];
-      try {
-        images = typeof t.images === 'string' ? JSON.parse(t.images) : (t.images || []);
-      } catch {
-        images = [];
-      }
-
-      // Parse location
-      let location = null;
-      try {
-        location = typeof t.location === 'string' ? JSON.parse(t.location) : t.location;
-      } catch {
-        location = { city: 'Lieu inconnu', country: '' };
-      }
+      const images = parseJsonField<string[]>(t.images, []);
+      const location = parseJsonField(t.location, { city: 'Lieu inconnu', country: '' });
 
       return {
         id: t.id,
@@ -127,40 +115,11 @@ router.get(
     }
 
     // Parse JSON strings
-    let images = [];
-    try {
-      images = typeof trip.images === 'string' ? JSON.parse(trip.images) : (trip.images || []);
-    } catch {
-      images = [];
-    }
-
-    let location = null;
-    try {
-      location = typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location;
-    } catch {
-      location = { city: 'Lieu inconnu', country: '' };
-    }
-
-    let schedule = [];
-    try {
-      schedule = trip.schedule ? (typeof trip.schedule === 'string' ? JSON.parse(trip.schedule) : trip.schedule) : [];
-    } catch {
-      schedule = [];
-    }
-
-    let includes = [];
-    try {
-      includes = trip.includes ? (typeof trip.includes === 'string' ? JSON.parse(trip.includes) : trip.includes) : [];
-    } catch {
-      includes = [];
-    }
-
-    let reviews = [];
-    try {
-      reviews = trip.reviews ? (typeof trip.reviews === 'string' ? JSON.parse(trip.reviews) : trip.reviews) : [];
-    } catch {
-      reviews = [];
-    }
+    const images = parseJsonField<string[]>(trip.images, []);
+    const location = parseJsonField(trip.location, { city: 'Lieu inconnu', country: '' });
+    const schedule = parseJsonField<any[]>(trip.schedule, []);
+    const includes = parseJsonField<any[]>(trip.includes, []);
+    const reviews = parseJsonField<any[]>(trip.reviews, []);
 
     res.json({
       success: true,

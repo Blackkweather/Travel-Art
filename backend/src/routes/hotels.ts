@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { parseJsonField } from '../utils/parseJsonField';
 
 const router = Router();
 
@@ -35,15 +36,7 @@ router.get('/', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthR
 
     // Format hotels for moderation view
     const formattedHotels = hotels.map(hotel => {
-      let location = null;
-      if (hotel.location) {
-        try {
-          location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-        } catch {
-          // If parsing fails, use as string
-          location = typeof hotel.location === 'string' ? hotel.location : null;
-        }
-      }
+      const location = parseJsonField(hotel.location, hotel.location);
       return {
         id: hotel.id,
         userId: hotel.userId,
@@ -198,42 +191,10 @@ router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, 
     .filter(t => t.type === 'CREDIT_PURCHASE')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  let location = null;
-  let images = [];
-  let performanceSpots = [];
-  let rooms = [];
-  
-  if (hotel.location) {
-    try {
-      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch {
-      location = null;
-    }
-  }
-  
-  if (hotel.images) {
-    try {
-      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch {
-      images = [];
-    }
-  }
-  
-  if (hotel.performanceSpots) {
-    try {
-      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch {
-      performanceSpots = [];
-    }
-  }
-  
-  if (hotel.rooms) {
-    try {
-      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch {
-      rooms = [];
-    }
-  }
+  const location = parseJsonField(hotel.location, null);
+  const images = parseJsonField<string[]>(hotel.images, []);
+  const performanceSpots = parseJsonField<string[]>(hotel.performanceSpots, []);
+  const rooms = parseJsonField<string[]>(hotel.rooms, []);
 
   res.json({
     success: true,
@@ -279,42 +240,10 @@ router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: Aut
   }
 
   // Parse JSON fields
-  let location = null;
-  let images = [];
-  let performanceSpots = [];
-  let rooms = [];
-
-  if (hotel.location) {
-    try {
-      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch {
-      location = null;
-    }
-  }
-
-  if (hotel.images) {
-    try {
-      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch {
-      images = [];
-    }
-  }
-
-  if (hotel.performanceSpots) {
-    try {
-      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch {
-      performanceSpots = [];
-    }
-  }
-
-  if (hotel.rooms) {
-    try {
-      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch {
-      rooms = [];
-    }
-  }
+  const location = parseJsonField(hotel.location, null);
+  const images = parseJsonField<string[]>(hotel.images, []);
+  const performanceSpots = parseJsonField<string[]>(hotel.performanceSpots, []);
+  const rooms = parseJsonField<string[]>(hotel.rooms, []);
 
   res.json({
     success: true,
@@ -356,42 +285,10 @@ router.get('/:id', asyncHandler(async (req, res) => {
     throw new CustomError('Hotel not found.', 404);
   }
 
-  let location = null;
-  let images = [];
-  let performanceSpots = [];
-  let rooms = [];
-  
-  if (hotel.location) {
-    try {
-      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch {
-      location = null;
-    }
-  }
-  
-  if (hotel.images) {
-    try {
-      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch {
-      images = [];
-    }
-  }
-  
-  if (hotel.performanceSpots) {
-    try {
-      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch {
-      performanceSpots = [];
-    }
-  }
-  
-  if (hotel.rooms) {
-    try {
-      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch {
-      rooms = [];
-    }
-  }
+  const location = parseJsonField(hotel.location, null);
+  const images = parseJsonField<string[]>(hotel.images, []);
+  const performanceSpots = parseJsonField<string[]>(hotel.performanceSpots, []);
+  const rooms = parseJsonField<string[]>(hotel.rooms, []);
 
   res.json({
     success: true,
@@ -711,33 +608,9 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
         }
       }
 
-      let images = [];
-      let videos = [];
-      let mediaUrls = [];
-      
-      if (artist.images) {
-        try {
-          images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-        } catch {
-          images = [];
-        }
-      }
-      
-      if (artist.videos) {
-        try {
-          videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-        } catch {
-          videos = [];
-        }
-      }
-      
-      if (artist.mediaUrls) {
-        try {
-          mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-        } catch {
-          mediaUrls = [];
-        }
-      }
+      const images = parseJsonField<string[]>(artist.images, []);
+      const videos = parseJsonField<string[]>(artist.videos, []);
+      const mediaUrls = parseJsonField<string[]>(artist.mediaUrls, []);
 
       return {
         ...artist,

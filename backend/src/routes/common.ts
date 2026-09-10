@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma, prismaAdmin } from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { parseJsonField } from '../utils/parseJsonField';
 
 const router = Router();
 
@@ -60,16 +61,7 @@ router.get('/referrals', authenticate, asyncHandler(async (req: AuthRequest, res
 
   // Format referrals data
   const formattedReferrals = referrals.map(r => {
-    let images = [];
-    if (r.invitee.artist?.images) {
-      try {
-        images = typeof r.invitee.artist.images === 'string' 
-          ? JSON.parse(r.invitee.artist.images) 
-          : r.invitee.artist.images;
-      } catch {
-        images = [];
-      }
-    }
+    const images = parseJsonField<string[]>(r.invitee.artist?.images, []);
 
     return {
       id: r.id,
@@ -297,15 +289,8 @@ router.get('/top', asyncHandler(async (req, res) => {
         }
       }
 
-      let images = [];
-      if (artist.images) {
-        try {
-          images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-        } catch {
-          images = [];
-        }
-      }
-      
+      const images = parseJsonField<string[]>(artist.images, []);
+
       // Named fields only - never spread the Prisma row here. This is a
       // public, unauthenticated endpoint; the full row carries referralCode,
       // loyaltyPoints, bookingCreditCost and phone, none of which belong on
@@ -376,24 +361,8 @@ router.get('/top', asyncHandler(async (req, res) => {
     }, {} as Record<string, number[]>);
 
     const hotelsWithStats = topHotels.map(hotel => {
-      let location = null;
-      let images = [];
-
-      if (hotel.location) {
-        try {
-          location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-        } catch {
-          location = null;
-        }
-      }
-
-      if (hotel.images) {
-        try {
-          images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-        } catch {
-          images = [];
-        }
-      }
+      const location = parseJsonField(hotel.location, null);
+      const images = parseJsonField<string[]>(hotel.images, []);
 
       const ratings = ratingsByHotel[hotel.id] || [];
       const averageRating = ratings.length > 0
@@ -455,16 +424,8 @@ router.get('/stats', asyncHandler(async (req, res) => {
   // Calculate total performance venues from all hotels
   let totalVenues = 0
   allHotels.forEach(hotel => {
-    if (hotel.performanceSpots) {
-      try {
-        const spots = typeof hotel.performanceSpots === 'string' 
-          ? JSON.parse(hotel.performanceSpots) 
-          : hotel.performanceSpots
-        totalVenues += Array.isArray(spots) ? spots.length : 0
-      } catch {
-        // Ignore parse errors
-      }
-    }
+    const spots = parseJsonField<any[]>(hotel.performanceSpots, [])
+    totalVenues += Array.isArray(spots) ? spots.length : 0
   })
 
   // Calculate average rating from all ratings
@@ -526,16 +487,7 @@ router.get('/testimonials', asyncHandler(async (req, res) => {
   const ratings = allRatings.filter(r => r.textReview && r.textReview.trim().length > 0).slice(0, limit)
 
   const testimonials = ratings.map(rating => {
-    let location = null
-    if (rating.hotel?.location) {
-      try {
-        location = typeof rating.hotel.location === 'string' 
-          ? JSON.parse(rating.hotel.location) 
-          : rating.hotel.location
-      } catch {
-        location = null
-      }
-    }
+    const location = parseJsonField(rating.hotel?.location, null)
 
     return {
       id: rating.id,
