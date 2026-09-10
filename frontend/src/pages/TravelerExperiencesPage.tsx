@@ -17,7 +17,7 @@ import { experienceTypeLabel } from '@/utils/i18n'
 import 'leaflet/dist/leaflet.css'
 import icon from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
-import { extractArray } from '@/utils/apiPayload'
+import { extractArray, parseJsonField } from '@/utils/apiPayload'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
 import { countryLabel } from '@/i18n/countries'
@@ -161,30 +161,10 @@ const TravelerExperiencesPage: React.FC = () => {
         if (trips.length > 0) {
           const formattedExperiences = trips.map((trip: any) => {
             // Parse location if it's a string
-            let location = { city: 'Lieu inconnu', country: '', lat: 0, lng: 0 }
-            if (trip.location) {
-              try {
-                location = typeof trip.location === 'string' 
-                  ? JSON.parse(trip.location) 
-                  : trip.location
-              } catch (e) {
-                console.warn('Failed to parse location:', e)
-                location = { city: 'Lieu inconnu', country: '', lat: 0, lng: 0 }
-              }
-            }
-            
+            const location = parseJsonField(trip.location, { city: 'Lieu inconnu', country: '', lat: 0, lng: 0 })
+
             // Parse images if they're a string
-            let images: string[] = []
-            if (trip.images) {
-              try {
-                images = Array.isArray(trip.images) 
-                  ? trip.images 
-                  : (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-              } catch (e) {
-                console.warn('Failed to parse images:', e)
-                images = []
-              }
-            }
+            const images = Array.isArray(trip.images) ? trip.images : parseJsonField<string[]>(trip.images, [])
             
             return {
               id: trip.id || String(Math.random()),

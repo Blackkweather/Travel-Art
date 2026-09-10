@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { parseJsonField } from '@/utils/apiPayload'
 
 const HotelDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -120,39 +121,11 @@ const HotelDetailsPage: React.FC = () => {
   }
 
   // Parse location, images, performance spots (handle both array/object and JSON string)
-  let location: any = {}
-  let images: string[] = []
-  let performanceSpots: any[] = []
-  
-  if (hotel.location) {
-    try {
-      location = typeof hotel.location === 'string' 
-        ? JSON.parse(hotel.location) 
-        : hotel.location
-    } catch {
-      location = {}
-    }
-  }
-  
-  if (hotel.images) {
-    try {
-      images = Array.isArray(hotel.images) 
-        ? hotel.images 
-        : (typeof hotel.images === 'string' ? JSON.parse(hotel.images) : [])
-    } catch {
-      images = []
-    }
-  }
-  
-  if (hotel.performanceSpots) {
-    try {
-      performanceSpots = Array.isArray(hotel.performanceSpots) 
-        ? hotel.performanceSpots 
-        : (typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : [])
-    } catch {
-      performanceSpots = []
-    }
-  }
+  const location = parseJsonField<any>(hotel.location, {})
+  const images = Array.isArray(hotel.images) ? hotel.images : parseJsonField<string[]>(hotel.images, [])
+  const performanceSpots = Array.isArray(hotel.performanceSpots)
+    ? hotel.performanceSpots
+    : parseJsonField<any[]>(hotel.performanceSpots, [])
   const locationString = location.city && location.country 
     ? `${location.city}, ${location.country}`
     : location.country || hotel.user?.country || 'Location not specified'

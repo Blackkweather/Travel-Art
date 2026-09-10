@@ -4,7 +4,7 @@ import { Users, Building, Calendar, TrendingUp, AlertCircle, Activity, Gift } fr
 import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import { adminApi, commonApi, paymentsApi } from '@/utils/api'
-import { extractArray } from '@/utils/apiPayload'
+import { extractArray, parseJsonField } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { formatNumber, formatRelative } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
@@ -164,7 +164,7 @@ const AdminDashboard: React.FC = () => {
         const topHotelEntries = extractArray(topHotelsRes.data?.data, 'hotels')
         setTopHotels(
           topHotelEntries.slice(0, 4).map((hotel: any) => {
-            const location = hotel?.location ? (typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location) : {}
+            const location = parseJsonField<any>(hotel?.location, {})
             return {
               id: hotel?.id ?? Math.random().toString(36),
               name: hotel?.name || 'Hotel',

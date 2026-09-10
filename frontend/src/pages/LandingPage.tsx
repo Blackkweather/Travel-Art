@@ -12,7 +12,7 @@ import Testimonials from '@/components/landing/Testimonials'
 import LandingFaq from '@/components/landing/LandingFaq'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
-import { extractArray } from '@/utils/apiPayload'
+import { extractArray, parseJsonField } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { experienceTypeLabel } from '@/utils/i18n'
 import { countryLabel } from '@/i18n/countries'
@@ -172,23 +172,11 @@ export default function LandingPage() {
         const trips = extractArray(tripsRes.data, 'trips')
 
         const formatted = trips.map((trip: any) => {
-          let images: string[] = []
-          try {
-            images = Array.isArray(trip.images) ? trip.images : 
-              (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-          } catch { 
-            images = [] 
-          }
-          
+          const images = Array.isArray(trip.images) ? trip.images : parseJsonField<string[]>(trip.images, [])
+
           // location arrives as {city, country}; the card wants one line.
-          let place = ''
-          try {
-            const loc =
-              typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location
-            place = [loc?.city, countryLabel(loc?.country)].filter(Boolean).join(', ')
-          } catch {
-            place = ''
-          }
+          const loc = parseJsonField<any>(trip.location, null)
+          const place = loc ? [loc.city, countryLabel(loc.country)].filter(Boolean).join(', ') : ''
 
           return {
             id: trip.id,

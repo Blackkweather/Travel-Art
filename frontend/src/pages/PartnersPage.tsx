@@ -7,6 +7,7 @@ import SimpleNavbar from '@/components/SimpleNavbar'
 import { commonApi } from '@/utils/api'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { parseJsonField } from '@/utils/apiPayload'
 
 const PartnersPage: React.FC = () => {
   const navigate = useNavigate()
@@ -46,16 +47,9 @@ const PartnersPage: React.FC = () => {
             const images = hotel.images || []
             
             // Parse performance spots
-            let performanceSpots: any[] = []
-            if (hotel.performanceSpots) {
-              try {
-                performanceSpots = Array.isArray(hotel.performanceSpots) 
-                  ? hotel.performanceSpots 
-                  : (typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : [])
-              } catch {
-                performanceSpots = []
-              }
-            }
+            const performanceSpots = Array.isArray(hotel.performanceSpots)
+              ? hotel.performanceSpots
+              : parseJsonField<any[]>(hotel.performanceSpots, [])
             
             const locationStr = location.city 
               ? `${location.city}, ${location.country || ''}`.trim()

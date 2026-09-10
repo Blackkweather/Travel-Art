@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { parseJsonField } from '@/utils/apiPayload'
 
 const PublicArtistProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -115,40 +116,11 @@ const PublicArtistProfile: React.FC = () => {
   }
 
   // Parse images and videos (handle both array and JSON string)
-  let images: string[] = []
-  let videos: string[] = []
-  
-  if (artist.images) {
-    try {
-      images = Array.isArray(artist.images) 
-        ? artist.images 
-        : (typeof artist.images === 'string' ? JSON.parse(artist.images) : [])
-    } catch {
-      images = []
-    }
-  }
-  
-  if (artist.videos) {
-    try {
-      videos = Array.isArray(artist.videos) 
-        ? artist.videos 
-        : (typeof artist.videos === 'string' ? JSON.parse(artist.videos) : [])
-    } catch {
-      videos = []
-    }
-  }
-  
+  const images = Array.isArray(artist.images) ? artist.images : parseJsonField<string[]>(artist.images, [])
+  const videos = Array.isArray(artist.videos) ? artist.videos : parseJsonField<string[]>(artist.videos, [])
+
   // Parse artisticProfile JSON
-  let artisticProfile: any = {}
-  if (artist.artisticProfile) {
-    try {
-      artisticProfile = typeof artist.artisticProfile === 'string' 
-        ? JSON.parse(artist.artisticProfile) 
-        : artist.artisticProfile
-    } catch (e) {
-      console.error('Error parsing artisticProfile:', e)
-    }
-  }
+  const artisticProfile = parseJsonField<any>(artist.artisticProfile, {})
 
   return (
     <div className="min-h-screen bg-[var(--surface)]" data-testid="artist-profile">

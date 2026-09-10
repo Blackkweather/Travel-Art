@@ -8,6 +8,7 @@ import { tripsApi } from '@/utils/api'
 import { useAuthStore } from '@/store/authStore'
 import { experienceTypeLabel } from '@/utils/i18n'
 import { countryLabel } from '@/i18n/countries'
+import { parseJsonField } from '@/utils/apiPayload'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
@@ -100,13 +101,7 @@ const ExperienceDetailsPage: React.FC = () => {
         }
         
         // Parse images
-        let images: string[] = []
-        try {
-          images = Array.isArray(trip.images) ? trip.images : 
-            (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-        } catch {
-          images = []
-        }
+        const images = Array.isArray(trip.images) ? trip.images : parseJsonField<string[]>(trip.images, [])
         
         setExperience({
           id: trip.id,
