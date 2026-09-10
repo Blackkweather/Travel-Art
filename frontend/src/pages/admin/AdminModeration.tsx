@@ -4,6 +4,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { User, Building, Download, Eye, Ban, CheckCircle } from 'lucide-react'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
+import toast from 'react-hot-toast'
 
 type ArtistListItem = {
   id: string
@@ -94,13 +95,13 @@ const AdminModeration: React.FC = () => {
 
   const suspendUser = async (userId?: string) => {
     if (!userId) return
-    if (!confirm('Suspend this user?')) return
+    if (!confirm(t('Suspendre ce compte ?'))) return
     try {
       setProcessing(userId)
       await adminApi.suspendUser(userId, { reason: 'Suspicious content' })
       await load()
     } catch {
-      alert('Impossible de suspendre cet utilisateur')
+      toast.error('Impossible de suspendre cet utilisateur')
     } finally {
       setProcessing(null)
     }
@@ -113,7 +114,7 @@ const AdminModeration: React.FC = () => {
       await adminApi.activateUser(userId)
       await load()
     } catch {
-      alert('Impossible de réactiver cet utilisateur')
+      toast.error('Impossible de réactiver cet utilisateur')
     } finally {
       setProcessing(null)
     }

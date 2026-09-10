@@ -11,6 +11,7 @@ import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
 import { countryLabel } from '@/i18n/countries'
+import toast from 'react-hot-toast'
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected'
 
@@ -182,7 +183,7 @@ const ArtistBookings: React.FC = () => {
       setBookings(data)
     } catch (err) {
       console.error('Error updating booking status:', err)
-      alert('Impossible de mettre à jour le statut. Veuillez réessayer.')
+      toast.error('Impossible de mettre à jour le statut. Veuillez réessayer.')
     } finally {
       setIsUpdating(false)
     }

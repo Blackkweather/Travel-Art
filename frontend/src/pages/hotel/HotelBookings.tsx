@@ -122,11 +122,14 @@ const HotelBookings: React.FC = () => {
   const handleStatusUpdate = async (bookingId: string, status: 'CONFIRMED' | 'REJECTED' | 'CANCELLED') => {
     try {
       await bookingsApi.updateStatus(bookingId, status)
-      // Notification
-      const statusText = status === 'CONFIRMED' ? 'confirmed' : status === 'REJECTED' ? 'rejected' : 'cancelled'
-      console.log(`Booking ${statusText} successfully`)
-      alert(`Booking ${statusText} successfully`)
-      
+      toast.success(
+        status === 'CONFIRMED'
+          ? t('Réservation confirmée')
+          : status === 'REJECTED'
+            ? t('Réservation refusée')
+            : t('Réservation annulée')
+      )
+
       // Refresh bookings - get hotel first
       const hotelRes = await hotelsApi.getByUser(user?.id || '')
       const hotel = hotelRes.data?.data
@@ -167,7 +170,7 @@ const HotelBookings: React.FC = () => {
       setBookings(transformedBookings)
     } catch (error) {
       console.error('Error updating booking status:', error)
-      alert('Impossible de mettre à jour le statut de la réservation')
+      toast.error('Impossible de mettre à jour le statut de la réservation')
     }
   }
   

@@ -5,6 +5,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
+import toast from 'react-hot-toast'
 
 interface UserData {
   id: string
@@ -79,7 +80,7 @@ const AdminUsers: React.FC = () => {
     const reason = prompt('Pourquoi suspendre ce compte ? (visible par l’utilisateur)')
     if (reason === null) return
     if (reason.trim().length < 5) {
-      alert('Le motif doit contenir au moins 5 caractères.')
+      toast.error('Le motif doit contenir au moins 5 caractères.')
       return
     }
 
@@ -88,7 +89,7 @@ const AdminUsers: React.FC = () => {
       await adminApi.suspendUser(userId, { reason: reason.trim() })
       fetchUsers()
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Impossible de suspendre cet utilisateur')
+      toast.error(err.response?.data?.message || 'Impossible de suspendre cet utilisateur')
     } finally {
       setProcessing(null)
     }
@@ -100,7 +101,7 @@ const AdminUsers: React.FC = () => {
       await adminApi.activateUser(userId)
       fetchUsers()
     } catch (err: any) {
-      alert(err.response?.data?.message || t('Impossible de réactiver cet utilisateur'))
+      toast.error(err.response?.data?.message || t('Impossible de réactiver cet utilisateur'))
     } finally {
       setProcessing(null)
     }
@@ -117,7 +118,7 @@ const AdminUsers: React.FC = () => {
       link.click()
       link.remove()
     } catch {
-      alert('Échec de l’export des utilisateurs')
+      toast.error('Échec de l’export des utilisateurs')
     }
   }
 

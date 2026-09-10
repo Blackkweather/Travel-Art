@@ -13,6 +13,7 @@ import {
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
+import toast from 'react-hot-toast'
 
 interface BookingData {
   id: string
@@ -93,7 +94,7 @@ const AdminBookings: React.FC = () => {
       link.click()
       link.remove()
     } catch {
-      alert('Échec de l’export des réservations')
+      toast.error('Échec de l’export des réservations')
     }
   }
 

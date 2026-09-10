@@ -790,6 +790,7 @@ export const en: Record<string, string> = {
   "Sur demande uniquement": "By request only",
   "Surveillez votre solde pour ne pas interrompre vos réservations": "Keep an eye on your balance so your bookings are never interrupted",
   "Suspendre": "Suspend",
+  "Suspendre ce compte ?": "Suspend this account?",
   "Sélectionner le type de catégorie": "Select the category type",
   "Sélectionner une option": "Select an option",
   "Sélectionner une sous-catégorie": "Select a subcategory",

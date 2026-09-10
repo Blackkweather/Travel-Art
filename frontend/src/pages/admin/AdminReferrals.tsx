@@ -6,6 +6,7 @@ import { Users, Download, Search, Filter } from 'lucide-react'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
+import toast from 'react-hot-toast'
 
 interface Referral {
   id: string
@@ -83,7 +84,7 @@ const AdminReferrals: React.FC = () => {
 
   const exportToCSV = () => {
     if (referrals.length === 0) {
-      alert('Aucun parrainage à exporter')
+      toast.error('Aucun parrainage à exporter')
       return
     }
     
