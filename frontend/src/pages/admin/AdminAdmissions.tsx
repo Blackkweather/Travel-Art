@@ -6,6 +6,7 @@ import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 import { countryLabel } from '@/i18n/countries'
+import { parseJsonField } from '@/utils/apiPayload'
 
 interface Application {
   id: string
@@ -27,7 +28,7 @@ type Tab = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'PENDING', label: t('À examiner') },
-  { key: 'APPROVED', label: 'Admises' },
+  { key: 'APPROVED', label: t('Admises') },
   { key: 'REJECTED', label: t('Refusées') },
 ]
 
@@ -101,13 +102,8 @@ const AdminAdmissions: React.FC = () => {
 
   const detail = (app: Application) => {
     if (app.role === 'ARTIST') return app.artist?.discipline || t('Discipline non renseignée')
-    let where = ''
-    try {
-      const loc = app.hotel?.location ? JSON.parse(app.hotel.location) : null
-      where = loc ? [loc.city, countryLabel(loc.country)].filter(Boolean).join(', ') : ''
-    } catch {
-      where = app.hotel?.location ?? ''
-    }
+    const loc = parseJsonField<any>(app.hotel?.location, null)
+    const where = loc ? [loc.city, countryLabel(loc.country)].filter(Boolean).join(', ') : (app.hotel?.location ?? '')
     return [app.hotel?.name, where].filter(Boolean).join(' — ') || 'Établissement non renseigné'
   }
 

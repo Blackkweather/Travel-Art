@@ -84,35 +84,10 @@ const buildMonthlySeries = (
   return buckets
 }
 
+/** Same monthly bucketing as buildMonthlySeries, run through a running total -
+ * growth reads as "how many exist by this month", not "how many joined". */
 const buildUserGrowthSeries = (users: any[], months: number): TrendPoint[] => {
-  const now = new Date()
-  const buckets: TrendPoint[] = []
-  const monthIndex = new Map<string, number>()
-
-  for (let offset = months - 1; offset >= 0; offset--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - offset, 1)
-    const key = `${date.getFullYear()}-${date.getMonth()}`
-    monthIndex.set(key, buckets.length)
-    buckets.push({
-      key,
-      label: `${monthFormatter.format(date)} ${String(date.getFullYear()).slice(-2)}`,
-      value: 0,
-      date: date.toISOString()
-    })
-  }
-
-  users.forEach((user) => {
-    const createdAt = user?.createdAt || user?.user?.createdAt
-    if (!createdAt) return
-    const date = new Date(createdAt)
-    if (Number.isNaN(date.getTime())) return
-    const key = `${date.getFullYear()}-${date.getMonth()}`
-    const index = monthIndex.get(key)
-    if (index === undefined) return
-    buckets[index].value += 1
-  })
-
-  // Convert to cumulative
+  const buckets = buildMonthlySeries(users, months, (user: any) => user?.createdAt || user?.user?.createdAt)
   let cumulative = 0
   return buckets.map(bucket => {
     cumulative += bucket.value
@@ -197,14 +172,7 @@ const AdminAnalytics: React.FC = () => {
   }, [revenueTrend])
 
   useEffect(() => {
-    console.log('📊 AdminAnalytics component mounted - loading charts...')
-    console.log('Recharts components available:', {
-      LineChart: !!LineChart,
-      BarChart: !!BarChart,
-      AreaChart: !!AreaChart,
-      ResponsiveContainer: !!ResponsiveContainer
-    })
-    ;(async () => {
+    (async () => {
       try {
         setLoading(true)
         setError(null)
@@ -275,7 +243,7 @@ const AdminAnalytics: React.FC = () => {
         })
 
         const statusData: BookingStatusData[] = [
-          { name: 'En attente', value: statusCounts['PENDING'] || 0 },
+          { name: t('En attente'), value: statusCounts['PENDING'] || 0 },
           { name: t('Confirmée'), value: statusCounts['CONFIRMED'] || 0 },
           { name: t('Terminée'), value: statusCounts['COMPLETED'] || 0 },
           { name: t('Annulée'), value: statusCounts['CANCELLED'] || 0 },
@@ -283,14 +251,8 @@ const AdminAnalytics: React.FC = () => {
         ].filter(item => item.value > 0)
 
         setBookingStatusData(statusData)
-        console.log('✅ Analytics data loaded:', {
-          bookingTrend: bookingTrendData.length,
-          revenueTrend: revenueTrendData.length,
-          userGrowth: userGrowthData.length,
-          bookingStatus: statusData.length
-        })
       } catch (e: any) {
-        console.error('❌ Analytics error:', e)
+        console.error('Analytics error:', e)
         setError(e?.response?.data?.message || 'Failed to load analytics')
       } finally {
         setLoading(false)
@@ -329,9 +291,9 @@ const AdminAnalytics: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-line border border-line rounded-card overflow-hidden">
         {[
           { label: t('Utilisateurs'), value: formatNumber(stats?.totalUsers ?? 0) },
-          { label: t('Artistes'), value: (stats?.totalArtists ?? 0).toLocaleString('fr-FR') },
-          { label: t('Hôtels'), value: (stats?.totalHotels ?? 0).toLocaleString('fr-FR') },
-          { label: t('Réservations'), value: (stats?.totalBookings ?? 0).toLocaleString('fr-FR') },
+          { label: t('Artistes'), value: formatNumber(stats?.totalArtists ?? 0) },
+          { label: t('Hôtels'), value: formatNumber(stats?.totalHotels ?? 0) },
+          { label: t('Réservations'), value: formatNumber(stats?.totalBookings ?? 0) },
           { label: t('Chiffre d’affaires'), value: `€${formatNumber(stats?.totalRevenue ?? 0)}` }
         ].map((stat) => (
           <div key={stat.label} className="stat rounded-none border-0">

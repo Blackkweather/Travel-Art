@@ -995,6 +995,7 @@ export const en: Record<string, string> = {
   "1 semaine, 1 mois…": "1 week, 1 month…",
   "Accepter": "Accept",
   "Admettre": "Admit",
+  "Admises": "Admitted",
   "Administrateurs": "Administrators",
   "Adresse e-mail": "Email address",
   "Aider ses pairs": "Helping peers",
