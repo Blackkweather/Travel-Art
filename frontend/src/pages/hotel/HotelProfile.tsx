@@ -4,6 +4,7 @@ import { Save, Edit3, MapPin, Building, Plus, Trash2, AlertCircle } from 'lucide
 import { hotelsApi } from '@/utils/api'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
+import { parseJsonField } from '@/utils/apiPayload'
 
 /**
  * Hotel profile.
@@ -34,17 +35,6 @@ interface HotelLocation {
 
 const emptyLocation: HotelLocation = { city: '', country: '' }
 
-/** Server stores these columns as JSON strings; tolerate bad data rather than crash. */
-const parseJson = <T,>(value: unknown, fallback: T): T => {
-  if (!value) return fallback
-  if (typeof value !== 'string') return (value as T) ?? fallback
-  try {
-    return JSON.parse(value) as T
-  } catch {
-    return fallback
-  }
-}
-
 const HotelProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -63,11 +53,11 @@ const HotelProfile: React.FC = () => {
   const applyProfile = (hotel: any) => {
     setName(hotel?.name ?? '')
     setDescription(hotel?.description ?? '')
-    setLocation(parseJson<HotelLocation>(hotel?.location, emptyLocation))
+    setLocation(parseJsonField<HotelLocation>(hotel?.location, emptyLocation))
     setContactPhone(hotel?.contactPhone ?? '')
     setResponsibleName(hotel?.responsibleName ?? '')
     setResponsibleEmail(hotel?.responsibleEmail ?? '')
-    setSpots(parseJson<PerformanceSpot[]>(hotel?.performanceSpots, []))
+    setSpots(parseJsonField<PerformanceSpot[]>(hotel?.performanceSpots, []))
   }
 
   useEffect(() => {
@@ -117,7 +107,7 @@ const HotelProfile: React.FC = () => {
 
       applyProfile(response.data?.data ?? response.data)
       setIsEditing(false)
-      setNotice('Profile saved.')
+      setNotice(t('Profil mis à jour'))
     } catch (err: any) {
       // Surface the real reason. The previous implementation reported success
       // unconditionally, which is how a silent failure survives to production.

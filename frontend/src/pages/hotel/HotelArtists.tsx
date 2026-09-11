@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 import { formatNumber } from '@/utils/i18n'
 import { bookingsApi, hotelsApi, commonApi, artistsApi } from '@/utils/api'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
-import { extractArray } from '@/utils/apiPayload'
+import { extractArray, parseJsonField } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 
@@ -54,17 +54,8 @@ const HotelArtists: React.FC = () => {
   const storageKey = useMemo(() => (hotelId ? `travel-art:favorites:${hotelId}` : null), [hotelId])
 
   const parseJsonArray = useCallback(<T,>(value: unknown, fallback: T[]): T[] => {
-    if (!value) return fallback
-    if (Array.isArray(value)) return value as T[]
-    if (typeof value === 'string') {
-      try {
-        const parsed = JSON.parse(value)
-        return Array.isArray(parsed) ? (parsed as T[]) : fallback
-      } catch {
-        return fallback
-      }
-    }
-    return fallback
+    const parsed = parseJsonField<T[] | T>(value, fallback)
+    return Array.isArray(parsed) ? parsed : fallback
   }, [])
 
   const deriveAvailability = useCallback((status?: string): AvailabilityBadge => {
@@ -370,7 +361,7 @@ const HotelArtists: React.FC = () => {
       setBookingModal({ open: false })
       // Booking created successfully - receipt will be available after payment
     } catch (e: any) {
-      setBookingError(e?.response?.data?.message || 'Failed to create booking')
+      setBookingError(e?.response?.data?.message || t('Impossible de créer la réservation'))
     } finally {
       setProcessing(false)
     }

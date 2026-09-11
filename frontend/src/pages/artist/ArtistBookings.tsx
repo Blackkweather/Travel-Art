@@ -12,6 +12,7 @@ import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
 import { countryLabel } from '@/i18n/countries'
 import toast from 'react-hot-toast'
+import { parseJsonField } from '@/utils/apiPayload'
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected'
 
@@ -45,30 +46,14 @@ const extractBookings = (data: any): (BookingType & { notes?: string; performanc
   return []
 }
 
-const parseJson = <T,>(value: unknown, fallback: T): T => {
-  if (!value) {
-    return fallback
-  }
-
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value) as T
-    } catch {
-      return fallback
-    }
-  }
-
-  return value as T
-}
-
 const getLocationString = (location: any): string => {
-  const parsed = parseJson<{ city?: string; country?: string }>(location, {})
+  const parsed = parseJsonField<{ city?: string; country?: string }>(location, {})
   const parts = [parsed.city, countryLabel(parsed.country)].filter(Boolean)
-  return parts.length ? parts.join(', ') : 'Location TBA'
+  return parts.length ? parts.join(', ') : t('Lieu à confirmer')
 }
 
 const getHotelImage = (images: any): string => {
-  const parsedImages = parseJson<string[]>(images, [])
+  const parsedImages = Array.isArray(images) ? images : parseJsonField<string[]>(images, [])
   return parsedImages[0] || PLACEHOLDER_IMAGE
 }
 
@@ -440,7 +425,7 @@ const ArtistBookings: React.FC = () => {
                   <div>
                     <p className="text-sm font-medium text-content-secondary">{t('Date et heure de début')}</p>
                     <p className="text-content font-medium">
-                      {new Date(selectedBooking.startDate).toLocaleDateString('fr-FR')} at {selectedBooking.startTime}
+                      {new Date(selectedBooking.startDate).toLocaleDateString('fr-FR')} à {selectedBooking.startTime}
                     </p>
                   </div>
                   <div>

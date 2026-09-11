@@ -47,7 +47,6 @@ const ArtistReferrals: React.FC = () => {
         }
       } catch {
         // No artist profile yet
-        console.log('No artist profile found')
       }
 
       // Get referrals

@@ -137,10 +137,10 @@ const ArtistMembership: React.FC = () => {
   ]
 
   const membershipStats = [
-    { 
-      label: 'Membre depuis', 
-      value: memberSince ? new Date(memberSince).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently', 
-      icon: Calendar 
+    {
+      label: t('Membre depuis'),
+      value: memberSince ? new Date(memberSince).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric', year: 'numeric' }) : t('Récemment'),
+      icon: Calendar
     },
     { 
       label: t('Représentations'), 

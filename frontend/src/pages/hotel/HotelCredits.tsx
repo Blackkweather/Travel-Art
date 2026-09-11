@@ -41,7 +41,7 @@ const HotelCredits: React.FC = () => {
       const txRes = await paymentsApi.transactions({ limit: 20 })
       setTransactions(txRes.data.data.transactions || [])
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Failed to load credits data')
+      setError(e?.response?.data?.message || t('Impossible de charger vos crédits'))
     } finally {
       setLoading(false)
     }
@@ -100,7 +100,7 @@ const HotelCredits: React.FC = () => {
     } catch (e: any) {
       // The server says why it refused — for example that payment processing
       // is not configured yet, in which case retrying will not help.
-      setError(e?.response?.data?.error?.message || 'Failed to start checkout')
+      setError(e?.response?.data?.error?.message || t('Impossible de démarrer le paiement. Veuillez réessayer.'))
     } finally {
       setProcessing(null)
     }
