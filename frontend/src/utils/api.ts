@@ -207,8 +207,8 @@ export const adminApi = {
   getLogs: (params?: any) =>
     apiClient.get('/admin/logs', params),
   
-  getAllActivities: (params?: any) =>
-    apiClient.get('/admin/activities', params),
+  getAllActivities: (params?: any, config?: any) =>
+    apiClient.get('/admin/activities', params, config),
   
   getReferrals: (params?: any) =>
     apiClient.get('/admin/referrals', params),

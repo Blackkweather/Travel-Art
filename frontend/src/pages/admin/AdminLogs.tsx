@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { t } from '@/i18n'
 import { formatRelative } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
+import { toCsv, downloadCsv } from '@/utils/csv'
 
 type ActivityType = 'ALL' | 'USER_REGISTRATION' | 'BOOKING' | 'TRANSACTION' | 'RATING' | 'ADMIN_ACTION'
 
@@ -73,7 +74,10 @@ const AdminLogs: React.FC = () => {
         params.type = selectedType
       }
 
-      const response = await adminApi.getAllActivities(params)
+      // This aggregates across five tables; a cold serverless-database
+      // connection can comfortably exceed the client's default 10s timeout
+      // (see the same allowance on AdminAnalytics's dashboard call).
+      const response = await adminApi.getAllActivities(params, { timeout: 45000 })
       const data = response.data?.data
 
       if (data) {
@@ -174,25 +178,18 @@ const AdminLogs: React.FC = () => {
   const formatTimestamp = formatRelative
 
   const exportLogs = () => {
-    const csv = [
-      ['Type', 'Action', 'Actor', 'Target', 'Details', 'Timestamp'].join(','),
-      ...filteredActivities.map(a => [
+    const csv = toCsv(
+      ['Type', 'Action', 'Actor', 'Target', 'Details', 'Timestamp'],
+      filteredActivities.map(a => [
         a.type,
         a.action,
         a.actor?.name || a.actor?.email || 'N/A',
         a.target?.name || a.target?.email || 'N/A',
-        JSON.stringify(a.details).replace(/,/g, ';'),
+        JSON.stringify(a.details),
         a.timestamp
-      ].join(','))
-    ].join('\n')
-
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `activity-logs-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
+      ])
+    )
+    downloadCsv(csv, `activity-logs-${new Date().toISOString().split('T')[0]}.csv`)
     toast.success(t('Journal d’activité exporté'))
   }
 

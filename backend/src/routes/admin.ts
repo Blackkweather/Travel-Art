@@ -807,192 +807,168 @@ router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (
       dateFilter.lte = new Date(endDate as string);
     }
 
+    // Five independent reads, each with a nested include - sequential awaits
+    // meant five round trips to a serverless Neon connection before anything
+    // rendered, which is what pushed this past the client's 10s timeout on a
+    // cold connection. None of these depend on each other, so they run
+    // together instead.
+    const dateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
+
+    const [users, bookings, transactions, ratings, adminLogs] = await Promise.all([
+      (!type || type === 'USER_REGISTRATION')
+        ? prisma.user.findMany({
+            where: dateWhere,
+            include: { artist: true, hotel: true },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+          })
+        : Promise.resolve([]),
+      (!type || type === 'BOOKING')
+        ? prisma.booking.findMany({
+            where: dateWhere,
+            include: {
+              artist: { include: { user: { select: { id: true, name: true, email: true } } } },
+              hotel: { include: { user: { select: { id: true, name: true, email: true } } } }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 100
+          })
+        : Promise.resolve([]),
+      (!type || type === 'TRANSACTION')
+        ? prisma.transaction.findMany({
+            where: dateWhere,
+            include: {
+              hotel: { include: { user: { select: { id: true, name: true, email: true } } } },
+              artist: { include: { user: { select: { id: true, name: true, email: true } } } }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 100
+          })
+        : Promise.resolve([]),
+      (!type || type === 'RATING')
+        ? prisma.rating.findMany({
+            where: dateWhere,
+            include: {
+              hotel: { include: { user: { select: { id: true, name: true, email: true } } } },
+              artist: { include: { user: { select: { id: true, name: true, email: true } } } }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+          })
+        : Promise.resolve([]),
+      (!type || type === 'ADMIN_ACTION')
+        ? prisma.adminLog.findMany({
+            where: dateWhere,
+            include: { actor: { select: { id: true, name: true, email: true, role: true } } },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+          })
+        : Promise.resolve([])
+    ]);
+
     const activities: any[] = [];
 
-    // Get user registrations
-    if (!type || type === 'USER_REGISTRATION') {
-      const users = await prisma.user.findMany({
-        where: {
-          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+    users.forEach(user => {
+      activities.push({
+        id: `user-${user.id}`,
+        type: 'USER_REGISTRATION',
+        action: `${user.role} registered`,
+        actor: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
         },
-        include: {
-          artist: true,
-          hotel: true
+        target: null,
+        details: {
+          role: user.role,
+          country: user.country,
+          hasArtistProfile: !!user.artist,
+          hasHotelProfile: !!user.hotel
         },
-        orderBy: { createdAt: 'desc' },
-        take: 50
+        timestamp: user.createdAt
       });
-      users.forEach(user => {
-        activities.push({
-          id: `user-${user.id}`,
-          type: 'USER_REGISTRATION',
-          action: `${user.role} registered`,
-          actor: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-          },
-          target: null,
-          details: {
-            role: user.role,
-            country: user.country,
-            hasArtistProfile: !!user.artist,
-            hasHotelProfile: !!user.hotel
-          },
-          timestamp: user.createdAt
-        });
-      });
-    }
+    });
 
-    // Get bookings
-    if (!type || type === 'BOOKING') {
-      const bookings = await prisma.booking.findMany({
-        where: {
-          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+    bookings.forEach(booking => {
+      activities.push({
+        id: `booking-${booking.id}`,
+        type: 'BOOKING',
+        action: `Booking ${booking.status.toLowerCase()}`,
+        actor: booking.hotel?.user ? {
+          id: booking.hotel.user.id,
+          name: booking.hotel.user.name,
+          email: booking.hotel.user.email,
+          role: 'HOTEL'
+        } : null,
+        target: booking.artist?.user ? {
+          id: booking.artist.user.id,
+          name: booking.artist.user.name,
+          email: booking.artist.user.email,
+          role: 'ARTIST'
+        } : null,
+        details: {
+          bookingId: booking.id,
+          status: booking.status,
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          totalPaymentAmount: booking.totalPaymentAmount || 0,
+          weeklyPaymentAmount: booking.weeklyPaymentAmount || 200,
+          numberOfWeeks: booking.numberOfWeeks || 0,
+          paymentStatus: booking.paymentStatus || 'PENDING',
+          hotelName: booking.hotel?.name,
+          artistName: booking.artist?.user?.name
         },
-        include: {
-          artist: {
-            include: { user: { select: { id: true, name: true, email: true } } }
-          },
-          hotel: {
-            include: { user: { select: { id: true, name: true, email: true } } }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 100
+        timestamp: booking.createdAt
       });
-      bookings.forEach(booking => {
-        activities.push({
-          id: `booking-${booking.id}`,
-          type: 'BOOKING',
-          action: `Booking ${booking.status.toLowerCase()}`,
-          actor: booking.hotel?.user ? {
-            id: booking.hotel.user.id,
-            name: booking.hotel.user.name,
-            email: booking.hotel.user.email,
-            role: 'HOTEL'
-          } : null,
-          target: booking.artist?.user ? {
-            id: booking.artist.user.id,
-            name: booking.artist.user.name,
-            email: booking.artist.user.email,
-            role: 'ARTIST'
-          } : null,
-          details: {
-            bookingId: booking.id,
-            status: booking.status,
-            startDate: booking.startDate,
-            endDate: booking.endDate,
-            totalPaymentAmount: booking.totalPaymentAmount || 0,
-            weeklyPaymentAmount: booking.weeklyPaymentAmount || 200,
-            numberOfWeeks: booking.numberOfWeeks || 0,
-            paymentStatus: booking.paymentStatus || 'PENDING',
-            hotelName: booking.hotel?.name,
-            artistName: booking.artist?.user?.name
-          },
-          timestamp: booking.createdAt
-        });
-      });
-    }
+    });
 
-    // Get transactions
-    if (!type || type === 'TRANSACTION') {
-      const transactions = await prisma.transaction.findMany({
-        where: {
-          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+    transactions.forEach(txn => {
+      activities.push({
+        id: `txn-${txn.id}`,
+        type: 'TRANSACTION',
+        action: txn.type,
+        actor: txn.hotel?.user || txn.artist?.user || null,
+        target: null,
+        details: {
+          transactionId: txn.id,
+          type: txn.type,
+          amount: txn.amount,
+          hotelId: txn.hotelId,
+          artistId: txn.artistId
         },
-        include: {
-          hotel: {
-            include: { user: { select: { id: true, name: true, email: true } } }
-          },
-          artist: {
-            include: { user: { select: { id: true, name: true, email: true } } }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 100
+        timestamp: txn.createdAt
       });
-      transactions.forEach(txn => {
-        activities.push({
-          id: `txn-${txn.id}`,
-          type: 'TRANSACTION',
-          action: txn.type,
-          actor: txn.hotel?.user || txn.artist?.user || null,
-          target: null,
-          details: {
-            transactionId: txn.id,
-            type: txn.type,
-            amount: txn.amount,
-            hotelId: txn.hotelId,
-            artistId: txn.artistId
-          },
-          timestamp: txn.createdAt
-        });
-      });
-    }
+    });
 
-    // Get ratings
-    if (!type || type === 'RATING') {
-      const ratings = await prisma.rating.findMany({
-        where: {
-          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
+    ratings.forEach(rating => {
+      activities.push({
+        id: `rating-${rating.id}`,
+        type: 'RATING',
+        action: 'Rating submitted',
+        actor: rating.hotel?.user || rating.artist?.user || null,
+        target: rating.artist?.user || rating.hotel?.user || null,
+        details: {
+          ratingId: rating.id,
+          stars: rating.stars,
+          textReview: rating.textReview,
+          isVisibleToArtist: rating.isVisibleToArtist
         },
-        include: {
-          hotel: {
-            include: { user: { select: { id: true, name: true, email: true } } }
-          },
-          artist: {
-            include: { user: { select: { id: true, name: true, email: true } } }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 50
+        timestamp: rating.createdAt
       });
-      ratings.forEach(rating => {
-        activities.push({
-          id: `rating-${rating.id}`,
-          type: 'RATING',
-          action: 'Rating submitted',
-          actor: rating.hotel?.user || rating.artist?.user || null,
-          target: rating.artist?.user || rating.hotel?.user || null,
-          details: {
-            ratingId: rating.id,
-            stars: rating.stars,
-            textReview: rating.textReview,
-            isVisibleToArtist: rating.isVisibleToArtist
-          },
-          timestamp: rating.createdAt
-        });
-      });
-    }
+    });
 
-    // Get admin logs
-    if (!type || type === 'ADMIN_ACTION') {
-      const adminLogs = await prisma.adminLog.findMany({
-        where: {
-          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {})
-        },
-        include: {
-          actor: {
-            select: { id: true, name: true, email: true, role: true }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 50
+    adminLogs.forEach(log => {
+      activities.push({
+        id: `admin-${log.id}`,
+        type: 'ADMIN_ACTION',
+        action: log.action,
+        actor: log.actor,
+        target: log.targetId ? { id: log.targetId } : null,
+        details: {},
+        timestamp: log.createdAt
       });
-      adminLogs.forEach(log => {
-        activities.push({
-          id: `admin-${log.id}`,
-          type: 'ADMIN_ACTION',
-          action: log.action,
-          actor: log.actor,
-          target: log.targetId ? { id: log.targetId } : null,
-          details: {},
-          timestamp: log.createdAt
-        });
-      });
-    }
+    });
 
     // Sort all activities by timestamp (most recent first)
     activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
