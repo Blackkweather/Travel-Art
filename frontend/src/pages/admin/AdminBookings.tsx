@@ -11,9 +11,10 @@ import {
   SelectValue,
 } from '@/components/ui/Select'
 import { t } from '@/i18n'
-import { formatNumber } from '@/utils/i18n'
+import { formatNumber, LOCALE } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
 import toast from 'react-hot-toast'
+import { parseJsonField } from '@/utils/apiPayload'
 
 interface BookingData {
   id: string
@@ -73,7 +74,7 @@ const AdminBookings: React.FC = () => {
       setBookings(response.data.data.bookings)
       setTotalPages(response.data.data.pagination.pages)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch bookings')
+      setError(err.response?.data?.message || t('Impossible de charger les réservations pour le moment.'))
     } finally {
       setLoading(false)
     }
@@ -99,7 +100,7 @@ const AdminBookings: React.FC = () => {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return new Date(dateString).toLocaleDateString(LOCALE, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -114,12 +115,8 @@ const AdminBookings: React.FC = () => {
   }
 
   const parseLocation = (locationString: string): string => {
-    try {
-      const location: LocationData = JSON.parse(locationString)
-      return `${location.city}, ${location.country}`
-    } catch {
-      return locationString
-    }
+    const location = parseJsonField<LocationData | null>(locationString, null)
+    return location ? `${location.city}, ${location.country}` : locationString
   }
 
   if (loading && bookings.length === 0) {
@@ -156,7 +153,7 @@ const AdminBookings: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
         {[
           { label: t('Réservations'), value: bookings.length },
-          { label: 'En attente', value: bookings.filter(b => b.status === 'PENDING').length },
+          { label: t('En attente'), value: bookings.filter(b => b.status === 'PENDING').length },
           { label: t('Confirmées'), value: bookings.filter(b => b.status === 'CONFIRMED').length },
           { label: t('Terminées'), value: bookings.filter(b => b.status === 'COMPLETED').length }
         ].map((stat) => (
@@ -214,10 +211,10 @@ const AdminBookings: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="font-serif text-lg text-content">
-                        Réservation {booking.id.slice(0, 8).toUpperCase()}
+                        {t('Réservation {id}', { id: booking.id.slice(0, 8).toUpperCase() })}
                       </h3>
                       <p className="text-sm text-content-secondary">
-                        Créée le {formatDate(booking.createdAt)}
+                        {t('Créée le {date}', { date: formatDate(booking.createdAt) })}
                       </p>
                     </div>
                   </div>
@@ -265,7 +262,7 @@ const AdminBookings: React.FC = () => {
                       <span>{formatDate(booking.startDate)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>End:</span>
+                      <span>{t('Fin :')}</span>
                       <span>{formatDate(booking.endDate)}</span>
                     </div>
                   </div>
@@ -306,7 +303,7 @@ const AdminBookings: React.FC = () => {
             {t('Précédent')}
           </button>
           <span className="text-content-secondary">
-            Page {currentPage} of {totalPages}
+            {t('Page {current} sur {total}', { current: currentPage, total: totalPages })}
           </span>
           <button
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}

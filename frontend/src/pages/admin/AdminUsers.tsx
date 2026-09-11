@@ -6,6 +6,8 @@ import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 import toast from 'react-hot-toast'
+import { parseJsonField } from '@/utils/apiPayload'
+import { formatShortDate } from '@/utils/i18n'
 
 interface UserData {
   id: string
@@ -57,7 +59,7 @@ const AdminUsers: React.FC = () => {
       setUsers(response.data.data.users)
       setTotalPages(response.data.data.pagination.pages)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch users')
+      setError(err.response?.data?.message || t('Impossible de charger les utilisateurs'))
     } finally {
       setLoading(false)
     }
@@ -128,11 +130,11 @@ const AdminUsers: React.FC = () => {
   const roleLabel = (role: string) => {
     switch (role) {
       case 'ARTIST':
-        return 'Artiste'
+        return t('Artiste')
       case 'HOTEL':
         return t('Hôtel')
       case 'ADMIN':
-        return 'Administrateur'
+        return t('Administrateur')
       default:
         return role
     }
@@ -249,12 +251,8 @@ const AdminUsers: React.FC = () => {
                         <div className="text-content font-medium">{user.hotel.name}</div>
                         <div className="text-content-secondary text-xs mt-1">
                           {(() => {
-                            try {
-                              const loc = JSON.parse(user.hotel.location)
-                              return `${loc.city}, ${loc.country}`
-                            } catch {
-                              return user.hotel.location
-                            }
+                            const loc = parseJsonField<any>(user.hotel.location, null)
+                            return loc ? `${loc.city}, ${loc.country}` : user.hotel.location
                           })()}
                         </div>
                       </div>
@@ -267,7 +265,7 @@ const AdminUsers: React.FC = () => {
                     <StatusBadge status={user.isActive ? 'ACTIVE' : 'SUSPENDED'} />
                   </td>
                   <td className="text-content-secondary">
-                    {new Date(user.createdAt).toLocaleDateString('fr-FR')}
+                    {formatShortDate(user.createdAt)}
                   </td>
                   <td className="numeric">
                     {user.role !== 'ADMIN' && (
@@ -278,7 +276,7 @@ const AdminUsers: React.FC = () => {
                             disabled={processing === user.id}
                             className="text-[var(--state-critical)] underline-offset-4 hover:underline disabled:opacity-50"
                           >
-                            {processing === user.id ? 'En cours…' : 'Suspendre'}
+                            {processing === user.id ? t('En cours…') : t('Suspendre')}
                           </button>
                         ) : (
                           <button
@@ -286,7 +284,7 @@ const AdminUsers: React.FC = () => {
                             disabled={processing === user.id}
                             className="text-[var(--state-positive)] underline-offset-4 hover:underline disabled:opacity-50"
                           >
-                            {processing === user.id ? 'En cours…' : t('Réactiver')}
+                            {processing === user.id ? t('En cours…') : t('Réactiver')}
                           </button>
                         )}
                       </div>
@@ -317,7 +315,7 @@ const AdminUsers: React.FC = () => {
             {t('Précédent')}
           </button>
           <span className="text-content-secondary">
-            Page {currentPage} of {totalPages}
+            {t('Page {current} sur {total}', { current: currentPage, total: totalPages })}
           </span>
           <button
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
