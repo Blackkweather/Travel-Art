@@ -142,6 +142,9 @@ export const artistsApi = {
 
   setAvailability: (id: string, data: any) =>
     apiClient.post(`/artists/${id}/availability`, data),
+
+  removeAvailability: (id: string, availabilityId: string) =>
+    apiClient.delete(`/artists/${id}/availability/${availabilityId}`),
 }
 
 // Hotels API
@@ -152,8 +155,8 @@ export const hotelsApi = {
   getById: (id: string) =>
     apiClient.get(`/hotels/${id}`),
   
-  getByUser: (userId: string) =>
-    apiClient.get(`/hotels/user/${userId}`),
+  getByUser: (userId: string, config?: any) =>
+    apiClient.get(`/hotels/user/${userId}`, undefined, config),
   
   createProfile: (data: any) =>
     apiClient.post('/hotels', data),
@@ -182,7 +185,7 @@ export const hotelsApi = {
   // { success: true }. HotelArtists already handles rejection properly (it
   // falls back to localStorage on read and reverts the star on write), and
   // that handling could never run while the errors were being masked.
-  getFavorites: (hotelId: string) => apiClient.get(`/hotels/${hotelId}/favorites`),
+  getFavorites: (hotelId: string, config?: any) => apiClient.get(`/hotels/${hotelId}/favorites`, undefined, config),
   addFavorite: (hotelId: string, artistId: string) => apiClient.post(`/hotels/${hotelId}/favorites`, { artistId }),
   removeFavorite: (hotelId: string, artistId: string) => apiClient.delete(`/hotels/${hotelId}/favorites/${artistId}`),
 }
@@ -263,7 +266,7 @@ export const tripsApi = {
 
 // Bookings API
 export const bookingsApi = {
-  list: (params?: any) => apiClient.get('/bookings', params),
+  list: (params?: any, config?: any) => apiClient.get('/bookings', params, config),
   getById: (id: string) => apiClient.get(`/bookings/${id}`),
   create: (data: { hotelId: string; artistId: string; startDate: string; endDate: string; notes?: string }) =>
     apiClient.post('/bookings', data),

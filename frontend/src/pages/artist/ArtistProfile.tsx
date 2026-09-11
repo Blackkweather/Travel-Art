@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import { t } from '@/i18n'
 import { formatShortDate } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
+import { parseJsonField } from '@/utils/apiPayload'
 
 const ArtistProfile: React.FC = () => {
   const [uploadingImages, setUploadingImages] = useState(false)
@@ -53,17 +54,8 @@ const ArtistProfile: React.FC = () => {
         setProfile(artist)
         
         // Parse artisticProfile JSON
-        let artisticProfile: any = {}
-        if (artist.artisticProfile) {
-          try {
-            artisticProfile = typeof artist.artisticProfile === 'string' 
-              ? JSON.parse(artist.artisticProfile) 
-              : artist.artisticProfile
-          } catch (e) {
-            console.error('Error parsing artisticProfile:', e)
-          }
-        }
-        
+        const artisticProfile = parseJsonField<any>(artist.artisticProfile, {})
+
         // Include profilePicture in images array if it exists
         const images = artist.images || [];
         const profilePicture = artist.profilePicture;
@@ -172,7 +164,7 @@ const ArtistProfile: React.FC = () => {
       setIsEditing(false)
       await fetchProfile()
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to update profile')
+      toast.error(error?.response?.data?.message || t('Vos modifications n’ont pas été enregistrées. Veuillez réessayer.'))
       console.error('Error updating profile:', error)
     }
   }
@@ -251,7 +243,7 @@ const ArtistProfile: React.FC = () => {
       setNewAvailability({ dateFrom: '', dateTo: '' })
       await fetchAvailability()
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to add availability')
+      toast.error(error?.response?.data?.message || t('Impossible d’ajouter cette disponibilité'))
       console.error('Error adding availability:', error)
     } finally {
       setLoadingAvailability(false)
@@ -259,11 +251,11 @@ const ArtistProfile: React.FC = () => {
   }
 
   const handleRemoveAvailability = async (availabilityId: string) => {
-    if (!confirm('Are you sure you want to remove this availability period?')) return
+    if (!profile?.id) return
+    if (!confirm(t('Retirer cette période de disponibilité ?'))) return
 
     try {
-      // Note: You may need to add a DELETE endpoint for availability
-      // For now, we'll just remove it from the local state
+      await artistsApi.removeAvailability(profile.id, availabilityId)
       setAvailabilities(prev => prev.filter(a => a.id !== availabilityId))
       toast.success(t('Disponibilité retirée'))
     } catch (error: any) {
@@ -528,17 +520,8 @@ const ArtistProfile: React.FC = () => {
             )}
             
             {(() => {
-              let artisticProfile: any = {}
-              if (profile.artisticProfile) {
-                try {
-                  artisticProfile = typeof profile.artisticProfile === 'string' 
-                    ? JSON.parse(profile.artisticProfile) 
-                    : profile.artisticProfile
-                } catch {
-                  return null
-                }
-              }
-              
+              const artisticProfile = parseJsonField<any>(profile.artisticProfile, {})
+
               return (
                 <>
                   {artisticProfile.mainCategory && (

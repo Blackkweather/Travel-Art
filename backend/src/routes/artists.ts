@@ -472,6 +472,36 @@ router.post('/:id/availability', authenticate, authorize('ARTIST'), asyncHandler
   });
 }));
 
+// Remove artist availability
+router.delete('/:id/availability/:availabilityId', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id, availabilityId } = req.params;
+
+  // Verify artist belongs to user
+  const artist = await prisma.artist.findFirst({
+    where: { id, userId: req.user!.id }
+  });
+
+  if (!artist) {
+    throw new CustomError('Artist not found or access denied.', 404);
+  }
+
+  // Scoped to this artist too, not just the row's own id - otherwise any
+  // authenticated artist could delete another artist's availability by guessing
+  // its id.
+  const deleted = await prisma.artistAvailability.deleteMany({
+    where: { id: availabilityId, artistId: id }
+  });
+
+  if (deleted.count === 0) {
+    throw new CustomError('Availability not found.', 404);
+  }
+
+  res.json({
+    success: true,
+    data: { id: availabilityId }
+  });
+}));
+
 
 export { router as artistRoutes };
 
