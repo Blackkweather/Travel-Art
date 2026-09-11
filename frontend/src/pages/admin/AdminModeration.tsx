@@ -5,6 +5,7 @@ import { User, Building, Download, Eye, Ban, CheckCircle } from 'lucide-react'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 import toast from 'react-hot-toast'
+import { toCsv, downloadCsv } from '@/utils/csv'
 
 type ArtistListItem = {
   id: string
@@ -139,20 +140,7 @@ const AdminModeration: React.FC = () => {
       }
     })
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `${type}-moderation-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    downloadCsv(toCsv(headers, rows), `${type}-moderation-${new Date().toISOString().split('T')[0]}.csv`)
   }
 
   return (

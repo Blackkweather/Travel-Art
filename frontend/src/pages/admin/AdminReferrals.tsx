@@ -7,6 +7,7 @@ import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
 import toast from 'react-hot-toast'
+import { toCsv, downloadCsv } from '@/utils/csv'
 
 interface Referral {
   id: string
@@ -99,20 +100,7 @@ const AdminReferrals: React.FC = () => {
       r.rewardEarned || 0
     ])
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `referrals-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    downloadCsv(toCsv(headers, rows), `referrals-${new Date().toISOString().split('T')[0]}.csv`)
   }
 
   if (loading) {
