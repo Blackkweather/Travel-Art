@@ -7,7 +7,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import ContactSupport from '@/components/ContactSupport'
 import StatusBadge from '@/components/StatusBadge'
 import toast from 'react-hot-toast'
-import { personName } from '@/utils/apiPayload'
+import { personName, parseJsonField } from '@/utils/apiPayload'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
@@ -75,14 +75,26 @@ const HotelDashboard: React.FC = () => {
       try {
         setLoading(true)
 
+        // Against a cold serverless-database connection, each of these can
+        // individually pass the client's 10s default - see the same 45s
+        // allowance on AdminAnalytics's and AdminLogs's dashboard calls.
+        const slow = { timeout: 45000 }
+
         // Get hotel profile
-        const hotelRes = await hotelsApi.getByUser(user.id)
+        const hotelRes = await hotelsApi.getByUser(user.id, slow)
         const hotel = hotelRes.data?.data
         if (!hotel) return
         setHotelId(hotel.id)
 
-        // Get bookings for this hotel
-        const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
+        // Bookings and favorites both only need hotel.id, not each other's
+        // result, so they run together instead of one after the other.
+        const [bookingsRes, favoritesRes] = await Promise.all([
+          bookingsApi.list({ hotelId: hotel.id }, slow),
+          hotelsApi.getFavorites(hotel.id, slow).catch((err) => {
+            console.warn('Failed to load favorites', err)
+            return null
+          })
+        ])
         // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
         const bookingsData = bookingsRes.data?.data
         const bookings = Array.isArray(bookingsData) 
@@ -111,17 +123,8 @@ const HotelDashboard: React.FC = () => {
         )
 
         // Parse performance spots from hotel profile
-        let spots: PerformanceSpot[] = []
-        if (hotel.performanceSpots) {
-          try {
-            const spotsData = typeof hotel.performanceSpots === 'string' 
-              ? JSON.parse(hotel.performanceSpots) 
-              : hotel.performanceSpots
-            spots = Array.isArray(spotsData) ? spotsData : []
-          } catch {
-            // Invalid JSON, use empty array
-          }
-        }
+        const spotsData = parseJsonField<PerformanceSpot[]>(hotel.performanceSpots, [])
+        const spots: PerformanceSpot[] = Array.isArray(spotsData) ? spotsData : []
 
         // Get upcoming performances (active bookings)
         const upcoming = bookings
@@ -150,19 +153,15 @@ const HotelDashboard: React.FC = () => {
         setUpcomingPerformances(upcoming)
         setPerformanceSpots(spots)
 
-        // Fetch favorite artists
-        try {
-          const favoritesRes = await hotelsApi.getFavorites(hotel.id)
-          const favorites = (favoritesRes.data?.data as any) || []
-          const favoriteIds = Array.isArray(favorites) ? favorites.map((f: any) => f?.artistId || f?.id || f).filter(Boolean) : []
-          if (favoriteIds.length > 0) {
-            const artistsPromises = favoriteIds.slice(0, 5).map((id: string) => artistsApi.getById(id).catch(() => null))
-            const artistsResults = await Promise.all(artistsPromises)
-            const artists = artistsResults.filter(Boolean).map((r: any) => r?.data?.data || r?.data).filter(Boolean)
-            setFavoriteArtists(artists)
-          }
-        } catch (err) {
-          console.warn('Failed to load favorites', err)
+        // Resolve favorite artists from whichever favorites the parallel
+        // fetch above returned (null if that call itself failed).
+        const favorites = (favoritesRes?.data?.data as any) || []
+        const favoriteIds = Array.isArray(favorites) ? favorites.map((f: any) => f?.artistId || f?.id || f).filter(Boolean) : []
+        if (favoriteIds.length > 0) {
+          const artistsPromises = favoriteIds.slice(0, 5).map((id: string) => artistsApi.getById(id).catch(() => null))
+          const artistsResults = await Promise.all(artistsPromises)
+          const artists = artistsResults.filter(Boolean).map((r: any) => r?.data?.data || r?.data).filter(Boolean)
+          setFavoriteArtists(artists)
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
