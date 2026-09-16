@@ -187,5 +187,83 @@ describe('Artists API', () => {
 
     expect(res.status).toBe(403);
   });
+
+  it('TC-ART-008: should find an artist whose season is already open', async () => {
+    // The browse endpoint used to include availability with
+    // `dateFrom >= now` - periods that had not STARTED yet - and then run the
+    // date filter over that one row. An artist free from last week until
+    // spring, which is what an artist who is working actually looks like,
+    // matched no date search at all. Every seeded artist was in that state,
+    // so a house that picked a week was told the platform was empty.
+    const artist = await prisma.artist.findFirst({
+      where: { user: { email: artistEmail } }
+    });
+    if (!artist) throw new Error('Artist not found');
+
+    const opened = new Date();
+    opened.setDate(opened.getDate() - 7);
+    const closes = new Date();
+    closes.setDate(closes.getDate() + 90);
+
+    await prisma.artistAvailability.create({
+      data: { artistId: artist.id, dateFrom: opened, dateTo: closes },
+    });
+
+    // A week well inside that season.
+    const weekFrom = new Date();
+    weekFrom.setDate(weekFrom.getDate() + 30);
+    const weekTo = new Date();
+    weekTo.setDate(weekTo.getDate() + 37);
+
+    const res = await request(app)
+      .get('/api/artists')
+      .query({
+        dateFrom: weekFrom.toISOString(),
+        dateTo: weekTo.toISOString(),
+        limit: '50',
+      });
+
+    expect(res.status).toBe(200);
+    const ids = res.body.data.artists.map((a: { id: string }) => a.id);
+    expect(ids).toContain(artist.id);
+
+    // and the season itself reaches the client, not an empty array
+    const row = res.body.data.artists.find((a: { id: string }) => a.id === artist.id);
+    expect(row.availability.length).toBeGreaterThan(0);
+
+    // A week after it closes must NOT match, or the filter is just a no-op.
+    const afterFrom = new Date();
+    afterFrom.setDate(afterFrom.getDate() + 200);
+    const afterTo = new Date();
+    afterTo.setDate(afterTo.getDate() + 207);
+
+    const after = await request(app)
+      .get('/api/artists')
+      .query({
+        dateFrom: afterFrom.toISOString(),
+        dateTo: afterTo.toISOString(),
+        limit: '50',
+      });
+
+    expect(after.status).toBe(200);
+    expect(after.body.data.artists.map((a: { id: string }) => a.id)).not.toContain(artist.id);
+  });
+
+  it('TC-ART-009: should match a discipline whatever the case, and count what it returns', async () => {
+    // `contains` on Postgres is case-sensitive, so a house typing `music`
+    // found nobody while `Music` found the roster. The pagination total was
+    // computed without the filters besides, so the page said `15 results`
+    // over a list showing one.
+    const res = await request(app)
+      .get('/api/artists')
+      .query({ discipline: 'music', limit: '50' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.artists.length).toBeGreaterThan(0);
+    for (const a of res.body.data.artists) {
+      expect(a.discipline.toLowerCase()).toContain('music');
+    }
+    expect(res.body.data.pagination.total).toBe(res.body.data.artists.length);
+  });
 });
 

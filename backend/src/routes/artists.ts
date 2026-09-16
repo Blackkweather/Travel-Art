@@ -55,16 +55,41 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    // Simple where clause - avoid nested queries for SQLite compatibility
+    const now = new Date();
+
+    /* Every filter belongs in the query.
+       Location and dates used to be applied in memory, to the one page that
+       had already come back from the database - so a search for India found
+       nothing at all while the only Indian artist sat on page 2, and the
+       pagination still reported 15 results across 2 pages because the count
+       never saw the filters. A house looking for the one artist it wants was
+       shown an empty shelf. */
     const where: any = {};
 
-    // Only add discipline filter if provided (simple contains works in SQLite)
+    // Postgres `contains` is case-sensitive: `dj` found nobody while `DJ`
+    // found two, and disciplines here are free text an artist typed.
     if (discipline) {
-      where.discipline = { contains: discipline };
+      where.discipline = { contains: discipline, mode: 'insensitive' };
     }
 
-    // Fetch artists with user info
-    const [allArtists, total] = await Promise.all([
+    if (location) {
+      where.user = { country: { contains: location, mode: 'insensitive' } };
+    }
+
+    /* A house books a week; the question is whether the artist's declared
+       period *overlaps* that week. Asking instead for periods that begin
+       after it - which is what the in-memory filter did, over a single row -
+       could only ever match an artist who had not started yet. */
+    if (dateFrom && dateTo) {
+      where.availability = {
+        some: {
+          dateFrom: { lte: new Date(dateTo) },
+          dateTo: { gte: new Date(dateFrom) }
+        }
+      };
+    }
+
+    const [artists, total] = await Promise.all([
       prisma.artist.findMany({
         where,
         include: {
@@ -79,47 +104,44 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
               country: true
             }
           },
+          /* Periods that have not *ended*. This used to ask for periods that
+             had not *begun*, which hid every artist whose season was already
+             open - on the day this was found that was all fourteen of them,
+             each free from that morning until March, and each invisible to
+             every date search on the platform. */
           availability: {
             where: {
-              dateFrom: { gte: new Date() }
+              dateTo: { gte: now }
             },
-            orderBy: { dateFrom: 'asc' },
-            take: 1
+            orderBy: { dateFrom: 'asc' }
           }
         },
         skip,
         take: limitNum,
         orderBy: { createdAt: 'desc' }
-      }).catch(() => []),
-      prisma.artist.count({ where }).catch(() => 0)
+      }),
+      prisma.artist.count({ where })
     ]);
 
-    // Apply location filter in memory if needed (SQLite-friendly)
-    let artists = allArtists;
-    if (location) {
-      artists = allArtists.filter(a => 
-        a.user?.country?.toLowerCase().includes(location.toLowerCase())
-      );
+    /* One query for the page, not one per artist. The errors these two used
+       to swallow are worth keeping too: a database that times out should say
+       so, not report a marketplace with no artists in it. */
+    const artistIds = artists.map(a => a.id);
+    const ratingRows = artistIds.length
+      ? await prisma.rating.findMany({
+          where: { artistId: { in: artistIds } },
+          select: { artistId: true, stars: true }
+        })
+      : [];
+    const starsByArtist = new Map<string, number[]>();
+    for (const row of ratingRows) {
+      const stars = starsByArtist.get(row.artistId) || [];
+      stars.push(row.stars);
+      starsByArtist.set(row.artistId, stars);
     }
 
-    // Apply date filter in memory if needed
-    if (dateFrom && dateTo) {
-      const dateFromFilter = new Date(dateFrom);
-      const dateToFilter = new Date(dateTo);
-      artists = artists.filter(a => 
-        a.availability.some(av => 
-          av.dateFrom <= dateToFilter && av.dateTo >= dateFromFilter
-        )
-      );
-    }
-
-    // Add rating badges for each artist
-    const artistsWithBadges = await Promise.all(
-    artists.map(async (artist) => {
-      const ratings = await prisma.rating.findMany({
-        where: { artistId: artist.id },
-        select: { stars: true }
-      });
+    const artistsWithBadges = artists.map((artist) => {
+      const ratings = (starsByArtist.get(artist.id) || []).map(stars => ({ stars }));
 
       let ratingBadge = null;
       // The average is returned alongside the badge. It used to be computed
@@ -152,8 +174,7 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
         videos: videos,
         mediaUrls: mediaUrls
       };
-    })
-    );
+    });
 
     res.json({
       success: true,
@@ -187,9 +208,11 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
           createdAt: true
         }
       },
+      // Open now, or still to come. Asking for periods that have not begun
+      // told an artist their own declared season did not exist.
       availability: {
         where: {
-          dateFrom: { gte: new Date() }
+          dateTo: { gte: new Date() }
         },
         orderBy: { dateFrom: 'asc' }
       },
@@ -278,7 +301,7 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
       },
       availability: {
         where: {
-          dateFrom: { gte: new Date() }
+          dateTo: { gte: new Date() }
         },
         orderBy: { dateFrom: 'asc' }
       }

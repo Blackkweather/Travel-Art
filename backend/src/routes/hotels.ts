@@ -226,9 +226,10 @@ router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: Aut
           createdAt: true
         }
       },
+      // A season that is open today is the one a house most wants shown.
       availabilities: {
         where: {
-          dateFrom: { gte: new Date() }
+          dateTo: { gte: new Date() }
         },
         orderBy: { dateFrom: 'asc' }
       }
@@ -274,9 +275,10 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
           createdAt: true
         }
       },
+      // A season that is open today is the one a house most wants shown.
       availabilities: {
         where: {
-          dateFrom: { gte: new Date() }
+          dateTo: { gte: new Date() }
         },
         orderBy: { dateFrom: 'asc' }
       }
@@ -545,8 +547,15 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
 
   const where: any = {};
 
+  // Case-insensitive: disciplines are free text an artist typed, and a house
+  // searching `dj` should find the artist who wrote `DJ`.
   if (discipline) {
-    where.discipline = { contains: discipline as string };
+    where.discipline = { contains: discipline as string, mode: 'insensitive' };
+  }
+
+  // In the query, not over the page that came back from it.
+  if (location) {
+    where.user = { country: { contains: String(location), mode: 'insensitive' } };
   }
 
   if (dateFrom && dateTo) {
@@ -571,10 +580,9 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
         },
         availability: {
           where: {
-            dateFrom: { gte: new Date() }
+            dateTo: { gte: new Date() }
           },
-          orderBy: { dateFrom: 'asc' },
-          take: 1
+          orderBy: { dateFrom: 'asc' }
         }
       },
       skip,
@@ -584,11 +592,7 @@ router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async 
     prisma.artist.count({ where })
   ]);
 
-  let filteredArtists = artists;
-  if (location) {
-    const loc = String(location).toLowerCase();
-    filteredArtists = artists.filter(a => a.user?.country?.toLowerCase().includes(loc));
-  }
+  const filteredArtists = artists;
 
   // Add rating badges for each artist
   const artistsWithBadges = await Promise.all(
