@@ -16,6 +16,7 @@ const HotelCredits: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState<string | null>(null)
+  const [checkoutNotice, setCheckoutNotice] = useState<{ kind: 'success' | 'cancelled'; message: string } | null>(null)
 
   const totalSpent = useMemo(() => {
     const purchases = transactions.filter((t) => t.type === 'CREDIT_PURCHASE')
@@ -51,6 +52,56 @@ const HotelCredits: React.FC = () => {
     loadAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
+
+  /* Stripe sends the house back here with ?checkout=success. Nothing read
+     that parameter, so a payment ended on a page that looked exactly like
+     the one before it - same balance, no acknowledgement, no way to tell a
+     successful charge from an abandoned one. */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const outcome = params.get('checkout')
+    if (!outcome) return
+
+    // Read it once, then take it out of the address bar, so refreshing the
+    // page does not replay a payment message that has already been seen.
+    params.delete('checkout')
+    const rest = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : ''))
+
+    setCheckoutNotice(outcome === 'success'
+      ? {
+          kind: 'success',
+          message: t('Paiement reçu. Vos crédits sont crédités dès que Stripe confirme le règlement, ce qui prend quelques secondes.')
+        }
+      : {
+          kind: 'cancelled',
+          message: t('Paiement interrompu. Aucun montant n’a été débité et votre solde est inchangé.')
+        })
+  }, [])
+
+  /* The redirect happens the moment the card clears, but the credits are
+     granted by the webhook, which arrives on its own schedule. Refetching
+     once would usually show the old balance and make a payment that went
+     through look lost, so the balance is re-read a few times as it lands. */
+  useEffect(() => {
+    if (checkoutNotice?.kind !== 'success' || !hotelId) return
+    let abandoned = false
+    const timers = [0, 2000, 5000, 9000].map((ms) => setTimeout(async () => {
+      if (abandoned) return
+      try {
+        const creditsRes = await hotelsApi.getCredits(hotelId)
+        if (abandoned) return
+        setCredits(creditsRes.data.data)
+        const txRes = await paymentsApi.transactions({ limit: 20 })
+        if (abandoned) return
+        setTransactions(txRes.data.data.transactions || [])
+      } catch {
+        // A failed refresh does not deserve an error banner here: the notice
+        // above already says the credits may take a moment to appear.
+      }
+    }, ms))
+    return () => { abandoned = true; timers.forEach(clearTimeout) }
+  }, [checkoutNotice?.kind, hotelId])
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -118,6 +169,16 @@ const HotelCredits: React.FC = () => {
           {t('Gérez vos crédits et vos formules pour réserver des artistes')}
         </p>
       </div>
+
+      {checkoutNotice && (
+        <div
+          className={checkoutNotice.kind === 'success' ? 'notice-positive' : 'notice-caution'}
+          role="status"
+          data-testid="checkout-notice"
+        >
+          {checkoutNotice.message}
+        </div>
+      )}
 
       {/* Current Credits Overview */}
       <div className="grid grid-cols-3 gap-px bg-line border border-line rounded-card overflow-hidden">

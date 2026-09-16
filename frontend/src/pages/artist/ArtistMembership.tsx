@@ -27,10 +27,47 @@ const ArtistMembership: React.FC = () => {
   const [referralCode, setReferralCode] = useState('')
   const [totalBookings, setTotalBookings] = useState(0)
   const [memberSince, setMemberSince] = useState('')
+  const [checkoutNotice, setCheckoutNotice] = useState<{ kind: 'success' | 'cancelled'; message: string } | null>(null)
 
   useEffect(() => {
     fetchArtistProfile()
   }, [user])
+
+  /* Stripe returns the artist here with ?checkout=success after an adhesion
+     is paid. Nothing read it, so paying 50 EUR and abandoning the page
+     looked identical: same status badge, no acknowledgement either way. */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const outcome = params.get('checkout')
+    if (!outcome) return
+
+    params.delete('checkout')
+    const rest = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : ''))
+
+    setCheckoutNotice(outcome === 'success'
+      ? {
+          kind: 'success',
+          message: t('Paiement reçu. Votre adhésion est activée dès que Stripe confirme le règlement, ce qui prend quelques secondes.')
+        }
+      : {
+          kind: 'cancelled',
+          message: t('Paiement interrompu. Aucun montant n’a été débité et votre adhésion est inchangée.')
+        })
+  }, [])
+
+  /* The adhesion is granted by the webhook, not by the redirect, so the
+     profile is re-read a few times while it lands rather than once, which
+     would usually show the status the artist had before paying. */
+  useEffect(() => {
+    if (checkoutNotice?.kind !== 'success') return
+    let abandoned = false
+    const timers = [2000, 5000, 9000].map((ms) => setTimeout(() => {
+      if (!abandoned) fetchArtistProfile()
+    }, ms))
+    return () => { abandoned = true; timers.forEach(clearTimeout) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkoutNotice?.kind])
 
   const fetchArtistProfile = async () => {
     if (!user?.id) {
@@ -191,6 +228,15 @@ const ArtistMembership: React.FC = () => {
   return (
     <div className="space-y-8">
       <SEOHead title={t('Adhésion') + ' — Travel Art'} />
+      {checkoutNotice && (
+        <div
+          className={checkoutNotice.kind === 'success' ? 'notice-positive' : 'notice-caution'}
+          role="status"
+          data-testid="checkout-notice"
+        >
+          {checkoutNotice.message}
+        </div>
+      )}
       {/* Header */}
       <div>
         <h1 className="page-head__title">
