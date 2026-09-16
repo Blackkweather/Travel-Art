@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { commonApi } from '@/utils/api'
+import { useAuthStore } from '@/store/authStore'
 import { countryLabel } from '@/i18n/countries'
 import { t } from '@/i18n'
 
@@ -28,8 +29,15 @@ interface Artist {
 
 export default function FeaturedArtists() {
   const [artists, setArtists] = useState<Artist[]>([])
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   useEffect(() => {
+    // The roster is behind an account, so a guest's request can only 401 and
+    // land in the catch below. The section hides itself either way; skipping
+    // the call keeps a failed request, and a red line in the console, off the
+    // front page of the site.
+    if (!isAuthenticated) return
+
     let alive = true
     commonApi
       .getTopArtists({ limit: 12 })
@@ -42,7 +50,7 @@ export default function FeaturedArtists() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [isAuthenticated])
 
   if (artists.length === 0) return null
 
