@@ -3,6 +3,15 @@ import { z } from 'zod';
 import { prisma } from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { config } from '../config';
+import { notify, bookingPayload } from '../services/notifications';
+import {
+  formatStay,
+  bookingRequestedEmail,
+  bookingConfirmedEmail,
+  bookingRejectedEmail,
+  bookingCancelledEmail,
+} from '../services/email';
 
 const router = Router();
 
@@ -388,6 +397,26 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
       }
     });
 
+  /* Tell the artist. This is the notification the whole marketplace turns on:
+     before it existed a house could ask for a week and the artist would only
+     learn of it by opening the dashboard unprompted. Not awaited - a booking
+     that was made stays made even if the mail provider is down, and the row
+     in notifications is written on the same best-effort basis. */
+  const stay = formatStay(booking.startDate, booking.endDate);
+  void notify({
+    userId: booking.artist.user.id,
+    type: 'BOOKING_REQUESTED',
+    payload: bookingPayload(booking),
+    email: () =>
+      bookingRequestedEmail(
+        booking.artist.user.email,
+        booking.artist.stageName || booking.artist.user.name || 'Bonjour',
+        booking.hotel.name,
+        stay,
+        `${config.frontendUrl}/dashboard/bookings`
+      ),
+  });
+
   res.status(201).json({
     success: true,
     data: {
@@ -520,6 +549,61 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
         }
       });
     }
+  }
+
+  /* Tell whoever did not perform the action. An accepted residency that the
+     house never hears about is the same as no residency; a cancelled one that
+     the artist never hears about is worse, because they may be about to buy a
+     flight. Each is best-effort and never awaited, for the same reason as the
+     request notification above. */
+  const stay = formatStay(updatedBooking.startDate, updatedBooking.endDate);
+  const artistLabel =
+    updatedBooking.artist.stageName || updatedBooking.artist.user.name || 'L’artiste';
+  const hotelLabel = updatedBooking.hotel.name;
+  const payload = bookingPayload(updatedBooking);
+
+  if (status === 'CONFIRMED') {
+    void notify({
+      userId: updatedBooking.hotel.user.id,
+      type: 'BOOKING_CONFIRMED',
+      payload,
+      email: () =>
+        bookingConfirmedEmail(
+          updatedBooking.hotel.user.email,
+          hotelLabel,
+          artistLabel,
+          stay,
+          `${config.frontendUrl}/dashboard/bookings`
+        ),
+    });
+  } else if (status === 'REJECTED') {
+    void notify({
+      userId: updatedBooking.hotel.user.id,
+      type: 'BOOKING_REJECTED',
+      payload,
+      email: () =>
+        bookingRejectedEmail(
+          updatedBooking.hotel.user.email,
+          hotelLabel,
+          artistLabel,
+          stay,
+          `${config.frontendUrl}/dashboard/artists`
+        ),
+    });
+  } else if (status === 'CANCELLED') {
+    void notify({
+      userId: updatedBooking.artist.user.id,
+      type: 'BOOKING_CANCELLED',
+      payload,
+      email: () =>
+        bookingCancelledEmail(
+          updatedBooking.artist.user.email,
+          artistLabel,
+          hotelLabel,
+          stay,
+          `${config.frontendUrl}/dashboard/bookings`
+        ),
+    });
   }
 
   res.json({

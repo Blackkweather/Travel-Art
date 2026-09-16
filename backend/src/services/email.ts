@@ -239,5 +239,118 @@ export function newRegistrationAdminAlert(applicant: {
   });
 }
 
+/* ------------------------------------------------- booking lifecycle
+
+   Until these existed, the whole booking flow was silent: a hotel asked an
+   artist for a week and the artist only found out by opening the dashboard,
+   which is not a thing a working musician does daily. Each of these is paired
+   with an in-app notification in services/notifications.ts - the row is for
+   whoever is looking, the mail is for everyone else.
+
+   All four name the dates and the other party in the subject line, because
+   these arrive among a hundred other messages and the decision they need is
+   usually made from the subject alone. */
+
+/** "du 12 au 19 janvier 2027" - one month named when both ends share it. */
+export function formatStay(start: Date, end: Date): string {
+  const day = (d: Date) => d.getUTCDate();
+  const month = (d: Date) =>
+    d.toLocaleDateString('fr-FR', { month: 'long', timeZone: 'UTC' });
+  const year = (d: Date) => d.getUTCFullYear();
+
+  if (year(start) === year(end) && month(start) === month(end)) {
+    return `du ${day(start)} au ${day(end)} ${month(end)} ${year(end)}`;
+  }
+  if (year(start) === year(end)) {
+    return `du ${day(start)} ${month(start)} au ${day(end)} ${month(end)} ${year(end)}`;
+  }
+  return `du ${day(start)} ${month(start)} ${year(start)} au ${day(end)} ${month(end)} ${year(end)}`;
+}
+
+/** To the artist: a house has asked for them. The one email that must land. */
+export function bookingRequestedEmail(
+  to: string,
+  artistName: string,
+  hotelName: string,
+  stay: string,
+  url: string
+) {
+  return send(to, {
+    subject: `${hotelName} vous propose une résidence ${stay}`,
+    heading: 'Une maison vous propose une résidence',
+    body: [
+      `Bonjour ${artistName},`,
+      `<strong>${hotelName}</strong> souhaite vous accueillir en résidence ${stay}.`,
+      'Les termes sont ceux du programme : sept nuits, douze heures de représentation sur la semaine, deux heures par jour au maximum, chambre et pension complète pour vous et un accompagnant. Le voyage reste à votre charge.',
+      'Rien n’est réservé tant que vous n’avez pas répondu. Regardez les dates, le lieu et ce que la maison fournit avant d’accepter.',
+    ],
+    action: { label: 'Voir la proposition', url },
+    footnote:
+      'Si les dates ne vous conviennent pas, refusez : un refus motivé n’a aucune conséquence sur votre profil.',
+  });
+}
+
+/** To the hotel: the artist said yes. */
+export function bookingConfirmedEmail(
+  to: string,
+  hotelName: string,
+  artistName: string,
+  stay: string,
+  url: string
+) {
+  return send(to, {
+    subject: `${artistName} accepte la résidence ${stay}`,
+    heading: 'La résidence est confirmée',
+    body: [
+      `Bonjour ${hotelName},`,
+      `<strong>${artistName}</strong> a accepté votre proposition ${stay}. La résidence est confirmée des deux côtés.`,
+      'Il reste à convenir de deux choses avant l’arrivée : la répartition des douze heures sur la semaine, et le nom de la personne qui accueillera l’artiste sur place.',
+    ],
+    action: { label: 'Ouvrir la réservation', url },
+  });
+}
+
+/** To the hotel: the artist said no. Written so it does not read as a snub. */
+export function bookingRejectedEmail(
+  to: string,
+  hotelName: string,
+  artistName: string,
+  stay: string,
+  url: string
+) {
+  return send(to, {
+    subject: `${artistName} ne retient pas les dates ${stay}`,
+    heading: 'La proposition n’a pas été retenue',
+    body: [
+      `Bonjour ${hotelName},`,
+      `<strong>${artistName}</strong> ne donne pas suite pour la période ${stay}. Vos crédits vous ont été restitués.`,
+      'Un refus tient presque toujours au calendrier et non au lieu. D’autres artistes de la même discipline sont disponibles sur cette période.',
+    ],
+    action: { label: 'Voir d’autres artistes', url },
+  });
+}
+
+/** To the artist: the house pulled out. The one that costs someone a flight. */
+export function bookingCancelledEmail(
+  to: string,
+  artistName: string,
+  hotelName: string,
+  stay: string,
+  url: string
+) {
+  return send(to, {
+    subject: `Résidence annulée : ${hotelName}, ${stay}`,
+    heading: 'La résidence est annulée',
+    body: [
+      `Bonjour ${artistName},`,
+      `<strong>${hotelName}</strong> annule la résidence prévue ${stay}.`,
+      'Nous cherchons à vous replacer sur la même période, sans pouvoir le garantir. Si vous aviez déjà engagé des frais de voyage, écrivez-nous en réponse à ce message : nous en parlons à la maison.',
+    ],
+    action: { label: 'Voir mes dates', url },
+    footnote:
+      'C’est la raison pour laquelle nous recommandons de ne rien réserver avant qu’une résidence soit confirmée des deux côtés.',
+  });
+}
+
 export const emailIsConfigured = Boolean(resend);
 export { config };
