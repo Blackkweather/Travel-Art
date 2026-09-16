@@ -376,9 +376,18 @@ const TravelerExperiencesPage: React.FC = () => {
               }))}
               onChange={setMapCountry}
             />
+              {/* tile.openstreetmap.org is a volunteer-run server that blocks
+                  any app generating production-level traffic without a
+                  registered tile provider - which is exactly what happened
+                  here (see osm.wiki/Blocked). CARTO's basemaps are free and
+                  keyless for this volume, so the map works again immediately;
+                  swap to a paid provider (MapTiler, Mapbox, Stadia) with a
+                  real API key before traffic grows further. */}
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                subdomains="abcd"
+                maxZoom={20}
               />
               {/* baseFiltered, not filteredExperiences: the map keeps every
                   pin the explicit filters allow. Narrowing the pins by the
