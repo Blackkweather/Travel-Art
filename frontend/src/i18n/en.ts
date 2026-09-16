@@ -1210,4 +1210,8 @@ export const en: Record<string, string> = {
   "Toutes les questions": "All the questions",
   "le principe en détail": "how it works, in full",
   "ou": "or",
+  // /partners, signed out
+  "{count} maisons partenaires, visibles avec un compte.": "{count} partner houses, visible with an account.",
+  "Le répertoire des partenaires est réservé aux membres.": "The partner directory is for members.",
+  "Le répertoire nomme chaque établissement, ses scènes et ses conditions d’accueil. Il s’ouvre avec un compte, artiste comme hôtel.": "The directory names every house, its stages and its hosting terms. It opens with an account, artist or hotel alike.",
 }

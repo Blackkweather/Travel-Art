@@ -8,9 +8,11 @@ import { commonApi } from '@/utils/api'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
 import { parseJsonField } from '@/utils/apiPayload'
+import { useAuthStore } from '@/store/authStore'
 
 const PartnersPage: React.FC = () => {
   const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const [partners, setPartners] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -22,6 +24,17 @@ const PartnersPage: React.FC = () => {
   // Fetch hotels from database
   useEffect(() => {
     const fetchHotels = async () => {
+      /* The roster is behind an account now, so a guest has nothing to ask
+         for. Asking anyway would spend a request to earn a 401 and then fall
+         through to the "no partners yet" branch below - which would tell a
+         prospective partner the network is empty when it has 35 houses in
+         it. The signed-out state is rendered from /stats instead, which is
+         public and counts them without naming them. */
+      if (!isAuthenticated) {
+        setLoading(false)
+        return
+      }
+
       try {
         setLoading(true)
         const res = await commonApi.getTopHotels()
@@ -79,7 +92,7 @@ const PartnersPage: React.FC = () => {
     }
     
     fetchHotels()
-  }, [])
+  }, [isAuthenticated])
 
   const [stats, setStats] = useState({
     partnerHotels: 0,
@@ -248,6 +261,29 @@ const PartnersPage: React.FC = () => {
           <div className="text-center py-20">
             <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
             <p className="text-content-secondary text-lg">{t('Chargement des partenaires…')}</p>
+          </div>
+        ) : !isAuthenticated ? (
+          <div className="text-center py-20 max-w-2xl mx-auto">
+            <p className="text-content text-xl mb-4">
+              {stats.partnerHotels > 0
+                ? t('{count} maisons partenaires, visibles avec un compte.', {
+                    count: stats.partnerHotels,
+                  })
+                : t('Le répertoire des partenaires est réservé aux membres.')}
+            </p>
+            <p className="text-content-secondary mb-8">
+              {t(
+                'Le répertoire nomme chaque établissement, ses scènes et ses conditions d’accueil. Il s’ouvre avec un compte, artiste comme hôtel.'
+              )}
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link to="/register" className="btn-gold btn-arrow">
+                {t('Nous rejoindre')}
+              </Link>
+              <Link to="/login" className="btn-outline">
+                {t('Se connecter')}
+              </Link>
+            </div>
           </div>
         ) : partners.length === 0 ? (
           <div className="text-center py-20">
