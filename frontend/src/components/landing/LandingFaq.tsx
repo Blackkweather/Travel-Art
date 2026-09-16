@@ -87,8 +87,12 @@ export default function LandingFaq() {
 
         <p className="mt-10 text-content-secondary">
           {t('Une question qui n’est pas là ?')}{' '}
+          <Link to="/faq" className="text-gold underline underline-offset-4">
+            {t('Toutes les questions')}
+          </Link>{' '}
+          {t('ou')}{' '}
           <Link to="/how-it-works" className="text-gold underline underline-offset-4">
-            {t('Le principe en détail')}
+            {t('le principe en détail')}
           </Link>
         </p>
       </div>

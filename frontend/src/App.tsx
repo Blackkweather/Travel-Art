@@ -31,6 +31,7 @@ const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'))
 const TermsPage = lazy(() => import('@/pages/TermsPage'))
 const CookiePolicyPage = lazy(() => import('@/pages/CookiePolicyPage'))
 const AboutPage = lazy(() => import('@/pages/AboutPage'))
+const FaqPage = lazy(() => import('@/pages/FaqPage'))
 
 // Protected pages - lazy loaded
 const ArtistDashboard = lazy(() => import('@/pages/artist/ArtistDashboard'))
@@ -159,6 +160,7 @@ function App() {
       <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
       <Route path="/cookies" element={<PageTransition><CookiePolicyPage /></PageTransition>} />
       <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
+      <Route path="/faq" element={<PageTransition><FaqPage /></PageTransition>} />
 
       {/* Protected Routes */}
       <Route 

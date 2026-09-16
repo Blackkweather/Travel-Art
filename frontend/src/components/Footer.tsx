@@ -10,6 +10,7 @@ const DISCOVER_LINKS = [
   { to: '/how-it-works', label: t('Le principe') },
   { to: '/top-artists', label: t('Artistes') },
   { to: '/top-hotels', label: t('Hôtels') },
+  { to: '/faq', label: 'FAQ' },
 ]
 
 const COMPANY_LINKS = [
