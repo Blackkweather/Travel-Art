@@ -233,6 +233,19 @@ export const adminApi = {
 }
 
 // Common API
+/**
+ * What happened to your residencies. Polled by the bell in the header, so it
+ * returns the unread count alongside the rows and the bell needs one request
+ * rather than two.
+ */
+export const notificationsApi = {
+  list: () => apiClient.get('/notifications'),
+
+  markRead: (id: string) => apiClient.patch(`/notifications/${id}/read`),
+
+  readAll: () => apiClient.post('/notifications/read-all'),
+}
+
 export const commonApi = {
   getReferrals: () =>
     apiClient.get('/referrals'),

@@ -1283,4 +1283,16 @@ export const en: Record<string, string> = {
   "Une annulation se dit tôt et par écrit. Si l’hôtel annule, ses crédits lui sont restitués et nous cherchons à vous replacer sur la même période, sans pouvoir le garantir ; un billet déjà acheté reste votre risque, ce qui est une raison de plus de ne rien réserver avant que la résidence soit confirmée des deux côtés. Si c’est vous qui annulez, prévenez-nous immédiatement : une annulation motivée n’a aucune conséquence, une annulation tardive et répétée met fin à votre présence sur la plateforme. La sélection se fait à la main des deux côtés ; l’exclusion aussi.": "A cancellation is given early and in writing. If the hotel cancels, its credits are returned and we try to place you elsewhere in the same period, without being able to guarantee it; a ticket already bought remains your risk, which is one more reason to book nothing until the residency is confirmed on both sides. If you are the one cancelling, tell us immediately: a cancellation with a reason has no consequence, a late and repeated one ends your presence on the platform. Selection is done by hand on both sides; so is exclusion.",
   "Le programme, la candidature, les délais de réponse, ce qui est inclus et ce qui ne l’est pas, la vie d’une résidence Travel Art.": "The programme, applying, how long a decision takes, what is included and what is not, and the life of a Travel Art residency.",
   "Le programme, la candidature, l’argent et la vie d’une résidence — dans l’ordre où les questions se posent vraiment.": "The programme, applying, the money and the life of a residency — in the order the questions actually come up.",
+
+  // notification bell
+  "Notifications": "Notifications",
+  "Notifications, {n} non lues": "Notifications, {n} unread",
+  "Tout marquer comme lu": "Mark all as read",
+  "Rien de neuf pour le moment.": "Nothing new just now.",
+  "Mise à jour": "Update",
+  "{who} vous propose une résidence": "{who} is offering you a residency",
+  "{who} accepte la résidence": "{who} accepted the residency",
+  "{who} ne retient pas ces dates": "{who} passed on these dates",
+  "{who} annule la résidence": "{who} cancelled the residency",
+  "{who} a laissé une évaluation": "{who} left a review",
 }

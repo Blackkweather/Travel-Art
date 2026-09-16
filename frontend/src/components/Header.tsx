@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 import { getLogoUrl } from '@/config/assets'
+import NotificationBell from '@/components/NotificationBell'
 import { useAuthStore } from '@/store/authStore'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { t } from '@/i18n'
@@ -106,6 +107,9 @@ const Header: React.FC = () => {
             <LanguageSwitcher />
             {user ? (
               <>
+                {/* Sits before the dashboard link because it is the thing most
+                    likely to be the reason someone opened the app. */}
+                <NotificationBell />
                 <Link to="/dashboard" className={`${linkClass} hidden sm:block`}>
                   {t('Tableau de bord')}
                   <span className={underline(pathname === '/dashboard')} />
