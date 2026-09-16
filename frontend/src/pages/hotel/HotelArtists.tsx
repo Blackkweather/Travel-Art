@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Search, MapPin, Calendar, Heart } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { formatNumber } from '@/utils/i18n'
-import { bookingsApi, hotelsApi, commonApi, artistsApi } from '@/utils/api'
+import { bookingsApi, hotelsApi, artistsApi } from '@/utils/api'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
 import { extractArray, parseJsonField } from '@/utils/apiPayload'
 import { t } from '@/i18n'
@@ -24,6 +24,8 @@ interface ArtistCardData {
   image: string
   availability: AvailabilityBadge
   nextAvailable?: string | null
+  seasonFrom?: string | null
+  seasonTo?: string | null
   totalBookings: number
   membershipStatus?: string
   loyaltyPoints?: number
@@ -41,6 +43,11 @@ const HotelArtists: React.FC = () => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [loyaltyTierFilter, setLoyaltyTierFilter] = useState('all')
   const [availabilityWindow, setAvailabilityWindow] = useState<string>('')
+  // What is typed, and what has actually been asked of the server. Keeping
+  // them apart stops a refetch firing on every keystroke in a date field.
+  const [weekFrom, setWeekFrom] = useState<string>('')
+  const [weekTo, setWeekTo] = useState<string>('')
+  const [appliedWeek, setAppliedWeek] = useState<{ from: string; to: string }>({ from: '', to: '' })
   const [hotelId, setHotelId] = useState<string>('')
   const [bookingModal, setBookingModal] = useState<{ open: boolean; artistId?: string; start?: string; end?: string }>({ open: false })
   const [bookingError, setBookingError] = useState<string | null>(null)
@@ -58,25 +65,50 @@ const HotelArtists: React.FC = () => {
     return Array.isArray(parsed) ? parsed : fallback
   }, [])
 
-  const deriveAvailability = useCallback((status?: string): AvailabilityBadge => {
-    switch ((status || '').toUpperCase()) {
-      case 'ACTIVE':
-        return 'Available'
-      case 'PENDING':
-        return 'Pending'
-      default:
-        return 'Unavailable'
+  /* This used to read `membershipStatus`, so a green "Disponible" told the
+     house the artist had paid their 50 € subscription - nothing whatsoever
+     about whether they could come. The season the artist actually declared is
+     the only honest source, and the API now returns periods that are open
+     today rather than only those that have not started yet. */
+  const readSeason = useCallback((artist: any) => {
+    const periods = Array.isArray(artist?.availability) ? artist.availability : []
+    const now = Date.now()
+    const parsed = periods
+      .map((period: any) => ({
+        from: new Date(period?.dateFrom),
+        to: new Date(period?.dateTo)
+      }))
+      .filter((period: { from: Date; to: Date }) =>
+        !Number.isNaN(period.from.getTime()) &&
+        !Number.isNaN(period.to.getTime()) &&
+        period.to.getTime() >= now)
+      .sort((a: { from: Date }, b: { from: Date }) => a.from.getTime() - b.from.getTime())
+
+    if (!parsed.length) {
+      return { badge: 'Unavailable' as AvailabilityBadge, from: null, to: null }
+    }
+
+    // A season already running beats one that starts later.
+    const open = parsed.find((period: { from: Date }) => period.from.getTime() <= now)
+    const chosen = open || parsed[0]
+    return {
+      badge: (open ? 'Available' : 'Pending') as AvailabilityBadge,
+      from: chosen.from.toISOString(),
+      to: chosen.to.toISOString()
     }
   }, [])
 
   const transformArtist = useCallback((artist: any): ArtistCardData => {
     const imageList = parseJsonArray<string>(artist.images, [])
     const specialtyList = parseJsonArray<string>(artist.mediaUrls, [])
-    const availability = deriveAvailability(artist.membershipStatus)
+    const season = readSeason(artist)
 
     const location = artist.user?.country || artist.location || 'Worldwide'
 
-    const nextAvailable = artist.membershipRenewal ? new Date(artist.membershipRenewal).toISOString() : null
+    /* `nextAvailable` was the membership *renewal* date, rendered to the house
+       as "Prochaine date". A house could read the day the artist's card is
+       debited as the day they are free to perform. */
+    const nextAvailable = season.from
 
     const rating = typeof artist.averageRating === 'number' ? artist.averageRating : artist.rating ?? 0
     const totalBookings = typeof artist.totalBookings === 'number' ? artist.totalBookings : artist.bookingCount ?? 0
@@ -94,8 +126,10 @@ const HotelArtists: React.FC = () => {
       hotelRating: artist.hotelRating ?? null,
       specialties,
       image: imageList[0] || PLACEHOLDER_IMAGE,
-      availability,
+      availability: season.badge,
       nextAvailable,
+      seasonFrom: season.from,
+      seasonTo: season.to,
       totalBookings,
       membershipStatus: artist.membershipStatus,
       loyaltyPoints: artist.loyaltyPoints,
@@ -103,7 +137,7 @@ const HotelArtists: React.FC = () => {
       isFavorite: Boolean(artist.isFavorite),
       notes: artist.bio
     }
-  }, [deriveAvailability, parseJsonArray])
+  }, [readSeason, parseJsonArray])
 
   const extractArtists = useCallback((payload: any): any[] => {
     if (!payload) return []
@@ -166,40 +200,34 @@ const HotelArtists: React.FC = () => {
     setLoading(true)
     setError(null)
 
-    try {
-      const res = await commonApi.getTopArtists()
-      const list = extractArtists(res.data?.data)
-      if (list.length) {
-        const favoriteSet = new Set(favoriteIdsRef.current)
-        setArtists(list.map(item => {
-          const transformed = transformArtist(item)
-          return { ...transformed, isFavorite: favoriteSet.has(transformed.id) }
-        }))
-        setLoading(false)
-        return
-      }
-      throw new Error('No artists returned from top artists endpoint')
-    } catch (primaryError) {
-      console.warn('Falling back to artists service:', primaryError)
-      try {
-        const fallbackRes = await artistsApi.getAll({ limit: 50 })
-        const list = extractArtists(fallbackRes.data)
-        if (!list.length) {
-          throw new Error('Artist list is empty')
-        }
-        const favoriteSet = new Set(favoriteIdsRef.current)
-        setArtists(list.map(item => {
-          const transformed = transformArtist(item)
-          return { ...transformed, isFavorite: favoriteSet.has(transformed.id) }
-        }))
-      } catch (fallbackError) {
-        console.error('Failed to load artists', fallbackError)
-        setError(t('Impossible de charger les artistes pour le moment. Réessayez plus tard.'))
-      } finally {
-        setLoading(false)
-      }
+    /* `/artists` rather than the top-artists endpoint. That one returns no
+       availability whatsoever, so no card drawn from it could say honestly
+       whether the artist was free, and no date could be filtered on at all.
+       The dates go to the server, which tests them against every declared
+       period - filtering here would only ever search the page that loaded. */
+    const params: Record<string, string | number> = { limit: 50 }
+    if (appliedWeek.from && appliedWeek.to) {
+      params.dateFrom = new Date(appliedWeek.from).toISOString()
+      params.dateTo = new Date(appliedWeek.to).toISOString()
     }
-  }, [extractArtists, transformArtist])
+
+    try {
+      const res = await artistsApi.getAll(params)
+      const list = extractArtists(res.data)
+      const favoriteSet = new Set(favoriteIdsRef.current)
+      // An empty list is a real answer here - nobody is free that week - and
+      // not a failure to be retried against another endpoint.
+      setArtists(list.map(item => {
+        const transformed = transformArtist(item)
+        return { ...transformed, isFavorite: favoriteSet.has(transformed.id) }
+      }))
+    } catch (loadError) {
+      console.error('Failed to load artists', loadError)
+      setError(t('Impossible de charger les artistes pour le moment. Réessayez plus tard.'))
+    } finally {
+      setLoading(false)
+    }
+  }, [extractArtists, transformArtist, appliedWeek.from, appliedWeek.to])
 
   useEffect(() => {
     const favoriteSet = new Set(favoriteIds)
@@ -383,11 +411,11 @@ const HotelArtists: React.FC = () => {
   const availabilityLabel = (availability: string) => {
     switch (availability) {
       case 'Available':
-        return 'Disponible'
+        return t('Saison ouverte')
       case 'Pending':
-        return t('À confirmer')
+        return t('Saison à venir')
       default:
-        return 'Indisponible'
+        return t('Aucune date déclarée')
     }
   }
 
@@ -441,6 +469,69 @@ const HotelArtists: React.FC = () => {
           {error}
         </div>
       )}
+
+      {/* The question a house actually has. It sits above every other filter
+          because everything else is a refinement of it, and it is answered by
+          the server against each artist's declared season. */}
+      <div className="search-container" data-testid="week-search">
+        <div className="flex flex-col lg:flex-row lg:items-end gap-4">
+          <div className="flex-1">
+            <label className="form-label" htmlFor="week-from">{t('Arrivée')}</label>
+            <input
+              id="week-from"
+              type="date"
+              value={weekFrom}
+              onChange={(e) => setWeekFrom(e.target.value)}
+              className="form-input w-full"
+              data-testid="week-from"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="form-label" htmlFor="week-to">{t('Départ')}</label>
+            <input
+              id="week-to"
+              type="date"
+              value={weekTo}
+              min={weekFrom || undefined}
+              onChange={(e) => setWeekTo(e.target.value)}
+              className="form-input w-full"
+              data-testid="week-to"
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              className="btn-primary whitespace-nowrap"
+              disabled={!weekFrom || !weekTo || weekTo < weekFrom}
+              onClick={() => setAppliedWeek({ from: weekFrom, to: weekTo })}
+              data-testid="week-search-submit"
+            >
+              {t('Voir qui est libre')}
+            </button>
+            {(appliedWeek.from || weekFrom) && (
+              <button
+                className="btn-secondary whitespace-nowrap"
+                onClick={() => {
+                  setWeekFrom('')
+                  setWeekTo('')
+                  setAppliedWeek({ from: '', to: '' })
+                }}
+                data-testid="week-search-clear"
+              >
+                {t('Toute la saison')}
+              </button>
+            )}
+          </div>
+        </div>
+        {appliedWeek.from && appliedWeek.to && (
+          <p className="text-sm text-content-secondary mt-4 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gold" />
+            {t('Artistes dont la saison couvre du {from} au {to}', {
+              from: new Date(appliedWeek.from).toLocaleDateString('fr-FR'),
+              to: new Date(appliedWeek.to).toLocaleDateString('fr-FR')
+            })}
+          </p>
+        )}
+      </div>
 
       {/* Search and Filters */}
       <div className="search-container">
@@ -544,8 +635,8 @@ const HotelArtists: React.FC = () => {
                 className="form-input"
               >
                 <option value="">{t('Toutes les disponibilités')}</option>
-                <option value="available">{t('Disponible maintenant')}</option>
-                <option value="pending">{t('En attente')}</option>
+                <option value="available">{t('Saison ouverte aujourd’hui')}</option>
+                <option value="pending">{t('Saison à venir')}</option>
               </select>
             </div>
           </div>
@@ -661,7 +752,11 @@ const HotelArtists: React.FC = () => {
                   {availabilityLabel(artist.availability)}
                 </span>
                 <span className="text-xs text-content-secondary">
-                  Prochaine date : {artist.nextAvailable ? new Date(artist.nextAvailable).toLocaleDateString('fr-FR') : t('à définir')}
+                  {artist.availability === 'Available' && artist.seasonTo
+                    ? t('Libre jusqu’au {date}', { date: new Date(artist.seasonTo).toLocaleDateString('fr-FR') })
+                    : artist.availability === 'Pending' && artist.seasonFrom
+                      ? t('À partir du {date}', { date: new Date(artist.seasonFrom).toLocaleDateString('fr-FR') })
+                      : t('Aucune date déclarée')}
                 </span>
               </div>
 
@@ -725,13 +820,22 @@ const HotelArtists: React.FC = () => {
             {t('Aucun artiste trouvé')}
           </h3>
           <p className="text-content-secondary mb-6">
-            {t('Essayez d’élargir votre recherche ou vos filtres')}
+            {appliedWeek.from && appliedWeek.to
+              ? t('Aucun artiste n’a déclaré de disponibilité sur cette semaine. Essayez d’autres dates.')
+              : t('Essayez d’élargir votre recherche ou vos filtres')}
           </p>
           <button
             onClick={() => {
               setSearchTerm('')
               setSelectedDiscipline('all')
               setSelectedLocation('all')
+              setLoyaltyTierFilter('all')
+              setAvailabilityWindow('')
+              // The week is the narrowest filter of the lot, so a reset that
+              // left it applied would clear everything and still show nothing.
+              setWeekFrom('')
+              setWeekTo('')
+              setAppliedWeek({ from: '', to: '' })
             }}
             className="btn-primary"
           >
