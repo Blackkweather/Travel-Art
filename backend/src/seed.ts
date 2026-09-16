@@ -90,7 +90,7 @@ const prisma = new PrismaClient();
  * contradict the credit model on the very page a hotel reads first.
  * ------------------------------------------------------------------------- */
 
-type ResidencyType = 'residency' | 'intimate' | 'rooftop' | 'workshop';
+export type ResidencyType = 'residency' | 'intimate' | 'rooftop' | 'workshop';
 
 /** How the headline room is described in the capacity line. */
 const VENUE_KIND: Record<SeedResort['spots'][number]['type'], string> = {
@@ -154,7 +154,7 @@ const SECOND_ROOM_LINE: Record<ResidencyType, (room: string) => string> = {
 };
 
 /** What the hotel receives. The first four lines are the contract itself. */
-function residencyIncludes(resort: SeedResort, type: ResidencyType): string[] {
+export function residencyIncludes(resort: SeedResort, type: ResidencyType): string[] {
   const [stage, second] = resort.spots;
   return [
     '12 heures de représentation sur la semaine, 2 heures par jour au maximum',
@@ -218,7 +218,7 @@ const WEEK_TEMPLATES: Record<ResidencyType, (stage: string, second: string) => s
   ],
 };
 
-function residencySchedule(resort: SeedResort, type: ResidencyType) {
+export function residencySchedule(resort: SeedResort, type: ResidencyType) {
   const [stage, second] = resort.spots;
   return WEEK_TEMPLATES[type](stage.name, second.name).map((activity, day) => ({
     time: `Jour ${day + 1}`,
@@ -1122,11 +1122,17 @@ async function main() {
   }
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+/* Only seed when this file is the thing being run. The residency-term
+   generators above are imported by backfill-residency-terms.ts, and before
+   this guard existed that import would have re-seeded the entire database as
+   a side effect of loading them. */
+if (require.main === module) {
+  main()
+    .catch((e) => {
+      console.error('❌ Seeding failed:', e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
