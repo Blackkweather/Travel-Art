@@ -144,9 +144,9 @@ function App() {
         <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
       <Route path="/how-it-works" element={<PageTransition><HowItWorksPage /></PageTransition>} />
       <Route path="/partners" element={<PageTransition><PartnersPage /></PageTransition>} />
-      <Route path="/top-artists" element={<PageTransition><TopArtistsPage /></PageTransition>} />
-      <Route path="/top-hotels" element={<PageTransition><TopHotelsPage /></PageTransition>} />
-      <Route path="/hotel/:id" element={<PageTransition><HotelDetailsPage /></PageTransition>} />
+      <Route path="/top-artists" element={<ProtectedRoute><PageTransition><TopArtistsPage /></PageTransition></ProtectedRoute>} />
+      <Route path="/top-hotels" element={<ProtectedRoute><PageTransition><TopHotelsPage /></PageTransition></ProtectedRoute>} />
+      <Route path="/hotel/:id" element={<ProtectedRoute><PageTransition><HotelDetailsPage /></PageTransition></ProtectedRoute>} />
       <Route path="/experiences" element={<PageTransition><TravelerExperiencesPage /></PageTransition>} />
       <Route path="/experience/:id" element={<PageTransition><ExperienceDetailsPage /></PageTransition>} />
       <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
@@ -263,7 +263,7 @@ function App() {
       </Route>
 
       {/* Artist Public Profile */}
-      <Route path="/artist/:id" element={<PageTransition><PublicArtistProfile /></PageTransition>} />
+      <Route path="/artist/:id" element={<ProtectedRoute><PageTransition><PublicArtistProfile /></PageTransition></ProtectedRoute>} />
 
       {/* Catch all */}
       <Route path="*" element={<NotFoundPage />} />

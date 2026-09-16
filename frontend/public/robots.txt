@@ -15,6 +15,13 @@ Allow: /
 Disallow: /dashboard
 Disallow: /dashboard/
 
+# The artist and hotel rosters require an account, the way clubmedlive.fr
+# keeps its roster behind sign-in - not public browsing, so not public index.
+Disallow: /top-artists
+Disallow: /top-hotels
+Disallow: /artist/
+Disallow: /hotel/
+
 # Auth and account flows. Nothing here is useful in an index, and the reset and
 # verification URLs carry single-use tokens that must not be crawled or logged.
 Disallow: /login

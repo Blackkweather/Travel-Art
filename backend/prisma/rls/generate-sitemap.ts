@@ -3,10 +3,13 @@
  *
  * robots.txt has advertised a sitemap since before this existed; the URL
  * returned 404. This writes the real thing: the static public routes, plus one
- * entry for every published trip, every resort and every artist - about 100
- * URLs that a crawler currently has no way to discover, because the app is a
- * single-page bundle and none of those pages is linked from a crawlable
- * <a href> until React has run.
+ * entry for every published trip - a crawler otherwise has no way to discover
+ * them, because the app is a single-page bundle and none of those pages is
+ * linked from a crawlable <a href> until React has run.
+ *
+ * Hotel and artist profiles are not listed: those routes require an account
+ * (ProtectedRoute in App.tsx), so indexing them would only send a crawler to
+ * a login redirect.
  *
  * Only public content is listed. Everything robots.txt disallows is excluded
  * here too, so the two files cannot disagree - a sitemap that advertises a
@@ -30,13 +33,18 @@ interface Entry {
   lastmod?: string;
 }
 
-/** Static routes. Auth and dashboard paths are deliberately absent. */
+/**
+ * Static routes. Auth and dashboard paths are deliberately absent.
+ *
+ * /top-artists, /top-hotels and every /artist/:id and /hotel/:id are gone
+ * from here too: those routes now sit behind ProtectedRoute (see App.tsx),
+ * so a crawler indexing them would only ever get redirected to /login.
+ */
 const STATIC: Entry[] = [
   { loc: '/', changefreq: 'daily', priority: '1.0' },
   { loc: '/experiences', changefreq: 'daily', priority: '0.9' },
-  { loc: '/top-artists', changefreq: 'daily', priority: '0.9' },
-  { loc: '/top-hotels', changefreq: 'daily', priority: '0.9' },
   { loc: '/how-it-works', changefreq: 'monthly', priority: '0.7' },
+  { loc: '/faq', changefreq: 'monthly', priority: '0.6' },
   { loc: '/partners', changefreq: 'weekly', priority: '0.7' },
   { loc: '/about', changefreq: 'monthly', priority: '0.6' },
   { loc: '/terms', changefreq: 'yearly', priority: '0.3' },
@@ -69,31 +77,6 @@ async function main() {
     });
   }
 
-  const hotels = await prisma.hotel.findMany({ select: { id: true, createdAt: true } });
-  for (const h of hotels) {
-    entries.push({
-      loc: `/hotel/${h.id}`,
-      changefreq: 'weekly',
-      priority: '0.8',
-      lastmod: iso(h.createdAt),
-    });
-  }
-
-  // Only artists whose account is admitted and active. Listing a pending or
-  // rejected applicant would publish the fact that they applied.
-  const artists = await prisma.artist.findMany({
-    where: { user: { approvalStatus: 'APPROVED', isActive: true } },
-    select: { id: true, createdAt: true },
-  });
-  for (const a of artists) {
-    entries.push({
-      loc: `/artist/${a.id}`,
-      changefreq: 'weekly',
-      priority: '0.7',
-      lastmod: iso(a.createdAt),
-    });
-  }
-
   const body = entries
     .map((e) => {
       const lines = [
@@ -117,8 +100,6 @@ async function main() {
   console.log(`sitemap written: ${OUT}`);
   console.log(`  static      ${STATIC.length}`);
   console.log(`  experiences ${trips.length}`);
-  console.log(`  resorts     ${hotels.length}`);
-  console.log(`  artists     ${artists.length}`);
   console.log(`  total       ${entries.length} URLs`);
   console.log(`  base        ${SITE}`);
 }

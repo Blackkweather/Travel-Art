@@ -167,7 +167,11 @@ router.post('/newsletter/subscribe', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: { subscribed: true } });
 }));
 
-router.get('/top', asyncHandler(async (req, res) => {
+// Signed in only: this is the one place left that names real artists and
+// hotels to a caller, so it closes the same gap as the /:id routes in
+// artists.ts and hotels.ts. The homepage's own teaser (FeaturedArtists) calls
+// this too and degrades to rendering nothing for a guest - see its catch().
+router.get('/top', authenticate, asyncHandler(async (req, res) => {
   const { type } = req.query;
 
   // Callers may ask for more than the default ten; 50 is the ceiling so this

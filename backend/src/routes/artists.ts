@@ -37,7 +37,9 @@ const availabilitySchema = z.object({
 });
 
 // Search and filter artists (must come before /:id route)
-router.get('/', asyncHandler(async (req, res) => {
+// Signed in only: the roster is not public browsing, the way clubmedlive.fr
+// keeps its resort/artist roster behind an account.
+router.get('/', authenticate, asyncHandler(async (req, res) => {
   try {
     const query = req.query;
     const { discipline, location, dateFrom, dateTo, page, limit } = {
@@ -259,8 +261,8 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
   });
 }));
 
-// Get public artist profile
-router.get('/:id', asyncHandler(async (req, res) => {
+// Get artist profile. Signed in only - see the note on GET / above.
+router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const artist = await prisma.artist.findUnique({

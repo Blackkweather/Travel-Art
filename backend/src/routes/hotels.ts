@@ -257,8 +257,10 @@ router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: Aut
   });
 }));
 
-// Get hotel profile
-router.get('/:id', asyncHandler(async (req, res) => {
+// Get hotel profile. Signed in only, same as the artist profile route - the
+// roster is not public browsing, the way clubmedlive.fr keeps its roster
+// behind an account.
+router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const hotel = await prisma.hotel.findUnique({
