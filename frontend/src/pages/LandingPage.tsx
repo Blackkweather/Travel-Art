@@ -5,6 +5,7 @@ import { tripsApi } from '@/utils/api'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import GalleryPan from '@/components/GalleryPan'
+import CinematicHero from '@/components/landing/CinematicHero'
 import ProofBand from '@/components/landing/ProofBand'
 import ProcessSteps from '@/components/landing/ProcessSteps'
 import FeaturedArtists from '@/components/landing/FeaturedArtists'
@@ -141,7 +142,12 @@ export default function LandingPage() {
 
   // States
   const [experiences, setExperiences] = useState<any[]>([])
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+  // The only slide state that is rendered from. It is set when a navigation
+  // *starts*, because the photograph has to begin dissolving with the type
+  // rather than after it; the timeline's own completion is tracked on
+  // currentIndexRef below. A second piece of state held the settled index and
+  // was read by nothing - it only forced a render per navigation.
+  const [heroFrame, setHeroFrame] = useState(0)
   // Seeded, not empty: the hero paints on the first render instead of
   // showing a black full-height void until the trips request resolves. Only
   // the opening slide is seeded - seeding all three made the phone fetch two
@@ -155,6 +161,13 @@ export default function LandingPage() {
   const counterStripRef = useRef<HTMLDivElement>(null)
   const isAnimatingRef = useRef(false)
   const mouseXRef = useRef(0)
+  // The wheel, touch, click and key handlers are bound once and must still see
+  // the current slide when they fire. Reading it from state instead meant the
+  // setup effect had to list currentSlideIndex as a dependency, and that
+  // rebound the listeners - and re-ran the opening reveal - on every
+  // navigation. See the intro effect below.
+  const currentIndexRef = useRef(0)
+  const introPlayedRef = useRef(false)
   const weLoveSectionRef = useRef<HTMLElement>(null)
   const descriptionRef = useRef<HTMLElement>(null)
   const experienceImagesSectionRef = useRef<HTMLElement>(null)
@@ -279,10 +292,10 @@ export default function LandingPage() {
   const navigate = (direction: number) => {
     if (isAnimatingRef.current || slides.length === 0 || !slideshowRef.current) return
 
-    const prevIndex = currentSlideIndex
+    const prevIndex = currentIndexRef.current
     const nextIndex = direction === NEXT
-      ? currentSlideIndex < slides.length - 1 ? currentSlideIndex + 1 : 0
-      : currentSlideIndex > 0 ? currentSlideIndex - 1 : slides.length - 1
+      ? prevIndex < slides.length - 1 ? prevIndex + 1 : 0
+      : prevIndex > 0 ? prevIndex - 1 : slides.length - 1
 
     performNavigation(prevIndex, nextIndex, direction)
   }
@@ -292,31 +305,20 @@ export default function LandingPage() {
     if (!slideshowRef.current) return
 
     isAnimatingRef.current = true
+    setHeroFrame(nextIndex)
 
     const slideElements = slideshowRef.current.querySelectorAll('.slide')
-    const slideImages = slideshowRef.current.querySelectorAll('.slide__img')
 
     const currentSlide = slideElements[prevIndex] as HTMLElement
-    const currentImage = slideImages[prevIndex] as HTMLElement
     const currentTextLines = currentSlide.querySelectorAll('.slide__text-line')
 
     const nextSlide = slideElements[nextIndex] as HTMLElement
-    const nextImage = slideImages[nextIndex] as HTMLElement
     const nextTextLines = nextSlide.querySelectorAll('.slide__text-line')
 
     // Make sure next slide is ready
     gsap.set(nextSlide, {
       visibility: 'visible',
       y: direction * 100 + '%'
-    })
-
-    // Enhanced image setup
-    gsap.set(nextImage, {
-      y: -direction * 40 + '%',
-      scale: 1.4,
-      scaleY: 1.8,
-      rotation: -direction * 8,
-      transformOrigin: direction === NEXT ? '0% 0%' : '100% 100%'
     })
 
     // Reset next text lines
@@ -333,7 +335,7 @@ export default function LandingPage() {
         currentSlide.classList.remove('active')
         nextSlide.classList.add('active')
         isAnimatingRef.current = false
-        setCurrentSlideIndex(nextIndex)
+        currentIndexRef.current = nextIndex
       }
     })
 
@@ -362,20 +364,6 @@ export default function LandingPage() {
       0.2
     )
 
-    // Enhanced image animation for current slide
-    tl.to(
-      currentImage,
-      {
-        y: direction * 40 + '%',
-        scale: 1.4,
-        scaleY: 1.8,
-        rotation: direction * 8,
-        ease: 'power1.out',
-        transformOrigin: direction === NEXT ? '0% 100%' : '100% 0%'
-      },
-      0.2
-    )
-
     // Animate in next slide
     tl.to(
       nextSlide,
@@ -385,18 +373,9 @@ export default function LandingPage() {
       0.2
     )
 
-    // Enhanced image animation for next slide
-    tl.to(
-      nextImage,
-      {
-        y: '0%',
-        scale: 1,
-        scaleY: 1,
-        rotation: 0,
-        ease: 'imageWarp'
-      },
-      0.2
-    )
+    // The photograph itself is no longer animated here: CinematicHero
+    // dissolves it on the GPU, driven by currentSlideIndex. Only the type
+    // moves in this timeline.
 
     // Animate in next text
     tl.to(
@@ -417,26 +396,36 @@ export default function LandingPage() {
   useEffect(() => {
     if (slides.length === 0 || !slideshowRef.current) return
 
-    // Use standard GSAP eases that match the CodePen feel
-    // slideInOut: '0.25, 1, 0.5, 1' -> power2.inOut
-    // textReveal: '0.77, 0, 0.175, 1' -> power3.out
-    // imageWarp: '0.22, 1, 0.36, 1' -> power1.out
+    // Standard GSAP eases, in place of the three named curves this was
+    // written against. 'textReveal' was still being passed as an ease string
+    // below: GSAP does not know that name, so it silently used its default
+    // and warned - the opening reveal has never actually run on the curve
+    // this comment describes.
 
     // Initialize counter strip
     initCounterStrip()
 
-    // Initialize first slide
-    const slideElements = slideshowRef.current.querySelectorAll('.slide')
-    const firstSlide = slideElements[0] as HTMLElement
-    if (firstSlide) {
-      gsap.set(firstSlide, {
-        visibility: 'visible',
-        y: '0%'
-      })
-      firstSlide.classList.add('active')
+    const slideElements = Array.from(
+      slideshowRef.current.querySelectorAll('.slide')
+    ) as HTMLElement[]
 
-      // Animate in first slide text
-      const firstSlideTextLines = firstSlide.querySelectorAll('.slide__text-line')
+    /* Exactly one slide may be visible, and it is whichever one is showing
+       now - not always the first. This effect used to re-show slide 0 on
+       every navigation, which left two headlines stacked at y:0 and replayed
+       the opening reveal underneath the slide the visitor was actually on. */
+    const active = Math.min(currentIndexRef.current, slideElements.length - 1)
+    slideElements.forEach((element, i) => {
+      gsap.set(element, { visibility: i === active ? 'visible' : 'hidden', y: '0%' })
+      element.classList.toggle('active', i === active)
+    })
+
+    const activeSlide = slideElements[active]
+    // The reveal is an entrance, so it belongs to the first paint only. The
+    // slide list grows once, when the trips request resolves, and replaying
+    // the reveal then would stutter type the visitor is already reading.
+    if (activeSlide && !introPlayedRef.current) {
+      introPlayedRef.current = true
+      const firstSlideTextLines = activeSlide.querySelectorAll('.slide__text-line')
       // No delay: the reveal is the first thing on the page, and the hero
       // already costs a hydration pass before it can run at all.
       gsap.to(firstSlideTextLines, {
@@ -445,7 +434,7 @@ export default function LandingPage() {
         duration: 0.9,
         stagger: 0.08,
         delay: 0,
-        ease: 'textReveal'
+        ease: 'power3.out'
       })
     }
 
@@ -473,11 +462,11 @@ export default function LandingPage() {
       // Only navigate slides on wheel if user is clearly in slideshow area
       if (isInSlideshow) {
         // Check if we're trying to scroll past the slideshow
-        if (e.deltaY > 0 && currentSlideIndex === slides.length - 1) {
+        if (e.deltaY > 0 && currentIndexRef.current === slides.length - 1) {
           // Allow normal scroll down after last slide
           return
         }
-        if (e.deltaY < 0 && currentSlideIndex === 0) {
+        if (e.deltaY < 0 && currentIndexRef.current === 0) {
           // Allow normal scroll up at first slide
           return
         }
@@ -543,7 +532,10 @@ export default function LandingPage() {
       document.removeEventListener('keydown', handleKeyDown)
       gsap.killTweensOf(slideElements)
     }
-  }, [slides, currentSlideIndex])
+    // Deliberately not currentSlideIndex: every handler above reads the live
+    // value from currentIndexRef, so re-binding them per navigation bought
+    // nothing and cost a duplicated opening animation.
+  }, [slides])
 
   // GSAP Animations for other sections
   useEffect(() => {
@@ -652,20 +644,26 @@ export default function LandingPage() {
       {/* Hero. min-h-[100dvh] rather than h-screen so the iOS address bar does
           not crop it. */}
       <section ref={heroRef} className="slideshow-section relative min-h-[100dvh] flex items-center overflow-hidden">
+        {/* Painted first and never animated: whatever happens to WebGL, the
+            opening photograph is on screen. The canvas above it is the
+            enhancement, not the content. */}
+        <div
+          className="slide__base"
+          aria-hidden="true"
+          style={{ backgroundImage: `url(${heroVariant(slides[0]?.image ?? '')})` }}
+        />
+
+        <CinematicHero images={slides.map((slide) => heroVariant(slide.image))} index={heroFrame} />
+
+        {/* Scrim keeps the headline above AA contrast whatever the photo. */}
+        <div className="slide__scrim" aria-hidden="true" />
+
         <div ref={slideshowRef} className="slideshow">
           {slides.map((slide, index) => (
             <div
               key={slide.id}
               className={`slide ${index === 0 ? 'active' : ''}`}
             >
-              <div
-                className="slide__img"
-                style={{
-                  backgroundImage: `url(${heroVariant(slide.image)})`
-                }}
-              />
-              {/* Scrim keeps the headline above AA contrast whatever the photo. */}
-              <div className="slide__scrim" aria-hidden="true" />
               <div className="slide__text">
                 <h1 className="slide__text-line">{slide.title}</h1>
                 <h2 className="slide__text-line">{slide.subtitle}</h2>
@@ -673,20 +671,6 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
-
-        {/* The brand mark, stamped large and near-transparent onto the photograph
-            itself rather than confined to the 36px nav logo. The compass alone
-            (not the wordmark, already legible top-left) reads as an emblem at
-            this scale instead of a second, redundant "TRAVEL ART". Cropped off
-            the top-right corner so it sits in the frame like a watermark, not a
-            sticker; hidden below lg where the hero has no room to spare. */}
-        <img
-          src="/logo-mark.png"
-          alt=""
-          aria-hidden="true"
-          className="hidden lg:block absolute -top-16 right-0 w-[26rem] xl:w-[32rem] h-auto
-                     brightness-0 invert opacity-[0.16] pointer-events-none select-none z-[2]"
-        />
 
         {/* The hero had no call to action at all: the first screen of the site
             named the product and then asked the visitor for nothing. Both
@@ -964,16 +948,31 @@ export default function LandingPage() {
 
         .slideshow {
           position: relative;
+          z-index: 5;
           width: 100%;
           min-height: 100dvh;
           height: 100%;
           overflow: hidden;
         }
 
+        /* The layer the canvas is drawn over. Same photograph, same crop, so
+           if WebGL is unavailable the hero simply looks like it always did. */
+        .slide__base {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          background-size: cover;
+          background-position: center;
+        }
+
+        .slideshow-section > canvas {
+          z-index: 1;
+        }
+
         .slide__scrim {
           position: absolute;
           inset: 0;
-          z-index: 1;
+          z-index: 2;
           pointer-events: none;
           background: linear-gradient(
             to top,
@@ -996,31 +995,6 @@ export default function LandingPage() {
         
         .slide.active {
           visibility: visible;
-        }
-        
-        .slide__img {
-          position: absolute;
-          top: -10%;
-          left: -10%;
-          width: 120%;
-          height: 120%;
-          background-size: cover;
-          background-position: center;
-          will-change: transform;
-        }
-        
-        .slide__img::after {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0.2) 0%,
-            rgba(0, 0, 0, 0) 40%
-          );
         }
         
         /* Raised clear of the CTA pair that now sits at the foot of the hero. */
