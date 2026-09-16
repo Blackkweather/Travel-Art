@@ -79,7 +79,7 @@ const HotelBookings: React.FC = () => {
           hotelId: b.hotelId,
           startDate: b.startDate,
           endDate: b.endDate,
-          status: b.status.toLowerCase(),
+          status: String(b.status || 'PENDING').toLowerCase(),
           creditsUsed: b.creditCost ?? b.creditsUsed ?? 0,
           performanceSpot: b.performanceSpot || t('À préciser'),
           notes: b.notes || '',
@@ -119,17 +119,27 @@ const HotelBookings: React.FC = () => {
     return `${diffMins} minute${diffMins >= 2 ? 's' : ''}`
   }
 
-  const handleStatusUpdate = async (bookingId: string, status: 'CONFIRMED' | 'REJECTED' | 'CANCELLED') => {
+  /* A house asks; the artist answers. The server has always enforced it -
+     a hotel may only cancel its own request - but this page offered
+     "Confirmer" and "Refuser" on every pending booking, so both buttons
+     returned 400 "Hotels can only cancel bookings" every single time they
+     were pressed. The house was told the update had failed, and never why. */
+  const handleStatusUpdate = async (bookingId: string, status: 'CANCELLED') => {
     try {
       await bookingsApi.updateStatus(bookingId, status)
-      toast.success(
-        status === 'CONFIRMED'
-          ? t('Réservation confirmée')
-          : status === 'REJECTED'
-            ? t('Réservation refusée')
-            : t('Réservation annulée')
-      )
+    } catch (error) {
+      console.error('Error updating booking status:', error)
+      toast.error(t('Impossible de mettre à jour le statut de la réservation'))
+      return
+    }
 
+    toast.success(t('Demande annulée'))
+
+    /* Reloading the list is a different failure and deserves a different
+       sentence. It used to share the try above, so a hiccup here announced
+       that the update had failed - immediately after the success toast for
+       the update that had in fact gone through. */
+    try {
       // Refresh bookings - get hotel first
       const hotelRes = await hotelsApi.getByUser(user?.id || '')
       const hotel = hotelRes.data?.data
@@ -154,7 +164,7 @@ const HotelBookings: React.FC = () => {
         hotelId: b.hotelId,
         startDate: b.startDate,
         endDate: b.endDate,
-        status: b.status.toLowerCase(),
+        status: String(b.status || 'PENDING').toLowerCase(),
         creditsUsed: b.creditCost ?? b.creditsUsed ?? 0,
         performanceSpot: b.performanceSpot || t('À préciser'),
         notes: b.notes || '',
@@ -169,8 +179,8 @@ const HotelBookings: React.FC = () => {
       
       setBookings(transformedBookings)
     } catch (error) {
-      console.error('Error updating booking status:', error)
-      toast.error('Impossible de mettre à jour le statut de la réservation')
+      console.error('Error refreshing bookings after status update:', error)
+      toast.error(t('Statut mis à jour, mais la liste n’a pas pu être rechargée.'))
     }
   }
   
@@ -353,17 +363,15 @@ const HotelBookings: React.FC = () => {
                   <div className="flex flex-wrap gap-2">
                     {booking.status === 'pending' && (
                       <>
-                        <button 
-                          onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')}
-                          className="btn-primary text-sm"
-                        >
-                          {t('Confirmer')}
-                        </button>
-                        <button 
-                          onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
+                        <span className="text-sm text-content-secondary self-center mr-1">
+                          {t('En attente de la réponse de l’artiste')}
+                        </span>
+                        <button
+                          onClick={() => handleStatusUpdate(booking.id, 'CANCELLED')}
                           className="btn-secondary text-sm"
+                          data-testid="withdraw-request"
                         >
-                          {t('Refuser')}
+                          {t('Annuler la demande')}
                         </button>
                       </>
                     )}
