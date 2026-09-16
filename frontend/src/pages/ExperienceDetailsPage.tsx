@@ -13,6 +13,44 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
 
+/**
+ * The programme's published terms.
+ *
+ * The complaint about this page was that it described a teak terrace over the
+ * Andaman Sea and stated not one condition, while the benchmark competitor wins
+ * on published specifics alone. These six are the same on every residency in
+ * the network - they are the programme's terms, not the property's - so they
+ * are written here rather than read off the row, and a hotel comparing two
+ * residencies finds the identical contract in both.
+ *
+ * Built inside the render rather than at module scope: t() reads the active
+ * locale when it is called, and a const evaluated at import time would freeze
+ * these in whatever language the first page load happened to use.
+ */
+const programmeTerms = () => [
+  { term: t('Durée'), detail: t('7 nuits, du jour d’arrivée au jour de départ.') },
+  {
+    term: t('Temps de scène'),
+    detail: t('12 heures sur la semaine, 2 heures par jour au maximum.')
+  },
+  {
+    term: t('Jours sans scène'),
+    detail: t('Rien le jour de l’arrivée, rien le jour du départ.')
+  },
+  {
+    term: t('Accueil'),
+    detail: t('Chambre double pour l’artiste et un accompagnant, en pension complète.')
+  },
+  {
+    term: t('La scène'),
+    detail: t('Mise à disposition par l’hôtel, montée et réglée avant les balances.')
+  },
+  {
+    term: t('Voyage'),
+    detail: t('Le trajet jusqu’au lieu reste à la charge de l’artiste.')
+  }
+]
+
 const ExperienceDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -105,7 +143,7 @@ const ExperienceDetailsPage: React.FC = () => {
         
         setExperience({
           id: trip.id,
-          title: trip.title || 'Experience',
+          title: trip.title || t('Résidence'),
           location: {
             city: location.city || 'Lieu inconnu',
             country: location.country || '',
@@ -131,20 +169,23 @@ const ExperienceDetailsPage: React.FC = () => {
             : '/images/headers/experiences.webp',
           type: trip.type || 'intimate',
           rating: trip.averageRating || trip.rating || 4.5,
-          description: trip.description || 'An amazing experience awaits.',
-          fullDescription: trip.description || 'An amazing experience awaits.',
-          duration: trip.duration || '2 hours',
-          capacity: trip.capacity || '50 guests',
-          includes: trip.includes || [
-            'Accueil et cocktail',
-            'Représentation',
-            'Rafraîchissements',
-            t('Accès au lieu')
-          ],
-          schedule: trip.schedule || [],
-          artistBio: trip.artist?.bio || trip.artistBio || 'Talented artist with years of experience.',
-          venueDetails: trip.venueDetails || trip.hotel?.description || 'Beautiful venue setting.',
-          reviews: trip.reviews || []
+          description: trip.description || t('Le détail de cette résidence sera publié prochainement.'),
+          fullDescription: trip.description || t('Le détail de cette résidence sera publié prochainement.'),
+          // The programme's own terms, used when a row predates the seed that
+          // wrote them. The fallbacks used to read "2 hours" and "50 guests" -
+          // English, and both contradicting the published conditions.
+          duration: trip.duration || t('7 nuits'),
+          capacity: trip.capacity || t('Capacité à confirmer avec l’hôtel'),
+          // No invented inclusions: the terms block below states the contract,
+          // and a residency whose row is empty says nothing rather than
+          // promising a cocktail nobody agreed to.
+          includes: Array.isArray(trip.includes) ? trip.includes : [],
+          schedule: Array.isArray(trip.schedule) ? trip.schedule : [],
+          artistBio:
+            trip.artist?.bio || trip.artistBio || t('La biographie de l’artiste sera publiée prochainement.'),
+          venueDetails:
+            trip.venueDetails || trip.hotel?.description || t('Le détail du lieu sera publié prochainement.'),
+          reviews: Array.isArray(trip.reviews) ? trip.reviews : []
         })
       } catch (err: any) {
         console.error('Error fetching experience:', err)
@@ -284,7 +325,67 @@ const ExperienceDetailsPage: React.FC = () => {
                   <p className="text-sm text-content-secondary">{t('Capacité')}</p>
                   <p className="text-sm font-bold text-content">{experience.capacity}</p>
                 </div>
+                {/* The grid was declared four columns wide and held three, so
+                    the row sat visibly off-centre. The fourth is the date,
+                    which belongs beside the other terms rather than only in
+                    the sidebar. */}
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
+                    <Calendar className="w-6 h-6 text-gold" />
+                  </div>
+                  <p className="text-sm text-content-secondary">{t('Prochaine date')}</p>
+                  <p className="text-sm font-bold text-content">
+                    {new Date(experience.date).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
               </div>
+            </motion.div>
+
+            {/* The terms.
+                The programme's six conditions first - they are the same on
+                every residency and they are what a hotel signs - then what
+                this particular property puts on the table. */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="panel p-6"
+            >
+              <span className="eyebrow">{t('Les termes')}</span>
+              <h2 className="mt-3 text-3xl font-serif font-bold text-content mb-6 gold-underline">
+                {t('Ce que comprend la résidence')}
+              </h2>
+
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
+                {programmeTerms().map((item) => (
+                  <div key={item.term} className="border-t border-line pt-4">
+                    <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-content-secondary">
+                      {item.term}
+                    </dt>
+                    <dd className="mt-1.5 text-content leading-relaxed">{item.detail}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              {experience.includes.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-line">
+                  <h3 className="font-serif text-xl text-content mb-4">
+                    {t('Sur place, la maison fournit')}
+                  </h3>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    {experience.includes.map((item: string, index: number) => (
+                      <li key={index} className="flex gap-3 text-content-secondary">
+                        <span aria-hidden="true" className="mt-2.5 h-px w-5 shrink-0 bg-gold/60" />
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </motion.div>
 
             {/* Schedule */}

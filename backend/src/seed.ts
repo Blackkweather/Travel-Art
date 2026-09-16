@@ -51,13 +51,254 @@ if (!process.env.DATABASE_URL.startsWith('postgresql://') && !process.env.DATABA
 }
 
 // Prisma Client - uses DATABASE_URL from environment
-import { RESORTS, ENVIRONMENT_IMAGES } from './seedResorts';
+import { RESORTS, ENVIRONMENT_IMAGES, type SeedResort, type ResortEnvironment } from './seedResorts';
 
 // The seed creates rows across every hotel and artist, with no session to
 // attribute them to, so it uses the owner connection directly rather than the
 // request-scoped client. DATABASE_URL stays pointed at the owner for exactly
 // this reason; APP_DATABASE_URL is what the running server uses.
 const prisma = new PrismaClient();
+
+/* ---------------------------------------------------------------------------
+ * THE PUBLISHED TERMS OF A RESIDENCY
+ *
+ * Every residency row used to carry a null duration, capacity, includes,
+ * schedule and date, so /experiences described the light on a teak terrace and
+ * not one thing a hotel could put its name to. The competitor we are measured
+ * against wins on published specifics alone, so the specifics are written here.
+ *
+ * The programme's terms are fixed and identical everywhere: seven nights,
+ * twelve hours of performance across the week, two hours a day at most, nothing
+ * on the day of arrival nor on the day of departure, a double room and full
+ * board for the artist and one companion, a stage, and travel to the property
+ * at the artist's own expense.
+ *
+ * The arithmetic closes, and it closes on purpose: seven nights is eight days,
+ * the first and the last carry no performance, and the six days between them at
+ * two hours each are exactly the twelve hours the programme publishes. A hotel
+ * that counts the days in the planning below arrives at the number on the
+ * contract.
+ *
+ * What varies is the craft and the place. A rooftop DJ set needs a booth and a
+ * curfew; a piano salon needs a tuner and a room that can be taken to black; a
+ * workshop needs tables, materials and somewhere to leave the work overnight.
+ * That is what the tables below encode - the terms are shared, the kit and the
+ * week are not.
+ *
+ * PRICES STAY AT ZERO. priceFrom/priceTo are the hotel-side cost and the
+ * programme is paid in credits, not per residency; a number invented here would
+ * contradict the credit model on the very page a hotel reads first.
+ * ------------------------------------------------------------------------- */
+
+type ResidencyType = 'residency' | 'intimate' | 'rooftop' | 'workshop';
+
+/** How the headline room is described in the capacity line. */
+const VENUE_KIND: Record<SeedResort['spots'][number]['type'], string> = {
+  ballroom: 'grande salle',
+  lounge: 'salon',
+  resto: 'salle voûtée',
+  pool: 'bord de bassin',
+  beach: 'plein air',
+  garden: 'plein air',
+};
+
+/** The technical kit the property provides, by discipline. */
+const DISCIPLINE_KIT: Record<ResidencyType, string[]> = {
+  residency: [
+    'Backline complet : batterie, amplificateurs basse et guitare, cinq retours',
+    'Sonorisation et éclairage de scène montés et réglés avant les balances',
+    'Un technicien de la maison présent aux balances et à chaque représentation',
+  ],
+  intimate: [
+    'Piano accordé la veille de la première représentation',
+    'Deux micros voix et deux pieds, et la possibilité de jouer sans amplification',
+    'Salle mise au noir, éclairage réglé sur la scène seule',
+  ],
+  rooftop: [
+    'Régie DJ : deux platines, table de mixage quatre voies, casque de contrôle',
+    'Diffusion extérieure et caisson de basses calibrés pour le voisinage',
+    'Couvre-feu sonore à une heure du matin, arrêté avec la direction',
+  ],
+  workshop: [
+    'Atelier équipé : tables de travail, point d’eau et rangement fermé',
+    'Matériel et consommables pour douze participants par séance',
+    'Un espace de stockage pour les pièces en cours entre deux séances',
+  ],
+};
+
+/** The one line that only this kind of place can offer. */
+const VENUE_NOTE: Record<ResortEnvironment, string> = {
+  alpine: 'Transfert depuis la gare ou l’aéroport le plus proche, et forfait de remontées pour la semaine',
+  beach: 'Scène de plein air montée et démontée par l’équipe technique de la maison',
+  riad: 'Tapis, coussins bas et lanternes pour la mise en place du patio',
+  coast: 'Bâches et housses contre l’air marin pour le matériel laissé en place',
+  pool: 'Câblage et régie tenus à distance réglementaire du bassin',
+  lagoon: 'Transfert en bateau pour l’artiste, l’accompagnant et le matériel',
+  desert: 'Groupe électrogène silencieux et éclairage autonome pour les sets du soir',
+  marina: 'Amarrage et navette depuis le port pour l’artiste et son matériel',
+};
+
+/** Whether the headline room is a stage or a workbench. */
+const STAGE_LINE: Record<ResidencyType, (room: string, seats: number) => string> = {
+  residency: (room, seats) => `${room} en configuration scène, ${seats} personnes`,
+  intimate: (room, seats) => `${room} en configuration scène, ${seats} personnes`,
+  rooftop: (room, seats) => `${room} en configuration scène, ${seats} personnes`,
+  workshop: (room, seats) => `${room} en configuration atelier, ${seats} personnes`,
+};
+
+const SECOND_ROOM_LINE: Record<ResidencyType, (room: string) => string> = {
+  residency: (room) => `Répétitions en journée dans le second lieu de la maison : ${room}`,
+  intimate: (room) => `Répétitions en journée dans le second lieu de la maison : ${room}`,
+  rooftop: (room) => `Calage du système en journée dans le second lieu de la maison : ${room}`,
+  workshop: (room) => `Travail en journée dans le second lieu de la maison : ${room}`,
+};
+
+/** What the hotel receives. The first four lines are the contract itself. */
+function residencyIncludes(resort: SeedResort, type: ResidencyType): string[] {
+  const [stage, second] = resort.spots;
+  return [
+    '12 heures de représentation sur la semaine, 2 heures par jour au maximum',
+    'Rien le jour de l’arrivée ni le jour du départ',
+    'Chambre double pour l’artiste et un accompagnant',
+    'Pension complète pour les deux personnes, du dîner d’arrivée au petit-déjeuner du départ',
+    STAGE_LINE[type](stage.name, stage.capacity),
+    SECOND_ROOM_LINE[type](second.name),
+    'Accès aux espaces de l’hôtel en dehors des heures de scène',
+    'Un référent culturel de la maison présent toute la semaine',
+    ...DISCIPLINE_KIT[type],
+    VENUE_NOTE[resort.environment],
+    'Le voyage jusqu’au lieu reste à la charge de l’artiste',
+  ];
+}
+
+/**
+ * The week, day by day. Eight days for seven nights; the six in the middle
+ * carry two hours each, which is where the twelve hours come from.
+ */
+const WEEK_TEMPLATES: Record<ResidencyType, (stage: string, second: string) => string[]> = {
+  residency: (stage, second) => [
+    'Arrivée en fin d’après-midi, installation dans la chambre, dîner avec l’équipe de la maison. Pas de scène ce soir.',
+    `Repérage et montage : ${stage}. Balances dans l’après-midi, puis deux heures de représentation après le dîner.`,
+    'Matinée de travail à huis clos. Deux heures de représentation en soirée.',
+    'Répétition ouverte en fin d’après-midi : les clients entrent pendant que la formation travaille. Deux heures de scène ensuite.',
+    `Deux heures de représentation dans le second lieu de la maison : ${second}.`,
+    'Rencontre avec les clients autour du répertoire avant le service, puis deux heures de scène.',
+    'Dernière soirée, deux heures. Les douze heures de la semaine sont faites.',
+    'Petit-déjeuner et départ dans la matinée. Pas de scène ce jour.',
+  ],
+  intimate: (stage, second) => [
+    'Arrivée, installation, dîner avec la direction. Pas de scène ce soir.',
+    `Accord du piano et réglage du lieu : ${stage}. Deux heures de représentation en fin de soirée, sans amplification.`,
+    'Matinée de travail seul. Deux heures de représentation après le dîner, salle au noir.',
+    'Écoute commentée pour une trentaine de clients en fin d’après-midi, puis deux heures de représentation.',
+    `Deux heures dans le second lieu de la maison : ${second}, devant un public plus restreint.`,
+    'Journée de travail sur le programme de la dernière soirée, puis deux heures de représentation.',
+    'Dernière soirée, deux heures, programme choisi par l’artiste. Les douze heures sont faites.',
+    'Petit-déjeuner et départ dans la matinée. Pas de scène ce jour.',
+  ],
+  rooftop: (stage, second) => [
+    'Arrivée, installation, repérage du lieu à la tombée du jour. Pas de set ce soir.',
+    `Montage de la régie : ${stage}. Calage du système, puis deux heures de set au coucher du soleil.`,
+    'Deux heures au coucher du soleil, fin à la nuit tombée.',
+    'Une heure d’écoute ouverte en cabine pour les clients curieux, puis deux heures de set.',
+    `Deux heures dans le second lieu de la maison : ${second}.`,
+    'Set en deux parties, deux heures au total, fin à une heure du matin.',
+    'Dernier set de deux heures. Les douze heures de la semaine sont faites.',
+    'Départ dans la matinée. Pas de set ce jour.',
+  ],
+  workshop: (stage, second) => [
+    'Arrivée, visite de l’atelier et des espaces de travail. Pas de séance ce jour.',
+    `Installation de l’atelier : ${stage}. Deux heures de séance ouverte en fin d’après-midi.`,
+    'Travail personnel le matin, deux heures de séance avec les clients l’après-midi.',
+    'Deux heures de séance, douze participants au maximum, matériel fourni.',
+    `Séance de deux heures ailleurs dans la maison : ${second}.`,
+    'Deux heures de séance, puis accrochage des pièces réalisées depuis le début de la semaine.',
+    'Dernière séance de deux heures et présentation du travail aux clients. Les douze heures sont faites.',
+    'Décrochage et départ dans la matinée. Pas de séance ce jour.',
+  ],
+};
+
+function residencySchedule(resort: SeedResort, type: ResidencyType) {
+  const [stage, second] = resort.spots;
+  return WEEK_TEMPLATES[type](stage.name, second.name).map((activity, day) => ({
+    time: `Jour ${day + 1}`,
+    activity,
+  }));
+}
+
+/* ---- When each destination actually receives -------------------------------
+ * A residency dated August in Val d'Isère, or February in Mykonos, tells a
+ * hotel we have never opened their calendar. Each destination therefore carries
+ * its own season as a recurring window - the Alps from mid-December to the end
+ * of March, the western Mediterranean and the Greek islands across the summer,
+ * the Maghreb in the shoulder months either side of it, the tropics in their
+ * dry season - and the residencies of one destination are spread across it.
+ *
+ * The windows are month/day pairs rather than fixed dates so the seed still
+ * produces upcoming residencies whenever it is run, rather than going stale on
+ * a hard-coded year.
+ */
+type SeasonWindow = { from: [number, number]; to: [number, number] };
+
+const SEASONS: Record<string, SeasonWindow> = {
+  // Anything in the mountains, whichever country it stands in.
+  alpine: { from: [12, 14], to: [3, 22] },
+  France: { from: [6, 7], to: [9, 13] },
+  Italy: { from: [6, 7], to: [9, 13] },
+  Spain: { from: [5, 17], to: [9, 20] },
+  Greece: { from: [5, 24], to: [9, 20] },
+  Turkey: { from: [6, 7], to: [9, 20] },
+  Portugal: { from: [5, 17], to: [9, 13] },
+  Morocco: { from: [10, 5], to: [4, 26] },
+  Tunisia: { from: [10, 5], to: [5, 31] },
+  Egypt: { from: [10, 12], to: [4, 19] },
+  Senegal: { from: [11, 9], to: [4, 26] },
+  Mauritius: { from: [10, 5], to: [12, 14] },
+  Seychelles: { from: [10, 5], to: [11, 30] },
+  Madagascar: { from: [10, 5], to: [11, 30] },
+  Maldives: { from: [12, 7], to: [4, 19] },
+  Martinique: { from: [12, 7], to: [4, 19] },
+  Guadeloupe: { from: [12, 7], to: [4, 19] },
+  'Dominican Republic': { from: [12, 7], to: [4, 19] },
+  'Turks and Caicos': { from: [12, 7], to: [4, 19] },
+  Brazil: { from: [12, 7], to: [3, 22] },
+  Indonesia: { from: [5, 3], to: [9, 27] },
+  Thailand: { from: [11, 9], to: [4, 5] },
+};
+
+const DEFAULT_SEASON: SeasonWindow = { from: [5, 1], to: [9, 30] };
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const seasonKeyFor = (resort: SeedResort) =>
+  resort.environment === 'alpine' ? 'alpine' : resort.country;
+
+/**
+ * Places one residency inside its destination's next season, spread evenly
+ * against the others that share it, then falls back to the Monday on or before
+ * that point: hotels count their weeks from Monday, and a seven-night stay that
+ * starts on a Wednesday reads as a number somebody made up.
+ */
+function residencyDate(resort: SeedResort, ordinal: number, total: number, today: Date): Date {
+  const window = SEASONS[seasonKeyFor(resort)] ?? DEFAULT_SEASON;
+  const wraps = window.to[0] * 100 + window.to[1] <= window.from[0] * 100 + window.from[1];
+  const earliest = today.getTime() + 21 * DAY_MS;
+
+  let from = 0;
+  let to = 0;
+  for (let year = today.getUTCFullYear() - 1; year <= today.getUTCFullYear() + 2; year++) {
+    from = Date.UTC(year, window.from[0] - 1, window.from[1]);
+    to = Date.UTC(wraps ? year + 1 : year, window.to[0] - 1, window.to[1]);
+    if (to > earliest) break;
+  }
+
+  const start = Math.max(from, earliest);
+  const span = Math.max(to - start, 7 * DAY_MS);
+  const date = new Date(start + Math.round(((ordinal + 1) / (total + 1)) * span));
+  date.setUTCHours(16, 0, 0, 0);
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+  if (date.getTime() < earliest) date.setUTCDate(date.getUTCDate() + 7);
+  return date;
+}
 
 async function main() {
   console.log('🌱 Starting database seeding...');
@@ -736,7 +977,7 @@ async function main() {
   // the experiences page plots trips, so this is what actually puts thirty-five
   // pins on it - previously there were eight trips across four cities, and the
   // hotels they belonged to were all sitting at 0,0 anyway.
-  const RESIDENCY_TYPES = ['residency', 'intimate', 'rooftop', 'workshop'] as const;
+  const RESIDENCY_TYPES: ResidencyType[] = ['residency', 'intimate', 'rooftop', 'workshop'];
 
   const slugify = (value: string) =>
     value
@@ -746,17 +987,30 @@ async function main() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-  const experiences = RESORTS.map((resort, index) => {
-    // Spread the residencies across the coming year so the experiences page
-    // has a real calendar to sort and filter rather than one shared date.
-    const start = new Date();
-    start.setDate(start.getDate() + 14 + index * 9);
+  // How many residencies share each season, so each one can take its own place
+  // inside the window rather than all landing on the same week.
+  const seasonTotals = new Map<string, number>();
+  for (const resort of RESORTS) {
+    const key = seasonKeyFor(resort);
+    seasonTotals.set(key, (seasonTotals.get(key) ?? 0) + 1);
+  }
+  const seasonSeen = new Map<string, number>();
+  const today = new Date();
 
+  const experiences = RESORTS.map((resort, index) => {
     const headline = resort.spots[0];
+    const type = RESIDENCY_TYPES[index % RESIDENCY_TYPES.length];
     const artist = createdArtists.length
       ? createdArtists[index % createdArtists.length]
       : null;
     const hotel = createdHotels[index] ?? null;
+
+    // Each destination opens in its own season, and the residencies of one
+    // destination are spread across it rather than stacked on one date.
+    const seasonKey = seasonKeyFor(resort);
+    const ordinal = seasonSeen.get(seasonKey) ?? 0;
+    seasonSeen.set(seasonKey, ordinal + 1);
+    const start = residencyDate(resort, ordinal, seasonTotals.get(seasonKey) ?? 1, today);
 
     return {
       title: `Résidence — ${resort.city}`,
@@ -775,11 +1029,15 @@ async function main() {
       longitude: resort.lng,
       images: JSON.stringify(ENVIRONMENT_IMAGES[resort.environment]),
       status: 'PUBLISHED',
-      type: RESIDENCY_TYPES[index % RESIDENCY_TYPES.length],
+      type,
       rating: Number((4.3 + ((index * 7) % 7) / 10).toFixed(1)),
       date: start,
+      // The published terms. Identical on all thirty-five, because they are the
+      // programme's terms rather than this property's.
       duration: '7 nuits',
-      capacity: `${headline.capacity} personnes`,
+      capacity: `${VENUE_KIND[headline.type]} — ${headline.capacity} personnes`,
+      includes: JSON.stringify(residencyIncludes(resort, type)),
+      schedule: JSON.stringify(residencySchedule(resort, type)),
       artistId: artist ? artist.id : null,
       hotelId: hotel ? hotel.id : null
     };
@@ -803,6 +1061,8 @@ async function main() {
       date: experienceData.date,
       duration: experienceData.duration,
       capacity: experienceData.capacity,
+      includes: experienceData.includes,
+      schedule: experienceData.schedule,
       artistId: experienceData.artistId,
       hotelId: experienceData.hotelId
     };

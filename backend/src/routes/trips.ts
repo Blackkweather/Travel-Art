@@ -65,6 +65,9 @@ router.get(
         // while the detail page, which does select it, showed the actual
         // date. Same field, same format as the detail route below.
         date: t.date ? t.date.toISOString() : null,
+        // The listing card states the length of the stay next to the date, so
+        // the one term every residency shares is readable without opening it.
+        duration: t.duration || null,
         artist: t.artist?.user?.name || null,
         hotel: t.hotel?.name || null,
       };
