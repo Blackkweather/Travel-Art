@@ -638,6 +638,18 @@ router.post('/ratings', authenticate, asyncHandler(async (req: AuthRequest, res)
     throw new CustomError('Unauthorized', 403);
   }
 
+  /* A rating is a record of a residency that happened. Nothing stopped a house
+     rating an artist whose booking was still PENDING - before a date had even
+     been agreed, let alone played - which would have put reviews of
+     performances that never occurred on the artist's public profile and in the
+     testimonials on the landing page. */
+  if (booking.status !== 'COMPLETED') {
+    throw new CustomError(
+      'Une résidence ne peut être évaluée qu’une fois terminée',
+      400
+    );
+  }
+
   // Check if rating already exists
   const existingRating = await prisma.rating.findFirst({
     where: {
@@ -686,6 +698,21 @@ router.post('/ratings', authenticate, asyncHandler(async (req: AuthRequest, res)
       }
     }
   });
+
+  /* The last link in the chain. A rating is the only thing on this platform
+     that an artist earns rather than buys, and the Artiste confirmé tier sells
+     "distinctions et évaluations" outright - so the artist hears about it. */
+  if (rating.isVisibleToArtist) {
+    void notify({
+      userId: rating.artist.user.id,
+      type: 'RATING_RECEIVED',
+      payload: {
+        bookingId: rating.bookingId,
+        hotelName: rating.hotel.name,
+        stars: rating.stars,
+      },
+    });
+  }
 
   res.status(201).json({
     success: true,

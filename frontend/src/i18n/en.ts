@@ -1295,4 +1295,6 @@ export const en: Record<string, string> = {
   "{who} ne retient pas ces dates": "{who} passed on these dates",
   "{who} annule la résidence": "{who} cancelled the residency",
   "{who} a laissé une évaluation": "{who} left a review",
+  "Comment s’est passée la résidence de {who} ?": "How did {who}’s residency go?",
+  "l’autre partie": "the other party",
 }

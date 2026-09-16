@@ -51,7 +51,7 @@ function stay(from?: string, to?: string): string {
 
 /** One line, in the voice of the person reading it. */
 function describe(n: Notification): string {
-  const who = n.payload.hotelName || n.payload.artistName || ''
+  const who = n.payload.hotelName || n.payload.artistName || t('l’autre partie')
   const when = stay(n.payload.startDate, n.payload.endDate)
   switch (n.type) {
     case 'BOOKING_REQUESTED':
@@ -62,6 +62,8 @@ function describe(n: Notification): string {
       return t('{who} ne retient pas ces dates', { who }) + (when ? ` · ${when}` : '')
     case 'BOOKING_CANCELLED':
       return t('{who} annule la résidence', { who }) + (when ? ` · ${when}` : '')
+    case 'RATING_REQUESTED':
+      return t('Comment s’est passée la résidence de {who} ?', { who })
     case 'RATING_RECEIVED':
       return t('{who} a laissé une évaluation', { who })
     default:

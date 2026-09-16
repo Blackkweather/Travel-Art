@@ -585,6 +585,62 @@ describe('Bookings API', () => {
     expect(res.body.data).toHaveProperty('stars', 5);
     expect(res.body.data).toHaveProperty('textReview');
   });
+
+  it('TC-BOOK-011: should refuse a rating for a residency that has not finished', async () => {
+    // TC-BOOK-010 above has always created its booking as COMPLETED, because
+    // that is obviously what a rating is for - but the route never checked,
+    // so a house could review an artist on a booking still marked PENDING:
+    // before a date had been agreed, let alone played. Those reviews would
+    // have reached the artist's public profile and the landing page.
+    const hotel = await prisma.hotel.findFirst({
+      where: { user: { email: hotelEmail } }
+    });
+    const artist = await prisma.artist.findFirst({
+      where: { user: { email: artistEmail } }
+    });
+
+    if (!hotel || !artist) {
+      throw new Error('Test setup failed: hotel or artist not found');
+    }
+
+    const booking = await prisma.booking.create({
+      data: {
+        hotelId: hotel.id,
+        artistId: artist.id,
+        startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
+        status: 'PENDING',
+        creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
+      },
+    });
+
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: hotelEmail, password });
+
+    expect(loginRes.status).toBe(200);
+    const token = loginRes.body.data.token;
+
+    const res = await request(app)
+      .post('/api/bookings/ratings')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        bookingId: booking.id,
+        hotelId: hotel.id,
+        artistId: artist.id,
+        stars: 5,
+        textReview: 'Une semaine qui n’a pas encore eu lieu.',
+        isVisibleToArtist: true,
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+
+    const stored = await prisma.rating.count({ where: { bookingId: booking.id } });
+    expect(stored).toBe(0);
+  });
 });
 
 
