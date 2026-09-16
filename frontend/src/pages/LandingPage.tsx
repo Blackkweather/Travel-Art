@@ -200,6 +200,11 @@ export default function LandingPage() {
             // the card printed the enum, "rooftop", on a French page.
             category: experienceTypeLabel(trip.type) || trip.category || t('Expérience'),
             location: place || trip.hotel || '',
+            // Kept apart as well as joined: the hero sets them on two
+            // separate lines, and re-splitting the joined string there would
+            // break on any city whose name contains a comma.
+            city: loc?.city || '',
+            country: countryLabel(loc?.country),
           }
         })
         
@@ -207,28 +212,31 @@ export default function LandingPage() {
 
         if (formatted.length >= 3) {
           const experienceSlides: Slide[] = formatted.slice(0, 5).map((exp: any) => {
-            /* Titles arrive as "Résidence — Phuket". Splitting on word count
-               put the em-dash at the head of the second line, so the hero read
-               "RESIDENCE" / "— PHUKET" with an orphaned dash. Where the title
-               already carries that separator it is the natural break; only a
-               title without one falls back to halving by words. */
+            /* The place leads. Every trip is titled "Résidence — <place>", so
+               splitting on the em-dash put the same word, in the largest type
+               on the page, at the top of five consecutive slides: the hero
+               changed photograph and said "Résidence" again. What actually
+               differs is the city and its country, and both are already
+               parsed off the trip's location.
+
+               The title split stays as the fallback for a trip with no
+               location, and the word-halving below for one whose title has no
+               separator either. */
             const raw = exp.title || t('Expérience')
-            const [head, tail] = raw.includes('—')
+            const dash = raw.includes('—')
               ? raw.split('—').map((part: string) => part.trim())
-              : (() => {
-                  const words = raw.split(' ')
-                  const midPoint = Math.max(1, Math.floor(words.length / 2))
-                  return [
-                    words.slice(0, midPoint).join(' '),
-                    words.slice(midPoint).join(' ')
-                  ]
-                })()
+              : null
+            const words = raw.split(' ')
+            const midPoint = Math.max(1, Math.floor(words.length / 2))
+
+            const lead = exp.city || (dash ? dash[1] : words.slice(0, midPoint).join(' '))
+            const under = exp.country || (dash ? dash[0] : words.slice(midPoint).join(' '))
 
             return {
               id: exp.id,
               image: exp.image,
-              title: head || t('Entre l’ombre'),
-              subtitle: tail || t('et la lumière'),
+              title: lead || t('Entre l’ombre'),
+              subtitle: under || t('et la lumière'),
               category: exp.category
             }
           })
@@ -377,7 +385,14 @@ export default function LandingPage() {
     // dissolves it on the GPU, driven by currentSlideIndex. Only the type
     // moves in this timeline.
 
-    // Animate in next text
+    /* Animate in next text.
+       No delay: this tween is already positioned at 0.9s on the timeline, and
+       the 0.6s delay on top of that started the headline at 1.5s - the
+       outgoing type has been gone since 0.7s, so the hero spent the middle
+       third of every transition with no words on it at all, and the timeline
+       ran ~2.9s when the photograph had finished dissolving at 1.6s. The type
+       now rises while the image is still resolving, which reads as one
+       gesture rather than two. */
     tl.to(
       nextTextLines,
       {
@@ -385,8 +400,7 @@ export default function LandingPage() {
         opacity: 1,
         duration: 1,
         stagger: 0.1,
-        ease: 'power3.out',
-        delay: 0.6
+        ease: 'power3.out'
       },
       0.9
     )
