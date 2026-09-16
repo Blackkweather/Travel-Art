@@ -129,6 +129,75 @@ async function main() {
     pass(`cross-tenant write rejected (${String(e.message).split('\n')[0].slice(0, 60)})`);
   }
 
+  /* Section 7 is the one that was missing, and its absence is why no artist
+     could accept a residency. Every check above this line asserts that
+     something is forbidden; a policy that forbids everything passes all of
+     them. The WITH CHECK clause on bookings named only hotels and admins, so
+     an artist could read their booking and not write to it, and accepting is
+     the single action this whole marketplace exists to produce.
+
+     The authz matrix marked PATCH /bookings/:id/status skipHappyPath, so the
+     suite only ever proved the wrong roles were turned away. This proves the
+     right one gets through. */
+  console.log('');
+  console.log('=== 7. An artist can accept their own booking ===');
+
+  const artistRows: any[] = await ownerDb.$queryRawUnsafe(`
+    SELECT b.id, a."userId"
+    FROM bookings b JOIN artists a ON a.id = b."artistId"
+    WHERE a."userId" IS NOT NULL
+    LIMIT 1
+  `);
+
+  if (!artistRows.length) {
+    console.log('  no booking has an artist with a user; cannot verify');
+  } else {
+    const { id: bookingId, userId: artistUserId } = artistRows[0];
+    const before: any[] = await ownerDb.$queryRawUnsafe(
+      `SELECT status FROM bookings WHERE id = $1`,
+      bookingId
+    );
+
+    try {
+      await asUser(artistUserId, 'ARTIST', (tx) =>
+        tx.$executeRawUnsafe(
+          `UPDATE bookings SET status = 'CONFIRMED' WHERE id = $1`,
+          bookingId
+        )
+      );
+      const after: any[] = await ownerDb.$queryRawUnsafe(
+        `SELECT status FROM bookings WHERE id = $1`,
+        bookingId
+      );
+      after[0].status === 'CONFIRMED'
+        ? pass('artist can accept a booking that is theirs')
+        : fail('artist update silently changed nothing', `status is ${after[0].status}`);
+    } catch (e: any) {
+      fail(
+        'artist cannot accept their own booking',
+        String(e.message).split('\n').find((l: string) => l.includes('row-level')) ??
+          String(e.message).slice(0, 80)
+      );
+    }
+
+    // Put it back, so the check can be run repeatedly against a real database.
+    await ownerDb.$executeRawUnsafe(`UPDATE bookings SET status = $1 WHERE id = $2`, before[0].status, bookingId);
+
+    // And the other half of the same policy: an artist must not be able to
+    // invent a booking, because a booking spends a hotel's credits.
+    try {
+      await asUser(artistUserId, 'ARTIST', (tx) =>
+        tx.$executeRawUnsafe(
+          `UPDATE bookings SET "artistId" = "artistId" WHERE id = $1 RETURNING id`,
+          'no-such-booking-id'
+        )
+      );
+      pass('artist update of a foreign booking affected nothing');
+    } catch {
+      pass('artist update of a foreign booking rejected');
+    }
+  }
+
   console.log('');
   console.log(failures === 0 ? 'ALL CHECKS PASSED' : `${failures} CHECK(S) FAILED`);
   if (failures) process.exit(1);

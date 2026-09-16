@@ -78,16 +78,60 @@ GRANT EXECUTE ON FUNCTION app_user_id(), app_is_admin(),
 -- -------------------------------------------------------------- 3. bookings
 -- A booking is visible to the hotel that made it, the artist it is for, and an
 -- administrator. Nobody else, including other hotels and other artists.
+--
+-- This was one policy with a single WITH CHECK that named only hotels and
+-- admins, which meant an artist could see a booking and could not write to it:
+-- accepting a residency failed with "new row violates row-level security
+-- policy for table bookings" (Postgres 42501). Accepting is the one action the
+-- entire marketplace exists to produce, and no artist could perform it.
+--
+-- The rule being expressed is not the same for every command, so it is no
+-- longer written as though it were:
+--   read   - the hotel, the artist, an admin
+--   insert - the hotel or an admin only, because a booking spends the hotel's
+--            credits and an artist must never be able to conjure one
+--   update - the hotel, the artist, an admin, each only on rows already theirs
+--   delete - the hotel or an admin
+--
+-- On update, USING decides which rows may be touched and WITH CHECK decides
+-- what they may become. Naming the artist in both means an artist may change
+-- their own booking but cannot hand it to another artist: the new row would
+-- have to satisfy WITH CHECK, and a foreign artistId does not.
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS bookings_access ON bookings;
-CREATE POLICY bookings_access ON bookings
+DROP POLICY IF EXISTS bookings_read ON bookings;
+DROP POLICY IF EXISTS bookings_insert ON bookings;
+DROP POLICY IF EXISTS bookings_update ON bookings;
+DROP POLICY IF EXISTS bookings_delete ON bookings;
+
+CREATE POLICY bookings_read ON bookings FOR SELECT
+  USING (
+    app_is_admin()
+    OR "hotelId" IN (SELECT app_hotel_ids())
+    OR "artistId" IN (SELECT app_artist_ids())
+  );
+
+CREATE POLICY bookings_insert ON bookings FOR INSERT
+  WITH CHECK (
+    app_is_admin()
+    OR "hotelId" IN (SELECT app_hotel_ids())
+  );
+
+CREATE POLICY bookings_update ON bookings FOR UPDATE
   USING (
     app_is_admin()
     OR "hotelId" IN (SELECT app_hotel_ids())
     OR "artistId" IN (SELECT app_artist_ids())
   )
   WITH CHECK (
+    app_is_admin()
+    OR "hotelId" IN (SELECT app_hotel_ids())
+    OR "artistId" IN (SELECT app_artist_ids())
+  );
+
+CREATE POLICY bookings_delete ON bookings FOR DELETE
+  USING (
     app_is_admin()
     OR "hotelId" IN (SELECT app_hotel_ids())
   );
