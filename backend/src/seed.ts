@@ -819,10 +819,13 @@ async function main() {
   // Credit packages. These existed only as rows somebody inserted by hand: no
   // migration and no seed created them, so a fresh database served an empty
   // purchase page. Keyed by slug, which is what the checkout route looks up.
+  // Kept in step with prisma/seed-packages.ts by hand: two seed entry points
+  // upsert the same slugs, so a name that only changed here would be
+  // reverted the next time the other one runs.
   const CREDIT_PACKAGES = [
-    { slug: 'starter', name: 'Formule Découverte', credits: 10, bonusCredits: 0, priceCents: 150000, sortOrder: 1 },
-    { slug: 'professional', name: 'Formule Saison', credits: 25, bonusCredits: 4, priceCents: 350000, sortOrder: 2 },
-    { slug: 'enterprise', name: 'Formule Année', credits: 50, bonusCredits: 10, priceCents: 650000, sortOrder: 3 },
+    { slug: 'starter', name: 'Découverte', credits: 10, bonusCredits: 0, priceCents: 150000, sortOrder: 1 },
+    { slug: 'professional', name: 'Résidence', credits: 25, bonusCredits: 4, priceCents: 350000, sortOrder: 2 },
+    { slug: 'enterprise', name: 'Année', credits: 50, bonusCredits: 10, priceCents: 650000, sortOrder: 3 },
   ];
 
   for (const pack of CREDIT_PACKAGES) {

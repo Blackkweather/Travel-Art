@@ -21,7 +21,7 @@ import { prisma } from '../src/db';
 const PACKAGES = [
   {
     slug: 'starter',
-    name: 'Starter Package',
+    name: 'Découverte',
     credits: 10,
     bonusCredits: 0,
     priceCents: 150_000, // €1,500.00
@@ -29,7 +29,7 @@ const PACKAGES = [
   },
   {
     slug: 'professional',
-    name: 'Professional Package',
+    name: 'Résidence',
     credits: 25,
     bonusCredits: 4,
     priceCents: 350_000, // €3,500.00
@@ -37,7 +37,7 @@ const PACKAGES = [
   },
   {
     slug: 'enterprise',
-    name: 'Enterprise Package',
+    name: 'Année',
     credits: 50,
     bonusCredits: 10,
     priceCents: 650_000, // €6,500.00
