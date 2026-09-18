@@ -72,7 +72,11 @@ services:
       - key: RATE_LIMIT_WINDOW_MS
         value: "900000"
       - key: RATE_LIMIT_MAX_REQUESTS
-        value: "100"
+        # One person working normally exhausts 100 in a quarter of an hour:
+        # the notification bell polls every 60s and the dashboard spends
+        # another dozen or so per few pages. Past the cap every call 429s,
+        # including paying for credits. The login/reset limiter is separate.
+        value: "1000"
 
       # ---- Uploads ---------------------------------------------------------
       # Render's filesystem is ephemeral and is wiped on every deploy, so

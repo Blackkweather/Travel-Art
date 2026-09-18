@@ -11,6 +11,9 @@ import SEOHead from '@/components/SEOHead'
 
 const PLACEHOLDER_IMAGE = '/images/placeholder-experience.webp'
 
+// Three rows of the three-column grid.
+const PAGE_SIZE = 9
+
 type AvailabilityBadge = 'Available' | 'Pending' | 'Unavailable'
 
 interface ArtistCardData {
@@ -48,6 +51,7 @@ const HotelArtists: React.FC = () => {
   const [weekFrom, setWeekFrom] = useState<string>('')
   const [weekTo, setWeekTo] = useState<string>('')
   const [appliedWeek, setAppliedWeek] = useState<{ from: string; to: string }>({ from: '', to: '' })
+  const [page, setPage] = useState(1)
   const [hotelId, setHotelId] = useState<string>('')
   const [bookingModal, setBookingModal] = useState<{ open: boolean; artistId?: string; start?: string; end?: string }>({ open: false })
   const [bookingError, setBookingError] = useState<string | null>(null)
@@ -205,7 +209,12 @@ const HotelArtists: React.FC = () => {
        whether the artist was free, and no date could be filtered on at all.
        The dates go to the server, which tests them against every declared
        period - filtering here would only ever search the page that loaded. */
-    const params: Record<string, string | number> = { limit: 50 }
+    /* The whole matching set comes back and is paged in the browser, so the
+       filters and the sort below see every artist rather than whichever page
+       happened to load - the same mistake the server used to make. Past a few
+       hundred artists this has to move to the server's own page/limit, which
+       already reports honest totals. */
+    const params: Record<string, string | number> = { limit: 200 }
     if (appliedWeek.from && appliedWeek.to) {
       params.dateFrom = new Date(appliedWeek.from).toISOString()
       params.dateTo = new Date(appliedWeek.to).toISOString()
@@ -304,6 +313,21 @@ const HotelArtists: React.FC = () => {
     }
     return copy
   }, [filteredArtists, sortBy])
+
+  const pageCount = Math.max(1, Math.ceil(sortedArtists.length / PAGE_SIZE))
+
+  /* Narrowing the list can leave the reader stranded on a page that no longer
+     exists - filter down to four results while sitting on page 3 and the grid
+     goes blank while the count insists there are four. */
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, selectedDiscipline, selectedLocation, loyaltyTierFilter,
+      availabilityWindow, sortBy, appliedWeek.from, appliedWeek.to])
+
+  const visibleArtists = useMemo(
+    () => sortedArtists.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [sortedArtists, page]
+  )
 
   const toggleFavorite = async (artistId: string) => {
     if (!hotelId) return
@@ -603,12 +627,17 @@ const HotelArtists: React.FC = () => {
           </div>
           
           <div className="text-sm text-content-secondary">
-            {t(
-              sortedArtists.length >= 2
-                ? '{count} artistes trouvés'
-                : '{count} artiste trouvé',
-              { count: formatNumber(sortedArtists.length) }
-            )}
+            {sortedArtists.length > PAGE_SIZE
+              ? t('{shown} sur {count} artistes', {
+                  shown: formatNumber(visibleArtists.length),
+                  count: formatNumber(sortedArtists.length)
+                })
+              : t(
+                  sortedArtists.length >= 2
+                    ? '{count} artistes trouvés'
+                    : '{count} artiste trouvé',
+                  { count: formatNumber(sortedArtists.length) }
+                )}
           </div>
         </div>
 
@@ -645,7 +674,7 @@ const HotelArtists: React.FC = () => {
 
       {/* Artists Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="artists-list">
-        {sortedArtists.map((artist, index) => (
+        {visibleArtists.map((artist, index) => (
           <motion.div
             key={artist.id}
             data-testid="artist-card"
@@ -772,6 +801,43 @@ const HotelArtists: React.FC = () => {
           </motion.div>
         ))}
       </div>
+
+      {pageCount > 1 && (
+        <div className="flex items-center justify-between gap-4 flex-wrap" data-testid="pagination">
+          <button
+            className="btn-secondary text-sm"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={page === 1}
+            data-testid="page-prev"
+          >
+            {t('Précédent')}
+          </button>
+
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => setPage(n)}
+                aria-current={n === page ? 'page' : undefined}
+                className={n === page
+                  ? 'w-9 h-9 rounded-control bg-navy text-white text-sm'
+                  : 'w-9 h-9 rounded-control border border-line text-content text-sm hover:border-gold transition-colors'}
+              >
+                {formatNumber(n)}
+              </button>
+            ))}
+          </div>
+
+          <button
+            className="btn-secondary text-sm"
+            onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+            disabled={page === pageCount}
+            data-testid="page-next"
+          >
+            {t('Suivant')}
+          </button>
+        </div>
+      )}
 
       {/* Booking Modal */}
       {bookingModal.open && (

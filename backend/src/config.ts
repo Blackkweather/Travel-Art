@@ -46,7 +46,16 @@ export const config = {
   frontendUrl: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || vercelUrl || 'http://localhost:5173',
 
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-  rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+  /* 100 per fifteen minutes was small enough for one person working normally
+     to exhaust it. The notification bell alone polls every 60s - 15 requests
+     an idle quarter of an hour, doubled the moment a second tab is open - and
+     a short walk through the dashboard measured 14 more. Running out is
+     invisible and total: every later call, including the purchase of credits,
+     comes back 429 with a bare string, so the app simply stops working until
+     the window rolls over. This is a capacity control against abuse, not the
+     credential control - that is the 10-failed-attempts limiter on login,
+     registration and password reset, which is untouched. */
+  rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000', 10),
   maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
   uploadPath: process.env.UPLOAD_PATH || './uploads',
   // Email is sent over Resend (see services/email.ts), which reads
