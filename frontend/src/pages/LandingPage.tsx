@@ -323,10 +323,14 @@ export default function LandingPage() {
     const nextSlide = slideElements[nextIndex] as HTMLElement
     const nextTextLines = nextSlide.querySelectorAll('.slide__text-line')
 
-    // Make sure next slide is ready
+    /* The photograph dissolves on the GPU in CinematicHero, so these .slide
+       elements now carry only the type. Pushing one a whole viewport up while
+       the other arrives from below - and staggering the lines inside them at
+       the same time - was two vertical gestures fighting over the same words.
+       The container stays put; only the type moves, and only once. */
     gsap.set(nextSlide, {
       visibility: 'visible',
-      y: direction * 100 + '%'
+      y: '0%'
     })
 
     // Reset next text lines
@@ -351,34 +355,20 @@ export default function LandingPage() {
     animateCounter(nextIndex, tl)
 
     // Animate out current text
+    /* Out: a short lift and a fade, close enough that the words look like
+       they are being taken off the page rather than thrown off it. It has to
+       finish before the next line arrives, because without the container
+       push the two sets of type now occupy the same place. */
     tl.to(
       currentTextLines,
       {
-        y: '-80%',
+        y: '-45%',
         opacity: 0,
-        duration: 0.7,
-        stagger: 0.05,
-        ease: 'power2.in'
+        duration: 0.5,
+        stagger: 0.04,
+        ease: 'power3.in'
       },
       0
-    )
-
-    // Animate current slide out
-    tl.to(
-      currentSlide,
-      {
-        y: -direction * 100 + '%'
-      },
-      0.2
-    )
-
-    // Animate in next slide
-    tl.to(
-      nextSlide,
-      {
-        y: '0%'
-      },
-      0.2
     )
 
     // The photograph itself is no longer animated here: CinematicHero
@@ -398,11 +388,11 @@ export default function LandingPage() {
       {
         y: 0,
         opacity: 1,
-        duration: 1,
-        stagger: 0.1,
+        duration: 0.95,
+        stagger: 0.08,
         ease: 'power3.out'
       },
-      0.9
+      0.55
     )
   }
 
