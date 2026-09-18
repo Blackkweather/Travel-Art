@@ -472,10 +472,18 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
     throw new CustomError('Unauthorized', 403);
   }
 
+  /* Whether this change also releases the money, decided before the write so
+     it can travel with it. It used to be a second UPDATE on the same row a
+     few lines below - another full round trip to a database in us-east-1, on
+     a request that already makes several and took 7-9 seconds end to end
+     against a 10 second client timeout. */
+  const releasesPayment =
+    (status === 'REJECTED' || status === 'CANCELLED') && booking.status === 'PENDING';
+
   // Update booking
   const updatedBooking = await prisma.booking.update({
     where: { id },
-    data: { status },
+    data: releasesPayment ? { status, paymentStatus: 'REFUNDED' } : { status },
     include: {
       artist: {
         include: {
@@ -502,13 +510,8 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
     }
   });
 
-  // If booking is rejected or cancelled, update payment status and create refund transaction
-  if ((status === 'REJECTED' || status === 'CANCELLED') && booking.status === 'PENDING') {
-    await prisma.booking.update({
-      where: { id },
-      data: { paymentStatus: 'REFUNDED' }
-    });
-
+  // If booking is rejected or cancelled, return the credits it reserved.
+  if (releasesPayment) {
     // Return the credits the booking reserved. Without this the hotel paid for
     // a booking the artist declined: the spend was recorded on creation and
     // nothing ever gave it back. Guarded so a repeated status change cannot

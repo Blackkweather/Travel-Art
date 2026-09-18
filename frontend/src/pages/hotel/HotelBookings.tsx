@@ -135,53 +135,20 @@ const HotelBookings: React.FC = () => {
 
     toast.success(t('Demande annulée'))
 
-    /* Reloading the list is a different failure and deserves a different
-       sentence. It used to share the try above, so a hiccup here announced
-       that the update had failed - immediately after the success toast for
-       the update that had in fact gone through. */
-    try {
-      // Refresh bookings - get hotel first
-      const hotelRes = await hotelsApi.getByUser(user?.id || '')
-      const hotel = hotelRes.data?.data
-      if (!hotel) return
-
-      const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
-      // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
-      const bookingsDataRaw = bookingsRes.data?.data
-      const bookingsData = Array.isArray(bookingsDataRaw) 
-        ? bookingsDataRaw 
-        : (bookingsDataRaw?.bookings || [])
-      
-      const transformedBookings = bookingsData.map((b: any) => ({
-        id: b.id,
-        artist: {
-          id: b.artist?.id || '',
-          name: personName(b.artist),
-          discipline: b.artist?.discipline || '',
-          image: b.artist?.image || '/images/placeholder-experience.webp',
-          rating: b.artist?.rating || 0
-        },
-        hotelId: b.hotelId,
-        startDate: b.startDate,
-        endDate: b.endDate,
-        status: String(b.status || 'PENDING').toLowerCase(),
-        creditsUsed: b.creditCost ?? b.creditsUsed ?? 0,
-        performanceSpot: b.performanceSpot || t('À préciser'),
-        notes: b.notes || '',
-        duration: calculateDuration(b.startDate, b.endDate),
-        date: b.startDate,
-        time: new Date(b.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        guestCount: 0,
-        performanceType: b.performanceType || 'Performance',
-        contactEmail: b.artist?.email || '',
-        contactPhone: b.artist?.phone || ''
-      }))
-      
-      setBookings(transformedBookings)
-    } catch (error) {
-      console.error('Error refreshing bookings after status update:', error)
-      toast.error(t('Statut mis à jour, mais la liste n’a pas pu être rechargée.'))
-    }
+    /* The row is updated in place rather than by reloading the whole list.
+       The write itself already costs seven to nine seconds against a remote
+       database; refetching the hotel and then every booking added several
+       more, so the screen sat unchanged long enough that the only reasonable
+       conclusion was that the click had not worked - which is exactly what
+       people did, and then reached for a hard refresh. The server has
+       confirmed the new status by this point, so showing it is not a guess. */
+    setBookings((current) =>
+      current.map((booking) =>
+        booking.id === bookingId
+          ? { ...booking, status: status.toLowerCase() }
+          : booking
+      )
+    )
   }
   
   if (loading) {

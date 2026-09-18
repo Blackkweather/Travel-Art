@@ -213,6 +213,20 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+/* Nothing under /api is cacheable. Express attaches an ETag to every JSON
+   response and no Cache-Control went with it, so the browser was free to
+   revalidate and reuse the body it already had: cancel a residency, watch the
+   refresh come back 304, and the list redraws from the copy taken before the
+   cancellation. The row only changed after a hard reload, which is exactly
+   what it looked like from the outside - a write that had not taken.
+   These responses are per-user and change on every write, so they must not be
+   stored at all. The webhook route is mounted earlier and is unaffected. */
+app.use('/api/', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/artists', artistRoutes);
