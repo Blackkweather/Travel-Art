@@ -56,6 +56,20 @@ model User {
   // check adds no query.
   sessionsValidFrom DateTime?
 
+  // --- Consent ------------------------------------------------------------
+  // Under the GDPR and French consumer law it is not enough to obtain consent;
+  // the controller has to be able to demonstrate it (Art. 7(1)). These two
+  // fields answer "has this person accepted, and which version" in one read,
+  // which is what the registration gate needs. The ledger below answers "prove
+  // it, including everything they later withdrew", which is what a regulator
+  // or a dispute needs.
+  //
+  // NULL is meaningful and deliberate: it marks an account created before any
+  // of this existed. Backfilling those to "accepted" would be inventing a
+  // consent that was never given, which is worse than admitting the gap.
+  acceptedTermsAt      DateTime?
+  acceptedTermsVersion String?
+
   // Relations
   artist            Artist?
   hotel             Hotel?
@@ -64,8 +78,40 @@ model User {
   referralsReceived Referral[]     @relation("Referee")
   payments          Payment[]
   adminLogs         AdminLog[]
+  consents          ConsentRecord[]
 
   @@map("users")
+}
+
+/// An append-only record of every consent given or withdrawn.
+///
+/// Append-only on purpose: a withdrawal is a new row saying `granted = false`,
+/// never an update or a delete of the row that granted it. The question a
+/// dispute asks is "what had they agreed to on the day this happened", and
+/// that is unanswerable if the history is overwritten in place.
+model ConsentRecord {
+  id      String  @id @default(cuid())
+  userId  String
+  /// TERMS, PRIVACY, COOKIES_ANALYTICS
+  kind    String
+  /// The version of the document consented to, so a later revision does not
+  /// silently claim agreement to text nobody has read.
+  version String
+  granted Boolean
+
+  /// Evidence of circumstance. The address is stored as a salted hash, never
+  /// in the clear: it is needed to show consent came from the account holder's
+  /// session, not to identify anyone by their address later.
+  ipHash    String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind])
+  @@index([createdAt])
+  @@map("consent_records")
 }
 
 model Artist {

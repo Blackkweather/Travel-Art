@@ -17,6 +17,7 @@ import { paymentRoutes } from './routes/payments';
 import { bookingRoutes } from './routes/bookings';
 import { notificationRoutes } from './routes/notifications';
 import { maintenanceRoutes } from './routes/maintenance';
+import { privacyRoutes } from './routes/privacy';
 import { uploadRoutes } from './routes/upload';
 import { webhookRoutes } from './routes/webhooks';
 import { initializeDatabase, prisma } from './db';
@@ -229,6 +230,7 @@ app.use('/api/', (_req, res, next) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/privacy', privacyRoutes);
 app.use('/api/artists', artistRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/admin', adminRoutes);

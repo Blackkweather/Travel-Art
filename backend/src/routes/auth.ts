@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import { CONSENT, LEGAL_VERSION, clientIp, hashIp } from '../config/legal';
 import { config } from '../config';
 import {
   verificationEmail,
@@ -41,6 +42,16 @@ const registerSchema = z.object({
     .regex(/[a-zA-Z]/, 'Le mot de passe doit contenir au moins une lettre')
     .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
   phone: z.string().optional(),
+  /* Acceptance is a condition of creating the account, not a preference, so
+     only the literal `true` satisfies it: a missing field, a string, or an
+     unticked box are all refusals and all fail closed. A registration form
+     that collects this and an API that does not enforce it is the same as not
+     collecting it - the contract has to be formed on the server. */
+  acceptTerms: z.literal(true, {
+    errorMap: () => ({
+      message: 'Vous devez accepter les conditions générales et la politique de confidentialité.',
+    }),
+  }),
   // The product is French; the form has no language picker, so every account
   // was being stamped 'en' and the admin export reported it for all of them.
   locale: z.string().optional().default('fr'),
@@ -129,6 +140,32 @@ router.post('/register', asyncHandler(async (req, res) => {
     } catch (dbError: any) {
       console.error('Database error during user creation:', dbError);
       throw new CustomError('Failed to create account. Please try again later.', 500);
+    }
+
+    /* Stamp the acceptance and write it to the ledger in the same breath as
+       the account. Two rows rather than one: the terms and the privacy policy
+       are separate documents and a person can be asked to re-accept one
+       without the other. Best-effort - a consent that fails to record must not
+       roll back an account that was created, but it is logged loudly, because
+       an account with no provable consent is a gap someone has to close. */
+    try {
+      const consentedAt = new Date();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { acceptedTermsAt: consentedAt, acceptedTermsVersion: LEGAL_VERSION },
+      });
+      await prisma.consentRecord.createMany({
+        data: [CONSENT.TERMS, CONSENT.PRIVACY].map((kind) => ({
+          userId: user.id,
+          kind,
+          version: LEGAL_VERSION,
+          granted: true,
+          ipHash: hashIp(clientIp(req as never)),
+          userAgent: String(req.headers['user-agent'] || '').slice(0, 255) || null,
+        })),
+      });
+    } catch (consentError) {
+      console.error('CONSENT NOT RECORDED for user', user.id, consentError);
     }
 
     // Create Artist or Hotel profile based on role
