@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense, useState } from 'react'
+import React, { useEffect, Suspense, useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -10,6 +10,7 @@ import SiteIntro from '@/components/SiteIntro'
 import CookieBanner from '@/components/CookieBanner'
 import analytics from '@/utils/analytics'
 import { useAppKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { lazyRoute } from '@/utils/lazyRoute'
 
 import Layout from '@/components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -18,45 +19,45 @@ import RoleAwareRoute from './components/RoleAwareRoute'
 import PageTransition from './components/PageTransition'
 
 // Lazy load pages for code splitting
-const LandingPage = lazy(() => import('@/pages/LandingPage'))
-const HowItWorksPage = lazy(() => import('@/pages/HowItWorksPage'))
-const PartnersPage = lazy(() => import('@/pages/PartnersPage'))
-const TopArtistsPage = lazy(() => import('@/pages/TopArtistsPage'))
-const TopHotelsPage = lazy(() => import('@/pages/TopHotelsPage'))
-const HotelDetailsPage = lazy(() => import('@/pages/HotelDetailsPage'))
-const LoginPage = lazy(() => import('@/pages/LoginPage'))
-const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
-const ReferralRedirectPage = lazy(() => import('@/pages/ReferralRedirectPage'))
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
-const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'))
-const TermsPage = lazy(() => import('@/pages/TermsPage'))
-const CookiePolicyPage = lazy(() => import('@/pages/CookiePolicyPage'))
-const AboutPage = lazy(() => import('@/pages/AboutPage'))
-const FaqPage = lazy(() => import('@/pages/FaqPage'))
+const LandingPage = lazyRoute(() => import('@/pages/LandingPage'))
+const HowItWorksPage = lazyRoute(() => import('@/pages/HowItWorksPage'))
+const PartnersPage = lazyRoute(() => import('@/pages/PartnersPage'))
+const TopArtistsPage = lazyRoute(() => import('@/pages/TopArtistsPage'))
+const TopHotelsPage = lazyRoute(() => import('@/pages/TopHotelsPage'))
+const HotelDetailsPage = lazyRoute(() => import('@/pages/HotelDetailsPage'))
+const LoginPage = lazyRoute(() => import('@/pages/LoginPage'))
+const RegisterPage = lazyRoute(() => import('@/pages/RegisterPage'))
+const ReferralRedirectPage = lazyRoute(() => import('@/pages/ReferralRedirectPage'))
+const ForgotPasswordPage = lazyRoute(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazyRoute(() => import('./pages/ResetPasswordPage'))
+const PrivacyPolicyPage = lazyRoute(() => import('@/pages/PrivacyPolicyPage'))
+const TermsPage = lazyRoute(() => import('@/pages/TermsPage'))
+const CookiePolicyPage = lazyRoute(() => import('@/pages/CookiePolicyPage'))
+const AboutPage = lazyRoute(() => import('@/pages/AboutPage'))
+const FaqPage = lazyRoute(() => import('@/pages/FaqPage'))
 
 // Protected pages - lazy loaded
-const ArtistDashboard = lazy(() => import('@/pages/artist/ArtistDashboard'))
-const PublicArtistProfile = lazy(() => import('@/pages/PublicArtistProfile'))
-const ArtistMembership = lazy(() => import('@/pages/artist/ArtistMembership'))
-const ArtistReferrals = lazy(() => import('@/pages/artist/ArtistReferrals'))
+const ArtistDashboard = lazyRoute(() => import('@/pages/artist/ArtistDashboard'))
+const PublicArtistProfile = lazyRoute(() => import('@/pages/PublicArtistProfile'))
+const ArtistMembership = lazyRoute(() => import('@/pages/artist/ArtistMembership'))
+const ArtistReferrals = lazyRoute(() => import('@/pages/artist/ArtistReferrals'))
 
-const HotelDashboard = lazy(() => import('@/pages/hotel/HotelDashboard'))
-const HotelArtists = lazy(() => import('@/pages/hotel/HotelArtists'))
-const HotelCredits = lazy(() => import('@/pages/hotel/HotelCredits'))
+const HotelDashboard = lazyRoute(() => import('@/pages/hotel/HotelDashboard'))
+const HotelArtists = lazyRoute(() => import('@/pages/hotel/HotelArtists'))
+const HotelCredits = lazyRoute(() => import('@/pages/hotel/HotelCredits'))
 
-const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
-const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
-const AdminAnalytics = lazy(() => import('@/pages/admin/AdminAnalytics'))
-const AdminModeration = lazy(() => import('@/pages/admin/AdminModeration'))
-const AdminAdmissions = lazy(() => import('@/pages/admin/AdminAdmissions'))
-const AdminReferrals = lazy(() => import('@/pages/admin/AdminReferrals'))
-const AdminLogs = lazy(() => import('@/pages/admin/AdminLogs'))
-const TravelerExperiencesPage = lazy(() => import('@/pages/TravelerExperiencesPage'))
-const ExperienceDetailsPage = lazy(() => import('@/pages/ExperienceDetailsPage'))
-const RegistrationSentPage = lazy(() => import('@/pages/RegistrationSentPage'))
-const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage'))
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const AdminDashboard = lazyRoute(() => import('@/pages/admin/AdminDashboard'))
+const AdminUsers = lazyRoute(() => import('@/pages/admin/AdminUsers'))
+const AdminAnalytics = lazyRoute(() => import('@/pages/admin/AdminAnalytics'))
+const AdminModeration = lazyRoute(() => import('@/pages/admin/AdminModeration'))
+const AdminAdmissions = lazyRoute(() => import('@/pages/admin/AdminAdmissions'))
+const AdminReferrals = lazyRoute(() => import('@/pages/admin/AdminReferrals'))
+const AdminLogs = lazyRoute(() => import('@/pages/admin/AdminLogs'))
+const TravelerExperiencesPage = lazyRoute(() => import('@/pages/TravelerExperiencesPage'))
+const ExperienceDetailsPage = lazyRoute(() => import('@/pages/ExperienceDetailsPage'))
+const RegistrationSentPage = lazyRoute(() => import('@/pages/RegistrationSentPage'))
+const VerifyEmailPage = lazyRoute(() => import('@/pages/VerifyEmailPage'))
+const NotFoundPage = lazyRoute(() => import('@/pages/NotFoundPage'))
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
