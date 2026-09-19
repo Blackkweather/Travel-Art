@@ -62,9 +62,18 @@ router.post('/', async (req: Request, res: Response) => {
     return res.status(200).json({ received: true, ignored: event.type });
   }
 
-  // Claim the event before doing any work. The unique constraint on
-  // stripeEventId turns a redelivery into a conflict, which we answer 200 so
-  // Stripe stops retrying.
+  /* Claim the delivery before doing any work. The unique constraint on
+     stripeEventId turns a redelivery into a conflict.
+
+     A conflict is not automatically a duplicate, though. The row is only
+     marked processed once the work has actually succeeded, so a claim with a
+     null processedAt is a delivery somebody started and never finished - a
+     serverless timeout, a deploy, a crash, anything that kills the process
+     between the claim and the grant, none of which reaches the catch below.
+     Answering those "duplicate" is how a customer pays and silently receives
+     nothing, so a stale unfinished claim is handed to the retry instead. */
+  const STALE_AFTER_MS = 2 * 60 * 1000;
+
   try {
     await prisma.webhookEvent.create({
       data: {
@@ -75,15 +84,39 @@ router.post('/', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     if (err?.code === 'P2002') {
-      return res.status(200).json({ received: true, duplicate: true });
+      const existing = await prisma.webhookEvent.findUnique({
+        where: { stripeEventId: event.id },
+        select: { processedAt: true, claimedAt: true },
+      });
+
+      if (existing?.processedAt) {
+        return res.status(200).json({ received: true, duplicate: true });
+      }
+
+      const age = Date.now() - (existing?.claimedAt?.getTime() ?? 0);
+      if (age < STALE_AFTER_MS) {
+        /* Claimed moments ago and still running - most likely the delivery
+           this one duplicates is in flight right now. 409 rather than 200, so
+           Stripe comes back rather than treating it as settled. */
+        return res.status(409).json({ received: false, inFlight: true });
+      }
+
+      console.warn('Retaking a stale Stripe claim', event.id, 'claimed', Math.round(age / 1000), 's ago');
+    } else {
+      throw err;
     }
-    throw err;
   }
 
   try {
     if (event.type === 'checkout.session.completed') {
       await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
     }
+
+    // Finished, and only now does it count as processed.
+    await prisma.webhookEvent.update({
+      where: { stripeEventId: event.id },
+      data: { processedAt: new Date() },
+    });
   } catch (err: any) {
     // Let Stripe retry: the WebhookEvent row is removed so the retry is not
     // mistaken for a duplicate and silently dropped.

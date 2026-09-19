@@ -424,10 +424,28 @@ model WebhookEvent {
   id            String   @id @default(cuid())
   stripeEventId String   @unique
   type          String
-  processedAt   DateTime @default(now())
-  payload       String?
+
+  /// When the delivery was claimed, which is not when it was finished.
+  claimedAt DateTime @default(now())
+
+  /// Set only once the work actually succeeded.
+  ///
+  /// This used to default to now(), so a row said "processed" the instant it
+  /// was created - before any credits were granted. The handler claims the
+  /// event, then makes several sequential round trips to a database in
+  /// us-east-1. If the process dies in between - a serverless timeout, a
+  /// deploy, a crash - the catch that removes the claim never runs, the row
+  /// survives looking complete, and Stripe's retry is answered "duplicate"
+  /// and stops. The customer has paid and silently receives nothing.
+  ///
+  /// NULL now means claimed but unfinished, which is a state a retry is
+  /// allowed to take over once it has gone stale.
+  processedAt DateTime?
+
+  payload String?
 
   @@index([type])
+  @@index([processedAt])
   @@map("webhook_events")
 }
 
