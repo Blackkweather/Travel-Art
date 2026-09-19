@@ -132,10 +132,24 @@ app.use(cors({
 }));
 
 // Rate limiting
+/* Both limiters answer in the envelope every other endpoint uses.
+   They replied with a bare string, so a client reading the documented shape -
+   error.response.data.error.message - found nothing and showed the user
+   either silence or "Request failed with status code 429". Being throttled is
+   a thing a person can act on, but only if they are told. */
+const tooMany = (message: string) => ({
+  success: false,
+  error: { message },
+});
+
 const limiter = rateLimit({
   windowMs: config.rateLimitWindowMs,
   max: config.rateLimitMaxRequests,
-  message: 'Too many requests from this IP, please try again later.'
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: tooMany(
+    'Trop de requêtes depuis cette adresse. Patientez quelques minutes avant de réessayer.'
+  ),
 });
 app.use('/api/', limiter);
 
@@ -151,7 +165,11 @@ const credentialLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   skipSuccessfulRequests: true,
-  message: 'Too many failed attempts from this IP, please try again in 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: tooMany(
+    'Trop de tentatives échouées depuis cette adresse. Réessayez dans 15 minutes.'
+  ),
 });
 app.use('/api/auth/login', credentialLimiter);
 app.use('/api/auth/register', credentialLimiter);

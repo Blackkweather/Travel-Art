@@ -43,11 +43,21 @@ export default function ProofBand() {
 
   if (!stats) return null
 
+  /* Each label says exactly what the number counts, which two of them did
+     not. `totalArtists` is every artist with an account, not the handful
+     currently in a house - at the time of writing, eighteen registered
+     against five live residencies - and `totalBookings` counts every booking
+     ever created, cancelled and completed among them, so calling it
+     "programmées" claimed sixteen were on the calendar.
+
+     This band is the first hard number anyone evaluating the business reads.
+     A figure that does not survive the follow-up question costs more than the
+     larger number ever gained. */
   const figures = [
-    { value: stats.totalArtists, label: t('artistes en résidence') },
-    { value: stats.totalHotels, label: t('hôtels partenaires') },
+    { value: stats.totalArtists, label: t('artistes inscrits') },
+    { value: stats.totalHotels, label: t('maisons inscrites') },
     { value: stats.totalVenues, label: t('lieux de représentation') },
-    { value: stats.totalBookings, label: t('résidences programmées') },
+    { value: stats.totalBookings, label: t('résidences demandées') },
   ].filter((f) => typeof f.value === 'number' && f.value > 0)
 
   if (figures.length === 0) return null
