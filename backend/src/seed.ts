@@ -456,6 +456,16 @@ async function main() {
       }
     });
 
+    /* Credits and the entry that explains where they came from, together.
+       The ledger calls itself an append-only record of every credit movement,
+       and the Stripe webhook honours that - it writes a PURCHASE row in the
+       same transaction as the balance. The seed did not, so every seeded
+       hotel held a balance with no provenance and the ledger could never
+       reconcile against it: checked across 35 hotels, the one with any
+       history at all summed to -20 against a stored 40, purely because the
+       opening balance was invisible.
+
+       A grant nobody paid for is PROMOTIONAL_GRANT, which is what it is. */
     await prisma.credit.upsert({
       where: { hotelId: hotel.id },
       update: { totalCredits: 60, usedCredits: 0 },
@@ -465,6 +475,21 @@ async function main() {
         usedCredits: 0
       }
     });
+
+    const openingEntry = await prisma.creditLedger.findFirst({
+      where: { hotelId: hotel.id, reason: 'PROMOTIONAL_GRANT' },
+      select: { id: true }
+    });
+    if (!openingEntry) {
+      await prisma.creditLedger.create({
+        data: {
+          hotelId: hotel.id,
+          delta: 60,
+          reason: 'PROMOTIONAL_GRANT',
+          note: 'Solde initial de démonstration'
+        }
+      });
+    }
 
     createdHotels.push(hotel);
   }

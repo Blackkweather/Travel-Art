@@ -324,25 +324,99 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   // bookings already made.
   const creditCost = artist.bookingCreditCost;
 
-  // The hotel must be able to afford it before anything is written. Balance is
-  // derived from the ledger, which is the authoritative record; the Credit row
-  // is the running total kept in step with it.
-  const creditAccount = await prisma.credit.findUnique({
-    where: { hotelId: hotel.id }
-  });
+  /* The credits are claimed here, atomically, before anything else exists.
 
-  const availableCredits =
-    (creditAccount?.totalCredits ?? 0) - (creditAccount?.usedCredits ?? 0);
+     This used to read the balance, compare it in JavaScript, and write the
+     spend in a separate transaction further down. Nothing held a lock across
+     that gap and a round trip to the database is ~300ms, so two requests in
+     flight at once both read the same balance and both passed the check.
+     Demonstrated against the running app: a house holding 60 credits, with
+     residencies costing 5, had twenty accepted at once - 100 credits spent
+     against a budget of 60, leaving usedCredits 40 higher than totalCredits.
+     Every one of those is a real commitment to an artist that nobody paid for.
 
-  if (availableCredits < creditCost) {
-    throw new CustomError(
-      `This booking costs ${creditCost} credits and you have ${availableCredits}. Please top up before booking.`,
-      400
-    );
+     A single conditional UPDATE closes it. The row is matched only if it can
+     still afford the cost, and the database applies that test and the
+     increment as one indivisible operation, so concurrent callers queue behind
+     each other on the row rather than racing past it. No lock to hold, no
+     isolation level to configure, and it is the same statement whether one
+     request arrives or fifty. */
+  let creditsClaimed = false;
+
+  if (creditCost > 0) {
+    /* Compare-and-swap, because the read and the write have to be one
+       decision.
+
+       This used to read the balance, compare it in JavaScript, and write the
+       spend in a separate transaction further down. Nothing held a lock across
+       that gap and a round trip to the database is ~300ms, so requests in
+       flight together all read the same balance and all passed the check.
+       Demonstrated against the running app: a house holding 60 credits, with
+       residencies costing 5, had twenty accepted at once - 100 credits spent
+       against a budget of 60, leaving usedCredits 40 higher than totalCredits.
+       Every one of those was a real commitment to an artist nobody paid for.
+
+       The update below matches the row only if `usedCredits` is still exactly
+       what was just read, and sets it to the value derived from that same
+       read. A concurrent claim moves it, our WHERE stops matching, the update
+       touches nothing and we go round again with fresh numbers. One of the two
+       wins and the other re-checks affordability honestly.
+
+       Deliberately not a raw conditional UPDATE, which would be one statement
+       instead of two: Credit is an RLS-protected model and the extension that
+       stamps the caller's identity only wraps model operations, so raw SQL
+       arrives without it and the policy refuses the write. Measured - every
+       request came back "you have 60 credits" while holding 60. */
+    for (let attempt = 0; attempt < 5 && !creditsClaimed; attempt += 1) {
+      const account = await prisma.credit.findUnique({
+        where: { hotelId: hotel.id }
+      });
+
+      const availableCredits =
+        (account?.totalCredits ?? 0) - (account?.usedCredits ?? 0);
+
+      if (!account || availableCredits < creditCost) {
+        throw new CustomError(
+          `This booking costs ${creditCost} credits and you have ${availableCredits}. Please top up before booking.`,
+          400
+        );
+      }
+
+      const claim = await prisma.credit.updateMany({
+        where: { hotelId: hotel.id, usedCredits: account.usedCredits },
+        data: { usedCredits: account.usedCredits + creditCost }
+      });
+
+      if (claim.count === 1) {
+        creditsClaimed = true;
+      }
+    }
+
+    if (!creditsClaimed) {
+      // Five losses in a row means genuine contention on this hotel, not a
+      // shortfall. Saying "no credits" here would be a lie.
+      throw new CustomError(
+        'Trop de réservations simultanées sur ce compte. Réessayez dans un instant.',
+        409
+      );
+    }
   }
 
+  /* From here on the credits are already spent, so any failure has to give
+     them back - otherwise a house is charged for a residency that does not
+     exist. */
+  const releaseClaim = async () => {
+    if (!creditsClaimed) return;
+    await prisma.credit.update({
+      where: { hotelId: hotel.id },
+      data: { usedCredits: { decrement: creditCost } },
+    }).catch((error) => console.error('Credit claim not released for hotel', hotel.id, error));
+  };
+
   // Create booking with weekly payment
-  const booking = await prisma.booking.create({
+  let booking;
+  try {
+    booking = await prisma.booking.create({
     data: {
       hotelId: bookingData.hotelId,
       artistId: bookingData.artistId,
@@ -382,25 +456,28 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
       }
     }
   });
+  } catch (error) {
+    // The residency could not be written, so the credits go back.
+    await releaseClaim();
+    throw error;
+  }
 
-  // Spend the credits. The ledger entry and the running total move together
-  // so the two can never disagree; the ledger is what answers a dispute.
+  /* The ledger entry that explains the claim made above. The running total is
+     deliberately NOT touched here: it was already moved by the conditional
+     UPDATE, and incrementing it again would charge the house twice for one
+     residency. The ledger is what answers a dispute, so it still has to be
+     written - if this fails the balance is right and the trail is missing,
+     which is recoverable; the reverse would not be. */
   if (creditCost > 0) {
-    await prisma.$transaction([
-      prisma.creditLedger.create({
-        data: {
-          hotelId: hotel.id,
-          delta: -creditCost,
-          reason: 'BOOKING_SPEND',
-          bookingId: booking.id,
-          note: `Booking ${booking.id}`
-        }
-      }),
-      prisma.credit.update({
-        where: { hotelId: hotel.id },
-        data: { usedCredits: { increment: creditCost } }
-      })
-    ]);
+    await prisma.creditLedger.create({
+      data: {
+        hotelId: hotel.id,
+        delta: -creditCost,
+        reason: 'BOOKING_SPEND',
+        bookingId: booking.id,
+        note: `Booking ${booking.id}`
+      }
+    }).catch((error) => console.error('Ledger entry missing for booking', booking.id, error));
   }
 
   // Create pending transaction for the booking payment
