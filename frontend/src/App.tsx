@@ -6,6 +6,7 @@ import SEOHead from '@/components/SEOHead'
 import { getDefaultOrganizationSchema } from '@/utils/structuredData'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import SkipToContent from '@/components/SkipToContent'
+import SiteIntro from '@/components/SiteIntro'
 import analytics from '@/utils/analytics'
 import { useAppKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
@@ -127,6 +128,15 @@ function App() {
   
   return (
     <ErrorBoundary>
+      {/* Only at the front door. A hotelier arriving straight at
+          /dashboard/bookings is at work, not being introduced to a brand, and
+          the component itself already limits this to once a session. */}
+      {location.pathname === '/' && (
+        <SiteIntro
+          videoSrc="/intro/courtyard.mp4"
+          posterSrc="/intro/courtyard.jpg"
+        />
+      )}
       <SkipToContent />
       <SEOHead structuredData={getDefaultOrganizationSchema()} />
       {showInitialLoading ? (
