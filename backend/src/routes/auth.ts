@@ -28,19 +28,39 @@ const router = Router();
 const passwordFingerprint = (passwordHash: string): string =>
   createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
 
+/**
+ * One password policy, enforced everywhere a password is set.
+ *
+ * There were three. The registration form demanded a lower-case letter, an
+ * upper-case letter, a digit and a special character and said so in its
+ * placeholder; the register endpoint asked only for a letter and a digit; and
+ * reset-password asked for nothing beyond eight characters of anything. So the
+ * rule the product tells people is the rule could be sidestepped entirely by
+ * registering against the API directly, or - far more easily - by signing up
+ * and immediately resetting to `12345678`.
+ *
+ * A policy that only the form enforces is not a policy. This is the client's
+ * stated rule, which is the strictest of the three and the one users have
+ * already been promised, applied on the server where it cannot be skipped.
+ */
+const passwordPolicy = z
+  .string()
+  .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+  .max(128, 'Le mot de passe ne peut pas dépasser 128 caractères')
+  .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
+  .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
+  .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre')
+  .regex(
+    /[@$!%*?&#^()_+\-=[\]{};':"\|,.<>/?]/,
+    'Le mot de passe doit contenir au moins un caractère spécial'
+  );
+
 // Validation schemas
 const registerSchema = z.object({
   role: z.enum(['ARTIST', 'HOTEL']),
   name: z.string().min(2).max(100),
   email: z.string().email(),
-  // The registration form asks for length, a letter and a digit and scores the
-  // result; the API accepted `min(8)`, so "password" passed. The two now agree.
-  password: z
-    .string()
-    .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
-    .max(128, 'Le mot de passe ne peut pas dépasser 128 caractères')
-    .regex(/[a-zA-Z]/, 'Le mot de passe doit contenir au moins une lettre')
-    .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre'),
+  password: passwordPolicy,
   phone: z.string().optional(),
   /* Acceptance is a condition of creating the account, not a preference, so
      only the literal `true` satisfies it: a missing field, a string, or an
@@ -634,9 +654,11 @@ router.post('/verify-email', asyncHandler(async (req, res) => {
 }));
 
 // Reset password with token
+/* Reset used to accept eight characters of anything, which made it the
+   cheapest way around every rule above. */
 const resetPasswordSchema = z.object({
   token: z.string(),
-  password: z.string().min(8)
+  password: passwordPolicy
 });
 
 router.post('/reset-password', asyncHandler(async (req, res) => {

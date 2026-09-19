@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { privacyApi } from '@/utils/api'
@@ -22,6 +22,7 @@ import { t } from '@/i18n'
 const CookieBanner: React.FC = () => {
   const { user } = useAuthStore()
   const [visible, setVisible] = useState(false)
+  const barRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     // Nothing is asked of someone who has already answered.
@@ -32,6 +33,25 @@ const CookieBanner: React.FC = () => {
       return () => window.clearTimeout(id)
     }
   }, [])
+
+  /* A fixed bar at the foot of the page covers whatever the page put there.
+     Measured on /about, it hid the newsletter field, its subscribe button and
+     two footer links - so the page reserves exactly the bar's height until the
+     question is answered. The height is measured rather than hardcoded because
+     the copy wraps to two lines on a narrow screen. */
+  useEffect(() => {
+    if (!visible) return
+    const apply = () => {
+      const h = barRef.current?.offsetHeight ?? 0
+      document.body.style.paddingBottom = h ? `${h}px` : ''
+    }
+    apply()
+    window.addEventListener('resize', apply)
+    return () => {
+      window.removeEventListener('resize', apply)
+      document.body.style.paddingBottom = ''
+    }
+  }, [visible])
 
   const answer = (granted: boolean) => {
     setAnalyticsChoice(granted ? 'granted' : 'denied')
@@ -51,6 +71,7 @@ const CookieBanner: React.FC = () => {
 
   return (
     <div
+      ref={barRef}
       className="fixed inset-x-0 bottom-0 z-[9998] border-t border-line bg-surface-raised shadow-soft"
       role="dialog"
       aria-live="polite"

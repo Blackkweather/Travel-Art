@@ -19,7 +19,12 @@ const RegisterPage: React.FC = () => {
   // here with ?role=..., but nothing ever read it: visitors landed on the
   // picker regardless and had to choose their role a second time.
   const [selectedRole, setSelectedRole] = useState<'ARTIST' | 'HOTEL' | null>(
-    () => ROLE_FROM_PARAM[searchParams.get('role') || ''] || null
+    /* Lower-cased before the lookup. Every link inside the app spells it
+       `?role=artist`, but the map only had lowercase keys and did no
+       normalising, so `?role=ARTIST` - the spelling anyone writing a campaign
+       URL or sharing a link by hand would reach for - fell through to the
+       picker and asked them to choose a second time. */
+    () => ROLE_FROM_PARAM[(searchParams.get('role') || '').trim().toLowerCase()] || null
   )
   const [hoveredRole, setHoveredRole] = useState<'ARTIST' | 'HOTEL' | null>(null)
 
