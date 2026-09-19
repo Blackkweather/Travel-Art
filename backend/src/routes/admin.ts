@@ -446,23 +446,42 @@ router.get('/bookings', authenticate, authorize('ADMIN'), asyncHandler(async (re
   }
 
   const [bookings, total] = await Promise.all([
+    /* The same shape that made the hotel-facing list 34KB and seven seconds:
+       `include` on artist and hotel pulls every column of both - bio, images,
+       videos, mediaUrls, artisticProfile, performanceSpots, rooms - to render
+       a name, a discipline and a city. These are the fields AdminBookings
+       reads, and nothing added to either model later can widen this. */
     prisma.booking.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        artistId: true,
+        hotelId: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        numberOfWeeks: true,
+        creditCost: true,
+        totalPaymentAmount: true,
+        paymentStatus: true,
+        notes: true,
+        createdAt: true,
         artist: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
+          select: {
+            id: true,
+            stageName: true,
+            discipline: true,
+            user: { select: { name: true, email: true } },
+          },
         },
         hotel: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
+          select: {
+            id: true,
+            name: true,
+            location: true,
+            user: { select: { name: true, email: true } },
+          },
+        },
       },
       skip,
       take: limitNum,
