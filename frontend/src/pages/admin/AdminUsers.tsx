@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { adminApi } from '@/utils/api'
-import { User, Search, Filter, Download } from 'lucide-react'
+import { User, Search, Filter } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
@@ -8,6 +8,7 @@ import SEOHead from '@/components/SEOHead'
 import toast from 'react-hot-toast'
 import { parseJsonField } from '@/utils/apiPayload'
 import { formatShortDate } from '@/utils/i18n'
+import ExportButtons from '@/components/ExportButtons'
 
 interface UserData {
   id: string
@@ -109,21 +110,6 @@ const AdminUsers: React.FC = () => {
     }
   }
 
-  const handleExport = async () => {
-    try {
-      const response = await adminApi.exportData('users')
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', 'users.csv')
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-    } catch {
-      toast.error('Échec de l’export des utilisateurs')
-    }
-  }
-
   /* A role is not a status. Painting ADMIN in the critical red reserved for
      failures said an administrator account was a problem; all three roles are
      now the neutral chip, and the label carries the distinction. */
@@ -160,13 +146,7 @@ const AdminUsers: React.FC = () => {
             {t('Gérer les utilisateurs, vérifier les comptes et traiter les demandes d’assistance.')}
           </p>
         </div>
-        <button
-          onClick={handleExport}
-          className="btn-secondary flex items-center space-x-2"
-        >
-          <Download className="w-4 h-4" />
-          <span>{t('Exporter en CSV')}</span>
-        </button>
+        <ExportButtons type="users" />
       </div>
 
       {/* Filters */}

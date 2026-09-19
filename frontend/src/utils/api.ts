@@ -233,19 +233,38 @@ export const adminApi = {
   getReferrals: (params?: any) =>
     apiClient.get('/admin/referrals', params),
   
-  exportData: async (type: string) => {
+  /**
+   * Downloads an admin export and saves it under the name the server chose.
+   *
+   * `format` is 'csv' or 'xlsx'. The filename comes from Content-Disposition
+   * rather than being rebuilt here: the server already stamps the date and
+   * knows the extension, and two places inventing the same name is how an
+   * .xlsx ends up saved as .csv and refusing to open.
+   */
+  exportData: async (
+    type: 'bookings' | 'users' | 'logs',
+    format: 'csv' | 'xlsx' = 'csv'
+  ) => {
     // Uses axios directly rather than apiClient because it needs a blob
     // response, but it must resolve the base URL the same way - its own
     // fallback was http://localhost:8080/api, a port nothing in this project
     // listens on, so an export in development failed with a network error.
     const baseUrl = (import.meta as any).env?.VITE_API_URL || '/api'
-    const response = await axios.get(`${baseUrl}/admin/export?type=${type}`, {
-      responseType: 'blob',
-      headers: {
-        'Authorization': `Bearer ${useAuthStore.getState().token}`
+    const response = await axios.get(
+      `${baseUrl}/admin/export?type=${type}&format=${format}`,
+      {
+        responseType: 'blob',
+        headers: {
+          'Authorization': `Bearer ${useAuthStore.getState().token}`
+        }
       }
-    })
-    return response
+    )
+
+    const disposition = String(response.headers['content-disposition'] || '')
+    const match = disposition.match(/filename="?([^";]+)"?/i)
+    const filename = match ? match[1] : `travel-art-${type}.${format}`
+
+    return { response, filename }
   },
 }
 

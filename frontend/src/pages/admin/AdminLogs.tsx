@@ -8,7 +8,6 @@ import {
   Shield, 
   Filter, 
   Search,
-  Download,
   RefreshCw,
   Clock,
   User,
@@ -21,7 +20,7 @@ import toast from 'react-hot-toast'
 import { t } from '@/i18n'
 import { formatRelative } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
-import { toCsv, downloadCsv } from '@/utils/csv'
+import ExportButtons from '@/components/ExportButtons'
 
 type ActivityType = 'ALL' | 'USER_REGISTRATION' | 'BOOKING' | 'TRANSACTION' | 'RATING' | 'ADMIN_ACTION'
 
@@ -177,22 +176,6 @@ const AdminLogs: React.FC = () => {
   // copy of the admin dashboard's version of the same function.
   const formatTimestamp = formatRelative
 
-  const exportLogs = () => {
-    const csv = toCsv(
-      ['Type', 'Action', 'Actor', 'Target', 'Details', 'Timestamp'],
-      filteredActivities.map(a => [
-        a.type,
-        a.action,
-        a.actor?.name || a.actor?.email || 'N/A',
-        a.target?.name || a.target?.email || 'N/A',
-        JSON.stringify(a.details),
-        a.timestamp
-      ])
-    )
-    downloadCsv(csv, `activity-logs-${new Date().toISOString().split('T')[0]}.csv`)
-    toast.success(t('Journal d’activité exporté'))
-  }
-
   const activityTypes: { value: ActivityType; label: string; count?: number }[] = [
     { value: 'ALL', label: t('Toutes les activités'), count: summary?.totalActivities },
     { value: 'USER_REGISTRATION', label: 'Inscriptions', count: summary?.byType?.USER_REGISTRATION },
@@ -223,13 +206,7 @@ const AdminLogs: React.FC = () => {
             <RefreshCw className="w-4 h-4" />
             {t('Actualiser')}
           </button>
-          <button
-            onClick={exportLogs}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            {t('Exporter en CSV')}
-          </button>
+            <ExportButtons type="logs" />
         </div>
       </div>
 

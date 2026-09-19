@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { adminApi } from '@/utils/api'
-import { Calendar, MapPin, User, Building, Download, Filter, DollarSign } from 'lucide-react'
+import { Calendar, MapPin, User, Building, Filter, DollarSign } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import {
@@ -13,8 +13,8 @@ import {
 import { t } from '@/i18n'
 import { formatNumber, LOCALE } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
-import toast from 'react-hot-toast'
 import { parseJsonField } from '@/utils/apiPayload'
+import ExportButtons from '@/components/ExportButtons'
 
 interface BookingData {
   id: string
@@ -84,21 +84,6 @@ const AdminBookings: React.FC = () => {
     fetchBookings()
   }, [currentPage, selectedStatus])
 
-  const handleExport = async () => {
-    try {
-      const response = await adminApi.exportData('bookings')
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', 'bookings.csv')
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-    } catch {
-      toast.error('Échec de l’export des réservations')
-    }
-  }
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(LOCALE, {
       month: 'short',
@@ -139,13 +124,7 @@ const AdminBookings: React.FC = () => {
             {t('Suivre et gérer l’ensemble des réservations de la plateforme.')}
           </p>
         </div>
-        <button
-          onClick={handleExport}
-          className="btn-secondary flex items-center space-x-2"
-        >
-          <Download className="w-4 h-4" />
-          <span>{t('Exporter en CSV')}</span>
-        </button>
+        <ExportButtons type="bookings" />
       </div>
 
       {/* One rule between four peers, not four boxed cards with four coloured

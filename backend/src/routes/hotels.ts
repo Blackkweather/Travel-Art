@@ -539,6 +539,20 @@ router.get('/:id/credits', authenticate, authorize('HOTEL'), asyncHandler(async 
 
 // Browse artists with filters
 router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  /* The id in this path was decorative: it was never read, so any hotel could
+     pass any other hotel's id and be served normally. Nothing leaked, because
+     the roster this returns is the same for everyone - but an id that is
+     accepted and ignored is a hole waiting for the first piece of
+     hotel-specific logic to be added here, and it reads as a guard to anyone
+     auditing the route. It is checked now, exactly like /:id/rooms below. */
+  const owned = await prisma.hotel.findFirst({
+    where: { id: req.params.id, userId: req.user!.id },
+    select: { id: true },
+  });
+  if (!owned) {
+    throw new CustomError('Hotel not found or access denied.', 404);
+  }
+
   const { discipline, location, dateFrom, dateTo, page = '1', limit = '10' } = req.query;
 
   const pageNum = parseInt(page as string);

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { Dataset, ExportFormat, sendExport } from '../utils/exporter';
 import { approvedEmail, rejectedEmail } from '../services/email';
 import { config } from '../config';
 
@@ -293,80 +294,184 @@ const csvCell = (value: unknown): string => {
   return `"${str.replace(/"/g, '""')}"`;
 };
 
-router.get('/export', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  const { type } = req.query;
+const EXPORT_TYPES = ['bookings', 'users', 'logs'] as const;
+type ExportType = (typeof EXPORT_TYPES)[number];
 
+/**
+ * Builds the requested dataset. Each one selects named fields rather than
+ * including whole models: an export is the easiest place to leak a column
+ * somebody added later without thinking about who reads the file.
+ */
+async function buildExportDataset(type: ExportType): Promise<Dataset> {
   if (type === 'bookings') {
     const bookings = await prisma.booking.findMany({
-      include: {
-        artist: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        },
-        hotel: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
-      }
+      select: {
+        id: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        numberOfWeeks: true,
+        creditCost: true,
+        totalPaymentAmount: true,
+        paymentStatus: true,
+        createdAt: true,
+        artist: { select: { stageName: true, discipline: true, user: { select: { name: true, email: true } } } },
+        hotel: { select: { name: true, user: { select: { name: true, email: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    const csvData = [
-      'Booking ID,Hotel Name,Artist Name,Start Date,End Date,Status,Payment Amount,Payment Status,Weeks,Created At',
-      ...bookings.map(booking =>
-        [
-          csvCell(booking.id),
-          csvCell(booking.hotel.user.name),
-          csvCell(booking.artist.user.name),
-          csvCell(booking.startDate.toISOString()),
-          csvCell(booking.endDate.toISOString()),
-          csvCell(booking.status),
-          csvCell(`€${booking.totalPaymentAmount || 0}`),
-          csvCell(booking.paymentStatus || 'PENDING'),
-          csvCell(booking.numberOfWeeks || 0),
-          csvCell(booking.createdAt.toISOString())
-        ].join(',')
-      )
-    ].join('\n');
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=bookings.csv');
-    res.send(csvData);
-  } else if (type === 'users') {
-    const users = await prisma.user.findMany({
-      include: {
-        artist: true,
-        hotel: true
-      }
-    });
-
-    const csvData = [
-      'User ID,Name,Email,Role,Country,Language,Is Active,Created At',
-      ...users.map(user =>
-        [
-          csvCell(user.id),
-          csvCell(user.name),
-          csvCell(user.email),
-          csvCell(user.role),
-          csvCell(user.country || ''),
-          csvCell(user.language),
-          csvCell(user.isActive),
-          csvCell(user.createdAt.toISOString())
-        ].join(',')
-      )
-    ].join('\n');
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
-    res.send(csvData);
-  } else {
-    throw new CustomError('Invalid export type. Use "bookings" or "users".', 400);
+    return {
+      name: 'residences',
+      columns: [
+        { header: 'Référence', key: 'id', width: 28 },
+        { header: 'Maison', key: 'hotel' },
+        { header: 'Contact maison', key: 'hotelEmail', width: 28 },
+        { header: 'Artiste', key: 'artist' },
+        { header: 'Discipline', key: 'discipline' },
+        { header: 'Contact artiste', key: 'artistEmail', width: 28 },
+        { header: 'Arrivée', key: 'startDate' },
+        { header: 'Départ', key: 'endDate' },
+        { header: 'Semaines', key: 'weeks' },
+        { header: 'Statut', key: 'status' },
+        { header: 'Crédits', key: 'credits' },
+        { header: 'Montant (€)', key: 'amount' },
+        { header: 'Paiement', key: 'paymentStatus' },
+        { header: 'Créée le', key: 'createdAt' },
+      ],
+      rows: bookings.map((b) => ({
+        id: b.id,
+        hotel: b.hotel?.name || b.hotel?.user?.name || '',
+        hotelEmail: b.hotel?.user?.email || '',
+        artist: b.artist?.stageName || b.artist?.user?.name || '',
+        discipline: b.artist?.discipline || '',
+        artistEmail: b.artist?.user?.email || '',
+        startDate: b.startDate.toISOString().slice(0, 10),
+        endDate: b.endDate.toISOString().slice(0, 10),
+        weeks: b.numberOfWeeks ?? '',
+        status: b.status,
+        credits: b.creditCost ?? 0,
+        amount: b.totalPaymentAmount ?? 0,
+        paymentStatus: b.paymentStatus || 'PENDING',
+        createdAt: b.createdAt.toISOString().slice(0, 16).replace('T', ' '),
+      })),
+    };
   }
+
+  if (type === 'users') {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true, name: true, email: true, role: true, country: true,
+        language: true, isActive: true, approvalStatus: true,
+        emailVerified: true, acceptedTermsAt: true, acceptedTermsVersion: true,
+        createdAt: true,
+        artist: { select: { discipline: true, membershipStatus: true } },
+        hotel: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      name: 'comptes',
+      columns: [
+        { header: 'Référence', key: 'id', width: 28 },
+        { header: 'Nom', key: 'name' },
+        { header: 'E-mail', key: 'email', width: 30 },
+        { header: 'Rôle', key: 'role' },
+        { header: 'Établissement', key: 'hotel' },
+        { header: 'Discipline', key: 'discipline' },
+        { header: 'Adhésion', key: 'membership' },
+        { header: 'Pays', key: 'country' },
+        { header: 'Langue', key: 'language' },
+        { header: 'Actif', key: 'isActive' },
+        { header: 'Admission', key: 'approvalStatus' },
+        { header: 'E-mail vérifié', key: 'emailVerified' },
+        { header: 'CGU acceptées le', key: 'acceptedTermsAt', width: 20 },
+        { header: 'Version CGU', key: 'acceptedTermsVersion' },
+        { header: 'Inscrit le', key: 'createdAt' },
+      ],
+      rows: users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        hotel: u.hotel?.name || '',
+        discipline: u.artist?.discipline || '',
+        membership: u.artist?.membershipStatus || '',
+        country: u.country || '',
+        language: u.language,
+        isActive: u.isActive ? 'oui' : 'non',
+        approvalStatus: u.approvalStatus,
+        emailVerified: u.emailVerified ? 'oui' : 'non',
+        // Blank means the account predates the consent gate, which is a real
+        // and actionable state - not something to paper over with a date.
+        acceptedTermsAt: u.acceptedTermsAt ? u.acceptedTermsAt.toISOString().slice(0, 16).replace('T', ' ') : '',
+        acceptedTermsVersion: u.acceptedTermsVersion || '',
+        createdAt: u.createdAt.toISOString().slice(0, 16).replace('T', ' '),
+      })),
+    };
+  }
+
+  // logs
+  const logs = await prisma.adminLog.findMany({
+    select: {
+      id: true, action: true, targetId: true, createdAt: true,
+      actor: { select: { name: true, email: true, role: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 5000,
+  });
+
+  return {
+    name: 'journal',
+    columns: [
+      { header: 'Référence', key: 'id', width: 28 },
+      { header: 'Date', key: 'createdAt', width: 20 },
+      { header: 'Action', key: 'action', width: 30 },
+      { header: 'Auteur', key: 'actor' },
+      { header: 'E-mail auteur', key: 'actorEmail', width: 30 },
+      { header: 'Rôle', key: 'actorRole' },
+      { header: 'Cible', key: 'targetId', width: 28 },
+    ],
+    rows: logs.map((l) => ({
+      id: l.id,
+      createdAt: l.createdAt.toISOString().slice(0, 16).replace('T', ' '),
+      action: l.action,
+      actor: l.actor?.name || '',
+      actorEmail: l.actor?.email || '',
+      actorRole: l.actor?.role || '',
+      targetId: l.targetId || '',
+    })),
+  };
+}
+
+router.get('/export', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const type = String(req.query.type || '') as ExportType;
+  const format = String(req.query.format || 'csv').toLowerCase() as ExportFormat;
+
+  if (!EXPORT_TYPES.includes(type)) {
+    throw new CustomError(
+      `Type d'export inconnu. Valeurs acceptées : ${EXPORT_TYPES.join(', ')}.`,
+      400
+    );
+  }
+  if (format !== 'csv' && format !== 'xlsx') {
+    throw new CustomError('Format inconnu. Utilisez csv ou xlsx.', 400);
+  }
+
+  const dataset = await buildExportDataset(type);
+
+  /* Who exported what, and when. An export is the single largest disclosure
+     this system can make - the whole user list in one file - so it belongs in
+     the audit trail alongside suspensions and admissions. */
+  await prisma.adminLog.create({
+    data: {
+      action: `EXPORT_${type.toUpperCase()}_${format.toUpperCase()}_${dataset.rows.length}_ROWS`,
+      actorUserId: req.user!.id,
+    },
+  }).catch((error) => console.error('Export not logged', error));
+
+  await sendExport(res, dataset, format);
 }));
 
 // Get all users with pagination
