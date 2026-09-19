@@ -7,6 +7,7 @@ import { getDefaultOrganizationSchema } from '@/utils/structuredData'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import SkipToContent from '@/components/SkipToContent'
 import SiteIntro from '@/components/SiteIntro'
+import CookieBanner from '@/components/CookieBanner'
 import analytics from '@/utils/analytics'
 import { useAppKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
@@ -137,6 +138,7 @@ function App() {
           posterSrc="/intro/courtyard.jpg"
         />
       )}
+      <CookieBanner />
       <SkipToContent />
       <SEOHead structuredData={getDefaultOrganizationSchema()} />
       {showInitialLoading ? (

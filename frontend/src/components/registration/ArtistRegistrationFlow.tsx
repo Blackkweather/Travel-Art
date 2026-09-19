@@ -121,6 +121,12 @@ const ArtistRegistrationFlow: React.FC = () => {
         birthDate: state.basicInfo.birthDate,
         password: state.basicInfo.password,
         role: 'ARTIST' as const,
+        /* The box has been on this form the whole time and gated the submit
+           button, but its value never left the browser - so nothing was ever
+           recorded and there was no way to show anyone had agreed to
+           anything. The server refuses the registration outright if this is
+           absent or false. */
+        acceptTerms: state.basicInfo.agreeToTerms,
         artisticProfile: {
           mainCategory: state.artisticCategory.mainCategory,
           secondaryCategory: state.artisticCategory.secondaryCategory,

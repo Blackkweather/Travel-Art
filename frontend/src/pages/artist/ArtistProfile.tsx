@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import { t } from '@/i18n'
 import { formatShortDate } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
+import PrivacyControls from '@/components/PrivacyControls'
 import { parseJsonField } from '@/utils/apiPayload'
 
 const ArtistProfile: React.FC = () => {
@@ -891,6 +892,8 @@ const ArtistProfile: React.FC = () => {
           </button>
         </div>
       )}
+      <PrivacyControls />
+
       <ConfirmDialog
         open={confirmingDelete}
         title={t('Supprimer votre profil d’artiste ?')}

@@ -165,6 +165,8 @@ const itemVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 
 const HotelRegistrationFlow: React.FC = () => {
   const [state, setState] = useState<HotelRegistrationData>(INITIAL_STATE);
   const [isLoading, setIsLoading] = useState(false);
+  // Houses were never asked to accept anything at all.
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const navigate = useNavigate();
   const { register: registerUser } = useAuthStore();
 
@@ -280,6 +282,12 @@ const HotelRegistrationFlow: React.FC = () => {
         return;
       }
 
+      if (!acceptTerms) {
+        toast.error(t('Vous devez accepter les conditions générales et la politique de confidentialité.'));
+        setIsLoading(false);
+        return;
+      }
+
       const performanceSpotsPayload = JSON.stringify(
         state.spaces.map(s => ({
           name: s.name,
@@ -315,6 +323,7 @@ const HotelRegistrationFlow: React.FC = () => {
       // so the account was created and every answer past step 1 was lost.
       await registerUser({
         role: 'HOTEL',
+        acceptTerms,
         name: state.general.name,
         email: state.general.contactEmail,
         password: state.general.password,
@@ -713,9 +722,29 @@ const HotelRegistrationFlow: React.FC = () => {
                   <FormField label={t('Délai de réponse moyen')} placeholder="Ex: 48h" value={state.validation.delay || ''} onChange={(e) => updateValidation({ delay: (e.target as HTMLInputElement).value })} disabled={isLoading} />
                   <RadioGroup name="validation-process" label={t('Process de validation')} options={[{ value: 'Validation simple', label: 'Validation simple' }, { value: 'Validation après échange', label: t('Validation après échange') }]} value={state.validation.process} onChange={(v) => updateValidation({ process: v as ValidationProcess['process'] })} />
                   <FormField label={t('Personne décisionnaire')} placeholder={t('Nom et rôle')} value={state.validation.decisionMaker || ''} onChange={(e) => updateValidation({ decisionMaker: (e.target as HTMLInputElement).value })} disabled={isLoading} />
+                  <label className="flex items-start gap-3 pt-6 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      disabled={isLoading}
+                      className="mt-1 w-4 h-4 accent-gold shrink-0"
+                      data-testid="hotel-accept-terms"
+                    />
+                    <span className="text-sm text-content-secondary">
+                      {t('J’ai lu et j’accepte les')}{' '}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-gold underline">
+                        {t('conditions générales')}
+                      </a>{' '}
+                      {t('et la')}{' '}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-gold underline">
+                        {t('politique de confidentialité')}
+                      </a>.
+                    </span>
+                  </label>
                   <div className="flex justify-between pt-4">
                     <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
-                    <button type="button" onClick={handleSubmit} className="btn-primary" disabled={isLoading}>{isLoading ? 'Envoi…' : 'Terminer'}</button>
+                    <button type="button" onClick={handleSubmit} className="btn-primary" disabled={isLoading || !acceptTerms}>{isLoading ? 'Envoi…' : 'Terminer'}</button>
                   </div>
                 </motion.div>
               </motion.div>

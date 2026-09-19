@@ -4,6 +4,7 @@ import { Save, Edit3, MapPin, Building, Plus, Trash2, AlertCircle } from 'lucide
 import { hotelsApi } from '@/utils/api'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
+import PrivacyControls from '@/components/PrivacyControls'
 import { parseJsonField } from '@/utils/apiPayload'
 
 /**
@@ -370,6 +371,7 @@ const HotelProfile: React.FC = () => {
             </div>
           </div>
         </motion.section>
+      <PrivacyControls />
       </div>
     </div>
   )

@@ -170,6 +170,8 @@ export interface LoginCredentials {
 
 export interface RegisterData {
   role: 'ARTIST' | 'HOTEL'
+  /** Refused by the server unless literally true. */
+  acceptTerms?: boolean
   name: string
   firstName?: string
   lastName?: string

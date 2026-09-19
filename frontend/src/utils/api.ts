@@ -85,8 +85,11 @@ class ApiClient {
     return this.client.put(url, data)
   }
 
-  async delete<T = any>(url: string): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.delete(url)
+  /* `config` carries the rare DELETE that needs a body. Account erasure is
+     one: it takes the password and a typed confirmation, and neither belongs
+     in a query string where it would land in server logs. */
+  async delete<T = any>(url: string, config?: any): Promise<AxiosResponse<ApiResponse<T>>> {
+    return this.client.delete(url, config)
   }
 
   async patch<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
@@ -145,6 +148,20 @@ export const artistsApi = {
 
   removeAvailability: (id: string, availabilityId: string) =>
     apiClient.delete(`/artists/${id}/availability/${availabilityId}`),
+}
+
+// Privacy / data-subject rights
+export const privacyApi = {
+  setConsent: (kind: 'TERMS' | 'PRIVACY' | 'COOKIES_ANALYTICS', granted: boolean) =>
+    apiClient.post('/privacy/consent', { kind, granted }),
+
+  getConsent: () => apiClient.get('/privacy/consent'),
+
+  // Returns the whole record as a file, so it bypasses the JSON client.
+  exportUrl: () => '/api/privacy/export',
+
+  deleteAccount: (password: string) =>
+    apiClient.delete('/privacy/account', { data: { confirm: 'SUPPRIMER', password } }),
 }
 
 // Hotels API
