@@ -66,8 +66,16 @@ app.use(helmet({
         "data:",
         "https://res.cloudinary.com",
         "https://*.public.blob.vercel-storage.com",
-        // Raster tiles for the experiences map. The {s} in the tile URL
-        // expands to a/b/c, so the wildcard covers all three.
+        /* Raster tiles for the experiences map. The {s} in the tile URL
+           expands to a/b/c, so the wildcard covers all three.
+
+           CARTO is the one actually in use: TravelerExperiencesPage moved to
+           basemaps.cartocdn.com because OSM's volunteer tile server blocks
+           applications, and this list was not moved with it - so every tile on
+           /experiences was refused by our own policy and the map drew blank.
+           Measured before the fix: 24 CSP violations on one page load.
+           OSM stays listed because the layer is a one-line change back. */
+        "https://*.basemaps.cartocdn.com",
         "https://*.tile.openstreetmap.org",
       ],
       connectSrc: ["'self'"],

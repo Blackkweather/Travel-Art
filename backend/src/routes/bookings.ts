@@ -117,31 +117,48 @@ router.get('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
     }
 
     const [bookings, total] = await Promise.all([
+      /* `include` on artist and hotel pulled every column of both for every
+         booking - bio, images, videos, mediaUrls, artisticProfile,
+         performanceSpots, rooms, the lot - which is why sixteen bookings came
+         back as 34KB and the request took over seven seconds against a
+         database in us-east-1. These are the only fields the three booking
+         screens actually read. Named fields also mean a column added to
+         Artist or Hotel later cannot quietly start appearing in this
+         response: the other side of a booking is a different person. */
       prisma.booking.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          artistId: true,
+          hotelId: true,
+          startDate: true,
+          endDate: true,
+          status: true,
+          numberOfWeeks: true,
+          creditCost: true,
+          totalPaymentAmount: true,
+          paymentStatus: true,
+          notes: true,
+          createdAt: true,
           artist: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true
-                }
-              }
-            }
+            select: {
+              id: true,
+              stageName: true,
+              discipline: true,
+              phone: true,
+              profilePicture: true,
+              user: { select: { id: true, name: true, email: true } },
+            },
           },
           hotel: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true
-                }
-              }
-            }
-          }
+            select: {
+              id: true,
+              name: true,
+              location: true,
+              profilePicture: true,
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
         },
         skip,
         take: limitNum,
