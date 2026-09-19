@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { User, Building, ArrowRight } from 'lucide-react'
 import { ArtistRegistrationFlow, HotelRegistrationFlow } from '@/components/registration'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import { t } from '@/i18n'
@@ -69,10 +69,9 @@ const RegisterPage: React.FC = () => {
               transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
               className="inline-block mb-6"
             >
-              <img loading="lazy" decoding="async"
-                src={getLogoUrl('transparent')}
-                alt="Logo Travel Art"
-                className="w-40 h-40 md:w-56 md:h-56 object-contain mx-auto"
+              <BrandWordmark
+                className="w-40 md:w-56 h-auto mx-auto text-navy dark:text-cream"
+                title="Logo Travel Art"
               />
             </motion.div>
             {/* This carried three competing text colours at once: text-white,

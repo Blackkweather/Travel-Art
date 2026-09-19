@@ -1749,13 +1749,54 @@ html {
   background: #0B1F3F;
   overflow: hidden;
   cursor: pointer;
-  opacity: 1;
-  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+  /* A long, weighted curve: slow to release, quick through the middle, easing
+     into the stop. A linear or ease-out lift reads as a panel being deleted;
+     this reads as something being raised. */
+  transition: transform 1s cubic-bezier(0.76, 0, 0.24, 1);
+  will-change: transform;
 }
 
+/* The house lights going up. The panel lifts clear of the viewport rather
+   than fading, so the hero is revealed from the bottom edge up instead of
+   materialising through a dissolve - and because the hero has been sitting
+   there fully drawn the whole time, what appears is a finished page rather
+   than one still assembling itself.
+   101% rather than 100% so no hairline of navy is left on a fractional
+   device-pixel boundary. */
 .intro--leaving {
-  opacity: 0;
+  transform: translateY(-101%);
   pointer-events: none;
+}
+
+/* The type leaves first and travels less, so it does not smear upward with
+   the panel it is printed on. */
+.intro--leaving .intro__stage {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.4s ease-out, transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.intro--leaving .intro__skip {
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+/* The curtain's hem: a gold line on the trailing edge, so the eye has
+   something to follow up and out of frame. It exists only during the lift. */
+.intro__hem {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: #B99851;
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+}
+
+.intro--leaving .intro__hem {
+  opacity: 1;
 }
 
 /* The plate sits behind everything at low opacity: it is texture, not
@@ -1784,6 +1825,7 @@ html {
 
 .intro__stage {
   position: relative;
+  transition: opacity 0.4s ease-out, transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1888,4 +1930,10 @@ html {
     opacity: 1;
   }
   .intro__rule { width: 132px; }
+
+  .intro,
+  .intro--leaving,
+  .intro--leaving .intro__stage {
+    transition: none;
+  }
 }

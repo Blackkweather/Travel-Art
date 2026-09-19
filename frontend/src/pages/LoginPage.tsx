@@ -8,7 +8,7 @@ import { LoginCredentials } from '@/types'
 import toast from 'react-hot-toast'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
 import { t } from '@/i18n'
 
 const LoginPage: React.FC = () => {
@@ -67,23 +67,7 @@ const LoginPage: React.FC = () => {
       >
         <div className="text-center">
           <div className="flex justify-center mb-8">
-            <img loading="lazy" decoding="async" 
-              src={getLogoUrl('transparent')} 
-              alt="Travel Art" 
-              className="h-24 w-auto"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                const fallback = document.getElementById('logo-fallback-login')
-                if (fallback) {
-                  fallback.style.display = 'block'
-                }
-              }}
-            />
-            <div id="logo-fallback-login" className="hidden text-4xl font-serif font-bold">
-              <span className="text-content">TRAVEL</span>
-              <span className="text-gold mx-2">+</span>
-              <span className="text-content">ART</span>
-            </div>
+            <BrandWordmark className="h-24 w-auto text-navy dark:text-cream" />
           </div>
           <h2 className="text-3xl font-serif font-bold text-content gold-underline">
             {t('Bon retour')}

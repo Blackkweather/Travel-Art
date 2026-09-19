@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { t } from '@/i18n'
 
@@ -97,11 +97,9 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
       <div className="shell h-[72px] flex items-center justify-between">
         <div className="flex items-center gap-10">
           <Link to="/" aria-label={t('Travel Art, accueil')} className="shrink-0">
-            <img decoding="async"
-              src={getLogoUrl('transparent')}
-              alt="Travel Art"
-              className={`h-8 md:h-9 w-auto object-contain ${
-                onMedia ? 'brightness-0 invert' : 'dark:brightness-0 dark:invert'
+            <BrandWordmark
+              className={`h-8 md:h-9 w-auto ${
+                onMedia ? 'text-cream' : 'text-navy dark:text-cream'
               }`}
             />
           </Link>

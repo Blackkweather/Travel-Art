@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Instagram, Linkedin, Facebook } from 'lucide-react'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
 import NewsletterSignup from './NewsletterSignup'
 import { t } from '@/i18n'
 
@@ -40,11 +40,7 @@ const Footer: React.FC = () => {
       <div className="shell py-20">
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-8 gap-y-14">
           <div className="col-span-2 lg:col-span-4">
-            <img decoding="async"
-              src={getLogoUrl('transparent')}
-              alt="Travel Art"
-              className="h-9 w-auto object-contain brightness-0 invert dark:brightness-100 dark:invert-0"
-            />
+            <BrandWordmark className="h-9 w-auto text-cream" />
             <p className="mt-6 text-content-inverse/60 leading-relaxed max-w-[38ch]">
               {t('Des résidences d’artistes au cœur des hôtels d’exception. Musiciens, plasticiens et interprètes, reçus là où leur travail trouve sa place.')}
             </p>

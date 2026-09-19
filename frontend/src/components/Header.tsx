@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
 import NotificationBell from '@/components/NotificationBell'
 import { useAuthStore } from '@/store/authStore'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -78,14 +78,10 @@ const Header: React.FC = () => {
               className="shrink-0 hover:opacity-80 transition-opacity duration-300"
               aria-label={t('Travel Art, accueil')}
             >
-              {/* The mark is navy and gold, which disappears against the dark
-                  surface. It inverts only in dark mode - inverting it in light
-                  mode would render it white on white. */}
-              <img decoding="async"
-                src={getLogoUrl('transparent')}
-                alt="Travel Art"
-                className="h-8 md:h-9 w-auto object-contain dark:brightness-0 dark:invert"
-              />
+              {/* The lettering inherits the text colour, so the mark no
+                  longer needs a brightness/invert filter standing in for a
+                  second asset. */}
+              <BrandWordmark className="h-8 md:h-9 w-auto text-navy dark:text-cream" />
             </Link>
 
             <nav className="hidden lg:flex gap-8" aria-label={t('Navigation principale')}>

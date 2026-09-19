@@ -42,9 +42,10 @@ const SiteIntro: React.FC<Props> = ({ videoSrc, posterSrc }) => {
   const dismiss = useCallback(() => {
     clearTimers()
     setLeaving(true)
-    // Matches the .intro--leaving transition; the node goes away afterwards so
-    // it can never sit on top of the page swallowing clicks.
-    timers.current.push(window.setTimeout(() => setVisible(false), 700))
+    // Matches the 1s .intro--leaving lift, with a little slack so the node is
+    // never removed mid-travel. It goes away afterwards so it can never sit on
+    // top of the page swallowing clicks.
+    timers.current.push(window.setTimeout(() => setVisible(false), 1100))
   }, [])
 
   useEffect(() => {
@@ -111,6 +112,7 @@ tabIndex={-1}
         />
       )}
       <div className="intro__veil" aria-hidden="true" />
+      <div className="intro__hem" aria-hidden="true" />
 
       <div className="intro__stage">
         <svg
