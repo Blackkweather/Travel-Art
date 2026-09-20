@@ -38,7 +38,6 @@ export function useAppKeyboardShortcuts() {
       if ((event.ctrlKey || event.metaKey) && event.key === '/') {
         event.preventDefault()
         // Could show a help modal here
-        console.log('Keyboard shortcuts help (to be implemented)')
       }
     }
 

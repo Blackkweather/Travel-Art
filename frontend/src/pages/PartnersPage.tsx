@@ -39,7 +39,6 @@ const PartnersPage: React.FC = () => {
         setLoading(true)
         const res = await commonApi.getTopHotels()
         
-        console.log('Hotels API Response:', res.data)
         
         // The API returns { success: true, data: [...] }
         let hotels: any[] = []
@@ -51,7 +50,6 @@ const PartnersPage: React.FC = () => {
           hotels = res.data.data
         }
         
-        console.log('Parsed hotels:', hotels.length)
         
         if (hotels.length > 0) {
           const formattedPartners = hotels.map((hotel: any) => {

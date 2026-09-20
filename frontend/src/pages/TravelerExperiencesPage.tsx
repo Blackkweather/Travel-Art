@@ -155,8 +155,6 @@ const TravelerExperiencesPage: React.FC = () => {
         // both `data.trips` and a bare `data` array and nothing else is emitted.
         const trips = extractArray(res.data, 'trips')
         
-        console.log('📊 Parsed trips count:', trips.length)
-        console.log('📊 Parsed trips:', trips)
         
         if (trips.length > 0) {
           const formattedExperiences = trips.map((trip: any) => {
@@ -201,9 +199,6 @@ const TravelerExperiencesPage: React.FC = () => {
             }
           })
           
-          console.log('Formatted experiences:', formattedExperiences)
-          console.log('✅ Formatted experiences:', formattedExperiences)
-          console.log('✅ Setting experiences state with', formattedExperiences.length, 'items')
           setExperiences(formattedExperiences)
         } else {
           console.warn('⚠️ No trips found in API response')

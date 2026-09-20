@@ -140,17 +140,7 @@ const ArtistRegistrationFlow: React.FC = () => {
       };
 
       // Register user and automatically log them in
-      console.log('🚀 Starting registration...', { email: registrationData.email });
       await registerAuth(registrationData);
-      console.log('✅ Registration completed!');
-
-      // Check auth state
-      const authState = useAuthStore.getState();
-      console.log('🔍 Auth state after registration:', {
-        isAuthenticated: authState.isAuthenticated,
-        hasToken: !!authState.token,
-        hasUser: !!authState.user
-      });
 
       toast.success(t('Demande enregistrée'));
       // No session exists yet - the account is pending review - so this cannot

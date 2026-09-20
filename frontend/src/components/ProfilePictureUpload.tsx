@@ -50,30 +50,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
-      console.log('📤 Starting upload...', { 
-        fileName: file.name, 
-        fileSize: file.size, 
-        fileType: file.type 
-      });
       
       const formData = new FormData();
       formData.append('profilePicture', file);
-      
-      // Verify FormData contents
-      console.log('📦 FormData entries:');
-      for (const [key, value] of formData.entries()) {
-        console.log(`  ${key}:`, value instanceof File ? {
-          name: value.name,
-          size: value.size,
-          type: value.type
-        } : value);
-      }
 
       // Use apiClient which automatically handles authentication
       // The interceptor will handle FormData correctly (no Content-Type header)
       const response = await apiClient.post('/upload/profile-picture', formData);
       
-      console.log('✅ Upload successful:', response.data);
       const imageUrl = response.data.data.url;
       
       // Call the success callback FIRST - this updates the parent's state

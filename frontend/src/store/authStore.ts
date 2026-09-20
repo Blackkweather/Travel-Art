@@ -44,10 +44,8 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: RegisterData) => {
         set({ isLoading: true })
         try {
-          console.log('🔄 Registering user...', { email: data.email, role: data.role })
-          const response = await authApi.register(data)
-          console.log('📥 Registration response:', response.data)
-          
+          await authApi.register(data)
+
           /* Registration deliberately returns no token: the account is
              PENDING until an administrator admits it, so there is no session
              to establish. Setting isAuthenticated here would leave the app
