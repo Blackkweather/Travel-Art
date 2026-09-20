@@ -43,10 +43,11 @@ DATABASE_URL="file:./prisma/dev.db"
 DATABASE_URL="postgresql://user:password@host:5432/database"
 ```
 
-**Supabase Example:**
+**Neon example** (what this project actually uses; DIRECT_URL must be the
+non-pooler host, because `prisma migrate deploy` cannot run through PgBouncer):
 ```env
-DATABASE_URL="postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
-DIRECT_URL="postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres"
+DATABASE_URL="postgresql://USER:PASSWORD@ep-xxx-pooler.REGION.aws.neon.tech/travelart?sslmode=require&pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://USER:PASSWORD@ep-xxx.REGION.aws.neon.tech/travelart?sslmode=require"
 ```
 
 ### CORS Configuration
