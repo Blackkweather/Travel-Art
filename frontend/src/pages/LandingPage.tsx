@@ -305,11 +305,11 @@ export default function LandingPage() {
       ? prevIndex < slides.length - 1 ? prevIndex + 1 : 0
       : prevIndex > 0 ? prevIndex - 1 : slides.length - 1
 
-    performNavigation(prevIndex, nextIndex, direction)
+    performNavigation(prevIndex, nextIndex)
   }
 
   // Perform navigation animation
-  const performNavigation = (prevIndex: number, nextIndex: number, direction: number) => {
+  const performNavigation = (prevIndex: number, nextIndex: number) => {
     if (!slideshowRef.current) return
 
     isAnimatingRef.current = true

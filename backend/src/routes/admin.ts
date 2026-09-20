@@ -272,28 +272,6 @@ router.post('/admissions/:id/reject', authenticate, authorize('ADMIN'), asyncHan
   res.json({ success: true, data: { id: updated.id, approvalStatus: updated.approvalStatus } });
 }));
 
-/**
- * Quotes one CSV field and neutralises it against both CSV-structure and
- * spreadsheet-formula injection.
- *
- * Every string interpolated below (name, country, ...) is user-controlled -
- * set at open self-registration, no login required. Unescaped, a name
- * containing a `"` broke out of its quoted field and let a registrant forge
- * extra columns or rows into an admin's export. Worse, a name starting with
- * `=`, `+`, `-` or `@` is a live formula to Excel/Sheets/LibreOffice the
- * moment the admin opens the file - the classic CSV/formula-injection class
- * (CWE-1236). Doubling embedded quotes is standard CSV escaping; prefixing a
- * leading trigger character with a straight quote is OWASP's recommended
- * mitigation and keeps the visible value intact.
- */
-const csvCell = (value: unknown): string => {
-  let str = String(value ?? '');
-  if (/^[=+\-@\t\r]/.test(str)) {
-    str = `'${str}`;
-  }
-  return `"${str.replace(/"/g, '""')}"`;
-};
-
 const EXPORT_TYPES = ['bookings', 'users', 'logs'] as const;
 type ExportType = (typeof EXPORT_TYPES)[number];
 
