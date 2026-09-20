@@ -97,31 +97,52 @@ const TopArtistsPage: React.FC = () => {
         title={t('Artistes en résidence — Travel Art')}
         description={t('Musiciens, plasticiens et interprètes accueillis en résidence dans les hôtels du programme Travel Art.')}
       />
-      <SimpleNavbar />
+      <SimpleNavbar overMedia />
 
-      {/* Page header. This was a navy gradient band carrying white type; on a
-          light site that put a dark slab immediately under a light navigation
-          bar. It is now set on the page surface, with the eyebrow naming the
-          section and the rule closing it - the same opening every public page
-          uses, so the site reads as one publication. */}
-      <header className="relative pt-32 pb-14 md:pb-20">
-        <div className="shell">
+      {/* Page header. This page was the only one of the four public indexes
+          opening on bare surface: /top-hotels, /experiences and /partners all
+          lead with a photograph, and the artists - the half of the marketplace
+          with the least to show elsewhere - led with nothing. It carries one
+          now, built the same way as the others so the set reads as one
+          publication.
+
+          The earlier objection was to a flat navy gradient slab sitting under
+          a light navigation bar, which is not what a photograph with a scrim
+          does; the type stays legible without greying the whole frame. */}
+      <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/images/headers/artists.webp"
+            srcSet="/images/headers/artists-960.webp 960w, /images/headers/artists-1440.webp 1440w, /images/headers/artists.webp 1920w"
+            sizes="100vw"
+            width={1920}
+            height={1074}
+            alt=""
+            decoding="async"
+            fetchPriority="high"
+            className="w-full h-full object-cover"
+          />
+          {/* Gradient rather than a flat wash: the type occupies the lower
+              third, so only the lower third needs darkening. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/45 to-navy/25"></div>
+        </div>
+
+        <div className="shell relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <p className="eyebrow">{t('Le répertoire')}</p>
-            <h1 className="mt-5 max-w-[14ch]">
+            <p className="eyebrow text-white/80">{t('Le répertoire')}</p>
+            <h1 className="mt-5 max-w-[14ch] text-white">
               {t('Les artistes')}
-              <span className="block text-gold">{t('les plus remarqués')}</span>
+              <span className="block text-gold-500">{t('les plus remarqués')}</span>
             </h1>
-            <p className="mt-7 text-lg text-content-secondary max-w-[52ch] leading-relaxed">
+            <p className="mt-7 text-lg text-white/80 max-w-[52ch] leading-relaxed">
               {t('Découvrez les artistes qui font vivre les toits-terrasses et les plus belles adresses du monde.')}
             </p>
           </motion.div>
         </div>
-        <div className="shell mt-12"><span className="rule-reveal" /></div>
       </header>
 
       {/* Stats Section */}

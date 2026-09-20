@@ -467,7 +467,7 @@ const PublicArtistProfile: React.FC = () => {
                     }
                     
                     return (
-                      <div key={index} className="relative aspect-video rounded-card overflow-hidden bg-surface-inverse">
+                      <div key={index} className="relative aspect-video rounded-card overflow-hidden bg-surface-inverse border border-line shadow-medium">
                         {isYouTube && videoId ? (
                           <iframe
                             src={`https://www.youtube-nocookie.com/embed/${videoId}`}

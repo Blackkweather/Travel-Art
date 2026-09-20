@@ -505,7 +505,7 @@ router.get('/testimonials', optionalAuth, asyncHandler(async (req: AuthRequest, 
          Tignes names the hotel on its own, so the city goes too. Signed in,
          the full attribution comes back. */
       hotelName: signedIn
-        ? (rating.hotel?.user?.name || 'Hotel Partner')
+        ? (rating.hotel?.user?.name || 'Hôtel partenaire')
         : 'Un hôtel partenaire',
       location: signedIn
         ? (location

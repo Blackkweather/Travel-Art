@@ -825,31 +825,36 @@ const ArtistProfile: React.FC = () => {
               }
               
               return (
-                <div key={index} className="border border-line rounded-card overflow-hidden">
+                <div key={index} className="border border-line rounded-card overflow-hidden shadow-medium">
                   {/* Video Preview */}
                   {isYouTube && videoId ? (
                     <div className="aspect-video bg-surface-inverse">
                       <iframe
-                        src={`https://www.youtube.com/embed/${videoId}`}
-                        title={`Performance Video ${index + 1}`}
+                        src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                        title={`${t('Vidéo de performance')} ${index + 1}`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         className="w-full h-full"
                       />
                     </div>
                   ) : (
-                    <div className="aspect-video bg-surface-sunken flex items-center justify-center">
-                      <div className="text-center">
-                        <Music className="w-12 h-12 text-content-secondary mx-auto mb-2" />
-                        <p className="text-sm text-content-secondary">{t('Aperçu vidéo')}</p>
-                      </div>
+                    <div className="aspect-video bg-surface-sunken">
+                      <video
+                        src={video}
+                        controls
+                        preload="metadata"
+                        aria-label={`${t('Vidéo de performance')} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      >
+                        {t('Votre navigateur ne prend pas en charge la lecture vidéo.')}
+                      </video>
                     </div>
                   )}
                   
                   {/* Video Info */}
                   <div className="p-4 bg-surface flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-content mb-1">Performance Video {index + 1}</p>
+                      <p className="font-medium text-content mb-1">{t('Vidéo de performance')} {index + 1}</p>
                       <p className="text-sm text-content-secondary truncate">{video}</p>
                     </div>
                     {isEditing && (
