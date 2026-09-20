@@ -290,6 +290,7 @@ const TravelerExperiencesPage: React.FC = () => {
         description={t('Concerts, expositions et résidences dans 35 hôtels d’exception, de Val d’Isère à Phuket. Découvrez les prochaines dates sur la carte.')}
       />
         <SimpleNavbar overMedia />
+        <main id="contenu">
       
       {/* The photograph was set at 20% opacity behind a near-opaque navy
           gradient, which is a way of paying to download an image nobody can
@@ -634,6 +635,7 @@ const TravelerExperiencesPage: React.FC = () => {
         </div>
       </section>
 
+      </main>
       <Footer />
     </div>
   )

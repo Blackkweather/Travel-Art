@@ -13,6 +13,7 @@ import { useAuthStore } from '@/store/authStore';
 import { COUNTRIES, VALIDATION } from '@/types/artistRegistration';
 import { countryOptions as buildCountryOptions } from '@/i18n/countries';
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 type PublicType = 'Familles' | 'Couples' | 'Adult only' | 'Corporate';
 type Ambiance = 'Chill / Lounge' | 'Festif' | 'Culturel' | 'Premium / luxe';
@@ -352,7 +353,9 @@ const HotelRegistrationFlow: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-surface">
       <SimpleNavbar />
+      <SEOHead title={t('Inscription hôtel — Travel Art')} description={t('Présentez votre établissement et rejoignez le réseau d’hôtels partenaires Travel Art.')} />
       <main className="flex-1 container mx-auto px-4 pt-28 pb-12 md:pb-16">
+        <h1 className="sr-only">{t('Inscription hôtel')}</h1>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -206,7 +206,7 @@ const AboutPage: React.FC = () => {
                 </div>
               ))}
             </dl>
-            <Link to="/faq" className="btn-arrow mt-10 inline-flex text-[0.9375rem] font-semibold uppercase tracking-[0.04em] text-content">
+            <Link to="/faq" className="btn-arrow mt-10 inline-flex items-center min-h-[44px] text-[0.9375rem] font-semibold uppercase tracking-[0.04em] text-content">
               {t('Toutes les questions')}
             </Link>
           </div>
@@ -231,7 +231,7 @@ const AboutPage: React.FC = () => {
                     </li>
                   ))}
                 </ul>
-                <Link to={to} className="btn-arrow mt-8 inline-flex text-[0.9375rem] font-semibold uppercase tracking-[0.04em] text-content">
+                <Link to={to} className="btn-arrow mt-8 inline-flex items-center min-h-[44px] text-[0.9375rem] font-semibold uppercase tracking-[0.04em] text-content">
                   {cta}
                 </Link>
               </div>

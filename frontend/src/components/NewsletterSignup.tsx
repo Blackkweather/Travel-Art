@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
 import { Mail, Send, CheckCircle } from 'lucide-react'
 import { t, getLocale } from '@/i18n'
 import toast from 'react-hot-toast'
@@ -14,6 +14,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   className = ''
 }) => {
   const [email, setEmail] = useState('')
+  const fieldId = useId()
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -58,8 +59,10 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
           </p>
           <form onSubmit={handleSubmit} className="max-w-md mx-auto flex gap-3">
             <div className="flex-1">
+              <label htmlFor={fieldId} className="sr-only">{t('Adresse e-mail')}</label>
               <input
                 type="email"
+                id={fieldId}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t('Saisissez votre adresse e-mail')}
@@ -104,8 +107,10 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label htmlFor={fieldId} className="sr-only">{t('Adresse e-mail')}</label>
             <input
               type="email"
+              id={fieldId}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('Saisissez votre adresse e-mail')}
@@ -142,8 +147,10 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
     <div className={`${className}`}>
       <form onSubmit={handleSubmit} className="flex gap-3">
         <div className="flex-1">
+          <label htmlFor={fieldId} className="sr-only">{t('Adresse e-mail')}</label>
           <input
             type="email"
+            id={fieldId}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={t('Saisissez votre adresse e-mail')}

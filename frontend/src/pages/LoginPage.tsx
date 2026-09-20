@@ -10,6 +10,7 @@ import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import BrandWordmark from '@/components/BrandWordmark'
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
@@ -56,7 +57,12 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={t('Connexion — Travel Art')}
+        description={t('Accédez à votre espace Travel Art : vos résidences, vos réservations et votre profil.')}
+      />
       <SimpleNavbar />
+      <main id="contenu">
       
       <div className="flex items-center justify-center py-20 pt-32 px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -69,9 +75,9 @@ const LoginPage: React.FC = () => {
           <div className="flex justify-center mb-8">
             <BrandWordmark className="h-24 w-auto text-navy dark:text-cream" />
           </div>
-          <h2 className="text-3xl font-serif font-bold text-content gold-underline">
+          <h1 className="text-3xl font-serif font-bold text-content gold-underline">
             {t('Bon retour')}
-          </h2>
+          </h1>
           <p className="mt-2 text-content-secondary">
             {t('Connectez-vous à votre compte Travel Art')}
           </p>
@@ -84,6 +90,9 @@ const LoginPage: React.FC = () => {
                 {t('Adresse e-mail')}
               </label>
               <input
+                id="email"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register('email', {
                   required: 'Email is required',
                   pattern: {
@@ -97,7 +106,7 @@ const LoginPage: React.FC = () => {
                 placeholder={t('Saisissez votre e-mail')}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.email.message}</p>
+                <p id="email-error" role="alert" className="mt-1 text-sm text-[var(--state-critical)]">{errors.email.message}</p>
               )}
             </div>
 
@@ -106,6 +115,9 @@ const LoginPage: React.FC = () => {
                 {t('Mot de passe')}
               </label>
               <input
+                id="password"
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? "password-error" : undefined}
                 {...register('password', {
                   required: 'Password is required',
                   minLength: {
@@ -119,26 +131,26 @@ const LoginPage: React.FC = () => {
                 placeholder={t('Saisissez votre mot de passe')}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.password.message}</p>
+                <p id="password-error" role="alert" className="mt-1 text-sm text-[var(--state-critical)]">{errors.password.message}</p>
               )}
             </div>
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <label htmlFor="remember-me" className="flex items-center min-h-[44px] cursor-pointer">
               <input
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
                 className="h-4 w-4 text-gold focus:ring-gold border-line rounded-card"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-content-secondary">
+              <span className="ml-2 block text-sm text-content-secondary">
                 {t('Se souvenir de moi')}
-              </label>
-            </div>
+              </span>
+            </label>
 
             <div className="text-sm">
-              <Link to="/forgot-password" className="text-gold hover:text-gold-600">
+              <Link to="/forgot-password" className="inline-flex items-center min-h-[44px] text-gold hover:text-gold-800">
                 {t('Mot de passe oublié ?')}
               </Link>
             </div>
@@ -157,7 +169,7 @@ const LoginPage: React.FC = () => {
           <div className="text-center">
             <p className="text-content-secondary">
               Pas encore de compte ?{' '}
-              <Link to="/register" className="text-gold hover:text-gold-600 font-medium">
+              <Link to="/register" className="text-gold hover:text-gold-800 font-medium">
                 {t('Créer un compte')}
               </Link>
             </p>
@@ -174,6 +186,7 @@ const LoginPage: React.FC = () => {
       </motion.div>
       </div>
       
+      </main>
       <Footer />
     </div>
   )

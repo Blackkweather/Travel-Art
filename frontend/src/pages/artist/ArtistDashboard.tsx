@@ -150,7 +150,7 @@ const ArtistDashboard: React.FC = () => {
         <section className="panel mb-10">
           <div className="panel-head">
             <h2>{t('Réservations récentes')}</h2>
-            <Link to="/dashboard/bookings" className="btn-arrow text-sm text-content-secondary hover:text-content">
+            <Link to="/dashboard/bookings" className="btn-arrow inline-flex items-center min-h-[44px] text-sm text-content-secondary hover:text-content">
               {t('Tout voir')}
             </Link>
           </div>

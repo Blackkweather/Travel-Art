@@ -239,7 +239,7 @@ const AdminDashboard: React.FC = () => {
               <h2>{t('Activité récente')}</h2>
               <button
                 onClick={() => navigate('/dashboard/logs')}
-                className="btn-arrow text-sm text-content-secondary hover:text-content"
+                className="btn-arrow inline-flex items-center min-h-[44px] text-sm text-content-secondary hover:text-content"
               >
                 {t('Tout voir')}
               </button>
@@ -313,7 +313,7 @@ const AdminDashboard: React.FC = () => {
             <h2>{t('Hôtels actifs')}</h2>
             <button
               onClick={() => navigate('/dashboard/users')}
-              className="btn-arrow text-sm text-content-secondary hover:text-content"
+              className="btn-arrow inline-flex items-center min-h-[44px] text-sm text-content-secondary hover:text-content"
             >
               {t('Tout voir')}
             </button>

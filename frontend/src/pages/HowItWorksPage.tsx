@@ -84,6 +84,7 @@ const HowItWorksPage: React.FC = () => {
         description={t('Comment fonctionne une résidence Travel Art : candidature, sélection, séjour tout compris et représentation.')}
       />
       <SimpleNavbar overMedia />
+      <main id="contenu">
 
       {/* Asymmetric hero. The headline sits in the grid rather than centred
           over a darkened photograph, which is the default this page had. */}
@@ -193,6 +194,7 @@ const HowItWorksPage: React.FC = () => {
         </div>
       </section>
 
+      </main>
       <Footer />
     </div>
   )

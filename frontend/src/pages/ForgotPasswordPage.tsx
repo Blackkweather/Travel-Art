@@ -103,6 +103,9 @@ const ForgotPasswordPage: React.FC = () => {
                   {t('Adresse e-mail')}
                 </label>
                 <input
+                  id="email"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                   {...register('email', {
                     required: 'Email is required',
                     pattern: {
@@ -115,7 +118,7 @@ const ForgotPasswordPage: React.FC = () => {
                   placeholder={t('Saisissez votre e-mail')}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.email.message}</p>
+                  <p id="email-error" role="alert" className="mt-1 text-sm text-[var(--state-critical)]">{errors.email.message}</p>
                 )}
               </div>
 
@@ -130,7 +133,7 @@ const ForgotPasswordPage: React.FC = () => {
               </div>
 
               <div className="text-center">
-                <Link to="/login" className="text-gold hover:text-gold-600 font-medium text-sm">
+                <Link to="/login" className="text-gold hover:text-gold-800 font-medium text-sm">
                   {t('Retour à la connexion')}
                 </Link>
               </div>

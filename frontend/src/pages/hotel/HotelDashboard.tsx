@@ -241,7 +241,7 @@ const HotelDashboard: React.FC = () => {
         <section className="panel">
           <div className="panel-head">
             <h2>{t('Prochaines représentations')}</h2>
-            <Link to="/dashboard/bookings" className="btn-arrow text-sm text-content-secondary hover:text-content">
+            <Link to="/dashboard/bookings" className="btn-arrow inline-flex items-center min-h-[44px] text-sm text-content-secondary hover:text-content">
               {t('Tout voir')}
             </Link>
           </div>
@@ -338,7 +338,7 @@ const HotelDashboard: React.FC = () => {
           <section className="panel">
             <div className="panel-head">
               <h2>{t('Vos artistes favoris')}</h2>
-              <Link to="/dashboard/artists" className="btn-arrow text-sm text-content-secondary hover:text-content">
+              <Link to="/dashboard/artists" className="btn-arrow inline-flex items-center min-h-[44px] text-sm text-content-secondary hover:text-content">
                 {t('Tout voir')}
               </Link>
             </div>
@@ -381,7 +381,7 @@ const HotelDashboard: React.FC = () => {
             <p className="mt-2 max-w-[42ch] text-sm text-content-inverse/75">
               {t('Découvrez les artistes pour vos toits-terrasses et vos espaces intimistes.')}
             </p>
-            <span className="btn-arrow mt-6 inline-flex text-[0.9375rem] font-semibold uppercase tracking-[0.04em] text-gold">
+            <span className="btn-arrow mt-6 inline-flex items-center min-h-[44px] text-[0.9375rem] font-semibold uppercase tracking-[0.04em] text-gold">
               {t('Trouver un artiste')}
             </span>
           </Link>
@@ -395,7 +395,7 @@ const HotelDashboard: React.FC = () => {
             <p className="mt-2 text-sm text-content-secondary">
               {t('Consultez vos réservations d’artistes et leur statut.')}
             </p>
-            <span className="btn-arrow mt-6 inline-flex text-[0.9375rem] font-semibold uppercase tracking-[0.04em] text-content">
+            <span className="btn-arrow mt-6 inline-flex items-center min-h-[44px] text-[0.9375rem] font-semibold uppercase tracking-[0.04em] text-content">
               {t('Voir les réservations')}
             </span>
           </Link>

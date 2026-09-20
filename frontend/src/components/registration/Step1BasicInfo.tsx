@@ -227,11 +227,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Password */}
         <motion.div variants={itemVariants}>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-navy-900">
-              Mot de passe <span className="text-gold">*</span>
+            <label htmlFor="reg-password" className="block text-sm font-medium text-navy-900">
+              Mot de passe <span className="text-gold" aria-hidden="true">*</span>
             </label>
             <div className="relative">
               <input
+                id="reg-password"
                 type={showPassword ? 'text' : 'password'}
                 value={data.password}
                 onChange={(e) => update({ password: e.target.value, confirmPassword: data.confirmPassword })}
@@ -247,7 +248,9 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-content-secondary hover:text-gold"
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                aria-pressed={showPassword}
+                className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-content-secondary hover:text-gold"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -269,11 +272,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Confirm Password */}
         <motion.div variants={itemVariants}>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-navy-900">
-              Confirmer le mot de passe <span className="text-gold">*</span>
+            <label htmlFor="reg-confirm-password" className="block text-sm font-medium text-navy-900">
+              Confirmer le mot de passe <span className="text-gold" aria-hidden="true">*</span>
             </label>
             <div className="relative">
               <input
+                id="reg-confirm-password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={data.confirmPassword}
                 onChange={(e) => update({ confirmPassword: e.target.value })}
@@ -289,7 +293,9 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-content-secondary hover:text-gold"
+                aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher la confirmation du mot de passe'}
+                aria-pressed={showConfirmPassword}
+                className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-content-secondary hover:text-gold"
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -317,7 +323,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
             checked={data.agreeToTerms}
             onChange={(e) => update({ agreeToTerms: e.target.checked })}
             disabled={isLoading}
-            className="w-6 h-6 mt-1 rounded-card border-2 border-line-strong cursor-pointer accent-gold"
+            className="w-6 h-6 shrink-0 mt-1 rounded-card border-2 border-line-strong cursor-pointer accent-gold"
           />
           <span className="text-sm text-content-secondary">
             J’accepte les{' '}

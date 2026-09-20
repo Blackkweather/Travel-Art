@@ -60,7 +60,7 @@ const ResetPasswordPage: React.FC = () => {
             <p className="text-content-secondary mb-4">
               {t('Ce lien de réinitialisation est invalide ou a expiré.')}
             </p>
-            <Link to="/forgot-password" className="text-gold hover:text-gold-600 font-medium">
+            <Link to="/forgot-password" className="text-gold hover:text-gold-800 font-medium">
               {t('Demander un nouveau lien')}
             </Link>
           </div>
@@ -91,6 +91,9 @@ const ResetPasswordPage: React.FC = () => {
                   {t('Nouveau mot de passe')}
                 </label>
                 <input
+                  id="password"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? "password-error" : undefined}
                   {...register('password', {
                     required: 'Password is required',
                     minLength: {
@@ -103,7 +106,7 @@ const ResetPasswordPage: React.FC = () => {
                   placeholder={t('Saisissez le nouveau mot de passe')}
                 />
                 {errors.password && (
-                  <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.password.message}</p>
+                  <p id="password-error" role="alert" className="mt-1 text-sm text-[var(--state-critical)]">{errors.password.message}</p>
                 )}
               </div>
 
@@ -112,6 +115,9 @@ const ResetPasswordPage: React.FC = () => {
                   {t('Confirmer le mot de passe')}
                 </label>
                 <input
+                  id="confirmPassword"
+                  aria-invalid={!!errors.confirmPassword}
+                  aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
                   {...register('confirmPassword', {
                     required: t('Confirmez votre mot de passe'),
                     validate: value => value === password || t('Les deux mots de passe ne correspondent pas')
@@ -121,7 +127,7 @@ const ResetPasswordPage: React.FC = () => {
                   placeholder={t('Confirmez le nouveau mot de passe')}
                 />
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-[var(--state-critical)]">{errors.confirmPassword.message}</p>
+                  <p id="confirmPassword-error" role="alert" className="mt-1 text-sm text-[var(--state-critical)]">{errors.confirmPassword.message}</p>
                 )}
               </div>
 
@@ -136,7 +142,7 @@ const ResetPasswordPage: React.FC = () => {
               </div>
 
               <div className="text-center">
-                <Link to="/login" className="text-gold hover:text-gold-600 font-medium text-sm">
+                <Link to="/login" className="text-gold hover:text-gold-800 font-medium text-sm">
                   {t('Retour à la connexion')}
                 </Link>
               </div>

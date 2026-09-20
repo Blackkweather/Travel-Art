@@ -63,7 +63,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           <button
             onClick={() => onEdit(1)}
             disabled={isLoading}
-            className="flex items-center gap-2 text-gold hover:text-gold-600 font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-gold hover:text-gold-800 font-medium transition-colors disabled:opacity-50"
           >
             <Edit2 className="w-4 h-4" />
             {t('Modifier')}
@@ -108,7 +108,7 @@ const Step3Confirmation: React.FC<Step3Props> = ({
           <button
             onClick={() => onEdit(2)}
             disabled={isLoading}
-            className="flex items-center gap-2 text-gold hover:text-gold-600 font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 text-gold hover:text-gold-800 font-medium transition-colors disabled:opacity-50"
           >
             <Edit2 className="w-4 h-4" />
             {t('Modifier')}

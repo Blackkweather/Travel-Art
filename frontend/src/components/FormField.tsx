@@ -1,4 +1,4 @@
-import React, { useState, InputHTMLAttributes } from 'react'
+import React, { useId, useState, InputHTMLAttributes } from 'react'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { t } from '@/i18n'
@@ -31,6 +31,14 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     ref
   ) => {
     const [showPassword, setShowPassword] = useState(false)
+    /* The label used to be a bare <label> beside an <input> with no id, so it
+       named nothing: screen readers announced an unlabelled edit box and
+       clicking the label did not focus the field. */
+    const autoId = useId()
+    const fieldId = props.id || autoId
+    const errorId = `${fieldId}-error`
+    const hintId = `${fieldId}-hint`
+    const describedBy = [error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ') || undefined
     const isPasswordField = type === 'password'
     const inputType = isPasswordField && showPassword ? 'text' : type
 
@@ -40,15 +48,11 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
           <motion.label
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            htmlFor={fieldId}
             className="form-label flex items-center gap-2"
           >
             <span>{label}</span>
             {required && <span className="text-gold -ml-1" aria-hidden="true">*</span>}
-            {hint && (
-              <span className="text-xs text-content-secondary font-normal ml-auto" title={hint}>
-                ℹ️
-              </span>
-            )}
           </motion.label>
         )}
 
@@ -63,7 +67,10 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
 
             <input
               ref={ref}
+              id={fieldId}
               type={inputType}
+              aria-invalid={!!error}
+              aria-describedby={describedBy}
               disabled={disabled || isLoading}
               onChange={props.onChange}
               onFocus={props.onFocus}
@@ -98,11 +105,18 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             )}
           </div>
 
+          {hint && !error && (
+            <p id={hintId} className="mt-1.5 text-xs text-content-secondary">
+              {hint}
+            </p>
+          )}
+
           {/* Error message */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
+              id={errorId}
               className="field-error"
               role="alert"
             >

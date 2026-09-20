@@ -334,6 +334,7 @@ const FaqPage: React.FC = () => {
         structuredData={FAQ_STRUCTURED_DATA}
       />
       <SimpleNavbar overMedia={false} />
+      <main id="contenu">
 
       <section className="shell pt-32 md:pt-40 pb-16">
         <motion.p
@@ -410,6 +411,7 @@ const FaqPage: React.FC = () => {
         </div>
       </section>
 
+      </main>
       <Footer />
     </div>
   )

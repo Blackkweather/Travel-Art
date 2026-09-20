@@ -52,10 +52,10 @@ const Footer: React.FC = () => {
 
           <nav className="lg:col-span-2 lg:col-start-6" aria-label={t('Découvrir')}>
             <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">{t('Découvrir')}</h3>
-            <ul className="space-y-3">
+            <ul className="space-y-1">
               {DISCOVER_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-content-inverse/60 hover:text-gold transition-colors">
+                  <Link to={link.to} className="inline-flex items-center min-h-[44px] min-w-[44px] text-sm text-content-inverse/60 hover:text-gold-500 transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -65,10 +65,10 @@ const Footer: React.FC = () => {
 
           <nav className="lg:col-span-2" aria-label={t('La maison')}>
             <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">{t('La maison')}</h3>
-            <ul className="space-y-3">
+            <ul className="space-y-1">
               {COMPANY_LINKS.map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="text-sm text-content-inverse/60 hover:text-gold transition-colors">
+                  <Link to={link.to} className="inline-flex items-center min-h-[44px] min-w-[44px] text-sm text-content-inverse/60 hover:text-gold-500 transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -81,13 +81,13 @@ const Footer: React.FC = () => {
             <ul className="space-y-3 text-sm text-content-inverse/60">
               <li>Paris, France</li>
               <li>
-                <a href="mailto:hello@travelart.com" className="hover:text-gold transition-colors">
+                <a href="mailto:hello@travelart.com" className="inline-flex items-center min-h-[44px] hover:text-gold-500 transition-colors">
                   hello@travelart.com
                 </a>
               </li>
             </ul>
 
-            <ul className="flex gap-5 mt-8">
+            <ul className="flex gap-1 mt-6 -ml-3">
               {SOCIALS.map(({ href, label, Icon }) => (
                 <li key={label}>
                   <a
@@ -95,7 +95,7 @@ const Footer: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="text-content-inverse/50 hover:text-gold transition-colors inline-block"
+                    className="inline-flex h-11 w-11 items-center justify-center text-content-inverse/50 hover:text-gold-500 transition-colors"
                   >
                     <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
                   </a>
@@ -109,10 +109,10 @@ const Footer: React.FC = () => {
           <p className="text-sm text-content-inverse/50">
             &copy; {new Date().getFullYear()} Travel Art
           </p>
-          <ul className="flex flex-wrap gap-6">
+          <ul className="flex flex-wrap gap-x-6">
             {LEGAL_LINKS.map((link) => (
               <li key={link.to}>
-                <Link to={link.to} className="text-sm text-content-inverse/50 hover:text-gold transition-colors">
+                <Link to={link.to} className="inline-flex items-center min-h-[44px] text-sm text-content-inverse/50 hover:text-gold-500 transition-colors">
                   {link.label}
                 </Link>
               </li>

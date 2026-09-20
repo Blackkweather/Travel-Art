@@ -187,7 +187,7 @@ const TopHotelsPage: React.FC = () => {
             <p className="eyebrow text-white/80">{t('Le réseau')}</p>
             <h1 className="mt-5 max-w-[14ch] text-white">
               {t('Des hôtels d’exception')}
-              <span className="block text-gold">partenaires</span>
+              <span className="block text-gold-500">partenaires</span>
             </h1>
             <p className="mt-7 text-lg text-white/80 max-w-[52ch] leading-relaxed">
               {t('Découvrez les hôtels les plus prestigieux, leurs toits-terrasses et leurs espaces intimistes.')}

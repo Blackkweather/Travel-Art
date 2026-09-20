@@ -16,6 +16,7 @@ import {
   SubcategoryInfo
 } from '@/types/artistRegistration';
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const INITIAL_STATE: ArtistRegistrationData = {
   step: 1,
@@ -168,7 +169,9 @@ const ArtistRegistrationFlow: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-surface">
       <SimpleNavbar />
 
+      <SEOHead title={t('Inscription artiste — Travel Art')} description={t('Créez votre profil d’artiste en trois étapes et candidatez aux résidences Travel Art.')} />
       <main className="flex-1 container mx-auto px-4 pt-28 pb-12 md:pb-16">
+        <h1 className="sr-only">{t('Inscription artiste')}</h1>
         {/* Step Indicator */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

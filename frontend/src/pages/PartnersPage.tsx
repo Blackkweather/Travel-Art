@@ -182,6 +182,7 @@ const PartnersPage: React.FC = () => {
           content off-screen on a phone, and `hidden md:flex` with no fallback,
           so mobile visitors got no navigation at all. */}
       <SimpleNavbar overMedia />
+      <main id="contenu">
 
       <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
@@ -474,6 +475,7 @@ const PartnersPage: React.FC = () => {
         </div>
       </section>
       
+      </main>
       <Footer />
     </div>
   )

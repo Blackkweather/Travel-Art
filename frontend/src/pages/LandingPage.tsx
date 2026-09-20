@@ -644,6 +644,7 @@ export default function LandingPage() {
           of step with every other public page. SimpleNavbar already handles the
           dark-background case this page needs. */}
       <SimpleNavbar overMedia />
+      <main id="contenu">
 
       {/* Hero. min-h-[100dvh] rather than h-screen so the iOS address bar does
           not crop it. */}
@@ -934,6 +935,7 @@ export default function LandingPage() {
 
       </div>
 
+      </main>
       <Footer />
 
       <style>{`

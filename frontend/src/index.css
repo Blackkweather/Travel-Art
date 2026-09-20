@@ -12,6 +12,13 @@
 :root {
   --navy: #0B1F3F;
   --gold: #B99851;
+  /* #B99851 is the compass-rose gold and stays exactly as it is for fills,
+     borders and anything sitting on navy. As *text on a light surface* it
+     measures 2.74:1, which fails even the 3:1 large-text bar, so gold text
+     resolves to the 700 step of the same ramp (5.78:1 on white). Same hue,
+     legible weight. On dark surfaces it resolves to the 300 step instead -
+     the pairing `.btn-gold-outline` was already making by hand. */
+  --gold-text: #7B6231;
   --off-black: #14161A;
 
   /* Warm neutrals. The page is white and the tinted bands are warm, not grey:
@@ -124,6 +131,7 @@
   --text-secondary: #A1A1AA;
   --text-on-inverse: #0B1F3F;
   --text-on-gold: #14161A;
+  --gold-text: #DAC189;
 
   --border-subtle: #1E2C45;
   --border-strong: #2C3D5A;
@@ -828,8 +836,11 @@
   background-color: var(--navy);
 }
 
-.text-gold {
-  color: var(--gold);
+.text-gold,
+.hover\:text-gold:hover,
+.focus\:text-gold:focus,
+.group:hover .group-hover\:text-gold {
+  color: var(--gold-text);
 }
 
 .bg-gold {
@@ -1936,4 +1947,18 @@ html {
   .intro--leaving .intro__stage {
     transition: none;
   }
+}
+
+/* Leaflet ships 30x30 zoom controls, which is under the 44px touch guideline
+   the rest of the site now meets. The map is the only third-party UI on the
+   page, so it is brought into line here rather than left as the one control a
+   thumb misses. Markers keep their own size: they are pins on a map, and
+   inflating them would change what the map shows. */
+.leaflet-touch .leaflet-bar a.leaflet-control-zoom-in,
+.leaflet-touch .leaflet-bar a.leaflet-control-zoom-out,
+.leaflet-bar a.leaflet-control-zoom-in,
+.leaflet-bar a.leaflet-control-zoom-out {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
 }

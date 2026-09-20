@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useId, useMemo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar, ChevronDown, AlertCircle } from 'lucide-react';
 import { format, parse, isValid, startOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay, getYear, getMonth, setYear, setMonth } from 'date-fns';
@@ -109,6 +109,9 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
     return grid;
   }, [currentMonth]);
 
+  const fieldId = useId();
+  const errorId = `${fieldId}-error`;
+
   const selectDate = (date: Date) => {
     const selected = format(date, 'dd/MM/yyyy');
     onChange(selected);
@@ -118,7 +121,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
   return (
     <div className="w-full space-y-2" ref={ref}>
       {label && (
-        <motion.label initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="form-input-label flex items-center gap-2">
+        <motion.label htmlFor={fieldId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="form-input-label flex items-center gap-2">
           <span>{label}</span>
           {required && <span className="text-gold -ml-1" aria-hidden="true">*</span>}
         </motion.label>
@@ -128,7 +131,10 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
         <div className="relative flex items-center">
           <input
             ref={inputRef}
+            id={fieldId}
             type="text"
+            aria-invalid={!!error}
+            aria-describedby={error ? errorId : undefined}
             value={inputValue}
             onChange={handleInputChange}
             onFocus={() => !disabled && setOpen(true)}
@@ -147,7 +153,9 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
             type="button"
             onClick={() => !disabled && setOpen((o) => !o)}
             disabled={disabled}
-            className="absolute right-3 text-gold hover:text-gold/80 transition-colors"
+            aria-label="Ouvrir le calendrier"
+            aria-expanded={open}
+            className="absolute right-0 flex h-11 w-11 items-center justify-center text-gold hover:text-gold-800 transition-colors"
           >
             <Calendar className="w-5 h-5" />
           </button>
@@ -303,7 +311,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
       </div>
 
       {error && (
-        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="field-error" role="alert">
+        <motion.div id={errorId} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="field-error" role="alert">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <span>{error}</span>
         </motion.div>

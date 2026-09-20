@@ -7,6 +7,7 @@ import BrandWordmark from '@/components/BrandWordmark'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const ROLE_FROM_PARAM: Record<string, 'ARTIST' | 'HOTEL'> = {
   artist: 'ARTIST',
@@ -58,6 +59,10 @@ const RegisterPage: React.FC = () => {
   // Show role selection screen with enhanced UI
   return (
     <div className="flex flex-col min-h-screen bg-surface">
+      <SEOHead
+        title={t('Rejoindre Travel Art — Inscription')}
+        description={t('Artiste ou hôtel : créez votre compte et rejoignez le programme de résidences Travel Art.')}
+      />
       <SimpleNavbar />
       <main className="flex-1 container mx-auto px-4 pt-28 pb-12 md:pb-16">
         <div className="max-w-5xl mx-auto">

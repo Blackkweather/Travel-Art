@@ -96,7 +96,7 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
       <div className="relative">
       <div className="shell h-[72px] flex items-center justify-between">
         <div className="flex items-center gap-10">
-          <Link to="/" aria-label={t('Travel Art, accueil')} className="shrink-0">
+          <Link to="/" aria-label={t('Travel Art, accueil')} className="shrink-0 flex items-center min-h-[44px]">
             <BrandWordmark
               className={`h-8 md:h-9 w-auto ${
                 onMedia ? 'text-cream' : 'text-navy dark:text-cream'
