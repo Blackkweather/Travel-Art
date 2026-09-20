@@ -52,27 +52,10 @@ float hash21(vec2 p) {
   return fract(p.x * p.y);
 }
 
-float vnoise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  float a = hash21(i);
-  float b = hash21(i + vec2(1.0, 0.0));
-  float c = hash21(i + vec2(0.0, 1.0));
-  float d = hash21(i + vec2(1.0, 1.0));
-  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-}
-
-float fbm(vec2 p) {
-  float v = 0.0;
-  float a = 0.5;
-  for (int i = 0; i < 4; i++) {
-    v += a * vnoise(p);
-    p *= 2.0;
-    a *= 0.5;
-  }
-  return v;
-}
+/* hash21 is kept for the film grain below. The value-noise and fBm that used
+   to sit here existed only to warp and to break up a transition edge, and
+   both are gone - which also takes twelve texture-free noise lookups per
+   pixel per frame off a full-bleed hero. */
 
 /* background-size: cover, in UV space. Without this the photograph stretches
    with the window instead of being cropped by it. */
@@ -100,59 +83,33 @@ void main() {
 
   float t = clamp(uProgress, 0.0, 1.0);
 
-  /* The field the transition travels across.
+  /* One eased curve, and nothing else.
 
-     The old mask was one big soft threshold over the whole frame, so the new
-     photograph bloomed everywhere at once and the change read as a crossfade
-     with no moment to it. This gives it somewhere to come from and somewhere
-     to go: a diagonal axis carries the direction, a coarse noise bends that
-     line into something organic, and a fine noise breaks the boundary so it
-     never looks like a gradient sweeping past. */
-  float axis = dot(uv - 0.5, normalize(vec2(0.86, 0.34))) + 0.5;
-  float coarse = fbm(uv * 1.8 + uTime * 0.02);
-  float fine = vnoise(uv * 9.0 - uTime * 0.05);
-  float field = axis * 0.60 + coarse * 0.32 + fine * 0.08;
+     What was here pushed the pixels around where the two photographs met, so
+     they appeared to melt into one another. It was deliberate and it was
+     wrong: deforming a photograph of a real place makes it look like a
+     effect, and the photograph is the product. A hotel does not want its
+     terrace liquefied on the way past.
 
-  /* How tight the front is. A narrow band is a wipe with a leading edge; a
-     wide one is the crossfade this replaced. EDGE is the whole difference. */
-  float EDGE = 0.16;
-  float front = t * (1.0 + EDGE * 2.0) - EDGE;
-  float mask = 1.0 - smoothstep(front - EDGE, front + EDGE, field);
+     Light does the work now. The outgoing frame eases away while the incoming
+     one arrives, both perfectly sharp at every instant of it - no noise, no
+     displacement, no leading edge. Nothing is bent. */
+  float e = t * t * (3.0 - 2.0 * t);
 
-  /* 1 exactly at the front, 0 in both settled halves. Everything expensive
-     below is multiplied by this, so a frame that is not transitioning pays
-     for none of it and is never warped. */
-  float edge = 4.0 * mask * (1.0 - mask);
+  /* A slow counter-scale underneath the dissolve: the frame leaving drifts a
+     fraction closer, the frame arriving settles out of a slightly wider
+     push. It is the movement of a camera coming to rest, and it is what
+     stops a straight cross-fade reading as a slideshow. Small on purpose -
+     4% and 5% - because past that it becomes a zoom and announces itself. */
+  vec2 mid = vec2(0.5);
+  vec2 outUv = (uv0 - mid) * (1.0 + 0.040 * e * uMotion) + mid;
+  vec2 inUv = (uv1 - mid) * (1.0 + 0.050 * (1.0 - e) * uMotion) + mid;
 
-  /* The pixels are pushed hardest where the two photographs actually meet,
-     rather than across the whole frame - which is what makes them look like
-     they are melting into one another instead of fading. */
-  float amp = uMotion * 0.16 * edge;
-  vec2 flow = vec2(
-    fbm(uv * 3.0 + uTime * 0.03),
-    fbm(uv * 3.0 + 7.3 - uTime * 0.03)
-  ) - 0.5;
-  uv0 += flow * amp;
-  uv1 -= flow * amp * 0.65;
+  vec3 c0 = texture2D(uTex0, clamp(outUv, 0.001, 0.999)).rgb;
+  vec3 c1 = texture2D(uTex1, clamp(inUv, 0.001, 0.999)).rgb;
 
-  vec3 c0 = texture2D(uTex0, clamp(uv0, 0.001, 0.999)).rgb;
+  vec3 col = mix(c0, c1, e);
 
-  /* One fetch, deliberately. A three-tap chromatic separation at the front
-     looked good and cost two extra full-screen texture reads on every pixel
-     of every frame, transitioning or not - and this is a full-bleed hero that
-     has to hold 60fps on a phone. The front, the warp and the gold below do
-     the work; the fringing was the least visible part of it and by far the
-     most expensive. */
-  vec3 c1 = texture2D(uTex1, clamp(uv1, 0.001, 0.999)).rgb;
-
-  vec3 col = mix(c0, c1, clamp(mask, 0.0, 1.0));
-
-  /* The brand's gold, laid on the front itself and nowhere else, with a
-     small lift in brightness behind it. It is what stops the boundary
-     reading as an artefact and makes it read as a decision. */
-  vec3 GOLD = vec3(0.725, 0.596, 0.318);
-  col += GOLD * edge * 0.10 * uMotion;
-  col *= 1.0 + edge * 0.06 * uMotion;
 
   float grain = hash21(uv * uResolution * 0.5 + fract(uTime) * 100.0);
   col += (grain - 0.5) * 0.035 * uMotion;
