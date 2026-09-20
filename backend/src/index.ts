@@ -81,8 +81,34 @@ app.use(helmet({
       connectSrc: ["'self'"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      /* Performance videos on an artist profile. This was "'self'", which
+         refused every video the platform can actually store: uploads come
+         back as absolute Cloudinary or Blob URLs, exactly as images do, and
+         imgSrc above already names both hosts. The <video> element on
+         PublicArtistProfile was blocked for the same reason the CARTO tiles
+         were - the host was never added to our own policy.
+
+         The seeded demo clips live in the frontend's own public/ folder, so
+         they are covered by 'self' and need no third-party host here. */
+      mediaSrc: [
+        "'self'",
+        "blob:",
+        "data:",
+        "https://res.cloudinary.com",
+        "https://*.public.blob.vercel-storage.com",
+      ],
+      /* The same profile embeds YouTube in an iframe when the stored URL is a
+         YouTube link, and five seeded artists already had one. frameSrc was
+         "'none'", so that branch has never rendered - the player was refused
+         before it could load. youtube-nocookie is listed first because it is
+         what the embed should use: it sets no advertising cookies, which keeps
+         the embed outside the consent banner's remit. */
+      frameSrc: [
+        "'self'",
+        "https://www.youtube-nocookie.com",
+        "https://www.youtube.com",
+        "https://player.vimeo.com",
+      ],
     },
   },
 }));

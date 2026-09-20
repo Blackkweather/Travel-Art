@@ -257,7 +257,7 @@ const PublicArtistProfile: React.FC = () => {
         {/* About Section */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.1}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-content mb-4">About {artist.stageName || artist.user?.name}</h2>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('À propos de')} {artist.stageName || artist.user?.name}</h2>
             <div className="prose prose-lg max-w-none">
               <p className="text-content-secondary leading-relaxed text-base mb-4">
                 {artist.bio || `${artist.stageName || artist.user?.name} est un artiste professionnel${artist.discipline ? ` — ${artist.discipline}` : ''} qui se produit dans les lieux d’exception du monde entier, avec le goût des moments dont on se souvient.`}
@@ -442,7 +442,7 @@ const PublicArtistProfile: React.FC = () => {
         </ScrollAnimationWrapper>
 
         {/* Performance Videos */}
-        {(videos.length > 0 || !videos.length) && (
+        {(
           <ScrollAnimationWrapper animation="fade-up" delay={0.2}>
             <div className="mb-12">
               <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Vidéos de performances')}</h2>
@@ -470,8 +470,8 @@ const PublicArtistProfile: React.FC = () => {
                       <div key={index} className="relative aspect-video rounded-card overflow-hidden bg-surface-inverse">
                         {isYouTube && videoId ? (
                           <iframe
-                            src={`https://www.youtube.com/embed/${videoId}`}
-                            title={`Performance Video ${index + 1}`}
+                            src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                            title={`${t('Vidéo de performance')} ${index + 1}`}
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
                             className="w-full h-full"
@@ -480,6 +480,8 @@ const PublicArtistProfile: React.FC = () => {
                           <video
                             src={video}
                             controls
+                            preload="metadata"
+                            aria-label={`${t('Vidéo de performance')} ${index + 1}`}
                             className="w-full h-full object-cover"
                           >
                             {t('Votre navigateur ne prend pas en charge la lecture vidéo.')}
