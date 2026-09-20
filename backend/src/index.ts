@@ -52,6 +52,22 @@ initializeDatabase()
 app.use(compression());
 
 app.use(helmet({
+  /* Helmet defaults this to `no-referrer`, which strips the Referer header
+     from every outbound request the browser makes. That is stricter than it
+     sounds: an API key restricted by referrer - which is how ArcGIS, Google
+     Maps and most keyed tile providers limit a key that necessarily ships in
+     the bundle - can never satisfy its own allowlist, because the browser
+     sends nothing to match against. ArcGIS answers 401 with a JSON error,
+     Chrome sees JSON arriving at an <img> and blocks it as an opaque
+     response, and the map is blank with no CSP violation and no failed
+     request to explain it.
+
+     `strict-origin-when-cross-origin` is the modern browser default. It sends
+     the full URL only to our own origin, the bare origin to other sites, and
+     nothing at all when downgrading HTTPS to HTTP. So a third party learns
+     that travel-art.vercel.app made the request and never which page - no
+     artist id, no booking id - which is the part worth protecting. */
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -77,6 +93,10 @@ app.use(helmet({
            OSM stays listed because the layer is a one-line change back. */
         "https://*.basemaps.cartocdn.com",
         "https://*.tile.openstreetmap.org",
+        /* ArcGIS static basemap tiles. Leaflet loads raster tiles as <img>,
+           so imgSrc is the directive that matters here; the vector-style and
+           geocoding APIs would need connectSrc as well, and neither is used. */
+        "https://static-map-tiles-api.arcgis.com",
       ],
       connectSrc: ["'self'"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],

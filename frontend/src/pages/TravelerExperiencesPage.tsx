@@ -7,6 +7,10 @@ import Footer from '@/components/Footer'
 
 
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+
+/* Publishable by design: this ships inside the bundle, so the referrer
+   allowlist on the key is what limits it, not secrecy. */
+const ARCGIS_KEY = import.meta.env.VITE_ARCGIS_API_KEY || ''
 import L, { LatLngTuple } from 'leaflet'
 import { tripsApi } from '@/utils/api'
 import { experienceTypeLabel } from '@/utils/i18n'
@@ -15,23 +19,33 @@ import { experienceTypeLabel } from '@/utils/i18n'
 // Loaded here rather than in main.tsx: this is the only route with a map,
 // so its stylesheet has no business in the global bundle.
 import 'leaflet/dist/leaflet.css'
-import icon from 'leaflet/dist/images/marker-icon.png'
-import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 import { extractArray, parseJsonField } from '@/utils/apiPayload'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
 import { countryLabel } from '@/i18n/countries'
 
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+/* Leaflet's stock marker is a blue PNG with a drop shadow - the default look
+   of every map demo on the internet, and the one thing on this page that does
+   not belong to the brand. A pin drawn in the compass-rose gold over navy
+   reads as ours, and the quiet basemap was chosen so it would.
+
+   divIcon rather than a PNG: it is markup, so it scales on a retina screen
+   and costs no request. 32x42 keeps the tap target close to the guideline
+   without inflating the pin beyond what a cluster of them can bear. */
+const ResidencyIcon = L.divIcon({
+  className: 'residency-pin',
+  html: `
+    <svg width="32" height="42" viewBox="0 0 32 42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 26 16 26s16-15 16-26C32 7.163 24.837 0 16 0z"
+            fill="#0B1F3F"/>
+      <circle cx="16" cy="16" r="6.5" fill="#B99851"/>
+    </svg>`,
+  iconSize: [32, 42],
+  iconAnchor: [16, 42],
+  popupAnchor: [0, -36],
 })
 
-L.Marker.prototype.options.icon = DefaultIcon
+L.Marker.prototype.options.icon = ResidencyIcon
 
 interface Experience {
   id: string
@@ -372,19 +386,34 @@ const TravelerExperiencesPage: React.FC = () => {
               }))}
               onChange={setMapCountry}
             />
-              {/* tile.openstreetmap.org is a volunteer-run server that blocks
-                  any app generating production-level traffic without a
-                  registered tile provider - which is exactly what happened
-                  here (see osm.wiki/Blocked). CARTO's basemaps are free and
-                  keyless for this volume, so the map works again immediately;
-                  swap to a paid provider (MapTiler, Mapbox, Stadia) with a
-                  real API key before traffic grows further. */}
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                subdomains="abcd"
-                maxZoom={20}
-              />
+              {/* Basemap. ArcGIS when a key is configured, CARTO when it is
+                  not.
+
+                  The fallback is not politeness - VITE_ARCGIS_API_KEY lives in
+                  .env.local, which is not committed. A deploy where nobody set
+                  it in the Vercel dashboard would otherwise render an empty
+                  grey rectangle and say nothing about why, which is how the
+                  OSM block and the CSP refusals before it went unnoticed for
+                  weeks. Missing key means a working map on free tiles, not a
+                  broken one.
+
+                  light-gray over navigation or streets: it is the quietest of
+                  the four, which is what lets the gold pins read as the
+                  subject rather than competing with motorway shields. */}
+              {ARCGIS_KEY ? (
+                <TileLayer
+                  attribution='Powered by <a href="https://www.esri.com/">Esri</a>'
+                  url={`https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/arcgis/light-gray/static/tile/{z}/{y}/{x}?token=${ARCGIS_KEY}`}
+                  maxZoom={20}
+                />
+              ) : (
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  subdomains="abcd"
+                  maxZoom={20}
+                />
+              )}
               {/* baseFiltered, not filteredExperiences: the map keeps every
                   pin the explicit filters allow. Narrowing the pins by the
                   country the map itself picked would erase everywhere else

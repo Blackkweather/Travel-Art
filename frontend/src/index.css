@@ -1962,3 +1962,10 @@ html {
   height: 44px;
   line-height: 44px;
 }
+
+/* L.divIcon ships a white background and a border by default, which would
+   frame every map pin in a white box. The pin is the SVG, nothing else. */
+.residency-pin {
+  background: transparent;
+  border: 0;
+}
