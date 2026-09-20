@@ -160,8 +160,8 @@ function App() {
       <Route path="/top-artists" element={<ProtectedRoute><PageTransition><TopArtistsPage /></PageTransition></ProtectedRoute>} />
       <Route path="/top-hotels" element={<ProtectedRoute><PageTransition><TopHotelsPage /></PageTransition></ProtectedRoute>} />
       <Route path="/hotel/:id" element={<ProtectedRoute><PageTransition><HotelDetailsPage /></PageTransition></ProtectedRoute>} />
-      <Route path="/experiences" element={<PageTransition><TravelerExperiencesPage /></PageTransition>} />
-      <Route path="/experience/:id" element={<PageTransition><ExperienceDetailsPage /></PageTransition>} />
+      <Route path="/experiences" element={<ProtectedRoute><PageTransition><TravelerExperiencesPage /></PageTransition></ProtectedRoute>} />
+      <Route path="/experience/:id" element={<ProtectedRoute><PageTransition><ExperienceDetailsPage /></PageTransition></ProtectedRoute>} />
       <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
       <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
       <Route path="/inscription-envoyee" element={<PageTransition><RegistrationSentPage /></PageTransition>} />

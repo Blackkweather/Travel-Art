@@ -93,7 +93,8 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
       prisma.artist.findMany({
         where,
         include: {
-          // This list is public and unauthenticated - no email here. The
+          // No email here. The route requires a token now, but the narrow
+          // selection stays: a browse list has no business carrying it. The
           // single-artist route below and the hotel-scoped browse endpoint
           // already withhold it; this one used to hand out every artist's
           // address to anyone who paginated through it.
@@ -331,7 +332,7 @@ router.get('/:id', authenticate, asyncHandler(async (req, res) => {
     }
   }
 
-  // This is a public, unauthenticated route, so the request-scoped client
+  // This route requires a token, but it is not role-scoped, so the client
   // has no RLS identity and would silently count zero bookings regardless
   // of how many exist - the same gap that made this page disagree with the
   // artist's card on /top-artists (which already reads this count through

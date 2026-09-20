@@ -2,12 +2,14 @@ import { Router } from 'express';
 import { prisma } from '../db';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { parseJsonField } from '../utils/parseJsonField';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
 // GET /api/trips - list published trips (optionally filtered)
 router.get(
   '/',
+  authenticate,
   asyncHandler(async (req, res) => {
     const { destination } = req.query;
 
@@ -82,6 +84,7 @@ router.get(
 // GET /api/trips/:id - trip details (only if published)
 router.get(
   '/:id',
+  authenticate,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 

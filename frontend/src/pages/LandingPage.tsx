@@ -12,6 +12,7 @@ import FeaturedArtists from '@/components/landing/FeaturedArtists'
 import Testimonials from '@/components/landing/Testimonials'
 import LandingFaq from '@/components/landing/LandingFaq'
 import SimpleNavbar from '@/components/SimpleNavbar'
+import { useAuthStore } from '@/store/authStore'
 import Footer from '@/components/Footer'
 import { extractArray, parseJsonField } from '@/utils/apiPayload'
 import { t } from '@/i18n'
@@ -141,6 +142,7 @@ export default function LandingPage() {
   ]
 
   // States
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const [experiences, setExperiences] = useState<any[]>([])
   // The only slide state that is rendered from. It is set when a navigation
   // *starts*, because the photograph has to begin dissolving with the type
@@ -178,6 +180,16 @@ export default function LandingPage() {
 
   // Fetch experiences and create slides
   useEffect(() => {
+    /* The catalogue is behind an account, so a guest's request can only 401.
+       Skipping it keeps a guaranteed failure, and a red line in the console,
+       off the front page - and the hero simply keeps the curated slides it
+       opened with, which name no hotel and no artist. */
+    if (!isAuthenticated) {
+      setExperiences([])
+      setSlides(defaultSlides)
+      return
+    }
+
     const fetchData = async () => {
       try {
         const tripsRes = await tripsApi.getAll()
@@ -256,7 +268,7 @@ export default function LandingPage() {
       }
     }
     fetchData()
-  }, [])
+  }, [isAuthenticated])
 
   // Format number with leading zero
   const formatNumber = (num: number): string => {

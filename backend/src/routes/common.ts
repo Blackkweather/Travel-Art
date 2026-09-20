@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma, prismaAdmin } from '../db';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { authenticate, optionalAuth, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { parseJsonField } from '../utils/parseJsonField';
 
@@ -202,7 +202,7 @@ router.get('/top', authenticate, asyncHandler(async (req, res) => {
         // booking row would leave this function, but the old `...artist`
         // spread in the response handed the full rows (hotelId, dates,
         // notes, payment amounts) to anyone hitting this public,
-        // unauthenticated endpoint. Selecting just `id` here makes that
+        // endpoint open to any signed-in role. Selecting just `id` makes that
         // impossible to regress into.
         //
         // This filtered relation exists only to break ties in the sort
@@ -296,7 +296,7 @@ router.get('/top', authenticate, asyncHandler(async (req, res) => {
       const images = parseJsonField<string[]>(artist.images, []);
 
       // Named fields only - never spread the Prisma row here. This is a
-      // public, unauthenticated endpoint; the full row carries referralCode,
+      // endpoint open to any signed-in role; the full row carries referralCode,
       // loyaltyPoints, bookingCreditCost and phone, none of which belong on
       // a landing-page ranking.
       return {
@@ -374,7 +374,7 @@ router.get('/top', authenticate, asyncHandler(async (req, res) => {
         : null;
 
       // Named fields only - never spread the Prisma row here. This is a
-      // public, unauthenticated endpoint; the full row carries
+      // endpoint open to any signed-in role; the full row carries
       // responsibleEmail, responsiblePhone and contactPhone.
       return {
         id: hotel.id,
@@ -455,7 +455,7 @@ router.get('/stats', asyncHandler(async (req, res) => {
 }));
 
 // Get testimonials from ratings
-router.get('/testimonials', asyncHandler(async (req, res) => {
+router.get('/testimonials', optionalAuth, asyncHandler(async (req: AuthRequest, res) => {
   const limit = parseInt(req.query.limit as string) || 6
   
   // Get ratings with hotel and artist information
@@ -490,6 +490,8 @@ router.get('/testimonials', asyncHandler(async (req, res) => {
   // Filter out ratings without text reviews
   const ratings = allRatings.filter(r => r.textReview && r.textReview.trim().length > 0).slice(0, limit)
 
+  const signedIn = Boolean(req.user)
+
   const testimonials = ratings.map(rating => {
     const location = parseJsonField(rating.hotel?.location, null)
 
@@ -497,10 +499,19 @@ router.get('/testimonials', asyncHandler(async (req, res) => {
       id: rating.id,
       rating: rating.stars,
       comment: rating.textReview,
-      hotelName: rating.hotel?.user?.name || 'Hotel Partner',
-      location: location 
-        ? `${location.city || ''}, ${location.country || ''}`.trim()
-        : rating.hotel?.user?.country || '',
+      /* Social proof is worth showing a visitor; the partner list is not.
+         Signed out, the quote keeps its rating and its words but the hotel is
+         reduced to a country - "Un hotel partenaire, France". A town like
+         Tignes names the hotel on its own, so the city goes too. Signed in,
+         the full attribution comes back. */
+      hotelName: signedIn
+        ? (rating.hotel?.user?.name || 'Hotel Partner')
+        : 'Un hôtel partenaire',
+      location: signedIn
+        ? (location
+            ? `${location.city || ''}, ${location.country || ''}`.trim().replace(/^,\s*/, '')
+            : rating.hotel?.user?.country || '')
+        : (location?.country || rating.hotel?.user?.country || ''),
       createdAt: rating.createdAt
     }
   })
