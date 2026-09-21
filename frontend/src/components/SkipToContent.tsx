@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { t, useI18n } from '@/i18n'
 
 /**
  * The first thing a keyboard user reaches on any page.
@@ -10,10 +11,16 @@ import { useEffect } from 'react'
  * screen, the first <main> (or failing that the first heading) is the target.
  */
 export default function SkipToContent() {
+  /* The label was a literal, so it stayed in French when the rest of the site
+     switched to English - the very first thing a keyboard user reaches, and
+     the one string on the page that never translated. Reading the locale here
+     also rebuilds the link when it changes. */
+  const { locale } = useI18n()
+
   useEffect(() => {
     const skipLink = document.createElement('a')
     skipLink.href = '#contenu'
-    skipLink.textContent = 'Aller au contenu principal'
+    skipLink.textContent = t('Aller au contenu principal')
     skipLink.className =
       'sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 ' +
       'focus:inline-flex focus:items-center focus:min-h-[44px] focus:px-4 focus:py-2 ' +
@@ -46,7 +53,7 @@ export default function SkipToContent() {
         skipLink.parentNode.removeChild(skipLink)
       }
     }
-  }, [])
+  }, [locale])
 
   return null
 }

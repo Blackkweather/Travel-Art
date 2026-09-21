@@ -415,28 +415,13 @@ const ExperienceDetailsPage: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* What's Included */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="panel p-6"
-            >
-              <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
-                {t('Ce qui est compris')}
-              </h2>
-              <ul className="space-y-3">
-                {experience.includes.map((item: string, index: number) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-gold/20 rounded-control flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 bg-gold rounded-control"></div>
-                    </div>
-                    <span className="text-content-secondary">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-
+            {/* The panel that stood here repeated experience.includes in
+                full, a second time, under the heading "Ce qui est compris" -
+                the same thirteen lines the terms panel above already lists
+                under "Sur place, la maison fournit". It was the earlier,
+                plainer version of that section and was never removed when the
+                richer one replaced it, so every residency page printed its
+                inclusions twice. */}
             {/* Artist Bio */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
