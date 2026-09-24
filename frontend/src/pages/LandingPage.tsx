@@ -175,6 +175,27 @@ export default function LandingPage() {
   const experienceImagesSectionRef = useRef<HTMLElement>(null)
   const experiencesSectionRef = useRef<HTMLElement>(null)
   
+/* The signed-out gallery.
+ *
+ * GalleryPan is the pinned horizontal run - the page holds still and the work
+ * travels sideways. It renders nothing on an empty array, and gating the
+ * catalogue emptied it, so the signature moment on the front page disappeared
+ * for every visitor who was not logged in. Which is every visitor.
+ *
+ * These six keep it. They are the curated photographs already in the repo,
+ * captioned with a discipline and a country and nothing else: no hotel, no
+ * artist, no city precise enough to name a house on its own. They point at
+ * /register rather than a residency a visitor cannot open.
+ */
+const SIGNED_OUT_GALLERY = [
+  { id: 'g-alpine',  image: '/images/resorts/alpine.webp', title: 'Piano, en altitude',      category: 'Musique',      location: 'France',   href: '/register' },
+  { id: 'g-riad',    image: '/images/resorts/riad.webp',   title: 'Oud, dans un patio',      category: 'Musique',      location: 'Maroc',    href: '/register' },
+  { id: 'g-lagoon',  image: '/images/resorts/lagoon.webp', title: 'Danse, face au lagon',    category: 'Scène',        location: 'Thaïlande', href: '/register' },
+  { id: 'g-coast',   image: '/images/resorts/coast.webp',  title: 'Voix, au coucher',        category: 'Musique',      location: 'Portugal', href: '/register' },
+  { id: 'g-desert',  image: '/images/resorts/desert.webp', title: 'Atelier, plein désert',   category: 'Arts visuels', location: 'Maroc',    href: '/register' },
+  { id: 'g-marina',  image: '/images/resorts/marina.webp', title: 'Jazz, sur le port',       category: 'Musique',      location: 'Italie',   href: '/register' },
+]
+
   const weLovetags = ['MUSIQUE', 'ART', 'VOYAGE', 'LUXE', 'CULTURE', 'RENCONTRE', 'CRÉATION', 'SCÈNE']
 
 
@@ -185,7 +206,7 @@ export default function LandingPage() {
        off the front page - and the hero simply keeps the curated slides it
        opened with, which name no hotel and no artist. */
     if (!isAuthenticated) {
-      setExperiences([])
+      setExperiences(SIGNED_OUT_GALLERY)
       setSlides(defaultSlides)
       return
     }

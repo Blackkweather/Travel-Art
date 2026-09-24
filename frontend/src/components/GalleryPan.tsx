@@ -13,6 +13,10 @@ export interface GalleryItem {
   category?: string
   /** "Phuket, Thailand" - the thing a reader scans a residency card for. */
   location?: string
+  /** Where the card goes. Defaults to the residency. The signed-out gallery
+      sets this to /register, because /experience/:id would only bounce a
+      visitor to the login screen with no explanation. */
+  href?: string
 }
 
 interface GalleryPanProps {
@@ -86,7 +90,7 @@ export default function GalleryPan({ items }: GalleryPanProps) {
         {items.map((item, i) => (
           <Link
             key={item.id}
-            to={`/experience/${item.id}`}
+            to={item.href || `/experience/${item.id}`}
             className="group shrink-0 snap-start w-[78vw] sm:w-[52vw] lg:w-[34vw]"
           >
             {/* Alternating heights keep the run from reading as a filmstrip.
