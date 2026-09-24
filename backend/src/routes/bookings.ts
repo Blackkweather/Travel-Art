@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { config } from '../config';
@@ -606,18 +606,31 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
 
   // If booking is rejected or cancelled, return the credits it reserved.
   if (releasesPayment) {
-    // Return the credits the booking reserved. Without this the hotel paid for
-    // a booking the artist declined: the spend was recorded on creation and
-    // nothing ever gave it back. Guarded so a repeated status change cannot
-    // refund the same booking twice.
+    /* The refund runs on prismaAdmin, not the request-scoped client, and this
+       is the whole reason the reject path was broken.
+
+       The credits, credit_ledger and transactions tables are owned by the
+       hotel: RLS lets a hotel write its own rows and nobody else. But a refund
+       is triggered by whoever ends the booking - and when that is the ARTIST
+       rejecting a request, the request-scoped client carries the artist's
+       identity, which the hotel's credit policy refuses. The UPDATE matched
+       zero rows, Prisma threw, and the artist could never decline: the booking
+       stuck at PENDING with the hotel's credits held for ever.
+
+       This is a legitimate cross-boundary write - one party's action must move
+       another party's balance - which is exactly what prismaAdmin exists for.
+       Authorisation was already enforced above (role and ownership are checked
+       before we get here), so the elevated write is not a hole; it is the
+       refund the checks decided should happen. The hotel-cancel path worked by
+       luck, because there the actor and the balance owner were the same. */
     if (booking.creditCost > 0) {
-      const alreadyRefunded = await prisma.creditLedger.findFirst({
+      const alreadyRefunded = await prismaAdmin.creditLedger.findFirst({
         where: { bookingId: booking.id, reason: 'BOOKING_REFUND' }
       });
 
       if (!alreadyRefunded) {
-        await prisma.$transaction([
-          prisma.creditLedger.create({
+        await prismaAdmin.$transaction([
+          prismaAdmin.creditLedger.create({
             data: {
               hotelId: booking.hotelId,
               delta: booking.creditCost,
@@ -626,7 +639,7 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
               note: `Booking ${booking.id} ${status.toLowerCase()}`
             }
           }),
-          prisma.credit.update({
+          prismaAdmin.credit.update({
             where: { hotelId: booking.hotelId },
             data: { usedCredits: { decrement: booking.creditCost } }
           })
@@ -636,7 +649,7 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
 
     // Create refund transaction if payment was already made
     if (booking.paymentStatus === 'PAID') {
-      await prisma.transaction.create({
+      await prismaAdmin.transaction.create({
         data: {
           hotelId: booking.hotelId,
           artistId: booking.artistId,
