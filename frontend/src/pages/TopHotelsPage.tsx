@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
 import { countryLabel } from '@/i18n/countries'
+import { useAuthStore } from '@/store/authStore'
 
 interface TopHotel {
   id: string
@@ -40,21 +41,40 @@ const TopHotelsPage: React.FC = () => {
     totalEvents: 0
   })
 
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
+  /* This fetch used to run on mount with an empty dependency array. The auth
+     store rehydrates its token from localStorage asynchronously, so the
+     request left before the token existed, came back 401, and the page
+     rendered an empty roster to a signed-in user. PartnersPage already reads
+     the flag and waits; this now does the same. */
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
+
     const fetchData = async () => {
       setLoading(true)
       setError(null)
       try {
-        const [hotelsResponse, statsResponse] = await Promise.all([
+        /* allSettled, not all: /api/stats is public and /hotels is not, so a
+           401 on the roster used to reject the pair and throw away the counts
+           as well. That is why the header read "0" on a page that has them. */
+        const [rosterResult, statsResult] = await Promise.allSettled([
           commonApi.getTopHotels(),
           commonApi.getStats()
         ])
+
+        if (rosterResult.status === 'rejected') throw rosterResult.reason
+        const hotelsResponse = rosterResult.value
+        const statsResponse = statsResult.status === 'fulfilled' ? statsResult.value : null
 
         if (hotelsResponse.data.success) {
           setTopHotels(hotelsResponse.data.data || [])
         }
 
-        if (statsResponse.data.success) {
+        if (statsResponse?.data.success) {
           const statsData = statsResponse.data.data
           setStats({
             totalHotels: statsData.totalHotels || 0,
@@ -73,7 +93,7 @@ const TopHotelsPage: React.FC = () => {
     }
 
     fetchData()
-  }, [])
+  }, [isAuthenticated])
 
   const formatLocation = (location?: { city?: string; country?: string } | string): string => {
     if (!location) return 'Location TBA'
