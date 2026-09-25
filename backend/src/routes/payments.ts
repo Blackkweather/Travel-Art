@@ -1,53 +1,52 @@
 import { Router } from 'express';
 import { prisma } from '../db';
+import { config } from '../config';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { stripe, isStripeConfigured, stripeUnavailableReason } from '../stripe';
 
 const router = Router();
 
-// Get all credit packages
+/**
+ * Get all credit packages.
+ *
+ * These now come from the credit_packages table, which is the only place pack
+ * pricing is allowed to live. This handler previously returned a hardcoded
+ * array of EUR 49.99 / 129.99 / 399.99 while the pricing page advertised
+ * EUR 1,500 / 3,500 / 6,500, so a hotel was quoted thirty times what the API
+ * would have charged.
+ *
+ * priceCents is the stored value; price is derived for display only. Clients
+ * should prefer priceCents and must never hardcode either.
+ */
 router.get('/packages', asyncHandler(async (req, res) => {
-  // For now, return default packages since CreditPackage model doesn't exist
-  // In production, these should come from a database table
-  const packages = [
-    {
-      id: 'package-1',
-      name: 'Starter Package',
-      credits: 5,
-      price: 49.99,
-      discount: 0,
-      description: 'Perfect for small hotels getting started',
-      isActive: true
-    },
-    {
-      id: 'package-2',
-      name: 'Professional Package',
-      credits: 15,
-      price: 129.99,
-      discount: 10,
-      description: 'Best value for regular bookings',
-      isActive: true
-    },
-    {
-      id: 'package-3',
-      name: 'Enterprise Package',
-      credits: 50,
-      price: 399.99,
-      discount: 20,
-      description: 'Maximum savings for high-volume hotels',
-      isActive: true
-    }
-  ];
+  const packages = await prisma.creditPackage.findMany({
+    where: { active: true },
+    orderBy: { sortOrder: 'asc' }
+  });
 
   res.json({
     success: true,
-    data: packages
+    data: packages.map((pkg) => ({
+      id: pkg.id,
+      slug: pkg.slug,
+      name: pkg.name,
+      credits: pkg.credits,
+      bonusCredits: pkg.bonusCredits,
+      totalCredits: pkg.credits + pkg.bonusCredits,
+      priceCents: pkg.priceCents,
+      price: pkg.priceCents / 100,
+      currency: pkg.currency,
+      isActive: pkg.active
+    }))
   });
 }));
 
 // Purchase credits
 router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { hotelId, packageId, paymentMethod } = req.body;
+  // paymentMethod is accepted from the client for backward compatibility but
+  // ignored: Stripe Checkout collects the payment method itself.
+  const { hotelId, packageId } = req.body;
 
   if (!hotelId || !packageId) {
     throw new CustomError('hotelId and packageId are required', 400);
@@ -62,70 +61,202 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
     throw new CustomError('Hotel not found or access denied', 404);
   }
 
-  // Get package details (matching the packages from GET /packages)
-  const packageMap: Record<string, { credits: number; price: number; name: string }> = {
-    'package-1': { credits: 5, price: 49.99, name: 'Starter Package' },
-    'package-2': { credits: 15, price: 129.99, name: 'Professional Package' },
-    'package-3': { credits: 50, price: 399.99, name: 'Enterprise Package' }
-  };
+  // Validate against the packages table rather than a hardcoded map. The map
+  // that used to sit here listed EUR 49.99 / 129.99 / 399.99 and its keys
+  // ('package-1'...) no longer match any real package id, so a valid request
+  // was rejected as "Invalid package ID" before reaching the honest error.
+  const selectedPackage = await prisma.creditPackage.findFirst({
+    where: { OR: [{ id: packageId }, { slug: packageId }], active: true }
+  });
 
-  const selectedPackage = packageMap[packageId];
   if (!selectedPackage) {
-    throw new CustomError('Invalid package ID', 400);
+    throw new CustomError('Unknown credit package', 400);
   }
 
-  // Check if first-time purchase (50% discount)
-  const existingTransactions = await prisma.transaction.findMany({
-    where: {
-      hotelId: hotelId,
-      type: 'CREDIT_PURCHASE'
-    }
-  });
-
-  const isFirstPurchase = existingTransactions.length === 0;
-  const finalPrice = isFirstPurchase ? selectedPackage.price * 0.5 : selectedPackage.price;
-
-  // Calculate bonus credits
-  let bonusCredits = 0;
-  if (selectedPackage.name.includes('Professional')) {
-    bonusCredits = 4;
-  } else if (selectedPackage.name.includes('Enterprise')) {
-    bonusCredits = 10;
+  // Credits are never created by a request the client controls. This endpoint
+  // only opens a Stripe Checkout Session; the balance moves in the webhook,
+  // after Stripe confirms the charge and the signature is verified.
+  //
+  //   1. create a Checkout Session for the chosen CreditPackage  (here)
+  //   2. Stripe charges the card
+  //   3. checkout.session.completed arrives at /payments/webhook
+  //   4. that handler writes an append-only CreditLedger entry and the
+  //      matching balance update inside one transaction
+  //
+  // The price comes from the packages table, never from the request body.
+  if (!isStripeConfigured() || !stripe) {
+    console.warn(
+      `Blocked credit purchase: ${stripeUnavailableReason()} (hotel ${hotelId}, package ${packageId})`
+    );
+    throw new CustomError(
+      'Credit purchases are temporarily unavailable while payment processing is being set up. ' +
+      'No card has been charged and no credits have been added. Please contact us to arrange a purchase.',
+      503
+    );
   }
 
-  const totalCredits = selectedPackage.credits + bonusCredits;
-
-  // Update or create credits record
-  const creditRecord = await prisma.credit.upsert({
-    where: { hotelId: hotelId },
-    update: {
-      totalCredits: { increment: totalCredits }
-    },
-    create: {
-      hotelId: hotelId,
-      totalCredits: totalCredits,
-      usedCredits: 0
-    }
-  });
-
-  // Create transaction record
-  const transaction = await prisma.transaction.create({
+  // Recorded as PENDING before the redirect, so a completed charge always has
+  // a row to attach to even if the customer closes the tab.
+  const payment = await prisma.payment.create({
     data: {
-      hotelId: hotelId,
-      type: 'CREDIT_PURCHASE',
-      amount: finalPrice
-    }
+      actorUserId: req.user!.id,
+      amountCents: selectedPackage.priceCents,
+      currency: selectedPackage.currency,
+      status: 'PENDING',
+      packageId: selectedPackage.id,
+    },
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    // client_reference_id and metadata are echoed back on the webhook, which
+    // is the only place the credits are actually granted.
+    client_reference_id: payment.id,
+    metadata: {
+      paymentId: payment.id,
+      hotelId: hotel.id,
+      packageId: selectedPackage.id,
+      credits: String(selectedPackage.credits + selectedPackage.bonusCredits),
+    },
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: selectedPackage.currency.toLowerCase(),
+          unit_amount: selectedPackage.priceCents,
+          product_data: {
+            name: selectedPackage.name,
+            description: `${selectedPackage.credits + selectedPackage.bonusCredits} booking credits`,
+          },
+        },
+      },
+    ],
+    success_url: `${config.frontendUrl}/dashboard/credits?checkout=success`,
+    cancel_url: `${config.frontendUrl}/dashboard/credits?checkout=cancelled`,
+  });
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { stripeSessionId: session.id },
   });
 
   res.json({
     success: true,
+    data: { checkoutUrl: session.url, sessionId: session.id, paymentId: payment.id },
+  });
+}));
+
+/**
+ * Purchase an artist membership.
+ *
+ * The frontend has always called this endpoint, but it was never implemented,
+ * so every upgrade attempt 404'd and the page reported "Membership purchase
+ * failed. Please try again." — advice that could never work.
+ *
+ * It takes the same position as /credits/purchase above: validate everything
+ * that can be validated, then refuse honestly rather than granting a paid
+ * benefit no one was charged for. Activating a membership here would make an
+ * artist ACTIVE, and therefore priority-placed, for free.
+ */
+/**
+ * Annual membership tiers.
+ *
+ * Priced here, never from the request: a tier is two words on the wire and the
+ * amount charged must not be one of them.
+ */
+const MEMBERSHIP_TIERS = {
+  ARTIST: { priceCents: 5000, label: 'Formule Artiste' },
+  PROFESSIONAL: { priceCents: 10000, label: 'Formule Artiste confirme' },
+} as const;
+
+router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
+  const { artistId, membershipType } = req.body;
+
+  if (!artistId || !membershipType) {
+    throw new CustomError('artistId and membershipType are required', 400);
+  }
+
+  const tier = MEMBERSHIP_TIERS[membershipType as keyof typeof MEMBERSHIP_TIERS];
+  if (!tier) {
+    throw new CustomError('Unknown membership tier', 400);
+  }
+
+  const artist = await prisma.artist.findFirst({
+    where: { id: artistId, userId: req.user!.id }
+  });
+
+  if (!artist) {
+    throw new CustomError('Artist not found or access denied', 404);
+  }
+
+  if (!isStripeConfigured() || !stripe) {
+    console.warn(
+      `Blocked membership purchase: ${stripeUnavailableReason()} (artist ${artistId}, tier ${membershipType})`
+    );
+    throw new CustomError(
+      'Les adhesions ne sont pas encore disponibles a l\u2019achat en ligne. ' +
+      'Aucune carte n\u2019a ete debitee et votre adhesion est inchangee. Ecrivez-nous pour la mettre en place.',
+      503
+    );
+  }
+
+  // Both rows exist before the redirect, so a charge that completes while the
+  // customer has closed the tab still has something to attach itself to.
+  const membership = await prisma.membership.create({
     data: {
-      credits: creditRecord,
-      transaction: transaction,
-      package: selectedPackage,
-      bonusCredits: bonusCredits,
-      isFirstPurchase: isFirstPurchase
-    }
+      artistId: artist.id,
+      tier: membershipType as 'ARTIST' | 'PROFESSIONAL',
+      priceCents: tier.priceCents,
+      currency: 'EUR',
+      status: 'PENDING',
+    },
+  });
+
+  const payment = await prisma.payment.create({
+    data: {
+      actorUserId: req.user!.id,
+      amountCents: tier.priceCents,
+      currency: 'EUR',
+      status: 'PENDING',
+      membershipId: membership.id,
+    },
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    client_reference_id: payment.id,
+    // Echoed back on the webhook, which is the only place the tier is granted.
+    metadata: {
+      paymentId: payment.id,
+      membershipId: membership.id,
+      artistId: artist.id,
+      tier: membershipType,
+    },
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: tier.priceCents,
+          product_data: {
+            name: tier.label,
+            description: 'Adhesion annuelle Travel Art',
+          },
+        },
+      },
+    ],
+    success_url: `${config.frontendUrl}/dashboard/membership?checkout=success`,
+    cancel_url: `${config.frontendUrl}/dashboard/membership?checkout=cancelled`,
+  });
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { stripeSessionId: session.id },
+  });
+
+  res.json({
+    success: true,
+    data: { checkoutUrl: session.url, sessionId: session.id, membershipId: membership.id },
   });
 }));
 

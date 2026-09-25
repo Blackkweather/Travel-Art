@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, MapPin, Building, Music, Users, Calendar, AlertCircle } from 'lucide-react'
+import { Star, Building, Music, Users, Calendar, AlertCircle } from 'lucide-react'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { commonApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
+import { countryLabel } from '@/i18n/countries'
+import { useAuthStore } from '@/store/authStore'
 
 interface TopHotel {
   id: string
   name: string
   location?: { city?: string; country?: string } | string
   bookingCount?: number
+  averageRating?: number | null
   images?: string[]
   description?: string
   performanceSpots?: string
@@ -36,21 +41,40 @@ const TopHotelsPage: React.FC = () => {
     totalEvents: 0
   })
 
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
+  /* This fetch used to run on mount with an empty dependency array. The auth
+     store rehydrates its token from localStorage asynchronously, so the
+     request left before the token existed, came back 401, and the page
+     rendered an empty roster to a signed-in user. PartnersPage already reads
+     the flag and waits; this now does the same. */
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
+
     const fetchData = async () => {
       setLoading(true)
       setError(null)
       try {
-        const [hotelsResponse, statsResponse] = await Promise.all([
+        /* allSettled, not all: /api/stats is public and /hotels is not, so a
+           401 on the roster used to reject the pair and throw away the counts
+           as well. That is why the header read "0" on a page that has them. */
+        const [rosterResult, statsResult] = await Promise.allSettled([
           commonApi.getTopHotels(),
           commonApi.getStats()
         ])
+
+        if (rosterResult.status === 'rejected') throw rosterResult.reason
+        const hotelsResponse = rosterResult.value
+        const statsResponse = statsResult.status === 'fulfilled' ? statsResult.value : null
 
         if (hotelsResponse.data.success) {
           setTopHotels(hotelsResponse.data.data || [])
         }
 
-        if (statsResponse.data.success) {
+        if (statsResponse?.data.success) {
           const statsData = statsResponse.data.data
           setStats({
             totalHotels: statsData.totalHotels || 0,
@@ -62,27 +86,27 @@ const TopHotelsPage: React.FC = () => {
       } catch (err: any) {
         console.error('Error fetching top hotels:', err)
         setError(err.response?.data?.error?.message || 'Failed to load hotels')
-        toast.error('Failed to load top hotels. Please try again.')
+        toast.error(t('Impossible de charger les hôtels. Veuillez réessayer.'))
       } finally {
         setLoading(false)
       }
     }
 
     fetchData()
-  }, [])
+  }, [isAuthenticated])
 
   const formatLocation = (location?: { city?: string; country?: string } | string): string => {
     if (!location) return 'Location TBA'
     if (typeof location === 'string') {
       try {
         const parsed = JSON.parse(location)
-        const parts = [parsed.city, parsed.country].filter(Boolean)
+        const parts = [parsed.city, countryLabel(parsed.country)].filter(Boolean)
         return parts.length ? parts.join(', ') : 'Location TBA'
       } catch {
         return location
       }
     }
-    const parts = [location.city, location.country].filter(Boolean)
+    const parts = [location.city, countryLabel(location.country)].filter(Boolean)
     return parts.length ? parts.join(', ') : 'Location TBA'
   }
 
@@ -126,7 +150,11 @@ const TopHotelsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={t('Hôtels et resorts partenaires — Travel Art')}
+        description={t('Trente-cinq adresses dans vingt-trois pays, de la haute montagne aux lagons, qui accueillent des artistes toute l’année.')}
+      />
       {/* Loading Transition Overlay */}
       <AnimatePresence>
         {isTransitioning && (
@@ -142,48 +170,54 @@ const TopHotelsPage: React.FC = () => {
               transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
               className="text-center"
             >
-              <div className="w-24 h-24 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-              <p className="text-gold text-xl font-serif">Loading Hotel Experience...</p>
+              <div className="w-24 h-24 border-4 border-gold border-t-transparent rounded-control animate-spin mx-auto mb-6"></div>
+              <p className="text-gold text-xl font-serif">{t('Chargement des hôtels…')}</p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
       
-        <SimpleNavbar />
+        <SimpleNavbar overMedia />
       
       {/* Hero Section */}
-      <div className="relative py-20 pt-32 overflow-hidden">
-        {/* Background Image */}
+      <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=75" 
-            alt="Luxury hotel rooftop" 
+          <img loading="lazy" decoding="async"
+            src="/images/headers/hotels.webp"
+            srcSet="/images/headers/hotels-960.webp 960w, /images/headers/hotels-1440.webp 1440w, /images/headers/hotels.webp 1920w"
+            sizes="100vw"
+            width={1920}
+            height={1097}
+            alt=""
             className="w-full h-full object-cover"
             fetchPriority="high"
           />
-          {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-navy/70"></div>
+          {/* The scrim is a gradient rather than a flat 70% wash: a flat wash
+              greys the whole photograph to lift type that only occupies the
+              lower third of it. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/45 to-navy/25"></div>
         </div>
-        
-        <div className="container mx-auto px-6 text-center relative z-10">
+
+        <div className="shell relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6">
-              Luxury Hotel
-              <span className="block text-gold">Partners</span>
+            <p className="eyebrow text-white/80">{t('Le réseau')}</p>
+            <h1 className="mt-5 max-w-[14ch] text-white">
+              {t('Des hôtels d’exception')}
+              <span className="block text-gold-500">partenaires</span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Discover the world's most prestigious hotels offering stunning rooftop venues and intimate performance spaces.
+            <p className="mt-7 text-lg text-white/80 max-w-[52ch] leading-relaxed">
+              {t('Découvrez les hôtels les plus prestigieux, leurs toits-terrasses et leurs espaces intimistes.')}
             </p>
           </motion.div>
         </div>
-      </div>
+      </header>
 
       {/* Stats Section */}
-      <div className="bg-gray-50 py-16">
+      <div className="bg-[var(--surface-warm)] py-16">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <motion.div
@@ -191,11 +225,11 @@ const TopHotelsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                <Building className="w-8 h-8 text-navy" />
+              <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                <Building className="w-8 h-8 text-content" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalHotels || 0}</h3>
-              <p className="text-gray-600">Luxury Hotels</p>
+              <h3 className="text-3xl font-bold text-content mb-2">{stats.totalHotels || 0}</h3>
+              <p className="text-content-secondary">{t('Hôtels d’exception')}</p>
             </motion.div>
 
             <motion.div
@@ -203,11 +237,11 @@ const TopHotelsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                <Music className="w-8 h-8 text-navy" />
+              <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                <Music className="w-8 h-8 text-content" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalVenues || 0}</h3>
-              <p className="text-gray-600">Performance Venues</p>
+              <h3 className="text-3xl font-bold text-content mb-2">{stats.totalVenues || 0}</h3>
+              <p className="text-content-secondary">{t('Lieux de représentation')}</p>
             </motion.div>
 
             <motion.div
@@ -215,11 +249,11 @@ const TopHotelsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-navy" />
+              <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                <Star className="w-8 h-8 text-content" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">{stats.averageRating.toFixed(1)}</h3>
-              <p className="text-gray-600">Average Rating</p>
+              <h3 className="text-3xl font-bold text-content mb-2">{stats.averageRating.toFixed(1)}</h3>
+              <p className="text-content-secondary">{t('Note moyenne')}</p>
             </motion.div>
 
             <motion.div
@@ -227,11 +261,11 @@ const TopHotelsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-navy" />
+              <div className="w-16 h-16 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-4">
+                <Calendar className="w-8 h-8 text-content" />
               </div>
-              <h3 className="text-3xl font-bold text-navy mb-2">{stats.totalEvents || 0}</h3>
-              <p className="text-gray-600">Successful Events</p>
+              <h3 className="text-3xl font-bold text-content mb-2">{stats.totalEvents || 0}</h3>
+              <p className="text-content-secondary">{t('Événements réussis')}</p>
             </motion.div>
           </div>
         </div>
@@ -240,11 +274,11 @@ const TopHotelsPage: React.FC = () => {
       {/* Hotels Grid */}
       <div className="container mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-serif font-bold text-navy mb-6 gold-underline">
-            Featured Hotels
+          <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
+            {t('Hôtels à l’honneur')}
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Experience the world's most luxurious hotels with stunning rooftop venues and intimate performance spaces
+          <p className="text-xl text-content-secondary max-w-3xl mx-auto">
+            {t('Les plus belles adresses du monde, leurs toits-terrasses et leurs scènes intimistes')}
           </p>
         </div>
 
@@ -254,25 +288,25 @@ const TopHotelsPage: React.FC = () => {
           </div>
         ) : error ? (
           <div className="text-center py-20">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-navy mb-2">Failed to Load Hotels</h3>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <AlertCircle className="w-16 h-16 text-[var(--state-critical)] mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold text-content mb-2">{t('Impossible de charger les hôtels')}</h3>
+            <p className="text-content-secondary mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary"
             >
-              Try Again
+              {t('Réessayer')}
             </button>
           </div>
         ) : topHotels.length === 0 ? (
           <div className="text-center py-20">
-            <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold text-navy mb-2">No Hotels Found</h3>
-            <p className="text-gray-600 mb-6">
-              Check back soon to discover our luxury hotel partners.
+            <Building className="w-16 h-16 text-content-secondary mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold text-content mb-2">{t('Aucun hôtel trouvé')}</h3>
+            <p className="text-content-secondary mb-6">
+              {t('Revenez bientôt pour découvrir nos hôtels partenaires.')}
             </p>
             <Link to="/register" className="btn-primary">
-              Become a Hotel Partner
+              {t('Devenir hôtel partenaire')}
             </Link>
           </div>
         ) : (
@@ -283,91 +317,78 @@ const TopHotelsPage: React.FC = () => {
               const location = formatLocation(hotel.location)
               
               return (
-                <motion.div
+                <motion.article
                   key={hotel.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ 
-                    opacity: clickedHotelId === hotel.id ? 0 : 1, 
-                    y: 0,
-                    scale: clickedHotelId === hotel.id ? 1.1 : 1
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{
+                    opacity: clickedHotelId === hotel.id ? 0 : 1,
+                    y: 0
                   }}
-                  transition={{ 
-                    duration: 0.6, 
-                    delay: clickedHotelId === hotel.id ? 0 : index * 0.1 
+                  transition={{
+                    duration: 0.5,
+                    delay: clickedHotelId === hotel.id ? 0 : index * 0.06
                   }}
-                  whileHover={{ 
-                    y: -8, 
-                    scale: 1.03,
-                    transition: { duration: 0.3 }
-                  }}
-                  className="card-luxury overflow-hidden cursor-pointer"
+                  className="editorial-card group cursor-pointer"
                   onClick={() => handleHotelClick(hotel.id)}
                 >
-                  <div className="relative">
+                  <div className="editorial-card__media">
                     <img
-                      src={getImageUrl(hotel.images)}
-                      alt={hotel.name}
-                      className="w-full h-64 object-cover"
+                      decoding="async"
                       loading="lazy"
+                      src={getImageUrl(hotel.images)}
+                      alt=""
                       onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/600x400/0B1F3F/C9A63C?text=' + encodeURIComponent(hotel.name.substring(0, 2).toUpperCase())
+                        e.currentTarget.src = '/images/placeholder-experience.webp'
                       }}
                     />
                   </div>
-                  
-                  <div className="p-6">
-                    <h3 className="text-xl font-serif font-semibold text-navy mb-2">
-                      {hotel.name}
+
+                  <div className="editorial-card__body">
+                    <h3 className="font-serif text-xl text-content">
+                      <button
+                        type="button"
+                        className="editorial-card__link text-left"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleHotelClick(hotel.id)
+                        }}
+                      >
+                        {hotel.name}
+                      </button>
                     </h3>
-                    <p className="text-gray-600 text-sm mb-4 flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {location}
-                    </p>
-                    
+
+                    <p className="text-sm text-content-secondary">{location}</p>
+
                     {hotel.description && (
-                      <p className="text-gray-600 text-sm mb-4">
+                      <p className="line-clamp-2 text-sm text-content-secondary">
                         {hotel.description}
                       </p>
                     )}
 
                     {performanceSpots.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="text-sm font-medium text-navy mb-2">Performance Spots:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {performanceSpots.slice(0, 3).map((spot, spotIndex) => (
-                            <span
-                              key={spotIndex}
-                              className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                            >
-                              {spot}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                      <ul className="flex flex-wrap gap-2 pt-1">
+                        {performanceSpots.slice(0, 3).map((spot, spotIndex) => (
+                          <li key={spotIndex} className="badge-neutral">
+                            {spot}
+                          </li>
+                        ))}
+                      </ul>
                     )}
 
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <span className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {bookings} {bookings === 1 ? 'booking' : 'bookings'}
-                      </span>
-                      <span className="flex items-center">
-                        <Star className="w-4 h-4 mr-1" />
-                        {stats.averageRating.toFixed(1)} rating
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleHotelClick(hotel.id)
-                      }}
-                      className="w-full btn-primary text-center hover:scale-105 transition-transform"
-                    >
-                      View Venues
-                    </button>
+                    <dl className="mt-auto flex items-baseline gap-6 border-t border-line pt-4 text-sm">
+                      <div className="flex items-baseline gap-2">
+                        <dt className="text-content-secondary">{t('Réservations')}</dt>
+                        <dd className="font-serif text-base text-content tabular-nums">{bookings}</dd>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <dt className="text-content-secondary">{t('Note')}</dt>
+                        <dd className="font-serif text-base text-content tabular-nums">
+                          {typeof hotel.averageRating === 'number' ? hotel.averageRating.toFixed(1) : t('Pas encore noté')}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
-                </motion.div>
+                </motion.article>
               )
             })}
           </div>
@@ -375,14 +396,14 @@ const TopHotelsPage: React.FC = () => {
       </div>
 
       {/* Venue Types Section */}
-      <div className="bg-gray-50 py-20">
+      <div className="bg-[var(--surface-warm)] py-20">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-navy mb-6 gold-underline">
-              Venue Types
+            <h2 className="text-4xl font-serif font-bold text-content mb-6 gold-underline">
+              {t('Types de lieux')}
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From intimate rooftop terraces to grand ballrooms, our hotels offer diverse performance spaces
+            <p className="text-xl text-content-secondary max-w-3xl mx-auto">
+              {t('Du toit-terrasse intimiste à la grande salle de bal, nos hôtels offrent des scènes très différentes')}
             </p>
           </div>
 
@@ -393,14 +414,14 @@ const TopHotelsPage: React.FC = () => {
               transition={{ duration: 0.6 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
-                <Building className="w-10 h-10 text-navy" />
+              <div className="w-20 h-20 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-6">
+                <Building className="w-10 h-10 text-content" />
               </div>
-              <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                Rooftop Terraces
+              <h3 className="text-xl font-serif font-semibold text-content mb-4">
+                {t('Toits-terrasses')}
               </h3>
-              <p className="text-gray-600">
-                Intimate outdoor spaces with stunning city views, perfect for acoustic performances and sunset sets.
+              <p className="text-content-secondary">
+                {t('Des espaces en plein air face à la ville, parfaits pour l’acoustique et les sets au coucher du soleil.')}
               </p>
             </motion.div>
 
@@ -410,14 +431,14 @@ const TopHotelsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
-                <Music className="w-10 h-10 text-navy" />
+              <div className="w-20 h-20 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-6">
+                <Music className="w-10 h-10 text-content" />
               </div>
-              <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                Jazz Lounges
+              <h3 className="text-xl font-serif font-semibold text-content mb-4">
+                {t('Salons jazz')}
               </h3>
-              <p className="text-gray-600">
-                Sophisticated indoor venues with perfect acoustics for jazz ensembles and intimate concerts.
+              <p className="text-content-secondary">
+                {t('Des salles intérieures à l’acoustique soignée, pour les formations jazz et les concerts intimistes.')}
               </p>
             </motion.div>
 
@@ -427,14 +448,14 @@ const TopHotelsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="w-10 h-10 text-navy" />
+              <div className="w-20 h-20 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-6">
+                <Users className="w-10 h-10 text-content" />
               </div>
-              <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                Grand Ballrooms
+              <h3 className="text-xl font-serif font-semibold text-content mb-4">
+                {t('Salles de bal')}
               </h3>
-              <p className="text-gray-600">
-                Elegant large spaces ideal for classical concerts, formal performances, and special events.
+              <p className="text-content-secondary">
+                {t('De grands volumes élégants, pour les concerts classiques et les événements d’exception.')}
               </p>
             </motion.div>
 
@@ -444,40 +465,42 @@ const TopHotelsPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6">
-                <Star className="w-10 h-10 text-navy" />
+              <div className="w-20 h-20 bg-gold/15 rounded-control flex items-center justify-center mx-auto mb-6">
+                <Star className="w-10 h-10 text-content" />
               </div>
-              <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                Beach Clubs
+              <h3 className="text-xl font-serif font-semibold text-content mb-4">
+                {t('Clubs de plage')}
               </h3>
-              <p className="text-gray-600">
-                Open-air venues by the sea, perfect for DJ sets, electronic music, and sunset performances.
+              <p className="text-content-secondary">
+                {t('Des lieux en bord de mer, pour les DJ sets, les musiques électroniques et les fins de journée.')}
               </p>
             </motion.div>
           </div>
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="bg-navy text-white py-20">
-        <div className="container mx-auto px-6 text-center">
+      {/* .btn-primary is a navy fill and this band is navy, so the old button
+          was visible only as a floating label. Gold is the fill on inverse. */}
+      <section className="band-inverse">
+        <div className="shell text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl font-serif font-bold mb-6">
-              Ready to Partner?
+            <h2 className="mx-auto max-w-[18ch]">
+              {t('Envie de devenir partenaire ?')}
             </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Join our network of luxury hotels and start offering unforgettable artistic experiences to your guests.
+            <p className="mt-7 text-lg text-content-inverse/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
+              {t('Rejoignez notre réseau d’hôtels d’exception et offrez à vos clients des moments artistiques mémorables.')}
             </p>
-            <a href="/register" className="btn-primary text-lg px-8 py-4">
-              Join as Hotel
-            </a>
+            <Link to="/register?role=hotel" className="btn-gold btn-lg btn-arrow">
+              {t('Devenir hôtel partenaire')}
+            </Link>
           </motion.div>
         </div>
-      </div>
+      </section>
       
       <Footer />
     </div>

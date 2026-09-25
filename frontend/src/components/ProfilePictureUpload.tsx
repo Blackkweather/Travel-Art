@@ -3,17 +3,16 @@ import { Camera, Upload, X, Loader } from 'lucide-react';
 import { apiClient } from '@/utils/api';
 import { normalizeImageUrl } from '@/utils/imageUrl';
 import toast from 'react-hot-toast';
+import { t } from '@/i18n'
 
 interface ProfilePictureUploadProps {
   currentImage?: string;
   onUploadSuccess: (imageUrl: string) => void;
-  role: 'ARTIST' | 'HOTEL';
 }
 
 const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   currentImage,
-  onUploadSuccess,
-  role
+  onUploadSuccess
 }) => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -27,13 +26,13 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t('Sélectionnez un fichier image'));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be smaller than 5MB');
+      toast.error(t('L’image doit faire moins de 5 Mo'));
       return;
     }
 
@@ -51,30 +50,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
-      console.log('📤 Starting upload...', { 
-        fileName: file.name, 
-        fileSize: file.size, 
-        fileType: file.type 
-      });
       
       const formData = new FormData();
       formData.append('profilePicture', file);
-      
-      // Verify FormData contents
-      console.log('📦 FormData entries:');
-      for (const [key, value] of formData.entries()) {
-        console.log(`  ${key}:`, value instanceof File ? {
-          name: value.name,
-          size: value.size,
-          type: value.type
-        } : value);
-      }
 
       // Use apiClient which automatically handles authentication
       // The interceptor will handle FormData correctly (no Content-Type header)
       const response = await apiClient.post('/upload/profile-picture', formData);
       
-      console.log('✅ Upload successful:', response.data);
       const imageUrl = response.data.data.url;
       
       // Call the success callback FIRST - this updates the parent's state
@@ -86,7 +69,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
         setPreview(null);
       }, 100);
       
-      toast.success('Profile picture saved to database!');
+      toast.success(t('Photo de profil enregistrée'));
       
       // Clear the file input
       if (fileInputRef.current) {
@@ -117,16 +100,16 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
 
   return (
     <div className="relative inline-block">
-      <div className="relative w-48 h-48 rounded-xl overflow-hidden bg-gray-100 border-2 border-gray-200">
+      <div className="relative w-48 h-48 rounded-card overflow-hidden bg-surface-sunken border-2 border-line">
         {displayImage ? (
-          <img
+          <img decoding="async" loading="lazy"
             src={displayImage}
-            alt="Profile"
+            alt={t('Profil')}
             className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-navy/10 to-gold/10">
-            <Camera className="w-16 h-16 text-gray-400" />
+            <Camera className="w-16 h-16 text-content-secondary" />
           </div>
         )}
 
@@ -156,7 +139,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
           }}
           disabled={uploading}
           className="bg-gold text-navy p-2 rounded-full hover:bg-gold/90 transition-colors shadow-lg disabled:opacity-50"
-          title="Upload new photo"
+          title={t('Changer la photo')}
         >
           <Upload className="w-4 h-4" />
         </button>
@@ -169,8 +152,8 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
               e.stopPropagation();
               handleRemove();
             }}
-            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
-            title="Remove"
+            className="bg-[var(--state-critical)] text-white p-2 rounded-full hover:bg-[var(--state-critical)] transition-colors shadow-lg"
+            title={t('Retirer')}
           >
             <X className="w-4 h-4" />
           </button>

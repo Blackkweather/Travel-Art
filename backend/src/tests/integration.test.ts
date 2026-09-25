@@ -10,9 +10,7 @@ const BASE_URL = 'http://localhost:4000/api';
 // Simple exit wrapper that uses Node's process global
 const exitTest = (code: number) => {
   setTimeout(() => {
-    // @ts-ignore - process is a Node global
     if (typeof process !== 'undefined' && process.exit) {
-      // @ts-ignore
       process.exit(code)
     }
   }, 100)

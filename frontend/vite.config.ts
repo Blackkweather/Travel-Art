@@ -1,17 +1,19 @@
 import type { UserConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 import path from 'path'
-
-// Dynamic import to handle missing packages gracefully
-let reactPlugin: any = null
-try {
-  reactPlugin = require('@vitejs/plugin-react')
-} catch (e) {
-  console.warn('@vitejs/plugin-react not found, using basic config')
-}
 
 // https://vitejs.dev/config/
 export default {
-  plugins: reactPlugin ? [reactPlugin()] : [],
+  plugins: [react()],
+  // Debug logging is stripped from production bundles but kept in development.
+  // console.error and console.warn survive: they are how real failures surface.
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
+    pure:
+      process.env.NODE_ENV === 'production'
+        ? ['console.log', 'console.debug', 'console.info', 'console.trace']
+        : [],
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -38,7 +40,42 @@ export default {
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+
+    // Was `true`, which shipped 7.2MB of .map files next to a 1.8MB bundle and
+    // published the original source with it. Nothing in this project consumes
+    // them - there is no error tracker wired up - so they are not built at
+    // all rather than written and never read. Switch to 'hidden' if a tracker
+    // like Sentry is added later: that keeps the files for upload while still
+    // omitting the //# sourceMappingURL comment browsers follow.
+    sourcemap: false,
+
+    rollupOptions: {
+      output: {
+        // Only React is named by hand. It is on every route, it is stable
+        // across deploys, and pulling it out means app changes stop
+        // invalidating its cached copy.
+        //
+        // recharts and leaflet are deliberately NOT listed. Naming them
+        // hoisted each out of the lazy route that owns it - AdminAnalytics
+        // and TravelerExperiences - into a chunk Vite modulepreloads from
+        // index.html, so every visitor to the homepage fetched 370KB of a
+        // charting library used on one admin screen. Rollup already splits
+        // them correctly from the lazy() imports.
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // PageTransition wraps every route, so framer-motion is on the
+          // critical path whatever happens. Naming it keeps a stable 109KB
+          // vendor out of the entry chunk, so shipping app code does not
+          // invalidate its cached copy.
+          'motion': ['framer-motion'],
+          // Charting is ~100KB gzipped and used by exactly one admin screen.
+          // Named so it caches independently of that screen's own code.
+          'charts': ['recharts'],
+          // Same reasoning for the map on the experiences page.
+          'maps': ['leaflet', 'react-leaflet'],
+        },
+      },
+    },
   },
 } satisfies UserConfig
 

@@ -10,13 +10,13 @@ describe('LoadingSpinner', () => {
 
   it('displays loading text', () => {
     render(<LoadingSpinner />);
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(screen.getByText(/chargement/i)).toBeInTheDocument();
   });
 
   it('has accessible aria-label', () => {
     render(<LoadingSpinner />);
     const spinner = screen.getByRole('status');
-    expect(spinner).toHaveAttribute('aria-label', 'Loading');
+    expect(spinner).toHaveAttribute('aria-label', 'Chargement');
   });
 });
 

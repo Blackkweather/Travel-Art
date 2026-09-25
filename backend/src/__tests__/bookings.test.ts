@@ -26,9 +26,9 @@ async function createUserWithRole(role: 'HOTEL' | 'ARTIST' | 'ADMIN', email: str
 }
 
 describe('Bookings API', () => {
-  const hotelEmail = `hotel-${Date.now()}@example.com`;
-  const artistEmail = `artist-${Date.now()}@example.com`;
-  const adminEmail = `admin-${Date.now()}@example.com`;
+  const hotelEmail = `hotel-${Date.now()}@suite.test`;
+  const artistEmail = `artist-${Date.now()}@suite.test`;
+  const adminEmail = `admin-${Date.now()}@suite.test`;
   const password = 'SecureP@ss123';
 
   beforeAll(async () => {
@@ -36,11 +36,8 @@ describe('Bookings API', () => {
     await initializeDatabase();
 
     // Clean any leftover test data
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
     // Create hotel, artist, admin users and profiles
@@ -82,10 +79,21 @@ describe('Bookings API', () => {
       },
     });
 
+    // POST /bookings refuses an artist with no availability covering the
+    // requested dates. Without this window every booking-creation test got a
+    // 400 from that check rather than exercising the path under test.
+    await prisma.artistAvailability.create({
+      data: {
+        artistId: artist.id,
+        dateFrom: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        dateTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      },
+    });
+
     // Verify profiles were created
     expect(hotel).toBeDefined();
     expect(artist).toBeDefined();
-    
+
     // Verify users can be retrieved (ensures database is ready)
     const verifyHotelUser = await prisma.user.findUnique({ where: { email: hotelEmail } });
     const verifyArtistUser = await prisma.user.findUnique({ where: { email: artistEmail } });
@@ -96,11 +104,8 @@ describe('Bookings API', () => {
   });
 
   afterAll(async () => {
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
     await prisma.$disconnect().catch(() => undefined);
   });
@@ -153,6 +158,8 @@ describe('Bookings API', () => {
         startDate: start.toISOString(),
         endDate: end.toISOString(),
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       });
 
     expect(res.status).toBe(201);
@@ -199,6 +206,8 @@ describe('Bookings API', () => {
         startDate: past.toISOString(),
         endDate: future.toISOString(),
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       });
     expect(resPast.status).toBe(400);
 
@@ -214,13 +223,15 @@ describe('Bookings API', () => {
         startDate: start.toISOString(),
         endDate: end.toISOString(),
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       });
     expect(resRange.status).toBe(400);
   });
 
   it('TC-BOOK-005: should only return bookings for current hotel', async () => {
     // Create second hotel + user
-    const secondHotelUser = await createUserWithRole('HOTEL', `hotel2-${Date.now()}@example.com`, password);
+    const secondHotelUser = await createUserWithRole('HOTEL', `hotel2-${Date.now()}@suite.test`, password);
     const secondHotel = await prisma.hotel.create({
       data: {
         userId: secondHotelUser.id,
@@ -256,6 +267,8 @@ describe('Bookings API', () => {
           endDate: new Date(),
           status: 'PENDING',
           creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
         },
         {
           hotelId: hotel.id,
@@ -264,6 +277,8 @@ describe('Bookings API', () => {
           endDate: new Date(),
           status: 'PENDING',
           creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
         },
         {
           hotelId: secondHotel.id,
@@ -272,6 +287,8 @@ describe('Bookings API', () => {
           endDate: new Date(),
           status: 'PENDING',
           creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
         },
       ],
     });
@@ -319,6 +336,8 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         status: 'PENDING',
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -369,6 +388,9 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         status: 'PENDING',
         creditsUsed: 1,
+        creditCost: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -431,6 +453,9 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         status: 'PENDING',
         creditsUsed: 1,
+        creditCost: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -486,6 +511,8 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         status: 'PENDING',
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -529,6 +556,8 @@ describe('Bookings API', () => {
         endDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         status: 'COMPLETED',
         creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
       },
     });
 
@@ -555,6 +584,62 @@ describe('Bookings API', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data).toHaveProperty('stars', 5);
     expect(res.body.data).toHaveProperty('textReview');
+  });
+
+  it('TC-BOOK-011: should refuse a rating for a residency that has not finished', async () => {
+    // TC-BOOK-010 above has always created its booking as COMPLETED, because
+    // that is obviously what a rating is for - but the route never checked,
+    // so a house could review an artist on a booking still marked PENDING:
+    // before a date had been agreed, let alone played. Those reviews would
+    // have reached the artist's public profile and the landing page.
+    const hotel = await prisma.hotel.findFirst({
+      where: { user: { email: hotelEmail } }
+    });
+    const artist = await prisma.artist.findFirst({
+      where: { user: { email: artistEmail } }
+    });
+
+    if (!hotel || !artist) {
+      throw new Error('Test setup failed: hotel or artist not found');
+    }
+
+    const booking = await prisma.booking.create({
+      data: {
+        hotelId: hotel.id,
+        artistId: artist.id,
+        startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
+        status: 'PENDING',
+        creditsUsed: 1,
+        numberOfWeeks: 1,
+        totalPaymentAmount: 200.0,
+      },
+    });
+
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: hotelEmail, password });
+
+    expect(loginRes.status).toBe(200);
+    const token = loginRes.body.data.token;
+
+    const res = await request(app)
+      .post('/api/bookings/ratings')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        bookingId: booking.id,
+        hotelId: hotel.id,
+        artistId: artist.id,
+        stars: 5,
+        textReview: 'Une semaine qui n’a pas encore eu lieu.',
+        isVisibleToArtist: true,
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+
+    const stored = await prisma.rating.count({ where: { bookingId: booking.id } });
+    expect(stored).toBe(0);
   });
 });
 

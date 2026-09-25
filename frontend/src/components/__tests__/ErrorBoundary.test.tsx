@@ -31,8 +31,8 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    expect(screen.getByText(/Something went wrong/i)).toBeInTheDocument();
-    expect(screen.getByText(/Try Again/i)).toBeInTheDocument();
+    expect(screen.getByText(/Une erreur est survenue/i)).toBeInTheDocument();
+    expect(screen.getByText(/Réessayer/i)).toBeInTheDocument();
 
     consoleSpy.mockRestore();
   });

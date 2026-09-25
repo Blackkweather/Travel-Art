@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import SelectWithSearch from './SelectWithSearch';
 import CheckboxGroup from './CheckboxGroup';
 import RadioGroup from './RadioGroup';
 import { ArtisticCategory, SubcategoryInfo, MAIN_CATEGORIES, AUDIENCE_TYPES, LANGUAGES, SUBCATEGORY_MAP } from '@/types/artistRegistration';
+import useRevealFirstError from '@/hooks/useRevealFirstError';
+import { t } from '@/i18n'
 
 interface Step2Props {
   data: ArtisticCategory;
@@ -25,6 +27,10 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
   isLoading = false 
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [failedAttempt, setFailedAttempt] = useState(0);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  useRevealFirstError(failedAttempt, formRef);
 
   // Get available category types for the selected main category
   const categoryTypeOptions = useMemo(() => {
@@ -75,18 +81,23 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
     }));
   }, [subcategoryData.categoryType, subcategoryData.specificCategory]);
 
-  const validateStep = () => {
+  const collectErrors = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!data.mainCategory) newErrors.mainCategory = 'Main category is required';
-    if (data.audienceType.length === 0) newErrors.audienceType = 'Select at least one audience type';
-    if (!subcategoryData.categoryType) newErrors.categoryType = 'Category type is required';
-    if (!subcategoryData.domain) newErrors.domain = 'Domain is required';
+    if (!data.mainCategory) newErrors.mainCategory = t('Choisissez une catégorie principale');
+    if (data.audienceType.length === 0) newErrors.audienceType = t('Sélectionnez au moins un type de public');
+    if (!subcategoryData.categoryType) newErrors.categoryType = t('Choisissez un type de catégorie');
+    if (!subcategoryData.domain) newErrors.domain = 'Choisissez un domaine';
     if (specificCategoryOptions.length > 0 && !subcategoryData.specificCategory) {
-      newErrors.specificCategory = 'Specific category is required';
+      newErrors.specificCategory = t('Choisissez une catégorie précise');
     }
-    if (data.languages.length === 0) newErrors.languages = 'Select at least one language';
+    if (data.languages.length === 0) newErrors.languages = t('Sélectionnez au moins une langue');
 
+    return newErrors;
+  };
+
+  const validateStep = () => {
+    const newErrors = collectErrors();
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -110,10 +121,27 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
     });
   };
 
+  useEffect(() => {
+    setErrors((prev) => {
+      const shown = Object.keys(prev);
+      if (shown.length === 0) return prev;
+      const live = collectErrors();
+      const next: Record<string, string> = {};
+      for (const key of shown) if (live[key]) next[key] = prev[key];
+      return Object.keys(next).length === shown.length ? prev : next;
+    });
+    // Never adds a message, only drops ones already on screen, so nothing new
+    // appears while someone is still filling the step in.
+  }, [data, subcategoryData]);
+
   const handleNext = () => {
     if (validateStep()) {
       onNext();
+      return;
     }
+    // Counts the attempt rather than watching `errors`, so the page only
+    // moves when someone presses the button - never while they type.
+    setFailedAttempt((n) => n + 1);
   };
 
   const containerVariants = {
@@ -135,24 +163,25 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
 
   return (
     <motion.div
+      ref={formRef}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
       className="space-y-8"
     >
       <div>
-        <h2 className="text-3xl font-bold text-navy-900 mb-2">Catégorie artistique</h2>
-        <p className="text-gray-600">Décrivez votre domaine artistique</p>
+        <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Catégorie artistique')}</h2>
+        <p className="text-content-secondary">{t('Décrivez votre domaine artistique')}</p>
       </div>
 
       {/* Section 1: Main Category */}
       <motion.div variants={itemVariants} className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold text-navy-900 mb-4">
-            Choisissez votre catégorie principale
+            {t('Choisissez votre catégorie principale')}
           </h3>
           <SelectWithSearch
-            placeholder="Tribu Artistique"
+            placeholder={t('Tribu artistique')}
             options={MAIN_CATEGORIES}
             value={data.mainCategory}
             onChange={(value) => onChange({ ...data, mainCategory: value })}
@@ -167,10 +196,10 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
       <motion.div variants={itemVariants} className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold text-navy-900 mb-4">
-            Précisez un autre domaine si vous en avez un
+            {t('Précisez un autre domaine si vous en avez un')}
           </h3>
           <SelectWithSearch
-            placeholder="Tribu Artistique (optionnel)"
+            placeholder={t('Tribu artistique (facultatif)')}
             options={MAIN_CATEGORIES}
             value={data.secondaryCategory || ''}
             onChange={(value) => onChange({ ...data, secondaryCategory: value || undefined })}
@@ -183,7 +212,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
       <motion.div variants={itemVariants}>
         <CheckboxGroup
           name="audienceType"
-          label="Type de public"
+          label={t('Type de public')}
           options={AUDIENCE_TYPES}
           values={data.audienceType}
           onChange={(values) => onChange({ ...data, audienceType: values })}
@@ -200,8 +229,8 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           {/* Category Type Selection */}
           <motion.div variants={itemVariants}>
             <SelectWithSearch
-              label="Tribu Artistique"
-              placeholder="Sélectionner le type de catégorie"
+              label={t('Tribu artistique')}
+              placeholder={t('Sélectionner le type de catégorie')}
               options={categoryTypeOptions}
               value={subcategoryData.categoryType}
               onChange={handleCategoryTypeChange}
@@ -215,8 +244,8 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           {specificCategoryOptions.length > 0 && (
             <motion.div variants={itemVariants}>
               <SelectWithSearch
-                label="Sous-catégorie"
-                placeholder="Sélectionner une sous-catégorie"
+                label={t('Sous-catégorie')}
+                placeholder={t('Sélectionner une sous-catégorie')}
                 options={specificCategoryOptions}
                 value={subcategoryData.specificCategory}
                 onChange={handleSpecificCategoryChange}
@@ -232,7 +261,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
             <motion.div variants={itemVariants}>
               <RadioGroup
                 name="domain"
-                label="Domaine"
+                label={t('Domaine')}
                 options={domainOptions}
                 value={subcategoryData.domain}
                 onChange={(value) => onSubcategoryChange({ ...subcategoryData, domain: value })}
@@ -249,7 +278,7 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
       <motion.div variants={itemVariants}>
         <CheckboxGroup
           name="languages"
-          label="Langues parlées"
+          label={t('Langues parlées')}
           options={LANGUAGES}
           values={data.languages}
           onChange={(values) => onChange({ ...data, languages: values })}
@@ -269,21 +298,21 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
           exit={{ opacity: 0, height: 0 }}
         >
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-900">
-              Autres langues (précisez)
+            <label className="block text-sm font-medium text-content">
+              {t('Autres langues (précisez)')}
             </label>
             <input
               type="text"
               value={data.otherLanguages || ''}
               onChange={(e) => onChange({ ...data, otherLanguages: e.target.value })}
-              placeholder="Ex: Espagnol, Italien, Allemand..."
+              placeholder={t('Ex : espagnol, italien, allemand…')}
               disabled={isLoading}
               className={`
-                w-full h-12 px-4 rounded-xl border-2 transition-all
-                border-gray-200
-                ${isLoading ? 'bg-gray-50 opacity-60 cursor-not-allowed' : 'bg-white'}
-                focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500
-                text-gray-900 placeholder:text-gray-400
+                w-full h-12 px-4 rounded-card border-2 transition-all
+                border-line
+                ${isLoading ? 'bg-surface opacity-60 cursor-not-allowed' : 'bg-surface-raised'}
+                focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
+                text-content placeholder:text-content-secondary
               `}
             />
           </div>
@@ -295,24 +324,14 @@ const Step2ArtisticCategory: React.FC<Step2Props> = ({
         <button
           onClick={onBack}
           disabled={isLoading}
-          className={`
-            flex-1 h-14 rounded-xl font-bold text-lg transition-all
-            bg-gray-200 hover:bg-gray-300 text-navy-900
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-lg hover:shadow-xl hover:scale-[1.02]
-          `}
+          className="btn-outline btn-lg flex-1"
         >
-          Retour
+          {t('Retour')}
         </button>
         <button
           onClick={handleNext}
           disabled={isLoading}
-          className={`
-            flex-1 h-14 rounded-xl font-bold text-lg transition-all
-            bg-teal-500 hover:bg-teal-600 text-white
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-lg hover:shadow-xl hover:scale-[1.02]
-          `}
+          className="btn-gold btn-lg flex-1 btn-arrow"
         >
           {isLoading ? 'Chargement...' : 'Suivant'}
         </button>

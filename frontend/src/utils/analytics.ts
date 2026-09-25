@@ -8,6 +8,8 @@
  * update the trackEvent function to send events to your chosen service.
  */
 
+import { hasAnalyticsConsent } from './consent'
+
 type EventCategory = 
   | 'navigation'
   | 'booking'
@@ -42,6 +44,13 @@ class Analytics {
   trackEvent(event: AnalyticsEvent) {
     if (!this.enabled) {
       console.log('[Analytics]', event)
+      return
+    }
+
+    /* Prior consent, and prior means before the first event rather than after
+       the first page. Nothing is dispatched to a tag until the visitor has
+       said yes; an unanswered banner is a no. */
+    if (!hasAnalyticsConsent()) {
       return
     }
 

@@ -5,7 +5,14 @@ export default defineConfig({
     baseUrl: 'http://localhost:3000',
     supportFile: 'cypress/support/e2e.ts',
     setupNodeEvents(on, config) {
-      // implement node event listeners here
+      // cy.task('log', ...) prints to the terminal running the suite, which is
+      // the only way a diagnostic spec can report findings back.
+      on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        },
+      });
       return config;
     },
     viewportWidth: 1280,

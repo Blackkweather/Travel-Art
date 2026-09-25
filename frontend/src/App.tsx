@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense, useState } from 'react'
+import React, { useEffect, Suspense, useState } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -6,60 +6,58 @@ import SEOHead from '@/components/SEOHead'
 import { getDefaultOrganizationSchema } from '@/utils/structuredData'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import SkipToContent from '@/components/SkipToContent'
+import SiteIntro from '@/components/SiteIntro'
+import CookieBanner from '@/components/CookieBanner'
 import analytics from '@/utils/analytics'
 import { useAppKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { lazyRoute } from '@/utils/lazyRoute'
 
 import Layout from '@/components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import RoleRoute from './components/RoleRoute'
 import RoleAwareRoute from './components/RoleAwareRoute'
-import PasswordPopup from './components/PasswordPopup'
 import PageTransition from './components/PageTransition'
 
-// Force import to ensure it loads
-console.log('🔒 PasswordPopup imported:', typeof PasswordPopup)
-
 // Lazy load pages for code splitting
-const LandingPage = lazy(() => import('@/pages/LandingPage'))
-const LandingPageNewV2 = lazy(() => import('@/pages/LandingPageNewV2'))
-const LandingPageNewV3 = lazy(() => import('@/pages/LandingPageNewV3'))
-const HowItWorksPage = lazy(() => import('@/pages/HowItWorksPage'))
-const PartnersPage = lazy(() => import('@/pages/PartnersPage'))
-const TopArtistsPage = lazy(() => import('@/pages/TopArtistsPage'))
-const TopHotelsPage = lazy(() => import('@/pages/TopHotelsPage'))
-const HotelDetailsPage = lazy(() => import('@/pages/HotelDetailsPage'))
-const PricingPage = lazy(() => import('@/pages/PricingPage'))
-const LoginPage = lazy(() => import('@/pages/LoginPage'))
-const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
-const ReferralRedirectPage = lazy(() => import('@/pages/ReferralRedirectPage'))
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
-const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'))
-const TermsPage = lazy(() => import('@/pages/TermsPage'))
-const CookiePolicyPage = lazy(() => import('@/pages/CookiePolicyPage'))
-const AboutPage = lazy(() => import('@/pages/AboutPage'))
+const LandingPage = lazyRoute(() => import('@/pages/LandingPage'))
+const HowItWorksPage = lazyRoute(() => import('@/pages/HowItWorksPage'))
+const PartnersPage = lazyRoute(() => import('@/pages/PartnersPage'))
+const TopArtistsPage = lazyRoute(() => import('@/pages/TopArtistsPage'))
+const TopHotelsPage = lazyRoute(() => import('@/pages/TopHotelsPage'))
+const HotelDetailsPage = lazyRoute(() => import('@/pages/HotelDetailsPage'))
+const LoginPage = lazyRoute(() => import('@/pages/LoginPage'))
+const RegisterPage = lazyRoute(() => import('@/pages/RegisterPage'))
+const ReferralRedirectPage = lazyRoute(() => import('@/pages/ReferralRedirectPage'))
+const ForgotPasswordPage = lazyRoute(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazyRoute(() => import('./pages/ResetPasswordPage'))
+const PrivacyPolicyPage = lazyRoute(() => import('@/pages/PrivacyPolicyPage'))
+const TermsPage = lazyRoute(() => import('@/pages/TermsPage'))
+const CookiePolicyPage = lazyRoute(() => import('@/pages/CookiePolicyPage'))
+const AboutPage = lazyRoute(() => import('@/pages/AboutPage'))
+const FaqPage = lazyRoute(() => import('@/pages/FaqPage'))
 
 // Protected pages - lazy loaded
-const ArtistDashboard = lazy(() => import('@/pages/artist/ArtistDashboard'))
-const ArtistProfile = lazy(() => import('@/pages/artist/ArtistProfile'))
-const PublicArtistProfile = lazy(() => import('@/pages/PublicArtistProfile'))
-const ArtistMembership = lazy(() => import('@/pages/artist/ArtistMembership'))
-const ArtistReferrals = lazy(() => import('@/pages/artist/ArtistReferrals'))
+const ArtistDashboard = lazyRoute(() => import('@/pages/artist/ArtistDashboard'))
+const PublicArtistProfile = lazyRoute(() => import('@/pages/PublicArtistProfile'))
+const ArtistMembership = lazyRoute(() => import('@/pages/artist/ArtistMembership'))
+const ArtistReferrals = lazyRoute(() => import('@/pages/artist/ArtistReferrals'))
 
-const HotelDashboard = lazy(() => import('@/pages/hotel/HotelDashboard'))
-const HotelProfile = lazy(() => import('@/pages/hotel/HotelProfile'))
-const HotelArtists = lazy(() => import('@/pages/hotel/HotelArtists'))
-const HotelCredits = lazy(() => import('@/pages/hotel/HotelCredits'))
+const HotelDashboard = lazyRoute(() => import('@/pages/hotel/HotelDashboard'))
+const HotelArtists = lazyRoute(() => import('@/pages/hotel/HotelArtists'))
+const HotelCredits = lazyRoute(() => import('@/pages/hotel/HotelCredits'))
 
-const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
-const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
-const AdminAnalytics = lazy(() => import('@/pages/admin/AdminAnalytics'))
-const AdminModeration = lazy(() => import('@/pages/admin/AdminModeration'))
-const AdminReferrals = lazy(() => import('@/pages/admin/AdminReferrals'))
-const AdminLogs = lazy(() => import('@/pages/admin/AdminLogs'))
-const TravelerExperiencesPage = lazy(() => import('@/pages/TravelerExperiencesPage'))
-const ExperienceDetailsPage = lazy(() => import('@/pages/ExperienceDetailsPage'))
-const PaymentPage = lazy(() => import('@/pages/PaymentPage'))
+const AdminDashboard = lazyRoute(() => import('@/pages/admin/AdminDashboard'))
+const AdminUsers = lazyRoute(() => import('@/pages/admin/AdminUsers'))
+const AdminAnalytics = lazyRoute(() => import('@/pages/admin/AdminAnalytics'))
+const AdminModeration = lazyRoute(() => import('@/pages/admin/AdminModeration'))
+const AdminAdmissions = lazyRoute(() => import('@/pages/admin/AdminAdmissions'))
+const AdminReferrals = lazyRoute(() => import('@/pages/admin/AdminReferrals'))
+const AdminLogs = lazyRoute(() => import('@/pages/admin/AdminLogs'))
+const TravelerExperiencesPage = lazyRoute(() => import('@/pages/TravelerExperiencesPage'))
+const ExperienceDetailsPage = lazyRoute(() => import('@/pages/ExperienceDetailsPage'))
+const RegistrationSentPage = lazyRoute(() => import('@/pages/RegistrationSentPage'))
+const VerifyEmailPage = lazyRoute(() => import('@/pages/VerifyEmailPage'))
+const NotFoundPage = lazyRoute(() => import('@/pages/NotFoundPage'))
 
 // Dashboard redirect component
 const DashboardRedirect = () => {
@@ -101,7 +99,7 @@ const ReferralsRoute = () => {
 }
 
 function App() {
-  const { isLoading, checkAuth, user, token } = useAuthStore()
+  const { checkAuth, user, token } = useAuthStore()
   const location = useLocation()
   const [initialAuthChecked, setInitialAuthChecked] = useState(false)
   
@@ -127,42 +125,47 @@ function App() {
     analytics.pageView(location.pathname, document.title)
   }, [location.pathname])
 
-  // console.log('🔒 App.tsx rendering - PasswordPopup should be visible')
-  
   // Show loading only on very first mount if we don't have cached auth
   const showInitialLoading = !initialAuthChecked && !user && !token
   
   return (
     <ErrorBoundary>
+      {/* Only at the front door. A hotelier arriving straight at
+          /dashboard/bookings is at work, not being introduced to a brand, and
+          the component itself already limits this to once a session. */}
+      {location.pathname === '/' && (
+        <SiteIntro
+          videoSrc="/intro/courtyard.mp4"
+          posterSrc="/intro/courtyard.jpg"
+        />
+      )}
+      <CookieBanner />
       <SkipToContent />
       <SEOHead structuredData={getDefaultOrganizationSchema()} />
-      {/* PasswordPopup temporarily disabled - uncomment to activate */}
-      {/* <PasswordPopup /> */}
       {showInitialLoading ? (
-        <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="min-h-screen bg-surface flex items-center justify-center">
           <LoadingSpinner />
         </div>
       ) : (
         <Suspense fallback={
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="min-h-screen bg-surface flex items-center justify-center">
             <LoadingSpinner size="lg" />
           </div>
         }>
             <Routes location={location} key={location.pathname}>
         {/* Public Routes */}
-        <Route path="/" element={<PageTransition><LandingPageNewV3 /></PageTransition>} />
-        <Route path="/v2" element={<PageTransition><LandingPageNewV2 /></PageTransition>} />
+        <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
       <Route path="/how-it-works" element={<PageTransition><HowItWorksPage /></PageTransition>} />
       <Route path="/partners" element={<PageTransition><PartnersPage /></PageTransition>} />
-      <Route path="/top-artists" element={<PageTransition><TopArtistsPage /></PageTransition>} />
-      <Route path="/top-hotels" element={<PageTransition><TopHotelsPage /></PageTransition>} />
-      <Route path="/hotel/:id" element={<PageTransition><HotelDetailsPage /></PageTransition>} />
-      <Route path="/pricing" element={<PageTransition><PricingPage /></PageTransition>} />
-      <Route path="/experiences" element={<PageTransition><TravelerExperiencesPage /></PageTransition>} />
-      <Route path="/experience/:id" element={<PageTransition><ExperienceDetailsPage /></PageTransition>} />
-      <Route path="/payment" element={<PageTransition><PaymentPage /></PageTransition>} />
+      <Route path="/top-artists" element={<ProtectedRoute><PageTransition><TopArtistsPage /></PageTransition></ProtectedRoute>} />
+      <Route path="/top-hotels" element={<ProtectedRoute><PageTransition><TopHotelsPage /></PageTransition></ProtectedRoute>} />
+      <Route path="/hotel/:id" element={<ProtectedRoute><PageTransition><HotelDetailsPage /></PageTransition></ProtectedRoute>} />
+      <Route path="/experiences" element={<ProtectedRoute><PageTransition><TravelerExperiencesPage /></PageTransition></ProtectedRoute>} />
+      <Route path="/experience/:id" element={<ProtectedRoute><PageTransition><ExperienceDetailsPage /></PageTransition></ProtectedRoute>} />
       <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
       <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+      <Route path="/inscription-envoyee" element={<PageTransition><RegistrationSentPage /></PageTransition>} />
+      <Route path="/verify-email" element={<PageTransition><VerifyEmailPage /></PageTransition>} />
       <Route path="/ref/:code" element={<PageTransition><ReferralRedirectPage /></PageTransition>} />
       <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
       <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
@@ -170,6 +173,7 @@ function App() {
       <Route path="/terms" element={<PageTransition><TermsPage /></PageTransition>} />
       <Route path="/cookies" element={<PageTransition><CookiePolicyPage /></PageTransition>} />
       <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
+      <Route path="/faq" element={<PageTransition><FaqPage /></PageTransition>} />
 
       {/* Protected Routes */}
       <Route 
@@ -231,6 +235,14 @@ function App() {
             </RoleRoute>
           } 
         />
+        <Route
+          path="admissions"
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminAdmissions />
+            </RoleRoute>
+          }
+        />
         <Route 
           path="referrals"
           element={
@@ -264,13 +276,10 @@ function App() {
       </Route>
 
       {/* Artist Public Profile */}
-      <Route path="/artist/:id" element={<PageTransition><PublicArtistProfile /></PageTransition>} />
-      
-      {/* Hotel Public Profile */}
-      <Route path="/hotel/:id" element={<PageTransition><HotelProfile /></PageTransition>} />
-      
+      <Route path="/artist/:id" element={<ProtectedRoute><PageTransition><PublicArtistProfile /></PageTransition></ProtectedRoute>} />
+
       {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
       )}

@@ -15,6 +15,8 @@ import {
   ArtisticCategory,
   SubcategoryInfo
 } from '@/types/artistRegistration';
+import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const INITIAL_STATE: ArtistRegistrationData = {
   step: 1,
@@ -53,11 +55,10 @@ const ArtistRegistrationFlow: React.FC = () => {
   const [state, setState] = useState<ArtistRegistrationData>(INITIAL_STATE);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { register: registerUser } = useAuthStore();
 
   const stepTitles = [
     'Informations de base',
-    'Catégorie artistique',
+    t('Catégorie artistique'),
     'Confirmation'
   ];
 
@@ -107,7 +108,7 @@ const ArtistRegistrationFlow: React.FC = () => {
     try {
       // Validate all data before submission
       if (!state.basicInfo.stageName || !state.basicInfo.email || !state.basicInfo.password) {
-        toast.error('Please complete all required fields');
+        toast.error(t('Renseignez tous les champs obligatoires'));
         setIsLoading(false);
         return;
       }
@@ -121,6 +122,12 @@ const ArtistRegistrationFlow: React.FC = () => {
         birthDate: state.basicInfo.birthDate,
         password: state.basicInfo.password,
         role: 'ARTIST' as const,
+        /* The box has been on this form the whole time and gated the submit
+           button, but its value never left the browser - so nothing was ever
+           recorded and there was no way to show anyone had agreed to
+           anything. The server refuses the registration outright if this is
+           absent or false. */
+        acceptTerms: state.basicInfo.agreeToTerms,
         artisticProfile: {
           mainCategory: state.artisticCategory.mainCategory,
           secondaryCategory: state.artisticCategory.secondaryCategory,
@@ -134,31 +141,19 @@ const ArtistRegistrationFlow: React.FC = () => {
       };
 
       // Register user and automatically log them in
-      console.log('🚀 Starting registration...', { email: registrationData.email });
       await registerAuth(registrationData);
-      console.log('✅ Registration completed!');
 
-      // Check auth state
-      const authState = useAuthStore.getState();
-      console.log('🔍 Auth state after registration:', {
-        isAuthenticated: authState.isAuthenticated,
-        hasToken: !!authState.token,
-        hasUser: !!authState.user
+      toast.success(t('Demande enregistrée'));
+      // No session exists yet - the account is pending review - so this cannot
+      // redirect into the dashboard the way it used to.
+      navigate('/inscription-envoyee', {
+        state: { email: registrationData.email, role: 'ARTIST' }
       });
-
-      toast.success('Inscription réussie! Bienvenue sur Travel Arts');
-
-      // Small delay to ensure state is updated
-      setTimeout(() => {
-        console.log('🔄 Redirecting to profile...');
-        // Redirect to profile page for artists to complete their setup
-        navigate('/dashboard/profile');
-      }, 500);
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.error?.message ||
         error.message ||
-        'Inscription échouée. Veuillez réessayer.';
+        t('Inscription échouée. Veuillez réessayer.');
       toast.error(errorMessage);
       console.error('Registration error:', error);
     } finally {
@@ -166,26 +161,17 @@ const ArtistRegistrationFlow: React.FC = () => {
     }
   };
 
-  // Check if user can proceed from step 1
-  const canProceedFromStep1 = state.basicInfo.stageName &&
-    state.basicInfo.firstName &&
-    state.basicInfo.lastName &&
-    state.basicInfo.email &&
-    state.basicInfo.password &&
-    state.basicInfo.country;
-
-  // Check if user can proceed from step 2
-  const canProceedFromStep2 = state.artisticCategory.mainCategory &&
-    state.artisticCategory.audienceType.length > 0 &&
-    state.artisticCategory.languages.length > 0 &&
-    state.subcategory.categoryType &&
-    state.subcategory.domain;
+  // Two step-gate booleans used to sit here, recomputed on every render and
+  // never passed to anything. The real gate is each step component's own
+  // validateStep(), which runs before it calls onNext.
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
+    <div className="flex flex-col min-h-screen bg-surface">
       <SimpleNavbar />
 
-      <main className="flex-1 container mx-auto px-4 py-8 md:py-12">
+      <SEOHead title={t('Inscription artiste — Travel Art')} description={t('Créez votre profil d’artiste en trois étapes et candidatez aux résidences Travel Art.')} />
+      <main className="flex-1 container mx-auto px-4 pt-28 pb-12 md:pb-16">
+        <h1 className="sr-only">{t('Inscription artiste')}</h1>
         {/* Step Indicator */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -201,7 +187,7 @@ const ArtistRegistrationFlow: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl p-6 md:p-10 border border-gray-100"
+          className="max-w-3xl mx-auto bg-surface-raised rounded-card shadow-2xl p-6 md:p-10 border border-line"
         >
           <AnimatePresence mode="wait">
             {/* Step 1: Basic Information */}
@@ -281,10 +267,10 @@ const ArtistRegistrationFlow: React.FC = () => {
           transition={{ delay: 0.3 }}
           className="max-w-3xl mx-auto mt-8 text-center"
         >
-          <p className="text-sm text-gray-600">
-            Vos informations sont sécurisées et ne seront jamais partagées.
+          <p className="text-sm text-content-secondary">
+            {t('Vos informations sont sécurisées et ne seront jamais partagées.')}
             <br />
-            Avez besoin d'aide? <a href="/contact" className="text-teal-500 font-semibold hover:underline">Contactez-nous</a>
+            Besoin d’aide ? <a href="mailto:hello@travelart.com" className="text-gold font-semibold hover:underline">{t('Écrivez-nous')}</a>
           </p>
         </motion.div>
       </main>

@@ -4,6 +4,10 @@ import { Crown, Check, Star, Calendar, Gift, Users } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { paymentsApi, artistsApi } from '@/utils/api'
 import { toast } from 'react-hot-toast'
+import StatusBadge from '@/components/StatusBadge'
+import { t } from '@/i18n'
+import { formatDate, formatShortDate } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 function showToast(message: string) {
   try {
@@ -19,13 +23,51 @@ const ArtistMembership: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [artist, setArtist] = useState<any>(null)
   const [membershipStatus, setMembershipStatus] = useState<string>('INACTIVE')
+  const [membershipTier, setMembershipTier] = useState<string | null>(null)
   const [referralCode, setReferralCode] = useState('')
   const [totalBookings, setTotalBookings] = useState(0)
   const [memberSince, setMemberSince] = useState('')
+  const [checkoutNotice, setCheckoutNotice] = useState<{ kind: 'success' | 'cancelled'; message: string } | null>(null)
 
   useEffect(() => {
     fetchArtistProfile()
   }, [user])
+
+  /* Stripe returns the artist here with ?checkout=success after an adhesion
+     is paid. Nothing read it, so paying 50 EUR and abandoning the page
+     looked identical: same status badge, no acknowledgement either way. */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const outcome = params.get('checkout')
+    if (!outcome) return
+
+    params.delete('checkout')
+    const rest = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : ''))
+
+    setCheckoutNotice(outcome === 'success'
+      ? {
+          kind: 'success',
+          message: t('Paiement reçu. Votre adhésion est activée dès que Stripe confirme le règlement, ce qui prend quelques secondes.')
+        }
+      : {
+          kind: 'cancelled',
+          message: t('Paiement interrompu. Aucun montant n’a été débité et votre adhésion est inchangée.')
+        })
+  }, [])
+
+  /* The adhesion is granted by the webhook, not by the redirect, so the
+     profile is re-read a few times while it lands rather than once, which
+     would usually show the status the artist had before paying. */
+  useEffect(() => {
+    if (checkoutNotice?.kind !== 'success') return
+    let abandoned = false
+    const timers = [2000, 5000, 9000].map((ms) => setTimeout(() => {
+      if (!abandoned) fetchArtistProfile()
+    }, ms))
+    return () => { abandoned = true; timers.forEach(clearTimeout) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkoutNotice?.kind])
 
   const fetchArtistProfile = async () => {
     if (!user?.id) {
@@ -41,6 +83,7 @@ const ArtistMembership: React.FC = () => {
       if (artistData) {
         setArtist(artistData)
         setMembershipStatus(artistData.membershipStatus || 'INACTIVE')
+        setMembershipTier(artistData.membershipTier ?? null)
         setReferralCode(artistData.referralCode || '')
         setTotalBookings(artistData.bookings?.length || 0)
         setMemberSince(artistData.user?.createdAt || artistData.createdAt || new Date().toISOString())
@@ -54,9 +97,9 @@ const ArtistMembership: React.FC = () => {
     }
   }
 
-  const handleUpgrade = async (membershipType: 'PROFESSIONAL' | 'ENTERPRISE') => {
+  const handleUpgrade = async (membershipType: 'ARTIST' | 'PROFESSIONAL') => {
     if (!user?.artist?.id && !artist?.id) {
-      showToast('Artist profile not found. Please create your profile first.')
+      showToast(t('Créez d’abord votre profil d’artiste.'))
       return
     }
     
@@ -65,79 +108,85 @@ const ArtistMembership: React.FC = () => {
     try {
       setProcessing(true)
       await paymentsApi.membership(artistId, membershipType, 'CARD')
-      showToast('Membership purchased successfully')
+      showToast(t('Adhésion mise à jour'))
       await fetchArtistProfile() // Refresh profile after purchase
     } catch (e: any) {
       console.error('Membership purchase error:', e)
-      showToast('Membership purchase failed. Please try again.')
+      // The server explains *why* it refused (for example that payment
+      // processing is not configured yet, in which case retrying is futile).
+      // Telling the artist to "try again" regardless was misleading.
+      // The reason lives at data.error.message; reading data.message meant
+      // the server's explanation was thrown away every time.
+      showToast(
+        e?.response?.data?.error?.message ||
+          e?.response?.data?.message ||
+          t('L’adhésion n’a pas pu être mise à jour.')
+      )
     } finally {
       setProcessing(false)
     }
   }
 
-  // Determine current plan based on membership status
-  const getCurrentPlan = () => {
-    if (membershipStatus === 'ACTIVE' && artist) {
-      // Check if they have a professional/enterprise membership
-      return 'professional' // Default to professional if active
-    }
-    return null // No active plan
-  }
+  // The held tier comes from the active Membership row. This used to return
+  // 'professional' for anyone with an ACTIVE status, which combined with the
+  // plan flags below marked *both* plans as the current one and disabled both
+  // buttons — an active member could never change plan.
+  const currentPlan = membershipStatus === 'ACTIVE' ? membershipTier : null
 
-  const currentPlan = getCurrentPlan()
-  
   const plans = [
     {
-      name: 'Artist',
+      name: 'Artiste',
       price: '€50',
-      period: '/year',
-      description: 'Perfect for emerging artists starting their journey',
+      period: t('/an'),
+      description: t('Pensé pour les artistes qui se lancent'),
       features: [
-        'Create detailed artist profile',
-        'Upload portfolio (up to 20 images)',
-        'Set availability calendar',
-        'Receive booking requests',
-        'Basic performance analytics',
-        'Email support',
-        'Free T-shirt included'
+        t('Un profil d’artiste détaillé'),
+        t('Portfolio jusqu’à 20 images'),
+        t('Calendrier de disponibilités'),
+        t('Réception des demandes de réservation'),
+        'Statistiques essentielles',
+        t('Assistance par e-mail'),
+        'T-shirt offert'
       ],
+      tier: 'ARTIST' as const,
       popular: false,
-      current: currentPlan === 'basic' || membershipStatus === 'ACTIVE'
+      current: currentPlan === 'ARTIST'
     },
     {
-      name: 'Professional Artist',
+      name: t('Artiste confirmé'),
       price: '€100',
-      period: '/year',
-      description: 'Ideal for established artists seeking more opportunities',
+      period: t('/an'),
+      description: t('Pour les artistes confirmés qui veulent plus de dates'),
       features: [
-        'Everything in Artist plan',
-        'Unlimited portfolio uploads',
-        'Priority in search results',
-        'Advanced analytics dashboard',
-        'Performance badges & ratings',
-        'Priority customer support',
-        'Referral rewards program',
-        'Free T-shirt included'
+        t('Tout ce que comprend la formule Artiste'),
+        t('Portfolio illimité'),
+        t('Priorité dans les résultats'),
+        t('Tableau de bord statistique avancé'),
+        t('Distinctions et évaluations'),
+        'Assistance prioritaire',
+        t('Programme de parrainage'),
+        'T-shirt offert'
       ],
+      tier: 'PROFESSIONAL' as const,
       popular: true,
-      current: currentPlan === 'professional'
+      current: currentPlan === 'PROFESSIONAL'
     }
   ]
 
   const membershipStats = [
-    { 
-      label: 'Member Since', 
-      value: memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently', 
-      icon: Calendar 
+    {
+      label: t('Membre depuis'),
+      value: memberSince ? new Date(memberSince).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric', year: 'numeric' }) : t('Récemment'),
+      icon: Calendar
     },
     { 
-      label: 'Total Performances', 
+      label: t('Représentations'), 
       value: totalBookings.toString(), 
       icon: Star 
     },
     { 
-      label: 'Membership Status', 
-      value: membershipStatus === 'ACTIVE' ? 'Active' : 'Inactive', 
+      label: t('Statut de l’adhésion'), 
+      value: membershipStatus === 'ACTIVE' ? t('Active') : t('Inactive'), 
       icon: Users 
     }
   ]
@@ -145,23 +194,23 @@ const ArtistMembership: React.FC = () => {
   const benefits = [
     {
       icon: <Crown className="w-6 h-6 text-gold" />,
-      title: 'Priority Placement',
-      description: 'Get featured in search results and receive more booking requests'
+      title: 'Mise en avant prioritaire',
+      description: t('Apparaissez en tête des résultats et recevez davantage de demandes')
     },
     {
       icon: <Star className="w-6 h-6 text-gold" />,
-      title: 'Performance Analytics',
-      description: 'Track your performance metrics and optimize your bookings'
+      title: t('Statistiques de performance'),
+      description: t('Suivez vos indicateurs et optimisez vos dates')
     },
     {
       icon: <Gift className="w-6 h-6 text-gold" />,
-      title: 'Referral Rewards',
-      description: 'Earn credits for every successful artist referral'
+      title: t('Récompenses de parrainage'),
+      description: t('Gagnez des crédits pour chaque artiste parrainé')
     },
     {
       icon: <Users className="w-6 h-6 text-gold" />,
-      title: 'Exclusive Access',
-      description: 'Access to premium venues and exclusive performance opportunities'
+      title: t('Accès exclusif'),
+      description: t('Accès aux plus beaux lieux et à des dates exclusives')
     }
   ]
 
@@ -170,7 +219,7 @@ const ArtistMembership: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading membership information...</p>
+          <p className="text-content-secondary">{t('Chargement de votre abonnement…')}</p>
         </div>
       </div>
     )
@@ -178,37 +227,50 @@ const ArtistMembership: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Adhésion') + ' — Travel Art'} />
+      {checkoutNotice && (
+        <div
+          className={checkoutNotice.kind === 'success' ? 'notice-positive' : 'notice-caution'}
+          role="status"
+          data-testid="checkout-notice"
+        >
+          {checkoutNotice.message}
+        </div>
+      )}
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold text-navy mb-2">
-          Membership & Billing
+        <h1 className="page-head__title">
+          {t('Adhésion et facturation')}
         </h1>
-        <p className="text-sm text-gray-500">
-          Manage your membership plan and track your performance
+        <p className="text-sm text-content-secondary">
+          {t('Gérez votre adhésion et suivez votre activité')}
         </p>
       </div>
 
       {/* Current Membership Status */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-surface-raised rounded-card border border-line p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold text-navy mb-2">
-              Current Membership
+            <h2 className="text-lg font-semibold text-content mb-2">
+              {t('Adhésion en cours')}
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-content-secondary">
               {membershipStatus === 'ACTIVE' 
-                ? `${currentPlan === 'professional' ? 'Professional' : 'Artist'} Plan • Active since ${memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Recently'}`
-                : 'No active membership • Choose a plan below to get started'}
+                ? t('Formule {plan} • active depuis le {date}', {
+                    plan: currentPlan === 'PROFESSIONAL' ? t('Artiste confirmé') : t('Artiste'),
+                    date: memberSince ? formatDate(memberSince) : t('Récemment'),
+                  })
+                : t('Aucune adhésion active • choisissez une formule ci-dessous pour commencer')}
             </p>
           </div>
           {membershipStatus === 'ACTIVE' && (
             <div className="text-right">
-              <p className="text-2xl font-bold text-navy">
-                {currentPlan === 'professional' ? '€100' : '€50'}/year
+              <p className="text-2xl font-bold text-content">
+                {currentPlan === 'PROFESSIONAL' ? '€100' : '€50'}{t('/an')}
               </p>
               {artist?.membershipRenewal && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Next billing: {new Date(artist.membershipRenewal).toLocaleDateString()}
+                <p className="text-xs text-content-secondary mt-1">
+                  {t('Prochaine échéance : {date}', { date: formatShortDate(artist.membershipRenewal) })}
                 </p>
               )}
             </div>
@@ -220,14 +282,14 @@ const ArtistMembership: React.FC = () => {
           {membershipStats.map((stat, index) => {
             const Icon = stat.icon
             return (
-              <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <div key={index} className="bg-surface rounded-card p-4 border border-line">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gold/10">
+                  <div className="p-2 rounded-card bg-gold/10">
                     <Icon className="w-5 h-5 text-gold" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{stat.label}</p>
-                    <p className="text-lg font-semibold text-navy">{stat.value}</p>
+                    <p className="text-xs font-medium text-content-secondary uppercase tracking-wide mb-1">{stat.label}</p>
+                    <p className="text-lg font-semibold text-content">{stat.value}</p>
                   </div>
                 </div>
               </div>
@@ -238,8 +300,8 @@ const ArtistMembership: React.FC = () => {
 
       {/* Membership Plans */}
       <div>
-        <h2 className="text-2xl font-semibold text-navy mb-6">
-          {membershipStatus === 'ACTIVE' ? 'Upgrade Your Membership' : 'Choose Your Membership Plan'}
+        <h2 className="text-2xl font-semibold text-content mb-6">
+          {membershipStatus === 'ACTIVE' ? t('Faire évoluer votre adhésion') : t('Choisir votre formule')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
           {plans.map((plan, index) => (
@@ -248,39 +310,39 @@ const ArtistMembership: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
-              className={`relative bg-white rounded-lg border-2 transition-all hover:shadow-lg ${
+              className={`relative bg-surface-raised rounded-card border-2 transition-all hover:shadow-lg ${
                 plan.popular && !plan.current
-                  ? 'border-gold shadow-md'
+                  ? 'border-gold'
                   : plan.current
-                  ? 'border-gold/50 bg-gold/5'
-                  : 'border-gray-200 hover:border-gold/30'
+                  ? 'border-gold bg-surface-sunken'
+                  : 'border-line hover:border-line-strong'
               }`}
             >
               {plan.popular && !plan.current && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gold text-navy px-4 py-1 rounded-full text-xs font-semibold shadow-md">
-                    Most Popular
+                  <span className="badge border-gold bg-gold text-[var(--text-on-gold)]">
+                    {t('Le plus choisi')}
                   </span>
                 </div>
               )}
               
               {plan.current && (
                 <div className="absolute -top-3 right-4">
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-md">
-                    Current Plan
+                  <span className="badge-positive">
+                    {t('Formule actuelle')}
                   </span>
                 </div>
               )}
               
               <div className="p-6">
                 <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-navy mb-2">
+                  <h3 className="mb-2 font-serif text-xl text-content">
                     {plan.name}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
+                  <p className="text-sm text-content-secondary mb-4">{plan.description}</p>
                   <div className="flex items-baseline">
-                    <span className="text-4xl font-bold text-navy">{plan.price}</span>
-                    <span className="text-gray-500 ml-2 text-sm">{plan.period}</span>
+                    <span className="text-4xl font-bold text-content">{plan.price}</span>
+                    <span className="text-content-secondary ml-2 text-sm">{plan.period}</span>
                   </div>
                 </div>
 
@@ -294,23 +356,29 @@ const ArtistMembership: React.FC = () => {
                           plan.popular ? 'text-gold' : 'text-gold'
                         }`} />
                       </div>
-                      <span className="text-sm text-gray-700 leading-relaxed">{feature}</span>
+                      <span className="text-sm text-content-secondary leading-relaxed">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
                 <button 
-                  className={`w-full py-3 px-4 rounded-lg font-semibold text-sm transition-all ${
+                  className={`w-full py-3 px-4 rounded-card font-semibold text-sm transition-all ${
                     plan.current 
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                      ? 'bg-surface-sunken text-content-secondary cursor-not-allowed' 
                       : plan.popular 
                         ? 'bg-gold text-navy hover:bg-gold/90 shadow-md hover:shadow-lg' 
                         : 'bg-navy text-white hover:bg-navy/90 shadow-md hover:shadow-lg'
                   }`}
                   disabled={processing || plan.current}
-                  onClick={() => handleUpgrade(plan.name === 'Professional Artist' ? 'PROFESSIONAL' : 'PROFESSIONAL')}
+                  onClick={() => handleUpgrade(plan.tier)}
                 >
-                  {plan.current ? 'Current Plan' : (processing ? 'Processing…' : membershipStatus === 'ACTIVE' ? 'Upgrade Plan' : 'Choose Plan')}
+                  {plan.current
+                    ? t('Formule actuelle')
+                    : processing
+                      ? t('Traitement…')
+                      : membershipStatus === 'ACTIVE'
+                        ? t('Changer de formule')
+                        : t('Choisir cette formule')}
                 </button>
               </div>
             </motion.div>
@@ -319,9 +387,9 @@ const ArtistMembership: React.FC = () => {
       </div>
 
       {/* Benefits Section */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-navy mb-6">
-          Membership Benefits
+      <div className="bg-surface-raised rounded-card border border-line p-6">
+        <h2 className="text-xl font-semibold text-content mb-6">
+          {t('Les avantages de l’adhésion')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {benefits.map((benefit, index) => (
@@ -330,16 +398,16 @@ const ArtistMembership: React.FC = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-start gap-4 p-4 rounded-card hover:bg-surface transition-colors"
             >
-              <div className="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-gold/10 rounded-card flex items-center justify-center flex-shrink-0">
                 {React.cloneElement(benefit.icon, { className: "w-5 h-5 text-gold" })}
               </div>
               <div>
-                <h3 className="text-base font-semibold text-navy mb-1">
+                <h3 className="text-base font-semibold text-content mb-1">
                   {benefit.title}
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-content-secondary">
                   {benefit.description}
                 </p>
               </div>
@@ -349,81 +417,79 @@ const ArtistMembership: React.FC = () => {
       </div>
 
       {/* Billing History */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-navy mb-6">
-          Billing History
+      <div className="bg-surface-raised rounded-card border border-line p-6">
+        <h2 className="text-xl font-semibold text-content mb-6">
+          {t('Historique de facturation')}
         </h2>
         <div className="space-y-3">
           {artist?.transactions && artist.transactions.length > 0 ? (
             artist.transactions.map((transaction: any, index: number) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
+              <div key={index} className="flex items-center justify-between p-4 bg-surface rounded-card border border-line hover:bg-surface-sunken transition-colors">
                 <div>
-                  <p className="text-sm font-medium text-navy">{transaction.type || 'Membership'}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString() : 'Unknown date'}
+                  <p className="text-sm font-medium text-content">{transaction.type || 'Adhésion'}</p>
+                  <p className="text-xs text-content-secondary mt-1">
+                    {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('fr-FR') : 'Date inconnue'}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-navy">€{transaction.amount || 0}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded">
-                    Paid
-                  </span>
+                  <p className="text-sm font-semibold text-content">€{transaction.amount || 0}</p>
+                  <StatusBadge status="PAID" className="mt-1" />
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500 text-center py-8">No billing history yet</p>
+            <div className="empty-state">
+              <p className="empty-state__title">{t('Aucun historique de facturation')}</p>
+            </div>
           )}
         </div>
       </div>
 
       {/* Referral Program */}
       {referralCode && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-navy mb-6">
-            Referral Program
+        <div className="bg-surface-raised rounded-card border border-line p-6">
+          <h2 className="text-xl font-semibold text-content mb-6">
+            {t('Programme de parrainage')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-base font-semibold text-navy mb-3">
-                Invite Fellow Artists
+              <h3 className="text-base font-semibold text-content mb-3">
+                {t('Invitez d’autres artistes')}
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Share your referral code and earn credits for each successful referral.
+              <p className="text-sm text-content-secondary mb-4">
+                {t('Partagez votre code de parrainage et gagnez des crédits à chaque parrainage abouti.')}
               </p>
               <div className="flex items-center gap-2 mb-3">
                 <input
                   type="text"
                   value={referralCode}
                   readOnly
-                  className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono text-navy"
+                  className="flex-1 px-4 py-2 bg-surface border border-line rounded-card text-sm font-mono text-content"
                 />
                 <button 
-                  className="px-4 py-2 bg-navy text-white rounded-lg text-sm font-medium hover:bg-navy/90 transition-colors"
+                  className="px-4 py-2 bg-navy text-white rounded-card text-sm font-medium hover:bg-navy/90 transition-colors"
                   onClick={() => {
                     navigator.clipboard.writeText(referralCode)
-                    toast.success('Referral code copied!')
+                    toast.success(t('Code de parrainage copié'))
                   }}
-                >
-                  Copy
-                </button>
+                >{t('Copier')}</button>
               </div>
-              <p className="text-xs text-gray-500">
-                Share this code with other artists. You'll both benefit when they join!
+              <p className="text-xs text-content-secondary">
+                {t('Partagez ce code avec d’autres artistes : vous y gagnez tous les deux lorsqu’ils nous rejoignent.')}
               </p>
             </div>
             <div>
-              <h3 className="text-base font-semibold text-navy mb-4">
-                Referral Stats
+              <h3 className="text-base font-semibold text-content mb-4">
+                {t('Statistiques de parrainage')}
               </h3>
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-600">Loyalty Points</span>
-                  <span className="text-sm font-semibold text-navy">{artist?.loyaltyPoints || 0}</span>
+                <div className="flex justify-between items-center p-3 bg-surface rounded-card">
+                  <span className="text-sm text-content-secondary">{t('Points de fidélité')}</span>
+                  <span className="text-sm font-semibold text-content">{artist?.loyaltyPoints || 0}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-600">Total Bookings</span>
-                  <span className="text-sm font-semibold text-navy">{totalBookings}</span>
+                <div className="flex justify-between items-center p-3 bg-surface rounded-card">
+                  <span className="text-sm text-content-secondary">{t('Réservations')}</span>
+                  <span className="text-sm font-semibold text-content">{totalBookings}</span>
                 </div>
               </div>
             </div>

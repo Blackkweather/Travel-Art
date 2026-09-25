@@ -170,21 +170,14 @@ RATE_LIMIT_MAX_REQUESTS=100
 MAX_FILE_SIZE=10485760
 UPLOAD_PATH=./uploads
 
-# Email Configuration (Optional)
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your-email@example.com
-SMTP_PASS=your-password
-FROM_EMAIL=noreply@travelart.com
+# Email Configuration (Optional, sent over Resend - see backend/src/services/email.ts)
+RESEND_API_KEY=re_your_api_key
+RESEND_FROM=Travel Art <noreply@travelart.com>
+ADMIN_NOTIFY_EMAIL=admissions@travelart.com
 
 # Stripe (Optional)
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-
-# Clerk Authentication (Optional)
-CLERK_SECRET_KEY=sk_test_...
-CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_WEBHOOK_SECRET=whsec_...
 ```
 
 ### Frontend Environment Variables
@@ -196,14 +189,11 @@ Create a `.env` file in the `frontend/` directory:
 cp frontend/env.example frontend/.env
 ```
 
-Required variables:
-
 ```env
-# API Configuration
-VITE_API_URL=http://localhost:4000/api
-
-# Clerk Authentication
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+# API Configuration - leave unset for a same-origin deployment (the backend
+# serves the built frontend and answers /api/* itself); only set this when
+# the frontend and API are on different origins.
+VITE_API_URL=
 
 # CDN Configuration (Optional)
 VITE_CLOUDINARY_CLOUD_NAME=your-cloud-name

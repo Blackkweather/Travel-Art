@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CreditCard, ShoppingCart, TrendingUp, Gift, Star, Calendar, CheckCircle } from 'lucide-react'
+import { CreditCard, ShoppingCart, Gift, Star, Calendar, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { hotelsApi, paymentsApi } from '@/utils/api'
+import { transactionTypeLabel, formatNumber } from '@/utils/i18n'
+import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const HotelCredits: React.FC = () => {
   const { user } = useAuthStore()
@@ -13,6 +16,7 @@ const HotelCredits: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState<string | null>(null)
+  const [checkoutNotice, setCheckoutNotice] = useState<{ kind: 'success' | 'cancelled'; message: string } | null>(null)
 
   const totalSpent = useMemo(() => {
     const purchases = transactions.filter((t) => t.type === 'CREDIT_PURCHASE')
@@ -38,7 +42,7 @@ const HotelCredits: React.FC = () => {
       const txRes = await paymentsApi.transactions({ limit: 20 })
       setTransactions(txRes.data.data.transactions || [])
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Failed to load credits data')
+      setError(e?.response?.data?.message || t('Impossible de charger vos crédits'))
     } finally {
       setLoading(false)
     }
@@ -49,29 +53,79 @@ const HotelCredits: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
+  /* Stripe sends the house back here with ?checkout=success. Nothing read
+     that parameter, so a payment ended on a page that looked exactly like
+     the one before it - same balance, no acknowledgement, no way to tell a
+     successful charge from an abandoned one. */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const outcome = params.get('checkout')
+    if (!outcome) return
+
+    // Read it once, then take it out of the address bar, so refreshing the
+    // page does not replay a payment message that has already been seen.
+    params.delete('checkout')
+    const rest = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : ''))
+
+    setCheckoutNotice(outcome === 'success'
+      ? {
+          kind: 'success',
+          message: t('Paiement reçu. Vos crédits sont crédités dès que Stripe confirme le règlement, ce qui prend quelques secondes.')
+        }
+      : {
+          kind: 'cancelled',
+          message: t('Paiement interrompu. Aucun montant n’a été débité et votre solde est inchangé.')
+        })
+  }, [])
+
+  /* The redirect happens the moment the card clears, but the credits are
+     granted by the webhook, which arrives on its own schedule. Refetching
+     once would usually show the old balance and make a payment that went
+     through look lost, so the balance is re-read a few times as it lands. */
+  useEffect(() => {
+    if (checkoutNotice?.kind !== 'success' || !hotelId) return
+    let abandoned = false
+    const timers = [0, 2000, 5000, 9000].map((ms) => setTimeout(async () => {
+      if (abandoned) return
+      try {
+        const creditsRes = await hotelsApi.getCredits(hotelId)
+        if (abandoned) return
+        setCredits(creditsRes.data.data)
+        const txRes = await paymentsApi.transactions({ limit: 20 })
+        if (abandoned) return
+        setTransactions(txRes.data.data.transactions || [])
+      } catch {
+        // A failed refresh does not deserve an error banner here: the notice
+        // above already says the credits may take a moment to appear.
+      }
+    }, ms))
+    return () => { abandoned = true; timers.forEach(clearTimeout) }
+  }, [checkoutNotice?.kind, hotelId])
+
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'purchase':
-        return <ShoppingCart className="w-5 h-5 text-green-600" />
+        return <ShoppingCart className="w-5 h-5 text-[var(--state-positive)]" />
       case 'booking':
-        return <Calendar className="w-5 h-5 text-blue-600" />
+        return <Calendar className="w-5 h-5 text-[var(--state-info)]" />
       case 'refund':
-        return <Gift className="w-5 h-5 text-purple-600" />
+        return <Gift className="w-5 h-5 text-gold" />
       default:
-        return <CreditCard className="w-5 h-5 text-gray-600" />
+        return <CreditCard className="w-5 h-5 text-content-secondary" />
     }
   }
 
   const getTransactionColor = (type: string) => {
     switch (type) {
       case 'purchase':
-        return 'bg-green-100 text-green-800'
+        return 'bg-[var(--state-positive-wash)] text-[var(--state-positive)]'
       case 'booking':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-[var(--state-info-wash)] text-[var(--state-info)]'
       case 'refund':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-gold/10 text-gold'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-surface-sunken text-content'
     }
   }
 
@@ -81,15 +135,23 @@ const HotelCredits: React.FC = () => {
     if (!hotelId) return
     try {
       setProcessing(packageId)
-      await paymentsApi.purchaseCredits(hotelId, packageId, 'CARD')
-      const [creditsRes, txRes] = await Promise.all([
-        hotelsApi.getCredits(hotelId),
-        paymentsApi.transactions({ limit: 20 })
-      ])
-      setCredits(creditsRes.data.data)
-      setTransactions(txRes.data.data.transactions || [])
-    } catch (e) {
-      setError('Failed to complete purchase')
+      const res = await paymentsApi.purchaseCredits(hotelId, packageId, 'CARD')
+
+      // The balance is never granted here. This opens a Stripe Checkout
+      // Session and hands off to Stripe; the credits arrive when the
+      // signature-verified webhook confirms the charge, and the page reloads
+      // them on return via ?checkout=success.
+      const checkoutUrl = res.data?.data?.checkoutUrl
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl
+        return
+      }
+
+      setError(t('Impossible de démarrer le paiement. Veuillez réessayer.'))
+    } catch (e: any) {
+      // The server says why it refused — for example that payment processing
+      // is not configured yet, in which case retrying will not help.
+      setError(e?.response?.data?.error?.message || t('Impossible de démarrer le paiement. Veuillez réessayer.'))
     } finally {
       setProcessing(null)
     }
@@ -97,65 +159,48 @@ const HotelCredits: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Crédits') + ' — Travel Art'} />
       {/* Header */}
       <div className="fade-in-up">
         <h1 className="dashboard-title mb-3 gold-underline">
-          Credit Management
+          {t('Gestion des crédits')}
         </h1>
         <p className="dashboard-subtitle">
-          Manage your credits and purchase packages for artist bookings
+          {t('Gérez vos crédits et vos formules pour réserver des artistes')}
         </p>
       </div>
 
+      {checkoutNotice && (
+        <div
+          className={checkoutNotice.kind === 'success' ? 'notice-positive' : 'notice-caution'}
+          role="status"
+          data-testid="checkout-notice"
+        >
+          {checkoutNotice.message}
+        </div>
+      )}
+
       {/* Current Credits Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="dashboard-stat-card text-center"
-        >
-          <div className="w-16 h-16 bg-gradient-to-br from-gold/20 to-gold/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <CreditCard className="w-8 h-8 text-gold" />
-          </div>
-          <h3 className="text-3xl font-bold text-navy mb-2 count-up">{credits ? credits.availableCredits : (loading ? '—' : 0)}</h3>
-          <p className="section-subtitle">Available Credits</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="dashboard-stat-card text-center"
-        >
-          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <TrendingUp className="w-8 h-8 text-green-600" />
-          </div>
-          <h3 className="text-3xl font-bold text-navy mb-2 count-up">€{totalSpent.toLocaleString()}</h3>
-          <p className="section-subtitle">Total Spent</p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="dashboard-stat-card text-center"
-        >
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-blue-600" />
-          </div>
-          <h3 className="text-3xl font-bold text-navy mb-2 count-up">{totalBookings}</h3>
-          <p className="section-subtitle">Total Bookings</p>
-        </motion.div>
+      <div className="grid grid-cols-3 gap-px bg-line border border-line rounded-card overflow-hidden">
+        <div className="stat rounded-none border-0">
+          <span className="stat__label">{t('Crédits disponibles')}</span>
+          <span className="stat__value">{credits ? formatNumber(credits.availableCredits) : (loading ? '—' : 0)}</span>
+        </div>
+        <div className="stat rounded-none border-0">
+          <span className="stat__label">{t('Total dépensé')}</span>
+          <span className="stat__value">€{formatNumber(totalSpent)}</span>
+        </div>
+        <div className="stat rounded-none border-0">
+          <span className="stat__label">{t('Réservations')}</span>
+          <span className="stat__value">{formatNumber(totalBookings)}</span>
+        </div>
       </div>
 
       {/* Credit Packages */}
-      <div className="card-luxury fade-in-up-delay-1">
-        <h2 className="section-title gold-underline">
-          Purchase Credit Packages
-        </h2>
+      <div className="panel p-6 fade-in-up-delay-1">
+        <h2 className="mb-6 font-serif text-2xl text-content">{t('Acheter des crédits')}</h2>
         {error && (
-          <div className="mb-4 text-sm text-red-600">{error}</div>
+          <div className="notice-critical mb-4">{error}</div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {packages.map((pkg: any, index: number) => (
@@ -164,34 +209,41 @@ const HotelCredits: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={`border-2 rounded-xl p-6 relative transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                pkg.popular ? 'border-gold bg-gradient-to-br from-gold/10 to-gold/5 shadow-md' : 'border-gray-200 hover:border-gold/30'
+              className={`relative rounded-card border p-6 transition-colors duration-200 ${
+                pkg.popular ? 'border-gold bg-surface-sunken' : 'border-line hover:border-line-strong'
               }`}
             >
               {pkg.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gold text-navy px-4 py-1 rounded-full text-sm font-medium">
-                    Most Popular
+                  <span className="badge border-gold bg-gold text-[var(--text-on-gold)]">
+                    {t('Le plus choisi')}
                   </span>
                 </div>
               )}
               
               <div className="text-center mb-6">
-                <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+                <h3 className="text-xl font-serif font-semibold text-content mb-2">
                   {pkg.name}
                 </h3>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold text-navy">{pkg.credits}</span>
-                  <span className="text-gray-600 ml-2">credits</span>
+                  <span className="text-4xl font-bold text-content">
+                    {pkg.totalCredits ?? pkg.credits}
+                  </span>
+                  <span className="text-content-secondary ml-2">{t('crédits')}</span>
+                  {pkg.bonusCredits > 0 && (
+                    <p className="mt-1 text-sm text-[var(--state-positive)]">
+                      dont {pkg.bonusCredits} offerts
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center justify-center space-x-2 mb-2">
-                  <span className="text-2xl font-bold text-gold">€{pkg.price.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-gold">€{formatNumber(pkg.price)}</span>
                   {pkg.originalPrice && (
-                    <span className="text-lg text-gray-500 line-through">€{pkg.originalPrice.toLocaleString()}</span>
+                    <span className="text-lg text-content-secondary line-through">€{formatNumber(pkg.originalPrice)}</span>
                   )}
                 </div>
                 {pkg.savings ? (
-                  <div className="text-sm text-green-600 font-medium">Save €{pkg.savings.toLocaleString()}</div>
+                  <div className="text-sm font-medium text-[var(--state-positive)]">Économie de €{formatNumber(pkg.savings)}</div>
                 ) : null}
               </div>
 
@@ -200,7 +252,7 @@ const HotelCredits: React.FC = () => {
                   {pkg.features.map((feature: string, featureIndex: number) => (
                     <li key={featureIndex} className="flex items-start">
                       <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-gray-600">{feature}</span>
+                      <span className="text-sm text-content-secondary">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -209,13 +261,13 @@ const HotelCredits: React.FC = () => {
               <button
                 onClick={() => handlePurchase(pkg.id)}
                 disabled={processing === pkg.id}
-                className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                className={`w-full py-3 rounded-card font-medium transition-colors ${
                   pkg.popular 
                     ? 'bg-gold text-navy hover:bg-gold/90' 
                     : 'bg-navy text-white hover:bg-navy/90'
                 } disabled:opacity-60`}
               >
-                {processing === pkg.id ? 'Processing…' : 'Purchase Package'}
+                {processing === pkg.id ? 'Traitement…' : 'Choisir cette formule'}
               </button>
             </motion.div>
           ))}
@@ -223,10 +275,8 @@ const HotelCredits: React.FC = () => {
       </div>
 
       {/* Transaction History */}
-      <div className="card-luxury fade-in-up-delay-2">
-        <h2 className="section-title gold-underline">
-          Transaction History
-        </h2>
+      <div className="panel p-6 fade-in-up-delay-2">
+        <h2 className="mb-6 font-serif text-2xl text-content">{t('Historique des transactions')}</h2>
         <div className="space-y-3">
           {transactions.map((transaction, index) => (
             <motion.div
@@ -234,27 +284,27 @@ const HotelCredits: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="flex items-center justify-between p-5 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-gold/30 transition-all duration-300 hover:shadow-md"
+              className="flex items-center justify-between p-5 bg-surface-sunken rounded-card border border-line hover:border-gold/30 transition-all duration-300 hover:shadow-md"
             >
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+                <div className="w-14 h-14 bg-surface-raised rounded-card flex items-center justify-center shadow-sm border border-line">
                   {getTransactionIcon(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-navy text-lg mb-1">{transaction.type.replace('_', ' ')}</h3>
-                  <p className="text-sm text-gray-600 font-medium mb-1">{transaction.paymentMethod || '—'}</p>
-                  <p className="text-xs text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
+                  <h3 className="font-semibold text-content text-lg mb-1">{transaction.type.replace('_', ' ')}</h3>
+                  <p className="text-sm text-content-secondary font-medium mb-1">{transaction.paymentMethod || '—'}</p>
+                  <p className="text-xs text-content-secondary">{new Date(transaction.createdAt).toLocaleDateString('fr-FR')}</p>
                 </div>
               </div>
               
               <div className="text-right">
                 <div className={`px-3 py-1 rounded-full text-sm font-medium ${getTransactionColor(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}`}>
-                  {transaction.type}
+                  {transactionTypeLabel(transaction.type)}
                 </div>
                 <div className="mt-2">
                   {transaction.amount > 0 && (
-                    <div className="text-sm text-gray-600">
-                      €{transaction.amount.toLocaleString()}
+                    <div className="text-sm text-content-secondary">
+                      €{formatNumber(transaction.amount)}
                     </div>
                   )}
                 </div>
@@ -265,58 +315,58 @@ const HotelCredits: React.FC = () => {
       </div>
 
       {/* Credit Usage Tips */}
-      <div className="card-luxury">
-        <h2 className="text-xl font-serif font-semibold text-navy mb-6 gold-underline">
-          Credit Usage Tips
+      <div className="panel p-6">
+        <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
+          {t('Bien utiliser ses crédits')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-              How Credits Work
+            <h3 className="text-lg font-serif font-semibold text-content mb-4">
+              {t('Comment fonctionnent les crédits')}
             </h3>
             <ul className="space-y-3">
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
-                  Each booking typically costs 1-3 credits depending on artist level and duration
+                <span className="text-sm text-content-secondary">
+                  {t('Une réservation coûte généralement 1 à 3 crédits, selon le niveau de l’artiste et la durée')}
                 </span>
               </li>
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
-                  Credits are deducted when you confirm a booking
+                <span className="text-sm text-content-secondary">
+                  {t('Les crédits sont débités à la confirmation de la réservation')}
                 </span>
               </li>
               <li className="flex items-start">
                 <Star className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
-                  Cancellations within 48 hours receive full credit refunds
+                <span className="text-sm text-content-secondary">
+                  {t('Les annulations moins de 48 heures à l’avance sont remboursées intégralement en crédits.')}
                 </span>
               </li>
             </ul>
           </div>
           
           <div>
-            <h3 className="text-lg font-serif font-semibold text-navy mb-4">
-              Best Practices
+            <h3 className="text-lg font-serif font-semibold text-content mb-4">
+              {t('Bonnes pratiques')}
             </h3>
             <ul className="space-y-3">
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
-                  Purchase larger packages for better value and savings
+                <span className="text-sm text-content-secondary">
+                  {t('Les formules plus importantes sont plus avantageuses')}
                 </span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
-                  Monitor your credit balance to avoid booking interruptions
+                <span className="text-sm text-content-secondary">
+                  {t('Surveillez votre solde pour ne pas interrompre vos réservations')}
                 </span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="w-5 h-5 text-gold mr-3 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-600">
-                  Use credits strategically for high-value performances
+                <span className="text-sm text-content-secondary">
+                  {t('Réservez vos crédits pour les dates les plus importantes')}
                 </span>
               </li>
             </ul>

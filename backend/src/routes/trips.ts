@@ -1,12 +1,15 @@
 import { Router } from 'express';
 import { prisma } from '../db';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { parseJsonField } from '../utils/parseJsonField';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
 // GET /api/trips - list published trips (optionally filtered)
 router.get(
   '/',
+  authenticate,
   asyncHandler(async (req, res) => {
     const { destination } = req.query;
 
@@ -44,21 +47,8 @@ router.get(
 
     // Do not expose internal fields like createdAt/updatedAt
     const safeTrips = trips.map((t) => {
-      // Parse images JSON string to array
-      let images = [];
-      try {
-        images = typeof t.images === 'string' ? JSON.parse(t.images) : (t.images || []);
-      } catch (e) {
-        images = [];
-      }
-
-      // Parse location
-      let location = null;
-      try {
-        location = typeof t.location === 'string' ? JSON.parse(t.location) : t.location;
-      } catch (e) {
-        location = { city: 'Unknown', country: '' };
-      }
+      const images = parseJsonField<string[]>(t.images, []);
+      const location = parseJsonField(t.location, { city: 'Lieu inconnu', country: '' });
 
       return {
         id: t.id,
@@ -72,18 +62,29 @@ router.get(
         status: t.status,
         type: t.type || null,
         rating: t.rating ? Number(t.rating) : null,
+        // Was missing entirely, so every card on /experiences fell back to
+        // "today" client-side regardless of the trip's real scheduled date -
+        // while the detail page, which does select it, showed the actual
+        // date. Same field, same format as the detail route below.
+        date: t.date ? t.date.toISOString() : null,
+        // The listing card states the length of the stay next to the date, so
+        // the one term every residency shares is readable without opening it.
+        duration: t.duration || null,
         artist: t.artist?.user?.name || null,
         hotel: t.hotel?.name || null,
       };
     });
 
-    res.json(safeTrips);
+    // Same envelope as the rest of the API. This endpoint returned a bare
+    // array, which is why every consumer carried shape-detection.
+    res.json({ success: true, data: { trips: safeTrips } });
   }),
 );
 
 // GET /api/trips/:id - trip details (only if published)
 router.get(
   '/:id',
+  authenticate,
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -120,73 +121,47 @@ router.get(
     }
 
     // Parse JSON strings
-    let images = [];
-    try {
-      images = typeof trip.images === 'string' ? JSON.parse(trip.images) : (trip.images || []);
-    } catch (e) {
-      images = [];
-    }
-
-    let location = null;
-    try {
-      location = typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location;
-    } catch (e) {
-      location = { city: 'Unknown', country: '' };
-    }
-
-    let schedule = [];
-    try {
-      schedule = trip.schedule ? (typeof trip.schedule === 'string' ? JSON.parse(trip.schedule) : trip.schedule) : [];
-    } catch (e) {
-      schedule = [];
-    }
-
-    let includes = [];
-    try {
-      includes = trip.includes ? (typeof trip.includes === 'string' ? JSON.parse(trip.includes) : trip.includes) : [];
-    } catch (e) {
-      includes = [];
-    }
-
-    let reviews = [];
-    try {
-      reviews = trip.reviews ? (typeof trip.reviews === 'string' ? JSON.parse(trip.reviews) : trip.reviews) : [];
-    } catch (e) {
-      reviews = [];
-    }
+    const images = parseJsonField<string[]>(trip.images, []);
+    const location = parseJsonField(trip.location, { city: 'Lieu inconnu', country: '' });
+    const schedule = parseJsonField<any[]>(trip.schedule, []);
+    const includes = parseJsonField<any[]>(trip.includes, []);
+    const reviews = parseJsonField<any[]>(trip.reviews, []);
 
     res.json({
-      id: trip.id,
-      title: trip.title,
-      slug: trip.slug,
-      description: trip.description,
-      priceFrom: Number(trip.priceFrom),
-      priceTo: Number(trip.priceTo),
-      location: location,
-      images: images,
-      status: trip.status,
-      // Additional fields from database
-      type: trip.type || null,
-      rating: trip.rating ? Number(trip.rating) : null,
-      date: trip.date ? trip.date.toISOString() : null,
-      duration: trip.duration || null,
-      capacity: trip.capacity || null,
-      schedule: schedule,
-      includes: includes,
-      artistBio: trip.artistBio || null,
-      venueDetails: trip.venueDetails || null,
-      reviews: reviews,
-      // Related data
-      artist: trip.artist ? {
-        id: trip.artist.id,
-        name: trip.artist.user?.name || 'Artist',
-        bio: trip.artist.bio || null
-      } : null,
-      hotel: trip.hotel ? {
-        id: trip.hotel.id,
-        name: trip.hotel.name || 'Hotel',
-        description: trip.hotel.description || null
-      } : null,
+      success: true,
+      data: {
+        id: trip.id,
+        title: trip.title,
+        slug: trip.slug,
+        description: trip.description,
+        priceFrom: Number(trip.priceFrom),
+        priceTo: Number(trip.priceTo),
+        location: location,
+        images: images,
+        status: trip.status,
+        // Additional fields from database
+        type: trip.type || null,
+        rating: trip.rating ? Number(trip.rating) : null,
+        date: trip.date ? trip.date.toISOString() : null,
+        duration: trip.duration || null,
+        capacity: trip.capacity || null,
+        schedule: schedule,
+        includes: includes,
+        artistBio: trip.artistBio || null,
+        venueDetails: trip.venueDetails || null,
+        reviews: reviews,
+        // Related data
+        artist: trip.artist ? {
+          id: trip.artist.id,
+          name: trip.artist.user?.name || 'Artiste',
+          bio: trip.artist.bio || null
+        } : null,
+        hotel: trip.hotel ? {
+          id: trip.hotel.id,
+          name: trip.hotel.name || 'Hôtel',
+          description: trip.hotel.description || null
+        } : null,
+      },
     });
   }),
 );

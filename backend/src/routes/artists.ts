@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { parseJsonField } from '../utils/parseJsonField';
 
 const router = Router();
 
@@ -35,17 +36,10 @@ const availabilitySchema = z.object({
   dateTo: z.string().datetime()
 });
 
-const searchSchema = z.object({
-  discipline: z.string().optional(),
-  location: z.string().optional(),
-  dateFrom: z.string().datetime().optional(),
-  dateTo: z.string().datetime().optional(),
-  page: z.string().optional().default('1'),
-  limit: z.string().optional().default('10')
-});
-
 // Search and filter artists (must come before /:id route)
-router.get('/', asyncHandler(async (req, res) => {
+// Signed in only: the roster is not public browsing, the way clubmedlive.fr
+// keeps its resort/artist roster behind an account.
+router.get('/', authenticate, asyncHandler(async (req, res) => {
   try {
     const query = req.query;
     const { discipline, location, dateFrom, dateTo, page, limit } = {
@@ -61,118 +55,127 @@ router.get('/', asyncHandler(async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    // Simple where clause - avoid nested queries for SQLite compatibility
+    const now = new Date();
+
+    /* Every filter belongs in the query.
+       Location and dates used to be applied in memory, to the one page that
+       had already come back from the database - so a search for India found
+       nothing at all while the only Indian artist sat on page 2, and the
+       pagination still reported 15 results across 2 pages because the count
+       never saw the filters. A house looking for the one artist it wants was
+       shown an empty shelf. */
     const where: any = {};
 
-    // Only add discipline filter if provided (simple contains works in SQLite)
+    // Postgres `contains` is case-sensitive: `dj` found nobody while `DJ`
+    // found two, and disciplines here are free text an artist typed.
     if (discipline) {
-      where.discipline = { contains: discipline };
+      where.discipline = { contains: discipline, mode: 'insensitive' };
     }
 
-    // Fetch artists with user info
-    const [allArtists, total] = await Promise.all([
+    if (location) {
+      where.user = { country: { contains: location, mode: 'insensitive' } };
+    }
+
+    /* A house books a week; the question is whether the artist's declared
+       period *overlaps* that week. Asking instead for periods that begin
+       after it - which is what the in-memory filter did, over a single row -
+       could only ever match an artist who had not started yet. */
+    if (dateFrom && dateTo) {
+      where.availability = {
+        some: {
+          dateFrom: { lte: new Date(dateTo) },
+          dateTo: { gte: new Date(dateFrom) }
+        }
+      };
+    }
+
+    const [artists, total] = await Promise.all([
       prisma.artist.findMany({
         where,
         include: {
+          // No email here. The route requires a token now, but the narrow
+          // selection stays: a browse list has no business carrying it. The
+          // single-artist route below and the hotel-scoped browse endpoint
+          // already withhold it; this one used to hand out every artist's
+          // address to anyone who paginated through it.
           user: {
             select: {
               id: true,
               name: true,
-              email: true,
               country: true
             }
           },
+          /* Periods that have not *ended*. This used to ask for periods that
+             had not *begun*, which hid every artist whose season was already
+             open - on the day this was found that was all fourteen of them,
+             each free from that morning until March, and each invisible to
+             every date search on the platform. */
           availability: {
             where: {
-              dateFrom: { gte: new Date() }
+              dateTo: { gte: now }
             },
-            orderBy: { dateFrom: 'asc' },
-            take: 1
+            orderBy: { dateFrom: 'asc' }
           }
         },
         skip,
         take: limitNum,
         orderBy: { createdAt: 'desc' }
-      }).catch(() => []),
-      prisma.artist.count({ where }).catch(() => 0)
+      }),
+      prisma.artist.count({ where })
     ]);
 
-    // Apply location filter in memory if needed (SQLite-friendly)
-    let artists = allArtists;
-    if (location) {
-      artists = allArtists.filter(a => 
-        a.user?.country?.toLowerCase().includes(location.toLowerCase())
-      );
+    /* One query for the page, not one per artist. The errors these two used
+       to swallow are worth keeping too: a database that times out should say
+       so, not report a marketplace with no artists in it. */
+    const artistIds = artists.map(a => a.id);
+    const ratingRows = artistIds.length
+      ? await prisma.rating.findMany({
+          where: { artistId: { in: artistIds } },
+          select: { artistId: true, stars: true }
+        })
+      : [];
+    const starsByArtist = new Map<string, number[]>();
+    for (const row of ratingRows) {
+      const stars = starsByArtist.get(row.artistId) || [];
+      stars.push(row.stars);
+      starsByArtist.set(row.artistId, stars);
     }
 
-    // Apply date filter in memory if needed
-    if (dateFrom && dateTo) {
-      const dateFromFilter = new Date(dateFrom);
-      const dateToFilter = new Date(dateTo);
-      artists = artists.filter(a => 
-        a.availability.some(av => 
-          av.dateFrom <= dateToFilter && av.dateTo >= dateFromFilter
-        )
-      );
-    }
-
-    // Add rating badges for each artist
-    const artistsWithBadges = await Promise.all(
-    artists.map(async (artist) => {
-      const ratings = await prisma.rating.findMany({
-        where: { artistId: artist.id },
-        select: { stars: true }
-      });
+    const artistsWithBadges = artists.map((artist) => {
+      const ratings = (starsByArtist.get(artist.id) || []).map(stars => ({ stars }));
 
       let ratingBadge = null;
+      // The average is returned alongside the badge. It used to be computed
+      // here and then dropped, which left the client trying to read a number
+      // back out of the badge text - and reading it wrong, since it tested for
+      // 'Top 10%' against a string that says 'Top 10 % des artistes'.
+      let averageRating: number | null = null;
       if (ratings.length > 0) {
         const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
+        averageRating = Math.round(avgRating * 10) / 10;
         if (avgRating >= 4.5) {
-          ratingBadge = 'Top 10% Performer';
+          ratingBadge = 'Top 10 % des artistes';
         } else if (avgRating >= 4.0) {
-          ratingBadge = 'Excellent Performer';
+          ratingBadge = 'Artiste confirmé';
         } else if (avgRating >= 3.5) {
-          ratingBadge = 'Good Performer';
+          ratingBadge = 'Artiste recommandé';
         }
       }
 
-      let images = [];
-      let videos = [];
-      let mediaUrls = [];
-      
-      if (artist.images) {
-        try {
-          images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-        } catch (e) {
-          images = [];
-        }
-      }
-      
-      if (artist.videos) {
-        try {
-          videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-        } catch (e) {
-          videos = [];
-        }
-      }
-      
-      if (artist.mediaUrls) {
-        try {
-          mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-        } catch (e) {
-          mediaUrls = [];
-        }
-      }
+      const images = parseJsonField<string[]>(artist.images, []);
+      const videos = parseJsonField<string[]>(artist.videos, []);
+      const mediaUrls = parseJsonField<string[]>(artist.mediaUrls, []);
 
       return {
         ...artist,
         ratingBadge,
+        averageRating,
+        ratingCount: ratings.length,
         images: images,
         videos: videos,
         mediaUrls: mediaUrls
       };
-    })
-    );
+    });
 
     res.json({
       success: true,
@@ -206,9 +209,11 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
           createdAt: true
         }
       },
+      // Open now, or still to come. Asking for periods that have not begun
+      // told an artist their own declared season did not exist.
       availability: {
         where: {
-          dateFrom: { gte: new Date() }
+          dateTo: { gte: new Date() }
         },
         orderBy: { dateFrom: 'asc' }
       },
@@ -228,6 +233,14 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
       ratings: {
         take: 10,
         orderBy: { createdAt: 'desc' }
+      },
+      // The membership screen needs to know which tier is held, not just that
+      // one is active — without it the UI cannot tell an ARTIST member from a
+      // PROFESSIONAL one and marked both plans as current.
+      memberships: {
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'desc' },
+        take: 1
       }
     }
   });
@@ -254,33 +267,9 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
   }
 
   // Parse JSON strings
-  let images = [];
-  let videos = [];
-  let mediaUrls = [];
-  
-  if (artist.images) {
-    try {
-      images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-    } catch (e) {
-      images = [];
-    }
-  }
-  
-  if (artist.videos) {
-    try {
-      videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-    } catch (e) {
-      videos = [];
-    }
-  }
-  
-  if (artist.mediaUrls) {
-    try {
-      mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-    } catch (e) {
-      mediaUrls = [];
-    }
-  }
+  const images = parseJsonField<string[]>(artist.images, []);
+  const videos = parseJsonField<string[]>(artist.videos, []);
+  const mediaUrls = parseJsonField<string[]>(artist.mediaUrls, []);
 
   res.json({
     success: true,
@@ -290,13 +279,14 @@ router.get('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
       totalRatings: ratings.length,
       images,
       videos,
-      mediaUrls
+      mediaUrls,
+      membershipTier: artist.memberships[0]?.tier ?? null
     }
   });
 }));
 
-// Get public artist profile
-router.get('/:id', asyncHandler(async (req, res) => {
+// Get artist profile. Signed in only - see the note on GET / above.
+router.get('/:id', authenticate, asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const artist = await prisma.artist.findUnique({
@@ -312,7 +302,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
       },
       availability: {
         where: {
-          dateFrom: { gte: new Date() }
+          dateTo: { gte: new Date() }
         },
         orderBy: { dateFrom: 'asc' }
       }
@@ -323,57 +313,44 @@ router.get('/:id', asyncHandler(async (req, res) => {
     throw new CustomError('Artist not found.', 404);
   }
 
-  // Calculate aggregated rating badge (not numeric rating)
+  // Calculate aggregated rating badge and numeric average
   const ratings = await prisma.rating.findMany({
     where: { artistId: id },
     select: { stars: true }
   });
 
   let ratingBadge = null;
+  let avgRating: number | null = null;
   if (ratings.length > 0) {
-    const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
+    avgRating = Math.round((ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length) * 10) / 10;
     if (avgRating >= 4.5) {
-      ratingBadge = 'Top 10% Performer';
+      ratingBadge = 'Top 10 % des artistes';
     } else if (avgRating >= 4.0) {
-      ratingBadge = 'Excellent Performer';
+      ratingBadge = 'Artiste confirmé';
     } else if (avgRating >= 3.5) {
-      ratingBadge = 'Good Performer';
+      ratingBadge = 'Artiste recommandé';
     }
   }
 
-  let images = [];
-  let videos = [];
-  let mediaUrls = [];
-  
-  if (artist.images) {
-    try {
-      images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-    } catch (e) {
-      images = [];
-    }
-  }
-  
-  if (artist.videos) {
-    try {
-      videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-    } catch (e) {
-      videos = [];
-    }
-  }
-  
-  if (artist.mediaUrls) {
-    try {
-      mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-    } catch (e) {
-      mediaUrls = [];
-    }
-  }
+  // This route requires a token, but it is not role-scoped, so the client
+  // has no RLS identity and would silently count zero bookings regardless
+  // of how many exist - the same gap that made this page disagree with the
+  // artist's card on /top-artists (which already reads this count through
+  // the privileged client). Only the count crosses this boundary, never a
+  // booking row.
+  const bookingCount = await prismaAdmin.booking.count({ where: { artistId: id } });
+
+  const images = parseJsonField<string[]>(artist.images, []);
+  const videos = parseJsonField<string[]>(artist.videos, []);
+  const mediaUrls = parseJsonField<string[]>(artist.mediaUrls, []);
 
   res.json({
     success: true,
     data: {
       ...artist,
       ratingBadge,
+      avgRating,
+      bookingCount,
       images: images,
       videos: videos,
       mediaUrls: mediaUrls
@@ -384,7 +361,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
 // Update artist profile (own profile)
 router.put('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
   const profileData = artistProfileSchema.parse(req.body);
-  const { country, ...artistData } = req.body; // Extract country separately
+  // Country lives on User, not Artist, so it's handled separately below.
+  const { country } = req.body;
 
   const artist = await prisma.artist.findUnique({
     where: { userId: req.user!.id }
@@ -517,6 +495,36 @@ router.post('/:id/availability', authenticate, authorize('ARTIST'), asyncHandler
   res.status(201).json({
     success: true,
     data: availability
+  });
+}));
+
+// Remove artist availability
+router.delete('/:id/availability/:availabilityId', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
+  const { id, availabilityId } = req.params;
+
+  // Verify artist belongs to user
+  const artist = await prisma.artist.findFirst({
+    where: { id, userId: req.user!.id }
+  });
+
+  if (!artist) {
+    throw new CustomError('Artist not found or access denied.', 404);
+  }
+
+  // Scoped to this artist too, not just the row's own id - otherwise any
+  // authenticated artist could delete another artist's availability by guessing
+  // its id.
+  const deleted = await prisma.artistAvailability.deleteMany({
+    where: { id: availabilityId, artistId: id }
+  });
+
+  if (deleted.count === 0) {
+    throw new CustomError('Availability not found.', 404);
+  }
+
+  res.json({
+    success: true,
+    data: { id: availabilityId }
   });
 }));
 

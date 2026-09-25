@@ -1,248 +1,200 @@
 import React from 'react'
-import { motion } from 'framer-motion'
-import { Users, Building, Calendar, Star, CreditCard, Music } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
+
+/**
+ * Copy is the original page content, unchanged. Only the presentation moved:
+ * six equal cards with white-on-gold circle icons (a contrast failure) became
+ * a hairline ladder beside a sticky heading, which suits six items far better.
+ */
+const STEPS = [
+  {
+    title: t('Rejoindre, comme artiste ou comme hôtel'),
+    lede: t('Créez votre profil et présentez votre travail ou votre lieu. Les artistes déposent leur portfolio, indiquent leurs disponibilités et précisent leur discipline. Les hôtels décrivent leurs espaces de représentation et leurs conditions d’accueil.'),
+    points: [
+      t('Artistes : photos et vidéos de vos performances'),
+      t('Hôtels : toits-terrasses, salons et lieux intimistes'),
+      t('Renseignez votre calendrier de disponibilités'),
+      t('Précisez votre discipline artistique'),
+    ],
+  },
+  {
+    title: t('Trouver la bonne rencontre'),
+    lede: t('Notre système de mise en relation rapproche artistes et hôtels selon le lieu, les dates, l’esthétique et les contraintes de la salle. Parcourez les profils et choisissez la collaboration qui vous ressemble.'),
+    points: [
+      t('Mise en relation par affinités'),
+      t('Filtres par ville, date et style'),
+      t('Profils et portfolios détaillés'),
+      t('Avis et évaluations vérifiés'),
+    ],
+  },
+  {
+    title: t('Réserver la résidence'),
+    lede: t('Les hôtels invitent les artistes pour un concert sur les toits, un set intimiste ou un événement particulier. Les artistes reçoivent l’hébergement et une scène dans un cadre d’exception.'),
+    points: [
+      t('Demande de dates en quelques clics'),
+      t('Adhésion annuelle pour les artistes'),
+      t('Réservation sécurisée'),
+      t('Conditions d’annulation souples'),
+    ],
+  },
+  {
+    title: t('Créer ensemble'),
+    lede: t('Les artistes jouent sur des toits-terrasses, dans des salons feutrés et des espaces hôteliers d’exception. Les hôtels offrent l’hébergement et des moments dont leurs clients se souviennent.'),
+    points: [
+      t('Concerts sur les toits, face à la ville'),
+      t('Sets acoustiques dans des salons intimistes'),
+      t('Formations jazz en salle de bal'),
+      t('DJ sets au coucher du soleil'),
+    ],
+  },
+  {
+    title: t('Évaluer et commenter'),
+    lede: t('Après chaque représentation, l’hôtel évalue l’artiste sur la qualité de la prestation, le professionnalisme et l’accueil reçu par ses clients. L’artiste reçoit ses distinctions et les retours reçus.'),
+    points: [
+      t('Notation de 1 à 5 étoiles par les hôtels'),
+      t('Distinctions visibles sur le profil artiste'),
+      t('Retours détaillés après chaque date'),
+      t('Une réputation qui se construit dans la durée'),
+    ],
+  },
+  {
+    title: t('Grandir et rayonner'),
+    lede: t('Les artistes accumulent des nuits d’hébergement et étoffent leur portfolio. Les hôtels enrichissent l’expérience de leurs clients. Les deux élargissent leur réseau.'),
+    points: [
+      t('Artistes : hébergement offert pendant la résidence'),
+      t('Hôtels : une expérience client singulière'),
+      t('Programme de parrainage'),
+      t('Points de fidélité'),
+    ],
+  },
+]
 
 const HowItWorksPage: React.FC = () => {
-  const steps = [
-    {
-      icon: <Users className="w-8 h-8 text-white" />,
-      title: 'Join as Artist or Hotel',
-      description: 'Create your profile and showcase your talent or luxury venue. Artists can upload their portfolio, set availability, and define their specialties. Hotels can list their performance spaces and accommodation.',
-      details: [
-        'Artists: Upload photos/videos of performances',
-        'Hotels: Showcase rooftop terraces and intimate venues',
-        'Set your availability calendar',
-        'Define your artistic discipline and price range'
-      ]
-    },
-    {
-      icon: <Building className="w-8 h-8 text-white" />,
-      title: 'Discover Perfect Matches',
-      description: 'Our intelligent matching system connects artists with hotels based on location, availability, artistic style, and venue requirements. Browse profiles and find your ideal collaboration.',
-      details: [
-        'Smart matching algorithm',
-        'Filter by location, date, and style',
-        'View detailed profiles and portfolios',
-        'Read reviews and ratings'
-      ]
-    },
-    {
-      icon: <Calendar className="w-8 h-8 text-white" />,
-      title: 'Book Your Experience',
-      description: 'Hotels use credits to book artists for their rooftop performances, intimate concerts, or special events. Artists receive accommodation and the opportunity to perform in luxury settings.',
-      details: [
-        'Hotels purchase credit packages',
-        'Artists pay annual membership fee',
-        'Secure booking system',
-        'Flexible cancellation policies'
-      ]
-    },
-    {
-      icon: <Music className="w-8 h-8 text-white" />,
-      title: 'Create Magic Together',
-      description: 'Artists perform in stunning rooftop venues, intimate lounges, and luxury hotel spaces. Hotels provide accommodation and unforgettable experiences for their guests.',
-      details: [
-        'Rooftop performances with city views',
-        'Intimate acoustic sets in luxury lounges',
-        'Jazz ensembles in elegant ballrooms',
-        'DJ sets at sunset beach clubs'
-      ]
-    },
-    {
-      icon: <Star className="w-8 h-8 text-white" />,
-      title: 'Rate & Review',
-      description: 'After each performance, hotels rate artists based on their performance quality, professionalism, and guest satisfaction. Artists see aggregated badges and feedback.',
-      details: [
-        'Hotels rate artists (1-5 stars)',
-        'Artists see performance badges',
-        'Detailed feedback system',
-        'Build reputation over time'
-      ]
-    },
-    {
-      icon: <CreditCard className="w-8 h-8 text-white" />,
-      title: 'Earn & Grow',
-      description: 'Artists earn accommodation credits and build their portfolio. Hotels enhance their guest experience and create memorable moments. Both parties grow their network.',
-      details: [
-        'Artists: Free accommodation + performance fees',
-        'Hotels: Enhanced guest experience',
-        'Referral rewards program',
-        'Loyalty points system'
-      ]
-    }
-  ]
+  const reduceMotion = useReducedMotion()
 
   return (
-    <div className="min-h-screen bg-cream">
-      <SimpleNavbar />
-      
-      {/* Hero Section */}
-      <div className="relative py-20 pt-32 overflow-hidden">
-        {/* Background Image - Resort Island */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
-            alt="Resort island" 
+    <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={t('Le principe du programme — Travel Art')}
+        description={t('Comment fonctionne une résidence Travel Art : candidature, sélection, séjour tout compris et représentation.')}
+      />
+      <SimpleNavbar overMedia />
+      <main id="contenu">
+
+      {/* Asymmetric hero. The headline sits in the grid rather than centred
+          over a darkened photograph, which is the default this page had. */}
+      <section className="relative min-h-[78dvh] flex items-end overflow-hidden">
+        <div className="absolute inset-0">
+          <img loading="lazy" decoding="async"
+            src="/images/headers/how-it-works.webp"
+            srcSet="/images/headers/how-it-works-960.webp 960w, /images/headers/how-it-works-1440.webp 1440w, /images/headers/how-it-works.webp 1920w"
+            sizes="100vw"
+            width={1920}
+            height={1097}
+            fetchPriority="high"
+            alt=""
+            aria-hidden="true"
             className="w-full h-full object-cover"
           />
-          {/* Gradient overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-navy/80 via-navy/60 to-navy/80"></div>
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-surface/70 to-surface/40"
+          />
         </div>
-        
-        <div className="container mx-auto px-6 text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
+
+        <div className="shell relative z-10 pb-20 pt-32 grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
+          <motion.h1
+            initial={reduceMotion ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-7 font-serif text-content text-5xl md:text-6xl lg:text-7xl leading-[1.03]"
           >
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6 text-white">
-              How Travel Art
-              <span className="block text-gold">Works</span>
-            </h1>
-            <p className="text-xl text-white mb-8 max-w-3xl mx-auto">
-              Connect luxury hotels with talented hearts for unforgettable rooftop performances and intimate experiences. 
-              From jazz saxophonists on Parisian terraces to DJs spinning sunset sets in Ibiza.
-            </p>
-          </motion.div>
-        </div>
-      </div>
+            {t('Le principe')}
+            <span className="block text-gold italic leading-[1.1] pb-1">Travel Art</span>
+          </motion.h1>
 
-      {/* Steps Section */}
-      <div className="container mx-auto px-6 py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {steps.map((step, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="card-luxury"
-            >
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16 bg-gold rounded-full flex items-center justify-center shadow-lg">
-                    <div className="text-white">
-                      {step.icon}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-serif font-semibold text-navy mb-4">
-                    {step.title}
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {step.description}
-                  </p>
-                  <ul className="space-y-2">
-                    {step.details.map((detail, detailIndex) => (
-                      <li key={detailIndex} className="flex items-center text-sm text-gray-600">
-                        <div className="w-2 h-2 bg-gold rounded-full mr-3"></div>
-                        {detail}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Benefits Section */}
-      <div className="bg-gray-50 py-20">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-navy mb-6 gold-underline">
-              Why Choose Travel Art?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Experience the perfect blend of luxury hospitality and artistic excellence
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center"
-            >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <Building className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                Luxury Venues
-              </h3>
-              <p className="text-gray-600">
-                Perform in the world's most prestigious hotels with stunning rooftop views and intimate settings.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-center"
-            >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <Users className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                Curated Artists
-              </h3>
-              <p className="text-gray-600">
-                Work with verified, professional artists who specialize in creating magical moments.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-center"
-            >
-              <div className="w-20 h-20 bg-gold rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <Star className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="text-xl font-serif font-semibold text-navy mb-4">
-                Quality Guaranteed
-              </h3>
-              <p className="text-gray-600">
-                Our rating system ensures only the best artists perform at your luxury venues.
-              </p>
-            </motion.div>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="bg-navy text-white py-20">
-        <div className="container mx-auto px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
+          <motion.p
+            initial={reduceMotion ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-4 lg:col-start-9 text-content-secondary leading-relaxed"
           >
-            <h2 className="text-4xl font-serif font-bold mb-6">
-              Ready to Create Magic?
-            </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Join Travel Art today and start connecting luxury hotels with talented hearts for unforgettable experiences.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="/register" className="btn-primary text-lg px-8 py-4 text-white">
-                Join as Artist
-              </a>
-              <a href="/register" className="bg-transparent text-white border-2 border-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-navy transition-all duration-300 shadow-soft text-lg">
-                Join as Hotel
-              </a>
+            {t('Réunir les hôtels d’exception et les artistes, pour des concerts sur les toits et des moments plus intimes. Du saxophone jazz sur une terrasse parisienne au DJ set au coucher du soleil à Ibiza.')}
+          </motion.p>
+        </div>
+      </section>
+
+      {/* Sticky heading beside a scrolling ladder. */}
+      <section className="section-y">
+        <div className="shell grid grid-cols-1 lg:grid-cols-12 gap-x-8 gap-y-12">
+          <div className="lg:col-span-4">
+            <div className="lg:sticky lg:top-32">
+              <h2 className="font-serif text-content text-3xl md:text-4xl leading-[1.1]">
+                {t('Pourquoi Travel Art ?')}
+              </h2>
+              <p className="mt-5 text-content-secondary leading-relaxed max-w-[34ch]">
+                {t('La rencontre juste entre l’hôtellerie d’exception et l’exigence artistique.')}
+              </p>
+              <Link to="/register" className="btn-gold mt-10">
+                {t('Nous rejoindre')}
+              </Link>
             </div>
-          </motion.div>
+          </div>
+
+          <ol className="lg:col-span-7 lg:col-start-6">
+            {STEPS.map((step, i) => (
+              <motion.li
+                key={step.title}
+                initial={reduceMotion ? false : { opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.35 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className={`py-12 ${i === 0 ? 'pt-0' : 'border-t border-line'}`}
+              >
+                <h3 className="font-serif text-gold text-3xl md:text-4xl">{step.title}</h3>
+                <p className="mt-4 text-content-secondary text-lg leading-relaxed max-w-prose">
+                  {step.lede}
+                </p>
+                <ul className="mt-6 space-y-3">
+                  {step.points.map((point) => (
+                    <li key={point} className="flex gap-4 text-content-secondary">
+                      <span aria-hidden="true" className="mt-2.5 h-px w-5 shrink-0 bg-gold/60" />
+                      <span className="leading-relaxed">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.li>
+            ))}
+          </ol>
         </div>
-      </div>
-      
+      </section>
+
+      {/* Closing band, matching the landing page so the two read as one site. */}
+      <section className="shell">
+        <div className="border-t border-line py-24 md:py-32 text-center">
+          <h2 className="font-serif text-content text-4xl md:text-6xl leading-[1.05]">
+            {t('Prêt à créer ?')}
+          </h2>
+          <p className="mt-6 text-content-secondary max-w-[52ch] mx-auto leading-relaxed">
+            {t('Rejoignez Travel Art et commencez à faire dialoguer hôtels d’exception et artistes.')}
+          </p>
+          <div className="mt-12 flex flex-wrap gap-4 justify-center">
+            <Link to="/register" className="btn-gold">
+              {t('Je suis artiste')}
+            </Link>
+            <Link to="/register" className="btn-on-media">
+              {t('Je suis hôtelier')}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      </main>
       <Footer />
     </div>
   )

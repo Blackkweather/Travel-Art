@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/store/authStore'
 import { ApiResponse, LoginCredentials, RegisterData, User } from '@/types'
 
@@ -8,8 +8,12 @@ class ApiClient {
   constructor() {
     // In production, use relative path since backend serves frontend
     // In development, use Vite proxy (/api) which proxies to localhost:4000
-    const isProduction = (import.meta as any).env?.MODE === 'production'
-    const apiUrl = (import.meta as any).env?.VITE_API_URL || (isProduction ? '/api' : '/api')
+    // '/api' either way: in production the backend serves the built frontend
+    // from the same origin, and in development Vite proxies /api to
+    // localhost:4000. The isProduction ternary that used to be here chose
+    // '/api' in both branches.
+    const apiUrl = (import.meta as any).env?.VITE_API_URL || '/api'
+
     
     this.client = axios.create({
       baseURL: apiUrl,
@@ -56,20 +60,36 @@ class ApiClient {
     )
   }
 
-  async get<T = any>(url: string, params?: any): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.get(url, { params })
+  /**
+   * `config` exists for the few calls that legitimately take longer than the
+   * default ten seconds - the admin aggregates, which read several hundred
+   * rows from a serverless database and were timing out on a cold connection.
+   */
+  async get<T = any>(
+    url: string,
+    params?: any,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<ApiResponse<T>>> {
+    return this.client.get(url, { params, ...config })
   }
 
-  async post<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.post(url, data)
+  async post<T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<ApiResponse<T>>> {
+    return this.client.post(url, data, config)
   }
 
   async put<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
     return this.client.put(url, data)
   }
 
-  async delete<T = any>(url: string): Promise<AxiosResponse<ApiResponse<T>>> {
-    return this.client.delete(url)
+  /* `config` carries the rare DELETE that needs a body. Account erasure is
+     one: it takes the password and a typed confirmation, and neither belongs
+     in a query string where it would land in server logs. */
+  async delete<T = any>(url: string, config?: any): Promise<AxiosResponse<ApiResponse<T>>> {
+    return this.client.delete(url, config)
   }
 
   async patch<T = any>(url: string, data?: any): Promise<AxiosResponse<ApiResponse<T>>> {
@@ -85,7 +105,9 @@ export const authApi = {
     apiClient.post<{ user: User; token: string }>('/auth/login', credentials),
   
   register: (data: RegisterData) =>
-    apiClient.post<{ user: User; token: string }>('/auth/register', data),
+    apiClient.post<{ user: User; token: string }>('/auth/register', data, {
+      timeout: 45000,
+    }),
   
   refresh: () =>
     apiClient.post<{ token: string }>('/auth/refresh'),
@@ -114,11 +136,32 @@ export const artistsApi = {
   createProfile: (data: any) =>
     apiClient.post('/artists', data),
   
-  updateProfile: (id: string, data: any) =>
-    apiClient.put(`/artists/${id}`, data),
-  
+  // The server exposes PUT /artists/me, not PUT /artists/:id. This previously
+  // pointed at an endpoint that does not exist, so saving a profile 404d.
+  // The id parameter is kept so existing callers do not need to change; the
+  // server identifies the artist from the auth token.
+  updateProfile: (_id: string | undefined, data: any) =>
+    apiClient.put('/artists/me', data),
+
   setAvailability: (id: string, data: any) =>
     apiClient.post(`/artists/${id}/availability`, data),
+
+  removeAvailability: (id: string, availabilityId: string) =>
+    apiClient.delete(`/artists/${id}/availability/${availabilityId}`),
+}
+
+// Privacy / data-subject rights
+export const privacyApi = {
+  setConsent: (kind: 'TERMS' | 'PRIVACY' | 'COOKIES_ANALYTICS', granted: boolean) =>
+    apiClient.post('/privacy/consent', { kind, granted }),
+
+  getConsent: () => apiClient.get('/privacy/consent'),
+
+  // Returns the whole record as a file, so it bypasses the JSON client.
+  exportUrl: () => '/api/privacy/export',
+
+  deleteAccount: (password: string) =>
+    apiClient.delete('/privacy/account', { data: { confirm: 'SUPPRIMER', password } }),
 }
 
 // Hotels API
@@ -129,14 +172,18 @@ export const hotelsApi = {
   getById: (id: string) =>
     apiClient.get(`/hotels/${id}`),
   
-  getByUser: (userId: string) =>
-    apiClient.get(`/hotels/user/${userId}`),
+  getByUser: (userId: string, config?: any) =>
+    apiClient.get(`/hotels/user/${userId}`, undefined, config),
   
   createProfile: (data: any) =>
     apiClient.post('/hotels', data),
   
-  updateProfile: (id: string, data: any) =>
-    apiClient.put(`/hotels/${id}`, data),
+  // Same as artists: the server exposes PUT /hotels/me, not PUT /hotels/:id.
+  updateProfile: (_id: string | undefined, data: any) =>
+    apiClient.put('/hotels/me', data),
+
+  getMyProfile: () =>
+    apiClient.get('/hotels/me'),
   
   addRoomAvailability: (id: string, data: any) =>
     apiClient.post(`/hotels/${id}/rooms`, data),
@@ -150,18 +197,23 @@ export const hotelsApi = {
   
   // Credits purchase moved to payments service (see paymentsApi)
   
-  getFavorites: (hotelId: string) => apiClient.get(`/hotels/${hotelId}/favorites`).catch(() => ({ data: { data: [] } })),
-  addFavorite: (hotelId: string, artistId: string) => apiClient.post(`/hotels/${hotelId}/favorites`, { artistId }).catch(() => ({ data: { success: true } })),
-  removeFavorite: (hotelId: string, artistId: string) => apiClient.delete(`/hotels/${hotelId}/favorites/${artistId}`).catch(() => ({ data: { success: true } })),
+  // These used to swallow every failure and resolve as though the call had
+  // succeeded — getFavorites returned an empty list, the writes returned
+  // { success: true }. HotelArtists already handles rejection properly (it
+  // falls back to localStorage on read and reverts the star on write), and
+  // that handling could never run while the errors were being masked.
+  getFavorites: (hotelId: string, config?: any) => apiClient.get(`/hotels/${hotelId}/favorites`, undefined, config),
+  addFavorite: (hotelId: string, artistId: string) => apiClient.post(`/hotels/${hotelId}/favorites`, { artistId }),
+  removeFavorite: (hotelId: string, artistId: string) => apiClient.delete(`/hotels/${hotelId}/favorites/${artistId}`),
 }
 
 // Admin API
 export const adminApi = {
-  getDashboard: () =>
-    apiClient.get('/admin/dashboard'),
+  getDashboard: (config?: any) =>
+    apiClient.get('/admin/dashboard', undefined, config),
   
-  getUsers: (params?: any) =>
-    apiClient.get('/admin/users', params),
+  getUsers: (params?: any, config?: any) =>
+    apiClient.get('/admin/users', params, config),
   
   suspendUser: (id: string, data: any) =>
     apiClient.post(`/admin/users/${id}/suspend`, data),
@@ -169,30 +221,67 @@ export const adminApi = {
   activateUser: (id: string) =>
     apiClient.post(`/admin/users/${id}/activate`),
   
-  getBookings: (params?: any) =>
-    apiClient.get('/admin/bookings', params),
+  getBookings: (params?: any, config?: any) =>
+    apiClient.get('/admin/bookings', params, config),
   
   getLogs: (params?: any) =>
     apiClient.get('/admin/logs', params),
   
-  getAllActivities: (params?: any) =>
-    apiClient.get('/admin/activities', params),
+  getAllActivities: (params?: any, config?: any) =>
+    apiClient.get('/admin/activities', params, config),
   
   getReferrals: (params?: any) =>
     apiClient.get('/admin/referrals', params),
   
-  exportData: async (type: string) => {
-    const response = await axios.get(`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:8080/api'}/admin/export?type=${type}`, {
-      responseType: 'blob',
-      headers: {
-        'Authorization': `Bearer ${useAuthStore.getState().token}`
+  /**
+   * Downloads an admin export and saves it under the name the server chose.
+   *
+   * `format` is 'csv' or 'xlsx'. The filename comes from Content-Disposition
+   * rather than being rebuilt here: the server already stamps the date and
+   * knows the extension, and two places inventing the same name is how an
+   * .xlsx ends up saved as .csv and refusing to open.
+   */
+  exportData: async (
+    type: 'bookings' | 'users' | 'logs',
+    format: 'csv' | 'xlsx' = 'csv'
+  ) => {
+    // Uses axios directly rather than apiClient because it needs a blob
+    // response, but it must resolve the base URL the same way - its own
+    // fallback was http://localhost:8080/api, a port nothing in this project
+    // listens on, so an export in development failed with a network error.
+    const baseUrl = (import.meta as any).env?.VITE_API_URL || '/api'
+    const response = await axios.get(
+      `${baseUrl}/admin/export?type=${type}&format=${format}`,
+      {
+        responseType: 'blob',
+        headers: {
+          'Authorization': `Bearer ${useAuthStore.getState().token}`
+        }
       }
-    })
-    return response
+    )
+
+    const disposition = String(response.headers['content-disposition'] || '')
+    const match = disposition.match(/filename="?([^";]+)"?/i)
+    const filename = match ? match[1] : `travel-art-${type}.${format}`
+
+    return { response, filename }
   },
 }
 
 // Common API
+/**
+ * What happened to your residencies. Polled by the bell in the header, so it
+ * returns the unread count alongside the rows and the bell needs one request
+ * rather than two.
+ */
+export const notificationsApi = {
+  list: () => apiClient.get('/notifications'),
+
+  markRead: (id: string) => apiClient.patch(`/notifications/${id}/read`),
+
+  readAll: () => apiClient.post('/notifications/read-all'),
+}
+
 export const commonApi = {
   getReferrals: () =>
     apiClient.get('/referrals'),
@@ -203,8 +292,10 @@ export const commonApi = {
   getTopArtists: (params?: any) =>
     apiClient.get('/top?type=artists', params),
   
+  // 40 rather than the endpoint's default of 10: the resort network is 35
+  // properties and this page exists to show them.
   getTopHotels: (params?: any) =>
-    apiClient.get('/top?type=hotels', params),
+    apiClient.get('/top?type=hotels&limit=40', params),
   
   getStats: () =>
     apiClient.get('/stats'),
@@ -220,22 +311,13 @@ export const tripsApi = {
   
   getById: (id: string) =>
     apiClient.get(`/trips/${id}`),
-  
-  create: (data: any) =>
-    apiClient.post('/trips', data),
-  
-  update: (id: string, data: any) =>
-    apiClient.put(`/trips/${id}`, data),
-  
-  delete: (id: string) =>
-    apiClient.delete(`/trips/${id}`),
 }
 
 // Bookings API
 export const bookingsApi = {
-  list: (params?: any) => apiClient.get('/bookings', params),
+  list: (params?: any, config?: any) => apiClient.get('/bookings', params, config),
   getById: (id: string) => apiClient.get(`/bookings/${id}`),
-  create: (data: { hotelId: string; artistId: string; startDate: string; endDate: string; creditsUsed: number; notes?: string }) =>
+  create: (data: { hotelId: string; artistId: string; startDate: string; endDate: string; notes?: string }) =>
     apiClient.post('/bookings', data),
   updateStatus: (id: string, status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED') =>
     apiClient.patch(`/bookings/${id}/status`, { status }),
@@ -248,8 +330,10 @@ export const paymentsApi = {
   getPackages: () => apiClient.get('/payments/packages'),
   purchaseCredits: (hotelId: string, packageId: string, paymentMethod: string) =>
     apiClient.post('/payments/credits/purchase', { hotelId, packageId, paymentMethod }),
-  membership: (artistId: string, membershipType: 'PROFESSIONAL' | 'ENTERPRISE', paymentMethod: string) =>
+  // Tiers match the MembershipTier enum in the Prisma schema. This previously
+  // offered 'ENTERPRISE', which the schema has never had.
+  membership: (artistId: string, membershipType: 'ARTIST' | 'PROFESSIONAL', paymentMethod: string) =>
     apiClient.post('/payments/membership', { artistId, membershipType, paymentMethod }),
-  transactions: (params?: any) => apiClient.get('/payments/transactions', params),
-  refund: (transactionId: string) => apiClient.post(`/payments/refund/${transactionId}`),
+  transactions: (params?: any, config?: any) =>
+    apiClient.get('/payments/transactions', params, config),
 }

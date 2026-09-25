@@ -1,29 +1,51 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Calendar, Star, Music, ArrowRight, Globe } from 'lucide-react'
+import { MapPin, Calendar, Star, Music, ArrowRight, Globe, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
-import { useInView } from 'framer-motion'
-import { useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+
+
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+
+/* Publishable by design: this ships inside the bundle, so the referrer
+   allowlist on the key is what limits it, not secrecy. */
+const ARCGIS_KEY = import.meta.env.VITE_ARCGIS_API_KEY || ''
 import L, { LatLngTuple } from 'leaflet'
 import { tripsApi } from '@/utils/api'
+import { experienceTypeLabel } from '@/utils/i18n'
 
 // Fix for default marker icons in Leaflet with Vite
-import icon from 'leaflet/dist/images/marker-icon.png'
-import iconShadow from 'leaflet/dist/images/marker-shadow.png'
+// Loaded here rather than in main.tsx: this is the only route with a map,
+// so its stylesheet has no business in the global bundle.
+import 'leaflet/dist/leaflet.css'
+import { extractArray, parseJsonField } from '@/utils/apiPayload'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
+import { countryLabel } from '@/i18n/countries'
 
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+/* Leaflet's stock marker is a blue PNG with a drop shadow - the default look
+   of every map demo on the internet, and the one thing on this page that does
+   not belong to the brand. A pin drawn in the compass-rose gold over navy
+   reads as ours, and the quiet basemap was chosen so it would.
+
+   divIcon rather than a PNG: it is markup, so it scales on a retina screen
+   and costs no request. 32x42 keeps the tap target close to the guideline
+   without inflating the pin beyond what a cluster of them can bear. */
+const ResidencyIcon = L.divIcon({
+  className: 'residency-pin',
+  html: `
+    <svg width="32" height="42" viewBox="0 0 32 42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 26 16 26s16-15 16-26C32 7.163 24.837 0 16 0z"
+            fill="#0B1F3F"/>
+      <circle cx="16" cy="16" r="6.5" fill="#B99851"/>
+    </svg>`,
+  iconSize: [32, 42],
+  iconAnchor: [16, 42],
+  popupAnchor: [0, -36],
 })
 
-L.Marker.prototype.options.icon = DefaultIcon
+L.Marker.prototype.options.icon = ResidencyIcon
 
 interface Experience {
   id: string
@@ -38,11 +60,102 @@ interface Experience {
   description: string
 }
 
+// Values match the `type` field the API returns and must not be translated;
+// the labels come from the shared map so the filter chip and the card badge
+// cannot drift apart.
+const EXPERIENCE_TYPES = (['all', 'rooftop', 'intimate', 'workshop', 'residency'] as const)
+  .map((value) => ({ value, label: experienceTypeLabel(value) }))
+
+/**
+ * Pans the existing map when the derived centre or zoom changes.
+ *
+ * react-leaflet treats `center` and `zoom` as initial values only, so they
+ * cannot move a map that already exists. Remounting via `key` does move it, at
+ * the cost of destroying every popup and refetching every tile; this does it
+ * through Leaflet's own API instead.
+ */
+/**
+ * Narrows the list to whatever country the map is looking at.
+ *
+ * Fires only once the map has settled, and only when the view is tight enough
+ * to mean something: below zoom 5 you are looking at a continent, and every
+ * pin in frame belongs to a different country.
+ *
+ * It reports a country only when the pins in view agree on one. Two countries
+ * in frame is not a country filter, it is a wide shot, so the filter clears.
+ */
+const MapCountryWatcher: React.FC<{
+  points: { lat: number; lng: number; country?: string }[]
+  onChange: (country: string | null) => void
+}> = ({ points, onChange }) => {
+  const settle = (map: L.Map) => {
+    // Below this the frame still holds most of a continent, and narrowing the
+    // list would be a surprise rather than an answer to a gesture.
+    if (map.getZoom() < 6) {
+      onChange(null)
+      return
+    }
+
+    const bounds = map.getBounds()
+    const inView = points.filter(
+      (p) => p.country && bounds.contains([p.lat, p.lng] as LatLngTuple)
+    )
+    if (inView.length === 0) {
+      onChange(null)
+      return
+    }
+
+    // The country of the pin nearest the centre of the map. Taking the country
+    // holding the most pins instead reported France when you centred on
+    // Cortina, because France has more of the Alps - and flickered as pins
+    // crossed the edge of the frame. What you put in the middle of the screen
+    // is what you meant.
+    const centre = map.getCenter()
+    const scale = Math.cos((centre.lat * Math.PI) / 180)
+    let nearest = inView[0]
+    let best = Infinity
+    for (const p of inView) {
+      const dLat = p.lat - centre.lat
+      const dLng = (p.lng - centre.lng) * scale
+      const d = dLat * dLat + dLng * dLng
+      if (d < best) {
+        best = d
+        nearest = p
+      }
+    }
+    onChange(nearest.country ?? null)
+  }
+
+  const map = useMapEvents({
+    moveend: () => settle(map),
+    zoomend: () => settle(map),
+  })
+
+  return null
+}
+
+const MapView: React.FC<{ center: LatLngTuple; zoom: number }> = ({ center, zoom }) => {
+  const map = useMap()
+  // Depend on the primitive lat/lng, not the `center` tuple's identity: a new
+  // [lat, lng] array with the same values (recreated by the parent on every
+  // render) must not re-trigger the animated setView.
+  const [lat, lng] = center
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true })
+    // Depends on the unpacked lat/lng above, deliberately not on `center`
+    // itself (see comment above) - eslint can't see that they're equivalent.
+  }, [map, lat, lng, zoom]) // eslint-disable-line react-hooks/exhaustive-deps
+  return null
+}
+
 const TravelerExperiencesPage: React.FC = () => {
   const [experiences, setExperiences] = useState<Experience[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
+  const [mapCountry, setMapCountry] = useState<string | null>(null)
+  // Two rows of three. Reset whenever the result set changes underneath.
+  const [page, setPage] = useState(0)
 
   // Fetch experiences from API
   useEffect(() => {
@@ -52,74 +165,46 @@ const TravelerExperiencesPage: React.FC = () => {
         // The trips API always returns PUBLISHED trips, no need for status param
         const res = await tripsApi.getAll()
         
-        console.log('🔍 Trips API Response:', res)
-        console.log('🔍 Response data:', res.data)
-        console.log('🔍 Response data type:', typeof res.data)
-        console.log('🔍 Is array?', Array.isArray(res.data))
+        // One documented envelope now, so no shape-detection: the helper knows
+        // both `data.trips` and a bare `data` array and nothing else is emitted.
+        const trips = extractArray(res.data, 'trips')
         
-        // The trips API returns an array directly (not wrapped in success/data)
-        // Axios wraps the response, so res.data is the actual array
-        let trips: any[] = []
-        
-        if (Array.isArray(res.data)) {
-          trips = res.data
-          console.log('✅ Using direct array format')
-        } else if (res.data && Array.isArray(res.data.data)) {
-          trips = res.data.data
-          console.log('✅ Using wrapped data format')
-        } else if (res.data && res.data.success && Array.isArray(res.data.data)) {
-          trips = res.data.data
-          console.log('✅ Using success.data format')
-        } else {
-          console.error('❌ Unknown response format:', res.data)
-        }
-        
-        console.log('📊 Parsed trips count:', trips.length)
-        console.log('📊 Parsed trips:', trips)
         
         if (trips.length > 0) {
           const formattedExperiences = trips.map((trip: any) => {
             // Parse location if it's a string
-            let location = { city: 'Unknown', country: '', lat: 0, lng: 0 }
-            if (trip.location) {
-              try {
-                location = typeof trip.location === 'string' 
-                  ? JSON.parse(trip.location) 
-                  : trip.location
-              } catch (e) {
-                console.warn('Failed to parse location:', e)
-                location = { city: 'Unknown', country: '', lat: 0, lng: 0 }
-              }
-            }
-            
+            const location = parseJsonField(trip.location, { city: 'Lieu inconnu', country: '', lat: 0, lng: 0 })
+
             // Parse images if they're a string
-            let images: string[] = []
-            if (trip.images) {
-              try {
-                images = Array.isArray(trip.images) 
-                  ? trip.images 
-                  : (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-              } catch (e) {
-                console.warn('Failed to parse images:', e)
-                images = []
-              }
-            }
+            const images = Array.isArray(trip.images) ? trip.images : parseJsonField<string[]>(trip.images, [])
             
             return {
               id: trip.id || String(Math.random()),
               title: trip.title || 'Experience',
               location: {
-                city: location.city || 'Unknown',
+                city: location.city || 'Lieu inconnu',
                 country: location.country || '',
                 lat: location.lat || 0,
                 lng: location.lng || 0
               },
-              artist: trip.artist || 'Featured Artist',
-              hotel: trip.hotel || 'Luxury Venues',
+              /* The two trip endpoints disagree about this field. The list
+                 route projects it to a plain string before responding, while
+                 the detail route and the raw Prisma result carry the related
+                 record. Reading only one shape leaves the other rendering a
+                 placeholder - or, for the object, hands React an object to
+                 render and throws. So both are handled. */
+              artist:
+                typeof trip.artist === 'string'
+                  ? trip.artist
+                  : trip.artist?.user?.name || trip.artist?.name || t('Artiste en résidence'),
+              hotel:
+                typeof trip.hotel === 'string'
+                  ? trip.hotel
+                  : trip.hotel?.name || t('Lieu à confirmer'),
               date: trip.date || new Date().toISOString().split('T')[0],
               image: images && images.length > 0
                 ? images[0]
-                : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
+                : '/images/placeholder-experience.webp',
               type: (trip.type === 'rooftop' || trip.type === 'intimate' || trip.type === 'workshop' || trip.type === 'residency' 
                 ? trip.type 
                 : 'intimate') as Experience['type'],
@@ -128,9 +213,6 @@ const TravelerExperiencesPage: React.FC = () => {
             }
           })
           
-          console.log('Formatted experiences:', formattedExperiences)
-          console.log('✅ Formatted experiences:', formattedExperiences)
-          console.log('✅ Setting experiences state with', formattedExperiences.length, 'items')
           setExperiences(formattedExperiences)
         } else {
           console.warn('⚠️ No trips found in API response')
@@ -147,49 +229,57 @@ const TravelerExperiencesPage: React.FC = () => {
     fetchExperiences()
   }, [])
 
-  const filteredExperiences = useMemo(() => {
-    console.log('🔍 Filtering experiences:', {
-      total: experiences.length,
-      filterType,
-      selectedLocation,
-      experiences: experiences.map(e => ({ id: e.id, title: e.title, type: e.type, city: e.location?.city }))
-    })
-    
-    if (experiences.length === 0) {
-      console.log('⚠️ No experiences to filter')
-      return []
-    }
-    
-    const filtered = experiences.filter(exp => {
-      const matchesLocation = !selectedLocation || (exp.location?.city === selectedLocation)
+  /**
+   * The explicit filters only - search box, type, chosen city.
+   *
+   * Kept separate from the map-driven country filter on purpose: the map's
+   * centre and zoom are derived from this, so a filter the map itself sets
+   * cannot move the map, which would move the filter, which would move the map.
+   */
+  const baseFiltered = useMemo(() => {
+    if (experiences.length === 0) return []
+    return experiences.filter((exp) => {
+      const matchesLocation = !selectedLocation || exp.location?.city === selectedLocation
       const matchesType = filterType === 'all' || exp.type === filterType
-      
-      console.log(`🔍 Experience "${exp.title}":`, {
-        type: exp.type,
-        filterType,
-        matchesType,
-        city: exp.location?.city,
-        selectedLocation,
-        matchesLocation,
-        passes: matchesLocation && matchesType
-      })
-      
       return matchesLocation && matchesType
     })
-    
-    console.log('🔍 Filtered result:', filtered.length, 'experiences')
-    return filtered
   }, [experiences, selectedLocation, filterType])
 
-  const locations = useMemo(() => {
-    const unique = new Set(experiences.map(e => e.location.city))
-    return Array.from(unique).sort()
-  }, [])
+  /** What the grid shows: the explicit filters, narrowed by the map. */
+  const filteredExperiences = useMemo(() => {
+    if (!mapCountry) return baseFiltered
+    return baseFiltered.filter((exp) => exp.location?.country === mapCountry)
+  }, [baseFiltered, mapCountry])
 
-  // Calculate map center based on filtered experiences
+  // Was [] - computed once, before anything had loaded, so the city dropdown
+  // was permanently empty.
+  const PAGE_SIZE = 6
+  const pageCount = Math.max(1, Math.ceil(filteredExperiences.length / PAGE_SIZE))
+  const currentPage = Math.min(page, pageCount - 1)
+  const visibleExperiences = filteredExperiences.slice(
+    currentPage * PAGE_SIZE,
+    currentPage * PAGE_SIZE + PAGE_SIZE
+  )
+
+  // A filter change can leave you on a page that no longer exists.
+  useEffect(() => {
+    setPage(0)
+  }, [selectedLocation, filterType, mapCountry, experiences.length])
+
+  const locations = useMemo(() => {
+    const unique = new Set(experiences.map((e) => e.location?.city).filter(Boolean))
+    return Array.from(unique).sort()
+  }, [experiences])
+
+  // Calculate map center based on filtered experiences. Depends on
+  // filteredExperiences (not baseFiltered, unlike mapZoom below): this
+  // centers the view on what clicking a map pin narrowed to, even though
+  // every baseFiltered pin stays visible. Previously depended on baseFiltered
+  // while reading filteredExperiences, so clicking a country pin never
+  // re-centered the map onto it.
   const mapCenter: LatLngTuple = useMemo(() => {
     if (filteredExperiences.length === 0) return [45, 2] as LatLngTuple // Default center of Europe
-    
+
     const avgLat = filteredExperiences.reduce((sum, exp) => sum + exp.location.lat, 0) / filteredExperiences.length
     const avgLng = filteredExperiences.reduce((sum, exp) => sum + exp.location.lng, 0) / filteredExperiences.length
     return [avgLat, avgLng] as LatLngTuple
@@ -197,66 +287,87 @@ const TravelerExperiencesPage: React.FC = () => {
 
   // Calculate zoom level based on number of experiences
   const mapZoom = useMemo(() => {
-    if (filteredExperiences.length === 0) return 4
-    if (filteredExperiences.length === 1) return 8
-    if (filteredExperiences.length <= 3) return 5
+    if (baseFiltered.length === 0) return 4
+    if (baseFiltered.length === 1) return 8
+    if (baseFiltered.length <= 3) return 5
     return 4
-  }, [filteredExperiences])
+  }, [baseFiltered])
 
   const handleMapPinClick = (city: string) => {
     setSelectedLocation(city === selectedLocation ? null : city)
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-        <SimpleNavbar />
+    <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={t('Expériences et résidences d’artistes — Travel Art')}
+        description={t('Concerts, expositions et résidences dans 35 hôtels d’exception, de Val d’Isère à Phuket. Découvrez les prochaines dates sur la carte.')}
+      />
+        <SimpleNavbar overMedia />
+        <main id="contenu">
       
-      {/* Hero Section */}
-      <section className="relative py-24 bg-gradient-to-b from-navy to-navy/90 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1920')] opacity-20 bg-cover bg-center" />
-        <div className="relative max-w-7xl mx-auto px-6">
+      {/* The photograph was set at 20% opacity behind a near-opaque navy
+          gradient, which is a way of paying to download an image nobody can
+          see. It now carries the hero at full strength under a scrim shaped to
+          the type. */}
+      <header className="relative min-h-[62vh] flex items-end pt-32 pb-16 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img loading="lazy" decoding="async"
+            src="/images/headers/experiences.webp"
+            srcSet="/images/headers/experiences-960.webp 960w, /images/headers/experiences-1440.webp 1440w, /images/headers/experiences.webp 1920w"
+            sizes="100vw"
+            width={1920}
+            height={1097}
+            alt=""
+            className="w-full h-full object-cover"
+            fetchPriority="high"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/45 to-navy/25" />
+        </div>
+
+        <div className="shell relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center"
           >
-            <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6">
-              Discover Artistic Experiences
+            <p className="eyebrow text-white/80">{t('Le programme')}</p>
+            <h1 className="mt-5 max-w-[16ch] text-white">
+              {t('Découvrir les expériences')}
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
-              Immerse yourself in talented hearts performances at luxury hotels around the globe
+            <p className="mt-7 text-lg text-white/80 max-w-[54ch] leading-relaxed">
+              {t('Vivez les performances d’artistes accueillis par les hôtels d’exception du monde entier.')}
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/register" className="btn-gold">
-                Join as Talent
+            <div className="mt-10 flex flex-wrap gap-4">
+              <Link to="/register?role=artist" className="btn-gold btn-arrow">
+                {t('Rejoindre en tant qu’artiste')}
               </Link>
-              <Link to="/top-artists" className="btn-gold-outline">
-                Browse Artists
+              <Link to="/top-artists" className="btn-on-media">
+                {t('Parcourir les artistes')}
               </Link>
             </div>
           </motion.div>
         </div>
-      </section>
+      </header>
 
       {/* Interactive Map Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-[var(--surface-raised)]">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl font-serif font-bold text-navy mb-4">
-              Explore Experiences Worldwide
+            <h2 className="text-4xl font-serif font-bold text-content mb-4">
+              {t('Explorer les expériences dans le monde')}
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Click on locations to discover upcoming performances and artist residencies
+            <p className="text-content-secondary max-w-2xl mx-auto">
+              {t('Cliquez sur un lieu pour découvrir les prochaines dates et les résidences d’artistes')}
             </p>
           </motion.div>
 
           {/* Interactive Map */}
-          <div className="relative rounded-xl overflow-hidden mb-8 shadow-lg" style={{ height: '500px' }}>
+          <div className="relative rounded-card overflow-hidden mb-8 shadow-lg" style={{ height: '500px' }}>
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
@@ -264,14 +375,50 @@ const TravelerExperiencesPage: React.FC = () => {
               maxZoom={18}
               style={{ height: '100%', width: '100%', zIndex: 0 }}
               scrollWheelZoom={true}
-              key={`${mapCenter[0]}-${mapCenter[1]}-${filteredExperiences.length}`} // Force re-render on filter change
             >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {filteredExperiences.map((exp) => {
-                const isActive = selectedLocation === exp.location.city
+              {/* Moves the live map instead of replacing it. */}
+              <MapView center={mapCenter} zoom={mapZoom} />
+            <MapCountryWatcher
+              points={baseFiltered.map((e) => ({
+                lat: e.location.lat,
+                lng: e.location.lng,
+                country: e.location.country,
+              }))}
+              onChange={setMapCountry}
+            />
+              {/* Basemap. ArcGIS when a key is configured, CARTO when it is
+                  not.
+
+                  The fallback is not politeness - VITE_ARCGIS_API_KEY lives in
+                  .env.local, which is not committed. A deploy where nobody set
+                  it in the Vercel dashboard would otherwise render an empty
+                  grey rectangle and say nothing about why, which is how the
+                  OSM block and the CSP refusals before it went unnoticed for
+                  weeks. Missing key means a working map on free tiles, not a
+                  broken one.
+
+                  light-gray over navigation or streets: it is the quietest of
+                  the four, which is what lets the gold pins read as the
+                  subject rather than competing with motorway shields. */}
+              {ARCGIS_KEY ? (
+                <TileLayer
+                  attribution='Powered by <a href="https://www.esri.com/">Esri</a>'
+                  url={`https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/arcgis/light-gray/static/tile/{z}/{y}/{x}?token=${ARCGIS_KEY}`}
+                  maxZoom={20}
+                />
+              ) : (
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                  subdomains="abcd"
+                  maxZoom={20}
+                />
+              )}
+              {/* baseFiltered, not filteredExperiences: the map keeps every
+                  pin the explicit filters allow. Narrowing the pins by the
+                  country the map itself picked would erase everywhere else
+                  the moment you zoomed in. */}
+              {baseFiltered.map((exp) => {
                 return (
                   <Marker
                     key={exp.id}
@@ -282,11 +429,11 @@ const TravelerExperiencesPage: React.FC = () => {
                   >
                     <Popup>
                       <div className="p-2">
-                        <h3 className="font-semibold text-navy text-sm mb-1">{exp.location.city}</h3>
-                        <p className="text-xs text-gray-600 mb-2">{exp.title}</p>
-                        <p className="text-xs text-gray-500">{exp.artist} at {exp.hotel}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(exp.date).toLocaleDateString()}
+                        <h3 className="font-semibold text-content text-sm mb-1">{exp.location.city}</h3>
+                        <p className="text-xs text-content-secondary mb-2">{exp.title}</p>
+                        <p className="text-xs text-content-secondary">{exp.artist} — {exp.hotel}</p>
+                        <p className="text-xs text-content-secondary mt-1">
+                          {new Date(exp.date).toLocaleDateString('fr-FR')}
                         </p>
                       </div>
                     </Popup>
@@ -300,22 +447,22 @@ const TravelerExperiencesPage: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <button
               onClick={() => setSelectedLocation(null)}
-              className={`px-4 py-2 rounded-full transition-colors ${
+              className={`px-4 py-2 rounded-control transition-colors ${
                 !selectedLocation
-                  ? 'bg-gold text-navy font-semibold'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-gold text-off-black font-semibold'
+                  : 'bg-surface-sunken text-content-secondary hover:bg-surface-warm'
               }`}
             >
-              All Locations
+              {t('Toutes les villes')}
             </button>
             {locations.map(loc => (
               <button
                 key={loc}
                 onClick={() => setSelectedLocation(loc)}
-                className={`px-4 py-2 rounded-full transition-colors ${
+                className={`px-4 py-2 rounded-control transition-colors ${
                   selectedLocation === loc
-                    ? 'bg-gold text-navy font-semibold'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-gold text-off-black font-semibold'
+                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-warm'
                 }`}
               >
                 {loc}
@@ -323,19 +470,25 @@ const TravelerExperiencesPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Type Filter */}
+          {/* Type Filter. The values are compared against `exp.type` coming
+              from the API, so they stay in English; only the labels are
+              translated. Before this the chips rendered the raw value -
+              "Rooftop", "Intimate", "Workshop", "Residency" - on a site that
+              ships in French only, and `capitalize` was doing the presentation
+              work a label should do. */}
           <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {['all', 'rooftop', 'intimate', 'workshop', 'residency'].map(type => (
+            {EXPERIENCE_TYPES.map(({ value, label }) => (
               <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={`px-4 py-2 rounded-full transition-colors capitalize ${
-                  filterType === type
+                key={value}
+                onClick={() => setFilterType(value)}
+                aria-pressed={filterType === value}
+                className={`px-4 py-2 min-h-[44px] rounded-control transition-colors ${
+                  filterType === value
                     ? 'bg-navy text-white font-semibold'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-surface-sunken text-content-secondary hover:bg-surface-warm'
                 }`}
               >
-                {type === 'all' ? 'All Types' : type}
+                {label}
               </button>
             ))}
           </div>
@@ -343,23 +496,21 @@ const TravelerExperiencesPage: React.FC = () => {
       </section>
 
       {/* Experiences Grid */}
-      <section className="py-16 bg-cream">
+      <section className="py-16 bg-[var(--surface)]">
         <div className="max-w-7xl mx-auto px-6">
           {loading ? (
             <div className="text-center py-20">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gold mb-4"></div>
-              <p className="text-gray-600 text-lg">Loading experiences...</p>
+              <div className="inline-block animate-spin rounded-control h-12 w-12 border-b-2 border-gold mb-4"></div>
+              <p className="text-content-secondary text-lg">{t('Chargement des expériences…')}</p>
             </div>
           ) : filteredExperiences.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-gray-600 text-lg mb-4">No experiences found.</p>
-              <p className="text-gray-500 mb-2">Total experiences in state: {experiences.length}</p>
-              <p className="text-gray-500 mb-2">Filtered experiences: {filteredExperiences.length}</p>
-              <p className="text-gray-500">Check back soon to discover our immersive experiences.</p>
+              <p className="text-content-secondary text-lg mb-4">{t('Aucune expérience.')}</p>
+              <p className="text-content-secondary">{t('Revenez bientôt pour découvrir nos expériences.')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredExperiences.map((exp, index) => (
+              {visibleExperiences.map((exp, index) => (
               <Link
                 key={exp.id}
                 to={`/experience/${exp.id}`}
@@ -372,7 +523,7 @@ const TravelerExperiencesPage: React.FC = () => {
                   className="card-experience group cursor-pointer"
                 >
                 <div className="relative h-64 overflow-hidden">
-                  <img
+                  <img decoding="async" loading="lazy"
                     src={exp.image}
                     alt={exp.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -382,7 +533,7 @@ const TravelerExperiencesPage: React.FC = () => {
                     <div className="flex items-center space-x-2 mb-2">
                       <MapPin className="w-4 h-4" />
                       <span className="text-sm font-medium">
-                        {exp.location.city}, {exp.location.country}
+                        {exp.location.city}, {countryLabel(exp.location.country)}
                       </span>
                     </div>
                     <h3 className="text-xl font-serif font-bold mb-1">{exp.title}</h3>
@@ -392,18 +543,18 @@ const TravelerExperiencesPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="p-6 bg-white">
+                <div className="p-6 bg-[var(--surface-raised)]">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="px-3 py-1 bg-gold/20 text-gold text-xs font-semibold rounded-full capitalize">
-                      {exp.type}
+                    <span className="px-3 py-1 bg-gold/20 text-gold-700 text-xs font-semibold rounded-control">
+                      {experienceTypeLabel(exp.type)}
                     </span>
-                    <div className="flex items-center text-gray-600 text-sm">
+                    <div className="flex items-center text-content-secondary text-sm">
                       <Calendar className="w-4 h-4 mr-1" />
-                      {new Date(exp.date).toLocaleDateString()}
+                      {new Date(exp.date).toLocaleDateString('fr-FR')}
                     </div>
                   </div>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{exp.description}</p>
-                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <p className="text-content-secondary text-sm mb-4 line-clamp-2">{exp.description}</p>
+                  <div className="space-y-2 text-sm text-content-secondary mb-4">
                     <div className="flex items-center">
                       <Music className="w-4 h-4 mr-2 text-gold" />
                       <span>{exp.artist}</span>
@@ -413,8 +564,8 @@ const TravelerExperiencesPage: React.FC = () => {
                       <span>{exp.hotel}</span>
                     </div>
                   </div>
-                  <div className="inline-flex items-center text-gold font-semibold group-hover:text-navy transition-colors">
-                    Learn More
+                  <div className="inline-flex items-center text-gold font-semibold group-hover:text-content transition-colors">
+                    {t('En savoir plus')}
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -423,35 +574,97 @@ const TravelerExperiencesPage: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Paging. Hidden when everything already fits on one page - a pager
+              that cannot page is furniture. The count is spelled out rather
+              than shown as numbered pages: with six to a page the useful
+              information is where you are, not a row of page numbers. */}
+          {!loading && pageCount > 1 && (
+            <nav
+              className="mt-12 flex items-center justify-center gap-6"
+              aria-label={t('Pagination des expériences')}
+            >
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={currentPage === 0}
+                className="btn-outline btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label={t('Page précédente')}
+              >
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                {t('Précédent')}
+              </button>
+
+              <p className="text-sm text-content-secondary tabular-nums" aria-live="polite">
+                {t('Page {current} sur {total}', {
+                  current: currentPage + 1,
+                  total: pageCount,
+                })}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                disabled={currentPage >= pageCount - 1}
+                className="btn-outline btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label={t('Page suivante')}
+              >
+                {t('Suivant')}
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </nav>
+          )}
+
+          {/* Says why the list is short when the map is doing the narrowing,
+              and offers the way out. Without this a zoomed-in map looks like
+              a site with three experiences. */}
+          {mapCountry && !loading && (
+            <p className="mt-6 text-center text-sm text-content-secondary">
+              {t('Filtré sur {country} par la carte.', { country: countryLabel(mapCountry) })}{' '}
+              <button
+                type="button"
+                onClick={() => setMapCountry(null)}
+                className="text-gold hover:underline"
+              >
+                {t('Tout afficher')}
+              </button>
+            </p>
+          )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-navy to-navy/90 text-white">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+      {/* The second button's class list was self-contradicting - btn-gold-outline
+          sets a gold border and gold label, then border-white and text-content
+          overrode both, and the hover pair set the same colour it already had.
+          It also still read "Explore Artists" on a site that ships in French
+          only. */}
+      <section className="band-inverse">
+        <div className="shell text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-6">
-              Ready to Experience Art in Luxury?
+            <h2 className="mx-auto max-w-[18ch]">
+              {t('Envie de vivre l’art autrement ?')}
             </h2>
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-              Join our community of travelers, artists, and hotels creating unforgettable experiences together.
+            <p className="mt-7 text-lg text-content-inverse/70 mb-10 max-w-[52ch] mx-auto leading-relaxed">
+              {t('Rejoignez la communauté de voyageurs, d’artistes et d’hôtels qui créent ces moments ensemble.')}
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/register" className="btn-gold text-lg px-8 py-4">
-                Get Started
+              <Link to="/register" className="btn-gold btn-lg btn-arrow">
+                {t('Commencer')}
               </Link>
-              <Link to="/top-artists" className="btn-gold-outline text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-navy">
-                Explore Artists
+              <Link to="/top-artists" className="btn-on-media btn-lg">
+                {t('Parcourir les artistes')}
               </Link>
             </div>
           </motion.div>
         </div>
       </section>
 
+      </main>
       <Footer />
     </div>
   )

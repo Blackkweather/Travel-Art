@@ -1,258 +1,153 @@
 /**
- * Internationalization (i18n) utilities
- * Basic i18n implementation ready for react-i18next integration
+ * Date and number formatting for the active language.
+ *
+ * Copy lives in `@/i18n`; this module is only about how dates, times and
+ * numbers are written. It follows the same language, so an English reader gets
+ * "14 March 2026" and "1,250" rather than French forms in English sentences.
+ *
+ * The formatters are built once at module load, which is safe because
+ * switching language reloads the page - see the note in `@/i18n`.
  */
+import { getLocale, t } from '@/i18n'
 
-export type SupportedLanguage = 'en' | 'fr' | 'es' | 'de' | 'it';
+const TAGS = { fr: 'fr-FR', en: 'en-GB' } as const
 
-export interface Translations {
-  [key: string]: string | Translations;
+export const LOCALE = TAGS[getLocale()]
+
+export type SupportedLanguage = 'fr' | 'en'
+
+/** Formatters are built once; constructing Intl objects per call is costly. */
+const dateFormatter = new Intl.DateTimeFormat(LOCALE, {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+
+const shortDateFormatter = new Intl.DateTimeFormat(LOCALE, {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
+const timeFormatter = new Intl.DateTimeFormat(LOCALE, {
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+const numberFormatter = new Intl.NumberFormat(LOCALE)
+
+const toDate = (value: Date | string | number): Date | null => {
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
-// Basic translations structure
-const translations: Record<SupportedLanguage, Translations> = {
-  en: {
-    common: {
-      welcome: 'Welcome',
-      login: 'Login',
-      register: 'Register',
-      logout: 'Logout',
-      save: 'Save',
-      cancel: 'Cancel',
-      delete: 'Delete',
-      edit: 'Edit',
-      search: 'Search',
-      loading: 'Loading...',
-      error: 'Error',
-      success: 'Success',
-    },
-    nav: {
-      home: 'Home',
-      artists: 'Artists',
-      hotels: 'Hotels',
-      experiences: 'Experiences',
-      howItWorks: 'How It Works',
-    },
-  },
-  fr: {
-    common: {
-      welcome: 'Bienvenue',
-      login: 'Connexion',
-      register: "S'inscrire",
-      logout: 'Déconnexion',
-      save: 'Enregistrer',
-      cancel: 'Annuler',
-      delete: 'Supprimer',
-      edit: 'Modifier',
-      search: 'Rechercher',
-      loading: 'Chargement...',
-      error: 'Erreur',
-      success: 'Succès',
-    },
-    nav: {
-      home: 'Accueil',
-      artists: 'Artistes',
-      hotels: 'Hôtels',
-      experiences: 'Expériences',
-      howItWorks: 'Comment ça marche',
-    },
-  },
-  es: {
-    common: {
-      welcome: 'Bienvenido',
-      login: 'Iniciar sesión',
-      register: 'Registrarse',
-      logout: 'Cerrar sesión',
-      save: 'Guardar',
-      cancel: 'Cancelar',
-      delete: 'Eliminar',
-      edit: 'Editar',
-      search: 'Buscar',
-      loading: 'Cargando...',
-      error: 'Error',
-      success: 'Éxito',
-    },
-    nav: {
-      home: 'Inicio',
-      artists: 'Artistas',
-      hotels: 'Hoteles',
-      experiences: 'Experiencias',
-      howItWorks: 'Cómo funciona',
-    },
-  },
-  de: {
-    common: {
-      welcome: 'Willkommen',
-      login: 'Anmelden',
-      register: 'Registrieren',
-      logout: 'Abmelden',
-      save: 'Speichern',
-      cancel: 'Abbrechen',
-      delete: 'Löschen',
-      edit: 'Bearbeiten',
-      search: 'Suchen',
-      loading: 'Laden...',
-      error: 'Fehler',
-      success: 'Erfolg',
-    },
-    nav: {
-      home: 'Startseite',
-      artists: 'Künstler',
-      hotels: 'Hotels',
-      experiences: 'Erlebnisse',
-      howItWorks: 'Wie es funktioniert',
-    },
-  },
-  it: {
-    common: {
-      welcome: 'Benvenuto',
-      login: 'Accedi',
-      register: 'Registrati',
-      logout: 'Esci',
-      save: 'Salva',
-      cancel: 'Annulla',
-      delete: 'Elimina',
-      edit: 'Modifica',
-      search: 'Cerca',
-      loading: 'Caricamento...',
-      error: 'Errore',
-      success: 'Successo',
-    },
-    nav: {
-      home: 'Home',
-      artists: 'Artisti',
-      hotels: 'Hotel',
-      experiences: 'Esperienze',
-      howItWorks: 'Come funziona',
-    },
-  },
-};
-
-class I18n {
-  private currentLanguage: SupportedLanguage = 'en';
-  private translations: Record<SupportedLanguage, Translations> = translations;
-
-  /**
-   * Set current language
-   */
-  setLanguage(lang: SupportedLanguage) {
-    this.currentLanguage = lang;
-    // Store in localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('preferred-language', lang);
-      document.documentElement.lang = lang;
-    }
-  }
-
-  /**
-   * Get current language
-   */
-  getLanguage(): SupportedLanguage {
-    return this.currentLanguage;
-  }
-
-  /**
-   * Detect user's preferred language
-   */
-  detectLanguage(): SupportedLanguage {
-    if (typeof window === 'undefined') return 'en';
-
-    // Check localStorage first
-    const stored = localStorage.getItem('preferred-language') as SupportedLanguage;
-    if (stored && this.isSupportedLanguage(stored)) {
-      return stored;
-    }
-
-    // Check browser language
-    const browserLang = navigator.language.split('-')[0] as SupportedLanguage;
-    if (this.isSupportedLanguage(browserLang)) {
-      return browserLang;
-    }
-
-    return 'en';
-  }
-
-  /**
-   * Check if language is supported
-   */
-  isSupportedLanguage(lang: string): lang is SupportedLanguage {
-    return ['en', 'fr', 'es', 'de', 'it'].includes(lang);
-  }
-
-  /**
-   * Get translation by key path (e.g., 'common.welcome')
-   */
-  t(key: string, params?: Record<string, string>): string {
-    const keys = key.split('.');
-    let value: any = this.translations[this.currentLanguage];
-
-    for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = value[k];
-      } else {
-        // Fallback to English
-        value = this.translations.en;
-        for (const k2 of keys) {
-          if (value && typeof value === 'object' && k2 in value) {
-            value = value[k2];
-          } else {
-            return key; // Return key if translation not found
-          }
-        }
-        break;
-      }
-    }
-
-    if (typeof value !== 'string') {
-      return key;
-    }
-
-    // Replace parameters
-    if (params) {
-      return value.replace(/\{\{(\w+)\}\}/g, (match, param) => {
-        return params[param] || match;
-      });
-    }
-
-    return value;
-  }
-
-  /**
-   * Initialize i18n
-   */
-  init() {
-    const detectedLang = this.detectLanguage();
-    this.setLanguage(detectedLang);
-  }
-
-  /**
-   * Get all supported languages
-   */
-  getSupportedLanguages(): Array<{ code: SupportedLanguage; name: string }> {
-    return [
-      { code: 'en', name: 'English' },
-      { code: 'fr', name: 'Français' },
-      { code: 'es', name: 'Español' },
-      { code: 'de', name: 'Deutsch' },
-      { code: 'it', name: 'Italiano' },
-    ];
-  }
+/** "14 mars 2026". Returns an em dash for values that are not a real date. */
+export const formatDate = (value: Date | string | number): string => {
+  const date = toDate(value)
+  return date ? dateFormatter.format(date) : '—'
 }
 
-// Singleton instance
-export const i18n = new I18n();
-
-// Initialize on load
-if (typeof window !== 'undefined') {
-  i18n.init();
+/** "14/03/2026", for dense table cells. */
+export const formatShortDate = (value: Date | string | number): string => {
+  const date = toDate(value)
+  return date ? shortDateFormatter.format(date) : '—'
 }
 
-export default i18n;
+/** "20:30". French uses a 24-hour clock. */
+export const formatTime = (value: Date | string | number): string => {
+  const date = toDate(value)
+  return date ? timeFormatter.format(date) : '—'
+}
+
+/** "1 250" with a narrow no-break space, as French typography requires. */
+export const formatNumber = (value: number | null | undefined): string =>
+  typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : '0'
+
+/**
+ * Kept for the default export's shape. The `lang` attribute is set by
+ * I18nProvider, which knows the active language; this module used to stamp
+ * 'fr' at import time and would have raced it.
+ */
+export const initLocale = (): void => {}
 
 
+/**
+ * "il y a 3 heures" / "3 hours ago".
+ *
+ * The admin dashboard and the activity log each had their own copy of this;
+ * one spoke French and the other English ("3h ago") on the same French-only
+ * site. Singular and plural are separate keys because the two languages break
+ * differently at one, and because English puts the unit before "ago".
+ */
+export const formatRelative = (value: string | Date): string => {
+  const date = toDate(value)
+  if (!date) return t('Récemment')
 
+  const minutes = Math.round((Date.now() - date.getTime()) / 60000)
+  if (minutes < 1) return t('À l’instant')
+  if (minutes < 60) {
+    return t(minutes === 1 ? 'il y a {n} minute' : 'il y a {n} minutes', { n: minutes })
+  }
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) {
+    return t(hours === 1 ? 'il y a {n} heure' : 'il y a {n} heures', { n: hours })
+  }
+  const days = Math.round(hours / 24)
+  if (days < 7) {
+    return t(days === 1 ? 'il y a {n} jour' : 'il y a {n} jours', { n: days })
+  }
+  // Past a week a date is more useful than a distance.
+  return formatShortDate(date)
+}
 
+/**
+ * Labels for enum-ish values the API returns.
+ *
+ * These values are protocol, not copy: they are compared against API data and
+ * must stay exactly as the backend sends them. Only the label is translated.
+ * Several screens were printing the raw value through a `capitalize` class -
+ * "Rooftop", "Workshop", "CREDIT_PURCHASE" - which is English on a
+ * French-only site and, in the transactions case, a database constant shown
+ * to a customer.
+ */
+export const EXPERIENCE_TYPE_LABELS: Record<string, string> = {
+  all: t('Tous les types'),
+  rooftop: t('Toit-terrasse'),
+  intimate: t('Intimiste'),
+  workshop: t('Atelier'),
+  residency: t('Résidence'),
+}
 
+export const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+  CREDIT_PURCHASE: t('Achat de crédits'),
+  REFUND: t('Remboursement'),
+  BOOKING: t('Réservation'),
+  BOOKING_PAYMENT: t('Paiement de réservation'),
+  ADJUSTMENT: t('Ajustement'),
+}
 
+/**
+ * Falls back to the raw value rather than to an empty string: an unfamiliar
+ * value the backend adds later should still show something the user and
+ * support can talk about.
+ */
+export const labelFor = (map: Record<string, string>, value: string | null | undefined): string =>
+  (value && map[value]) || value || ''
 
+export const experienceTypeLabel = (value: string | null | undefined): string =>
+  labelFor(EXPERIENCE_TYPE_LABELS, value)
 
+export const transactionTypeLabel = (value: string | null | undefined): string =>
+  labelFor(TRANSACTION_TYPE_LABELS, value)
+
+export default {
+  LOCALE,
+  formatDate,
+  formatShortDate,
+  formatTime,
+  formatNumber,
+  formatRelative,
+  initLocale,
+  experienceTypeLabel,
+  transactionTypeLabel,
+}

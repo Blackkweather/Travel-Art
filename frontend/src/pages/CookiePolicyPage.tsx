@@ -1,67 +1,42 @@
 import React from 'react'
-import SimpleNavbar from '@/components/SimpleNavbar'
-import Footer from '@/components/Footer'
+import LegalLayout from '@/components/LegalLayout'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
 
 const CookiePolicyPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-cream">
-      <SimpleNavbar />
+    <LegalLayout
+      eyebrow="Cookies"
+      title={t('Politique relative aux cookies')}
+      lede={t('Comment nous utilisons les cookies et les technologies similaires.')}
+    >
+      <SEOHead
+        title={t('Politique relative aux cookies — Travel Art')}
+        description={t('Les cookies et technologies similaires utilisés par Travel Art, et comment régler vos préférences.')}
+      />
+        <h2>{t('Que sont les cookies ?')}</h2>
+        <p>
+          {t('Les cookies sont de petits fichiers texte enregistrés sur votre appareil. Ils permettent au site de fonctionner et nous aident à en mesurer l’usage et à le personnaliser.')}
+        </p>
 
-      <main className="container mx-auto px-6 pt-28 pb-20 max-w-4xl">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy mb-6">Cookie Policy</h1>
-        <p className="text-gray-600 mb-10">This page explains how we use cookies and similar technologies.</p>
+        <h2>{t('Comment nous les utilisons')}</h2>
+        <ul>
+          <li>{t('Cookies indispensables à l’authentification et au fonctionnement du site.')}</li>
+          <li>{t('Cookies de mesure d’audience, pour comprendre l’usage et améliorer nos services.')}</li>
+          <li>{t('Cookies de préférences, pour mémoriser vos réglages.')}</li>
+        </ul>
 
-        <section className="space-y-6 text-gray-700">
-          <h2 className="text-2xl font-serif font-semibold text-navy">What Are Cookies?</h2>
-          <p>
-            Cookies are small text files stored on your device to help websites work and to provide
-            analytics and personalization.
-          </p>
+        <h2>{t('Gérer les cookies')}</h2>
+        <p>
+          {t('Vous pouvez gérer les cookies depuis les réglages de votre navigateur. Désactiver certains d’entre eux peut altérer le fonctionnement du site.')}
+        </p>
 
-          <h2 className="text-2xl font-serif font-semibold text-navy">How We Use Cookies</h2>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>Essential cookies for authentication and core functionality.</li>
-            <li>Analytics cookies to understand usage and improve our services.</li>
-            <li>Preference cookies to remember settings such as language.</li>
-          </ul>
-
-          <h2 className="text-2xl font-serif font-semibold text-navy">Managing Cookies</h2>
-          <p>
-            You can control cookies through your browser settings. Disabling some cookies may impact
-            site functionality.
-          </p>
-
-          <h2 className="text-2xl font-serif font-semibold text-navy">Contact</h2>
-          <p>
-            For questions about this policy, email <a className="text-gold" href="mailto:hello@travelart.com">hello@travelart.com</a>.
-          </p>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
+        <h2>Contact</h2>
+        <p>
+          Pour toute question sur cette politique, écrivez à <a className="text-gold" href="mailto:hello@travelart.com">hello@travelart.com</a>.
+        </p>
+    </LegalLayout>
   )
 }
 
 export default CookiePolicyPage
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

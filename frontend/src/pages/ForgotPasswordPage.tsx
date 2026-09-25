@@ -5,8 +5,9 @@ import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
 import { authApi } from '@/utils/api'
+import { t } from '@/i18n'
 
 interface ForgotPasswordForm {
   email: string
@@ -32,7 +33,7 @@ const ForgotPasswordPage: React.FC = () => {
       if (import.meta.env.DEV) {
         const responseData = response.data?.data as any
         if (responseData?.dev?.resetLink) {
-          toast.success('Password reset link generated! Check console for details.', {
+          toast.success(t('Lien de réinitialisation généré.'), {
             duration: 10000
           })
           console.log('🔐 Password Reset Link (Dev Mode):')
@@ -41,22 +42,22 @@ const ForgotPasswordPage: React.FC = () => {
           console.log(`Token: ${responseData.dev.token}`)
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
         } else {
-          toast.success('If an account exists with that email, you will receive reset instructions.')
+          toast.success(t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.'))
         }
       } else {
-        toast.success('If an account exists with that email, you will receive reset instructions.')
+        toast.success(t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.'))
       }
-    } catch (error: any) {
+    } catch {
       // Don't reveal if email exists - always show success for security
       setEmailSent(true)
-      toast.success('If an account exists with that email, you will receive reset instructions.')
+      toast.success(t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.'))
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[var(--surface)]">
       <SimpleNavbar />
       
       <div className="flex items-center justify-center py-20 pt-32 px-4 sm:px-6 lg:px-8">
@@ -68,56 +69,43 @@ const ForgotPasswordPage: React.FC = () => {
         >
           <div className="text-center">
             <div className="flex justify-center mb-6">
-              <img 
-                src={getLogoUrl('transparent')} 
-                alt="Travel Art" 
-                className="h-24 w-auto"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none'
-                  const fallback = document.getElementById('logo-fallback-forgot')
-                  if (fallback) {
-                    fallback.style.display = 'block'
-                  }
-                }}
-              />
-              <div id="logo-fallback-forgot" className="hidden text-4xl font-serif font-bold">
-                <span className="text-navy">TRAVEL</span>
-                <span className="text-gold mx-2">+</span>
-                <span className="text-navy">ART</span>
-              </div>
+            <BrandWordmark className="h-24 w-auto text-navy dark:text-cream" />
             </div>
-            <h2 className="text-3xl font-serif font-bold text-navy gold-underline">
-              Forgot Password?
+            <h2 className="text-3xl font-serif font-bold text-content gold-underline">
+              {t('Mot de passe oublié ?')}
             </h2>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-content-secondary">
               {emailSent 
-                ? 'Check your email for reset instructions'
-                : 'Enter your email and we\'ll send you reset instructions'
+                ? t('Consultez votre boîte mail : les instructions vous y attendent.')
+                : t('Indiquez votre adresse e-mail et nous vous enverrons les instructions.')
               }
             </p>
           </div>
 
           {emailSent ? (
             <div className="text-center space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-green-800 text-sm">
-                  If an account exists with that email, you'll receive password reset instructions shortly.
+              <div className="bg-[var(--state-positive-wash)] border border-[var(--state-positive-line)] rounded-card p-4">
+                <p className="text-[var(--state-positive)] text-sm">
+                  {t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation sous peu.')}
                 </p>
               </div>
               <Link
                 to="/login"
                 className="block text-center text-gold hover:text-gold/80 font-medium"
               >
-                Back to Login
+                {t('Retour à la connexion')}
               </Link>
             </div>
           ) : (
             <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
                 <label htmlFor="email" className="form-label">
-                  Email Address
+                  {t('Adresse e-mail')}
                 </label>
                 <input
+                  id="email"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                   {...register('email', {
                     required: 'Email is required',
                     pattern: {
@@ -127,10 +115,10 @@ const ForgotPasswordPage: React.FC = () => {
                   })}
                   type="email"
                   className="form-input"
-                  placeholder="Enter your email"
+                  placeholder={t('Saisissez votre e-mail')}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                  <p id="email-error" role="alert" className="mt-1 text-sm text-[var(--state-critical)]">{errors.email.message}</p>
                 )}
               </div>
 
@@ -145,8 +133,8 @@ const ForgotPasswordPage: React.FC = () => {
               </div>
 
               <div className="text-center">
-                <Link to="/login" className="text-gold hover:text-gold-600 font-medium text-sm">
-                  Back to Login
+                <Link to="/login" className="text-gold hover:text-gold-800 font-medium text-sm">
+                  {t('Retour à la connexion')}
                 </Link>
               </div>
             </form>

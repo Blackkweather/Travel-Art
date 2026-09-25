@@ -22,17 +22,18 @@ describe('normalizeImageUrl', () => {
     expect(normalizeImageUrl(uploadPath)).toBe(uploadPath);
   });
 
-  it('prepends API base URL for relative paths', () => {
-    const relativePath = 'images/logo.png';
-    const result = normalizeImageUrl(relativePath);
-    expect(result).toContain('/api/');
-    expect(result).toContain('images/logo.png');
+  it('returns static /images paths as-is', () => {
+    // Seed data and placeholder artwork point here directly; there is no
+    // /api/images route, so these must never be prefixed with /api.
+    const path = '/images/hero/ombre.webp';
+    expect(normalizeImageUrl(path)).toBe(path);
   });
 
-  it('handles paths with leading slash', () => {
-    const path = '/images/logo.png';
-    const result = normalizeImageUrl(path);
+  it('prepends API base URL for other relative paths', () => {
+    const relativePath = 'artists/portfolio/photo.png';
+    const result = normalizeImageUrl(relativePath);
     expect(result).toContain('/api/');
+    expect(result).toContain('artists/portfolio/photo.png');
   });
 });
 

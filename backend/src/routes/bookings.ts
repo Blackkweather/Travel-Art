@@ -1,8 +1,17 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { config } from '../config';
+import { notify, bookingPayload } from '../services/notifications';
+import {
+  formatStay,
+  bookingRequestedEmail,
+  bookingConfirmedEmail,
+  bookingRejectedEmail,
+  bookingCancelledEmail,
+} from '../services/email';
 
 const router = Router();
 
@@ -108,31 +117,48 @@ router.get('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
     }
 
     const [bookings, total] = await Promise.all([
+      /* `include` on artist and hotel pulled every column of both for every
+         booking - bio, images, videos, mediaUrls, artisticProfile,
+         performanceSpots, rooms, the lot - which is why sixteen bookings came
+         back as 34KB and the request took over seven seconds against a
+         database in us-east-1. These are the only fields the three booking
+         screens actually read. Named fields also mean a column added to
+         Artist or Hotel later cannot quietly start appearing in this
+         response: the other side of a booking is a different person. */
       prisma.booking.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          artistId: true,
+          hotelId: true,
+          startDate: true,
+          endDate: true,
+          status: true,
+          numberOfWeeks: true,
+          creditCost: true,
+          totalPaymentAmount: true,
+          paymentStatus: true,
+          notes: true,
+          createdAt: true,
           artist: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true
-                }
-              }
-            }
+            select: {
+              id: true,
+              stageName: true,
+              discipline: true,
+              phone: true,
+              profilePicture: true,
+              user: { select: { id: true, name: true, email: true } },
+            },
           },
           hotel: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true
-                }
-              }
-            }
-          }
+            select: {
+              id: true,
+              name: true,
+              location: true,
+              profilePicture: true,
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
         },
         skip,
         take: limitNum,
@@ -293,8 +319,104 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   const weeklyPaymentAmount = 200.0; // Fixed weekly rate
   const totalPaymentAmount = numberOfWeeks * weeklyPaymentAmount;
 
+  // What this booking costs in credits, read from the artist now and frozen
+  // onto the booking. Repricing the artist later must not rewrite the cost of
+  // bookings already made.
+  const creditCost = artist.bookingCreditCost;
+
+  /* The credits are claimed here, atomically, before anything else exists.
+
+     This used to read the balance, compare it in JavaScript, and write the
+     spend in a separate transaction further down. Nothing held a lock across
+     that gap and a round trip to the database is ~300ms, so two requests in
+     flight at once both read the same balance and both passed the check.
+     Demonstrated against the running app: a house holding 60 credits, with
+     residencies costing 5, had twenty accepted at once - 100 credits spent
+     against a budget of 60, leaving usedCredits 40 higher than totalCredits.
+     Every one of those is a real commitment to an artist that nobody paid for.
+
+     A single conditional UPDATE closes it. The row is matched only if it can
+     still afford the cost, and the database applies that test and the
+     increment as one indivisible operation, so concurrent callers queue behind
+     each other on the row rather than racing past it. No lock to hold, no
+     isolation level to configure, and it is the same statement whether one
+     request arrives or fifty. */
+  let creditsClaimed = false;
+
+  if (creditCost > 0) {
+    /* Compare-and-swap, because the read and the write have to be one
+       decision.
+
+       This used to read the balance, compare it in JavaScript, and write the
+       spend in a separate transaction further down. Nothing held a lock across
+       that gap and a round trip to the database is ~300ms, so requests in
+       flight together all read the same balance and all passed the check.
+       Demonstrated against the running app: a house holding 60 credits, with
+       residencies costing 5, had twenty accepted at once - 100 credits spent
+       against a budget of 60, leaving usedCredits 40 higher than totalCredits.
+       Every one of those was a real commitment to an artist nobody paid for.
+
+       The update below matches the row only if `usedCredits` is still exactly
+       what was just read, and sets it to the value derived from that same
+       read. A concurrent claim moves it, our WHERE stops matching, the update
+       touches nothing and we go round again with fresh numbers. One of the two
+       wins and the other re-checks affordability honestly.
+
+       Deliberately not a raw conditional UPDATE, which would be one statement
+       instead of two: Credit is an RLS-protected model and the extension that
+       stamps the caller's identity only wraps model operations, so raw SQL
+       arrives without it and the policy refuses the write. Measured - every
+       request came back "you have 60 credits" while holding 60. */
+    for (let attempt = 0; attempt < 5 && !creditsClaimed; attempt += 1) {
+      const account = await prisma.credit.findUnique({
+        where: { hotelId: hotel.id }
+      });
+
+      const availableCredits =
+        (account?.totalCredits ?? 0) - (account?.usedCredits ?? 0);
+
+      if (!account || availableCredits < creditCost) {
+        throw new CustomError(
+          `This booking costs ${creditCost} credits and you have ${availableCredits}. Please top up before booking.`,
+          400
+        );
+      }
+
+      const claim = await prisma.credit.updateMany({
+        where: { hotelId: hotel.id, usedCredits: account.usedCredits },
+        data: { usedCredits: account.usedCredits + creditCost }
+      });
+
+      if (claim.count === 1) {
+        creditsClaimed = true;
+      }
+    }
+
+    if (!creditsClaimed) {
+      // Five losses in a row means genuine contention on this hotel, not a
+      // shortfall. Saying "no credits" here would be a lie.
+      throw new CustomError(
+        'Trop de réservations simultanées sur ce compte. Réessayez dans un instant.',
+        409
+      );
+    }
+  }
+
+  /* From here on the credits are already spent, so any failure has to give
+     them back - otherwise a house is charged for a residency that does not
+     exist. */
+  const releaseClaim = async () => {
+    if (!creditsClaimed) return;
+    await prisma.credit.update({
+      where: { hotelId: hotel.id },
+      data: { usedCredits: { decrement: creditCost } },
+    }).catch((error) => console.error('Credit claim not released for hotel', hotel.id, error));
+  };
+
   // Create booking with weekly payment
-  const booking = await prisma.booking.create({
+  let booking;
+  try {
+    booking = await prisma.booking.create({
     data: {
       hotelId: bookingData.hotelId,
       artistId: bookingData.artistId,
@@ -302,6 +424,7 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
       endDate: end,
       status: 'PENDING',
       creditsUsed: 0, // Deprecated - kept for backward compatibility
+      creditCost,
       weeklyPaymentAmount,
       numberOfWeeks,
       totalPaymentAmount,
@@ -333,6 +456,29 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
       }
     }
   });
+  } catch (error) {
+    // The residency could not be written, so the credits go back.
+    await releaseClaim();
+    throw error;
+  }
+
+  /* The ledger entry that explains the claim made above. The running total is
+     deliberately NOT touched here: it was already moved by the conditional
+     UPDATE, and incrementing it again would charge the house twice for one
+     residency. The ledger is what answers a dispute, so it still has to be
+     written - if this fails the balance is right and the trail is missing,
+     which is recoverable; the reverse would not be. */
+  if (creditCost > 0) {
+    await prisma.creditLedger.create({
+      data: {
+        hotelId: hotel.id,
+        delta: -creditCost,
+        reason: 'BOOKING_SPEND',
+        bookingId: booking.id,
+        note: `Booking ${booking.id}`
+      }
+    }).catch((error) => console.error('Ledger entry missing for booking', booking.id, error));
+  }
 
   // Create pending transaction for the booking payment
   await prisma.transaction.create({
@@ -344,6 +490,26 @@ router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
       status: 'PENDING'
       }
     });
+
+  /* Tell the artist. This is the notification the whole marketplace turns on:
+     before it existed a house could ask for a week and the artist would only
+     learn of it by opening the dashboard unprompted. Not awaited - a booking
+     that was made stays made even if the mail provider is down, and the row
+     in notifications is written on the same best-effort basis. */
+  const stay = formatStay(booking.startDate, booking.endDate);
+  void notify({
+    userId: booking.artist.user.id,
+    type: 'BOOKING_REQUESTED',
+    payload: bookingPayload(booking),
+    email: () =>
+      bookingRequestedEmail(
+        booking.artist.user.email,
+        booking.artist.stageName || booking.artist.user.name || 'Bonjour',
+        booking.hotel.name,
+        stay,
+        `${config.frontendUrl}/dashboard/bookings`
+      ),
+  });
 
   res.status(201).json({
     success: true,
@@ -400,10 +566,18 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
     throw new CustomError('Unauthorized', 403);
   }
 
+  /* Whether this change also releases the money, decided before the write so
+     it can travel with it. It used to be a second UPDATE on the same row a
+     few lines below - another full round trip to a database in us-east-1, on
+     a request that already makes several and took 7-9 seconds end to end
+     against a 10 second client timeout. */
+  const releasesPayment =
+    (status === 'REJECTED' || status === 'CANCELLED') && booking.status === 'PENDING';
+
   // Update booking
   const updatedBooking = await prisma.booking.update({
     where: { id },
-    data: { status },
+    data: releasesPayment ? { status, paymentStatus: 'REFUNDED' } : { status },
     include: {
       artist: {
         include: {
@@ -430,16 +604,52 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
     }
   });
 
-  // If booking is rejected or cancelled, update payment status and create refund transaction
-  if ((status === 'REJECTED' || status === 'CANCELLED') && booking.status === 'PENDING') {
-    await prisma.booking.update({
-      where: { id },
-      data: { paymentStatus: 'REFUNDED' }
-    });
-    
+  // If booking is rejected or cancelled, return the credits it reserved.
+  if (releasesPayment) {
+    /* The refund runs on prismaAdmin, not the request-scoped client, and this
+       is the whole reason the reject path was broken.
+
+       The credits, credit_ledger and transactions tables are owned by the
+       hotel: RLS lets a hotel write its own rows and nobody else. But a refund
+       is triggered by whoever ends the booking - and when that is the ARTIST
+       rejecting a request, the request-scoped client carries the artist's
+       identity, which the hotel's credit policy refuses. The UPDATE matched
+       zero rows, Prisma threw, and the artist could never decline: the booking
+       stuck at PENDING with the hotel's credits held for ever.
+
+       This is a legitimate cross-boundary write - one party's action must move
+       another party's balance - which is exactly what prismaAdmin exists for.
+       Authorisation was already enforced above (role and ownership are checked
+       before we get here), so the elevated write is not a hole; it is the
+       refund the checks decided should happen. The hotel-cancel path worked by
+       luck, because there the actor and the balance owner were the same. */
+    if (booking.creditCost > 0) {
+      const alreadyRefunded = await prismaAdmin.creditLedger.findFirst({
+        where: { bookingId: booking.id, reason: 'BOOKING_REFUND' }
+      });
+
+      if (!alreadyRefunded) {
+        await prismaAdmin.$transaction([
+          prismaAdmin.creditLedger.create({
+            data: {
+              hotelId: booking.hotelId,
+              delta: booking.creditCost,
+              reason: 'BOOKING_REFUND',
+              bookingId: booking.id,
+              note: `Booking ${booking.id} ${status.toLowerCase()}`
+            }
+          }),
+          prismaAdmin.credit.update({
+            where: { hotelId: booking.hotelId },
+            data: { usedCredits: { decrement: booking.creditCost } }
+          })
+        ]);
+      }
+    }
+
     // Create refund transaction if payment was already made
     if (booking.paymentStatus === 'PAID') {
-      await prisma.transaction.create({
+      await prismaAdmin.transaction.create({
         data: {
           hotelId: booking.hotelId,
           artistId: booking.artistId,
@@ -449,6 +659,61 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
         }
       });
     }
+  }
+
+  /* Tell whoever did not perform the action. An accepted residency that the
+     house never hears about is the same as no residency; a cancelled one that
+     the artist never hears about is worse, because they may be about to buy a
+     flight. Each is best-effort and never awaited, for the same reason as the
+     request notification above. */
+  const stay = formatStay(updatedBooking.startDate, updatedBooking.endDate);
+  const artistLabel =
+    updatedBooking.artist.stageName || updatedBooking.artist.user.name || 'L’artiste';
+  const hotelLabel = updatedBooking.hotel.name;
+  const payload = bookingPayload(updatedBooking);
+
+  if (status === 'CONFIRMED') {
+    void notify({
+      userId: updatedBooking.hotel.user.id,
+      type: 'BOOKING_CONFIRMED',
+      payload,
+      email: () =>
+        bookingConfirmedEmail(
+          updatedBooking.hotel.user.email,
+          hotelLabel,
+          artistLabel,
+          stay,
+          `${config.frontendUrl}/dashboard/bookings`
+        ),
+    });
+  } else if (status === 'REJECTED') {
+    void notify({
+      userId: updatedBooking.hotel.user.id,
+      type: 'BOOKING_REJECTED',
+      payload,
+      email: () =>
+        bookingRejectedEmail(
+          updatedBooking.hotel.user.email,
+          hotelLabel,
+          artistLabel,
+          stay,
+          `${config.frontendUrl}/dashboard/artists`
+        ),
+    });
+  } else if (status === 'CANCELLED') {
+    void notify({
+      userId: updatedBooking.artist.user.id,
+      type: 'BOOKING_CANCELLED',
+      payload,
+      email: () =>
+        bookingCancelledEmail(
+          updatedBooking.artist.user.email,
+          artistLabel,
+          hotelLabel,
+          stay,
+          `${config.frontendUrl}/dashboard/bookings`
+        ),
+    });
   }
 
   res.json({
@@ -481,6 +746,18 @@ router.post('/ratings', authenticate, asyncHandler(async (req: AuthRequest, res)
 
   if (!hotel || booking.hotelId !== hotel.id) {
     throw new CustomError('Unauthorized', 403);
+  }
+
+  /* A rating is a record of a residency that happened. Nothing stopped a house
+     rating an artist whose booking was still PENDING - before a date had even
+     been agreed, let alone played - which would have put reviews of
+     performances that never occurred on the artist's public profile and in the
+     testimonials on the landing page. */
+  if (booking.status !== 'COMPLETED') {
+    throw new CustomError(
+      'Une résidence ne peut être évaluée qu’une fois terminée',
+      400
+    );
   }
 
   // Check if rating already exists
@@ -531,6 +808,21 @@ router.post('/ratings', authenticate, asyncHandler(async (req: AuthRequest, res)
       }
     }
   });
+
+  /* The last link in the chain. A rating is the only thing on this platform
+     that an artist earns rather than buys, and the Artiste confirmé tier sells
+     "distinctions et évaluations" outright - so the artist hears about it. */
+  if (rating.isVisibleToArtist) {
+    void notify({
+      userId: rating.artist.user.id,
+      type: 'RATING_RECEIVED',
+      payload: {
+        bookingId: rating.bookingId,
+        hotelName: rating.hotel.name,
+        stars: rating.stars,
+      },
+    });
+  }
 
   res.status(201).json({
     success: true,

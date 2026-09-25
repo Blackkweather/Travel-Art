@@ -4,7 +4,7 @@ import { app } from '../index';
 import { prisma, initializeDatabase } from '../db';
 
 describe('Auth API (basic smoke tests)', () => {
-  const testEmail = `test-${Date.now()}@example.com`;
+  const testEmail = `test-${Date.now()}@suite.test`;
   const password = 'SecureP@ss123';
 
   beforeAll(async () => {
@@ -15,7 +15,7 @@ describe('Auth API (basic smoke tests)', () => {
 
   afterAll(async () => {
     await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
+      where: { email: { endsWith: '@suite.test' } },
     }).catch(() => undefined);
 
     await prisma.$disconnect().catch(() => undefined);
@@ -27,7 +27,7 @@ describe('Auth API (basic smoke tests)', () => {
       .send({
         role: 'ARTIST',
         name: 'Weak Password User',
-        email: `weak-${Date.now()}@example.com`,
+        email: `weak-${Date.now()}@suite.test`,
         password: 'short', // less than 8 chars
         phone: '+33000000002',
         locale: 'en',

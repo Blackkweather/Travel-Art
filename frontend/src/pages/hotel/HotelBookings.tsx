@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, MapPin, Clock, Star, CheckCircle, XCircle, AlertCircle, Search, User, Music } from 'lucide-react'
+import { Calendar, MapPin, Clock, Star, Search, Music } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { hotelsApi, bookingsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import StatusBadge from '@/components/StatusBadge'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import { personName } from '@/utils/apiPayload'
+import { t } from '@/i18n'
+import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
 interface Booking {
   id: string
@@ -29,6 +36,11 @@ interface Booking {
 
 const HotelBookings: React.FC = () => {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
+  const [ratingFor, setRatingFor] = useState<Booking | null>(null)
+  const [stars, setStars] = useState(5)
+  const [review, setReview] = useState('')
+  const [savingRating, setSavingRating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -59,23 +71,23 @@ const HotelBookings: React.FC = () => {
           id: b.id,
           artist: {
             id: b.artist?.id || '',
-            name: b.artist?.name || 'Unknown Artist',
+            name: personName(b.artist),
             discipline: b.artist?.discipline || '',
-            image: b.artist?.image || 'https://via.placeholder.com/100?text=Artist',
+            image: b.artist?.image || '/images/placeholder-experience.webp',
             rating: b.artist?.rating || 0
           },
           hotelId: b.hotelId,
           startDate: b.startDate,
           endDate: b.endDate,
-          status: b.status.toLowerCase(),
-          creditsUsed: b.creditsUsed || 0,
-          performanceSpot: b.performanceSpot || 'TBD',
+          status: String(b.status || 'PENDING').toLowerCase(),
+          creditsUsed: b.creditCost ?? b.creditsUsed ?? 0,
+          performanceSpot: b.performanceSpot || t('À préciser'),
           notes: b.notes || '',
           // Calculate duration
           duration: calculateDuration(b.startDate, b.endDate),
           // Format date/time
           date: b.startDate,
-          time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: new Date(b.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
           // Additional fields for display
           guestCount: 0, // Would need to come from booking details
           performanceType: b.performanceType || 'Performance',
@@ -102,61 +114,41 @@ const HotelBookings: React.FC = () => {
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
     
     if (diffHours > 0) {
-      return diffMins > 0 ? `${diffHours}h ${diffMins}m` : `${diffHours} hour${diffHours > 1 ? 's' : ''}`
+      return diffMins > 0 ? `${diffHours} h ${diffMins}` : `${diffHours} heure${diffHours >= 2 ? 's' : ''}`
     }
-    return `${diffMins} minute${diffMins !== 1 ? 's' : ''}`
+    return `${diffMins} minute${diffMins >= 2 ? 's' : ''}`
   }
 
-  const handleStatusUpdate = async (bookingId: string, status: 'CONFIRMED' | 'REJECTED' | 'CANCELLED') => {
+  /* A house asks; the artist answers. The server has always enforced it -
+     a hotel may only cancel its own request - but this page offered
+     "Confirmer" and "Refuser" on every pending booking, so both buttons
+     returned 400 "Hotels can only cancel bookings" every single time they
+     were pressed. The house was told the update had failed, and never why. */
+  const handleStatusUpdate = async (bookingId: string, status: 'CANCELLED') => {
     try {
       await bookingsApi.updateStatus(bookingId, status)
-      // Notification
-      const statusText = status === 'CONFIRMED' ? 'confirmed' : status === 'REJECTED' ? 'rejected' : 'cancelled'
-      console.log(`Booking ${statusText} successfully`)
-      alert(`Booking ${statusText} successfully`)
-      
-      // Refresh bookings - get hotel first
-      const hotelRes = await hotelsApi.getByUser(user?.id || '')
-      const hotel = hotelRes.data?.data
-      if (!hotel) return
-
-      const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
-      // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
-      const bookingsDataRaw = bookingsRes.data?.data
-      const bookingsData = Array.isArray(bookingsDataRaw) 
-        ? bookingsDataRaw 
-        : (bookingsDataRaw?.bookings || [])
-      
-      const transformedBookings = bookingsData.map((b: any) => ({
-        id: b.id,
-        artist: {
-          id: b.artist?.id || '',
-          name: b.artist?.name || 'Unknown Artist',
-          discipline: b.artist?.discipline || '',
-          image: b.artist?.image || 'https://via.placeholder.com/100?text=Artist',
-          rating: b.artist?.rating || 0
-        },
-        hotelId: b.hotelId,
-        startDate: b.startDate,
-        endDate: b.endDate,
-        status: b.status.toLowerCase(),
-        creditsUsed: b.creditsUsed || 0,
-        performanceSpot: b.performanceSpot || 'TBD',
-        notes: b.notes || '',
-        duration: calculateDuration(b.startDate, b.endDate),
-        date: b.startDate,
-        time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        guestCount: 0,
-        performanceType: b.performanceType || 'Performance',
-        contactEmail: b.artist?.email || '',
-        contactPhone: b.artist?.phone || ''
-      }))
-      
-      setBookings(transformedBookings)
     } catch (error) {
       console.error('Error updating booking status:', error)
-      alert('Failed to update booking status')
+      toast.error(t('Impossible de mettre à jour le statut de la réservation'))
+      return
     }
+
+    toast.success(t('Demande annulée'))
+
+    /* The row is updated in place rather than by reloading the whole list.
+       The write itself already costs seven to nine seconds against a remote
+       database; refetching the hotel and then every booking added several
+       more, so the screen sat unchanged long enough that the only reasonable
+       conclusion was that the click had not worked - which is exactly what
+       people did, and then reached for a hard refresh. The server has
+       confirmed the new status by this point, so showing it is not a guess. */
+    setBookings((current) =>
+      current.map((booking) =>
+        booking.id === bookingId
+          ? { ...booking, status: status.toLowerCase() }
+          : booking
+      )
+    )
   }
   
   if (loading) {
@@ -176,87 +168,45 @@ const HotelBookings: React.FC = () => {
     return matchesFilter && matchesSearch
   })
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />
-      case 'pending':
-        return <AlertCircle className="w-5 h-5 text-amber-600" />
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-blue-600" />
-      case 'cancelled':
-        return <XCircle className="w-5 h-5 text-red-600" />
-      default:
-        return <AlertCircle className="w-5 h-5 text-gray-600" />
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800'
-      case 'pending':
-        return 'bg-amber-100 text-amber-800'
-      case 'completed':
-        return 'bg-blue-100 text-blue-800'
-      case 'cancelled':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
   const stats = [
-    { label: 'Total Bookings', value: bookings.length, icon: Calendar },
-    { label: 'Confirmed', value: bookings.filter(b => b.status === 'confirmed').length, icon: CheckCircle },
-    { label: 'Pending', value: bookings.filter(b => b.status === 'pending').length, icon: AlertCircle },
-    { label: 'Completed', value: bookings.filter(b => b.status === 'completed').length, icon: Star }
+    { label: t('Réservations'), value: bookings.length },
+    { label: t('Confirmées'), value: bookings.filter(b => b.status === 'confirmed').length },
+    { label: 'En attente', value: bookings.filter(b => b.status === 'pending').length },
+    { label: t('Terminées'), value: bookings.filter(b => b.status === 'completed').length }
   ]
 
   return (
     <div className="space-y-8">
+      <SEOHead title={t('Réservations') + ' — Travel Art'} />
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
-          Hotel Bookings
+        <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
+          {t('Réservations de l’hôtel')}
         </h1>
-        <p className="text-gray-600">
-          Manage your artist bookings and performance schedules
+        <p className="text-content-secondary">
+          {t('Gérez vos réservations d’artistes et votre programmation')}
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="card-luxury text-center"
-            >
-              <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Icon className="w-6 h-6 text-gold" />
-              </div>
-              <h3 className="text-2xl font-bold text-navy mb-2">{stat.value}</h3>
-              <p className="text-gray-600">{stat.label}</p>
-            </motion.div>
-          )
-        })}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
+        {stats.map((stat) => (
+          <div key={stat.label} className="stat rounded-none border-0">
+            <span className="stat__label">{stat.label}</span>
+            <span className="stat__value">{formatNumber(stat.value)}</span>
+          </div>
+        ))}
       </div>
 
       {/* Search and Filters */}
       <div className="search-container">
         <div className="filters-row">
           <div className="flex-1">
-            <label className="form-label">Search Bookings</label>
+            <label className="form-label">{t('Rechercher une réservation')}</label>
             <div className="search-icon-container">
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder="Search by artist, venue, or performance type..."
+                placeholder={t('Rechercher par artiste, lieu ou type de prestation…')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -265,18 +215,18 @@ const HotelBookings: React.FC = () => {
             </div>
           </div>
           <div className="md:w-48">
-            <label className="form-label">Filter by Status</label>
+            <label className="form-label">{t('Filtrer par statut')}</label>
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="filter-select"
               data-testid="status-filter"
             >
-              <option value="all">All Status</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">{t('Tous les statuts')}</option>
+              <option value="confirmed">{t('Confirmée')}</option>
+              <option value="pending">{t('En attente')}</option>
+              <option value="completed">{t('Terminée')}</option>
+              <option value="cancelled">{t('Annulée')}</option>
             </select>
           </div>
         </div>
@@ -291,25 +241,25 @@ const HotelBookings: React.FC = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
-            className="card-luxury"
+            className="panel p-6"
           >
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Artist Info */}
               <div className="flex items-start space-x-4">
-                <img
+                <img decoding="async" loading="lazy"
                   src={booking.artist.image}
                   alt={booking.artist.name}
                   className="w-16 h-16 rounded-full object-cover"
                 />
                 <div>
-                  <h3 className="text-xl font-serif font-semibold text-navy mb-1">
+                  <h3 className="text-xl font-serif font-semibold text-content mb-1">
                     {booking.artist.name}
                   </h3>
                   <p className="text-gold font-medium mb-2">{booking.artist.discipline}</p>
                   {booking.artist.rating > 0 && (
                     <div className="flex items-center space-x-2 mb-2">
                       <Star className="w-4 h-4 text-gold" />
-                      <span className="text-sm text-gray-600">{booking.artist.rating.toFixed(1)}</span>
+                      <span className="text-sm text-content-secondary">{booking.artist.rating.toFixed(1)}</span>
                     </div>
                   )}
                 </div>
@@ -319,19 +269,19 @@ const HotelBookings: React.FC = () => {
               <div className="flex-1" data-testid="booking-details">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <h4 className="text-sm font-medium text-navy mb-2">Performance Details</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
+                    <h4 className="mb-2 text-sm font-medium text-content">{t('Détails de la représentation')}</h4>
+                    <div className="space-y-1 text-sm text-content-secondary">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
-                        <span>{new Date(booking.startDate).toLocaleDateString()}</span>
+                        <span>{new Date(booking.startDate).toLocaleDateString('fr-FR')}</span>
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2" />
-                        <span>{new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span>{new Date(booking.startDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2" />
-                        <span>{booking.performanceSpot || 'TBD'}</span>
+                        <span>{booking.performanceSpot || t('À préciser')}</span>
                       </div>
                       <div className="flex items-center">
                         <Music className="w-4 h-4 mr-2" />
@@ -341,77 +291,80 @@ const HotelBookings: React.FC = () => {
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-medium text-navy mb-2">Payment Info</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      {booking.totalPaymentAmount && (
+                    {/* Amounts are deliberately not shown on booking cards.
+                        The residency length and the settlement state are what a
+                        hotel acts on here; the figures live in Credits. */}
+                    <h4 className="text-sm font-medium text-content mb-2">{t('Résidence')}</h4>
+                    <div className="space-y-1 text-sm text-content-secondary">
+                      {booking.numberOfWeeks && (
                         <div className="flex items-center justify-between">
-                          <span>Total Payment:</span>
-                          <span className="font-bold text-gold">€{booking.totalPaymentAmount.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {booking.numberOfWeeks && booking.weeklyPaymentAmount && (
-                        <div className="flex items-center justify-between">
-                          <span>{booking.numberOfWeeks} week{booking.numberOfWeeks > 1 ? 's' : ''} × €{booking.weeklyPaymentAmount}/week</span>
+                          <span>{t('Durée :')}</span>
+                          <span className="font-medium text-content">
+                            {booking.numberOfWeeks} semaine{booking.numberOfWeeks >= 2 ? 's' : ''}
+                          </span>
                         </div>
                       )}
                       {booking.paymentStatus && (
                         <div className="flex items-center justify-between mt-2">
-                          <span>Status:</span>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                            booking.paymentStatus === 'PENDING' ? 'bg-amber-100 text-amber-800' :
-                            booking.paymentStatus === 'REFUNDED' ? 'bg-blue-100 text-blue-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {booking.paymentStatus}
-                          </span>
+                          <span>Paiement :</span>
+                          <StatusBadge status={booking.paymentStatus} />
                         </div>
                       )}
-                      {booking.notes && <div className="mt-2 pt-2 border-t border-gray-200">Notes: {booking.notes}</div>}
+                      {booking.notes && <div className="mt-2 pt-2 border-t border-line">Notes: {booking.notes}</div>}
                     </div>
                   </div>
                 </div>
 
                 {booking.notes && (
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium text-navy mb-2">Notes</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                    <h4 className="text-sm font-medium text-content mb-2">Notes</h4>
+                    <p className="text-sm text-content-secondary bg-surface p-3 rounded-card">
                       {booking.notes}
                     </p>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(booking.status)}`}>
-                    {getStatusIcon(booking.status)}
-                    <span className="ml-1 capitalize">{booking.status}</span>
-                  </span>
+                  <StatusBadge status={booking.status} />
                   
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     {booking.status === 'pending' && (
                       <>
-                        <button 
-                          onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')}
-                          className="btn-primary text-sm"
-                        >
-                          Confirm
-                        </button>
-                        <button 
-                          onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
+                        <span className="text-sm text-content-secondary self-center mr-1">
+                          {t('En attente de la réponse de l’artiste')}
+                        </span>
+                        <button
+                          onClick={() => handleStatusUpdate(booking.id, 'CANCELLED')}
                           className="btn-secondary text-sm"
+                          data-testid="withdraw-request"
                         >
-                          Decline
+                          {t('Annuler la demande')}
                         </button>
                       </>
                     )}
-                    {booking.status === 'confirmed' && (
-                      <button className="btn-secondary text-sm">View Details</button>
+                    {booking.status === 'confirmed' && booking.artist?.id && (
+                      <button
+                        onClick={() => navigate(`/artist/${booking.artist.id}`)}
+                        className="btn-secondary text-sm"
+                      >
+                        {t('Voir le détail')}
+                      </button>
                     )}
                     {booking.status === 'completed' && (
-                      <button className="btn-primary text-sm">Rate Artist</button>
+                      <button
+                        onClick={() => { setRatingFor(booking); setStars(5); setReview('') }}
+                        className="btn-primary text-sm"
+                      >
+                        {t('Évaluer l’artiste')}
+                      </button>
                     )}
                     {booking.status === 'cancelled' && (
-                      <button className="btn-secondary text-sm">Re-book</button>
+                      <button
+                        onClick={() => navigate('/dashboard/artists')}
+                        className="btn-secondary text-sm"
+                      >
+                        {t('Reprogrammer')}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -424,16 +377,16 @@ const HotelBookings: React.FC = () => {
       {/* No Results */}
       {filteredBookings.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Calendar className="w-12 h-12 text-gray-400" />
+          <div className="w-24 h-24 bg-surface-sunken rounded-full flex items-center justify-center mx-auto mb-6">
+            <Calendar className="w-12 h-12 text-content-secondary" />
           </div>
-          <h3 className="text-xl font-serif font-semibold text-navy mb-2">
-            No Bookings Found
+          <h3 className="text-xl font-serif font-semibold text-content mb-2">
+            {t('Aucune réservation')}
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-content-secondary mb-6">
             {searchTerm || filter !== 'all' 
-              ? 'Try adjusting your search criteria or filters'
-              : 'You haven\'t made any bookings yet'
+              ? t('Essayez d’élargir votre recherche ou vos filtres')
+              : t('Vous n’avez encore aucune réservation')
             }
           </p>
           {(searchTerm || filter !== 'all') && (
@@ -444,11 +397,96 @@ const HotelBookings: React.FC = () => {
               }}
               className="btn-primary"
             >
-              Clear Filters
+              {t('Réinitialiser les filtres')}
             </button>
           )}
         </div>
       )}
+    {ratingFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="panel w-full max-w-lg p-6">
+            <h3 className="font-serif text-xl text-content">{t('Évaluer l’artiste')}</h3>
+            <p className="mt-1 text-sm text-content-secondary">
+              {ratingFor.artist?.name || 'Artiste'}
+              {ratingFor.performanceSpot ? ` — ${ratingFor.performanceSpot}` : ''}
+            </p>
+
+            <div className="mt-6">
+              <span className="stat__label">{t('Note')}</span>
+              <div className="mt-2 flex gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setStars(n)}
+                    aria-label={`${n} sur 5`}
+                    aria-pressed={stars === n}
+                    className={`h-10 w-10 rounded-card border text-sm font-semibold transition-colors ${
+                      n <= stars
+                        ? 'border-gold bg-gold text-[var(--text-on-gold)]'
+                        : 'border-line text-content-secondary hover:border-line-strong'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="form-label" htmlFor="rating-review">{t('Commentaire')}</label>
+              <textarea
+                id="rating-review"
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
+                rows={4}
+                maxLength={500}
+                className="form-input w-full"
+                placeholder={t('Ce qui s’est bien passé, ce qui pourrait être amélioré…')}
+              />
+              {/* The endpoint requires 10 characters minimum, so the button
+                  stays disabled until that is met rather than returning a 400. */}
+              <p className="mt-1 text-[0.8125rem] text-content-secondary">
+                {review.trim().length < 10
+                  ? `Encore ${10 - review.trim().length} caractère(s).`
+                  : `${review.length} / 500`}
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={() => setRatingFor(null)} className="btn-ghost btn-sm">
+                {t('Annuler')}
+              </button>
+              <button
+                disabled={savingRating || review.trim().length < 10}
+                onClick={async () => {
+                  try {
+                    setSavingRating(true)
+                    await bookingsApi.rate({
+                      bookingId: ratingFor.id,
+                      hotelId: ratingFor.hotelId,
+                      artistId: ratingFor.artist.id,
+                      stars,
+                      textReview: review.trim(),
+                      isVisibleToArtist: true
+                    })
+                    toast.success(t('Évaluation enregistrée'))
+                    setRatingFor(null)
+                  } catch (err: any) {
+                    toast.error(err?.response?.data?.error?.message || t('Échec de l’enregistrement'))
+                  } finally {
+                    setSavingRating(false)
+                  }
+                }}
+                className="btn-primary btn-sm"
+              >
+                {savingRating ? 'Enregistrement…' : 'Envoyer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

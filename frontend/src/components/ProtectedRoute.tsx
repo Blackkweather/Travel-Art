@@ -6,20 +6,18 @@ import LoadingSpinner from './LoadingSpinner'
 interface ProtectedRouteProps {
   children: React.ReactNode
   requiredRole?: 'ARTIST' | 'HOTEL' | 'ADMIN'
-  redirectTo?: string
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requiredRole,
-  redirectTo 
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requiredRole
 }) => {
   const { user, isLoading } = useAuthStore()
   const location = useLocation()
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center">
         <LoadingSpinner />
       </div>
     )

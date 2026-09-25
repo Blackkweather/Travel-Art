@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { adminApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
-import { TrendingUp, Users, Gift, Download, Search, Filter } from 'lucide-react'
+import StatusBadge from '@/components/StatusBadge'
+import { Users, Download, Search, Filter } from 'lucide-react'
+import { t } from '@/i18n'
+import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
+import toast from 'react-hot-toast'
+import { toCsv, downloadCsv } from '@/utils/csv'
 
 interface Referral {
   id: string
@@ -68,7 +74,7 @@ const AdminReferrals: React.FC = () => {
           pages: 1
         })
       } catch (err: any) {
-        setError(err?.response?.data?.message || 'Failed to load referrals')
+        setError(err?.response?.data?.message || t('Impossible de charger les parrainages'))
       } finally {
         setLoading(false)
       }
@@ -79,7 +85,7 @@ const AdminReferrals: React.FC = () => {
 
   const exportToCSV = () => {
     if (referrals.length === 0) {
-      alert('No referrals to export')
+      toast.error('Aucun parrainage à exporter')
       return
     }
     
@@ -90,24 +96,11 @@ const AdminReferrals: React.FC = () => {
       r.referrerType || '',
       r.referredName || '',
       r.status || '',
-      r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
+      r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR') : '',
       r.rewardEarned || 0
     ])
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `referrals-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    downloadCsv(toCsv(headers, rows), `referrals-${new Date().toISOString().split('T')[0]}.csv`)
   }
 
   if (loading) {
@@ -120,197 +113,152 @@ const AdminReferrals: React.FC = () => {
 
   if (error) {
     return (
-      <div className="card-luxury text-red-700 bg-red-50">{error}</div>
+      <div className="notice-critical">{error}</div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-[1600px] mx-auto px-6 py-8">
+    <div className="min-h-screen bg-surface">
+      <SEOHead title={t('Parrainage') + ' — Travel Art'} />
+      <div className="shell py-12 md:py-16">
         {/* Header */}
         <div className="mb-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-              <h1 className="text-3xl font-semibold text-gray-900 mb-1">
-            Referral Tracking
+              <h1 className="page-head__title">
+            {t('Suivi des parrainages')}
           </h1>
-              <p className="text-sm text-gray-500">
-            Monitor referral program performance and rewards
+              <p className="text-sm text-content-secondary">
+            {t('Suivre les performances du programme de parrainage et les récompenses')}
           </p>
         </div>
         <button
           onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex flex-wrap items-center gap-2 px-4 py-2 bg-surface-raised border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface transition-colors"
         >
           <Download className="w-4 h-4" />
-              Export CSV
+              {t('Exporter en CSV')}
         </button>
           </div>
       </div>
 
-      {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 rounded-lg bg-blue-50">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Referrals</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalReferrals}</p>
-            </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden mb-8">
+        {[
+          { label: 'Parrainages', value: formatNumber(stats.totalReferrals) },
+          { label: t('Terminés'), value: formatNumber(stats.completedReferrals) },
+          { label: t('Récompenses'), value: `€${formatNumber(stats.totalRewards)}` },
+          { label: 'Parrains actifs', value: formatNumber(stats.activeReferrers) }
+        ].map((stat) => (
+          <div key={stat.label} className="stat rounded-none border-0">
+            <span className="stat__label">{stat.label}</span>
+            <span className="stat__value">{stat.value}</span>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 rounded-lg bg-emerald-50">
-                <Users className="w-5 h-5 text-emerald-600" />
-          </div>
-        </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Completed</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.completedReferrals}</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 rounded-lg bg-amber-50">
-                <Gift className="w-5 h-5 text-amber-600" />
-          </div>
-        </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Rewards</p>
-              <p className="text-2xl font-semibold text-gray-900">€{stats.totalRewards.toLocaleString()}</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 rounded-lg bg-purple-50">
-                <Users className="w-5 h-5 text-purple-600" />
-          </div>
-        </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Active Referrers</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.activeReferrers}</p>
-            </div>
-          </div>
-        </div>
+        ))}
+      </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+        <div className="bg-surface-raised rounded-card border border-line p-4 mb-6">
           <div className="flex items-center gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-content-secondary" />
               <input
                 type="text"
-                placeholder="Search by referrer or referred name..."
+                placeholder={t('Rechercher par parrain ou par filleul…')}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
                   setPage(1)
                 }}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-line-strong rounded-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--state-info)] focus:border-transparent"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
+              <Filter className="w-4 h-4 text-content-secondary" />
               <select
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value)
                   setPage(1)
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-line-strong rounded-card text-sm focus:outline-none focus:ring-2 focus:ring-[var(--state-info)] focus:border-transparent"
               >
-                <option value="">All Status</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="PENDING">Pending</option>
+                <option value="">{t('Tous les statuts')}</option>
+                <option value="COMPLETED">{t('Terminée')}</option>
+                <option value="PENDING">{t('En attente')}</option>
               </select>
           </div>
         </div>
       </div>
 
       {/* Referrals Table */}
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Referrals</h2>
+        <div className="panel">
+          <div className="panel-head">
+            <h2>{t('Parrainages')}</h2>
           </div>
         {referrals.length > 0 ? (
             <>
           <div className="overflow-x-auto">
-            <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referrer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referred</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Reward</th>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t('Parrain')}</th>
+                  <th scope="col">{t('Type')}</th>
+                  <th scope="col">{t('Filleul')}</th>
+                  <th scope="col">{t('Statut')}</th>
+                  <th scope="col">{t('Date')}</th>
+                  <th scope="col" className="numeric">{t('Récompense')}</th>
                 </tr>
               </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {referrals.map((referral) => (
-                      <tr key={referral.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{referral.referrerName}</div>
-                          <div className="text-xs text-gray-500">{referral.referrerEmail}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        referral.referrerType === 'ARTIST' 
-                          ? 'bg-purple-100 text-purple-800'
-                              : 'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        {referral.referrerType}
+                  <tr key={referral.id}>
+                    <td>
+                      <div className="font-medium text-content">{referral.referrerName}</div>
+                      <div className="text-content-secondary">{referral.referrerEmail}</div>
+                    </td>
+                    <td>
+                      <span className="badge-neutral">
+                        {referral.referrerType === 'ARTIST' ? 'Artiste' : t('Hôtel')}
                       </span>
                     </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{referral.referredName}</div>
-                          <div className="text-xs text-gray-500">{referral.referredEmail}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            referral.status === 'COMPLETED'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {referral.status}
-                      </span>
+                    <td>
+                      <div className="font-medium text-content">{referral.referredName}</div>
+                      <div className="text-content-secondary">{referral.referredEmail}</div>
                     </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(referral.createdAt).toLocaleDateString()}
+                    <td>
+                      <StatusBadge status={referral.status} />
                     </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
-                          €{referral.rewardEarned}
+                    <td className="text-content-secondary">
+                      {new Date(referral.createdAt).toLocaleDateString('fr-FR')}
                     </td>
+                    <td className="numeric font-medium">€{referral.rewardEarned}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
               {pagination.pages > 1 && (
-                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                  <div className="text-sm text-gray-500">
-                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} results
+                <div className="px-6 py-4 border-t border-line flex items-center justify-between">
+                  <div className="text-sm text-content-secondary">
+                    {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} sur {pagination.total}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t('Précédent')}
                     </button>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-content-secondary">
                       Page {pagination.page} of {pagination.pages}
                     </span>
                     <button
                       onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
                       disabled={page === pagination.pages}
-                      className="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 border border-line-strong rounded-card text-sm font-medium text-content-secondary hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t('Suivant')}
                     </button>
                   </div>
                 </div>
@@ -318,8 +266,8 @@ const AdminReferrals: React.FC = () => {
             </>
           ) : (
             <div className="px-6 py-12 text-center">
-              <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">No referrals tracked yet.</p>
+              <Users className="w-8 h-8 text-content-secondary mx-auto mb-2" />
+              <p className="text-sm text-content-secondary">{t('Aucun parrainage enregistré pour l’instant.')}</p>
             </div>
         )}
         </div>

@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, AlertCircle, CheckCircle2, Globe } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import FormField from '../FormField';
 import SelectWithSearch from './SelectWithSearch';
 import DatePicker from './DatePicker';
 import { BasicInfo, COUNTRIES, VALIDATION } from '@/types/artistRegistration';
+import { countryOptions } from '@/i18n/countries';
+import useRevealFirstError from '@/hooks/useRevealFirstError';
+import { t } from '@/i18n'
 
 interface Step1Props {
   data: BasicInfo;
@@ -17,6 +20,10 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [failedAttempt, setFailedAttempt] = useState(0);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  useRevealFirstError(failedAttempt, formRef);
 
   const validateEmail = (email: string) => {
     return VALIDATION.email.test(email);
@@ -38,39 +45,55 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
     const newErrors: Record<string, string> = {};
 
     // Check required fields
-    if (!data.stageName.trim()) newErrors.stageName = 'Stage name is required';
-    if (!data.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!data.lastName.trim()) newErrors.lastName = 'Last name is required';
-    if (!data.birthDate.trim()) newErrors.birthDate = 'Birth date is required';
-    else if (!validateDate(data.birthDate)) newErrors.birthDate = 'Format: DD/MM/YYYY';
+    if (!data.stageName.trim()) newErrors.stageName = t('Indiquez votre nom de scène');
+    if (!data.firstName.trim()) newErrors.firstName = t('Indiquez votre prénom');
+    if (!data.lastName.trim()) newErrors.lastName = 'Indiquez votre nom';
+    if (!data.birthDate.trim()) newErrors.birthDate = t('Indiquez votre date de naissance');
+    else if (!validateDate(data.birthDate)) newErrors.birthDate = 'Format attendu : JJ/MM/AAAA';
 
-    if (!data.phone.trim()) newErrors.phone = 'Phone number is required';
-    else if (!validatePhone(data.phone)) newErrors.phone = 'Invalid phone number';
+    if (!data.phone.trim()) newErrors.phone = t('Indiquez votre numéro de téléphone');
+    else if (!validatePhone(data.phone)) newErrors.phone = t('Numéro de téléphone invalide');
 
-    if (!data.email.trim()) newErrors.email = 'Email is required';
-    else if (!validateEmail(data.email)) newErrors.email = 'Invalid email address';
+    if (!data.email.trim()) newErrors.email = 'Indiquez votre adresse e-mail';
+    else if (!validateEmail(data.email)) newErrors.email = 'Adresse e-mail invalide';
 
-    if (!data.password) newErrors.password = 'Password is required';
+    if (!data.password) newErrors.password = t('Choisissez un mot de passe');
     else if (!validatePassword(data.password)) {
-      newErrors.password = 'Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special';
+      newErrors.password = t('8 caractères minimum, avec une majuscule, une minuscule, un chiffre et un caractère spécial');
     }
 
-    if (!data.confirmPassword) newErrors.confirmPassword = 'Confirm your password';
+    if (!data.confirmPassword) newErrors.confirmPassword = t('Confirmez votre mot de passe');
     else if (data.password !== data.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('Les deux mots de passe ne correspondent pas');
     }
 
-    if (!data.country) newErrors.country = 'Country is required';
-    if (!data.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms';
+    if (!data.country) newErrors.country = t('Sélectionnez votre pays');
+    if (!data.agreeToTerms) newErrors.agreeToTerms = t('Vous devez accepter les conditions pour continuer');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  /** Applies a change and retires the message for the field it belongs to. */
+  const update = (patch: Partial<BasicInfo>) => {
+    onChange({ ...data, ...patch });
+    setErrors((prev) => {
+      const stale = Object.keys(patch).filter((key) => prev[key]);
+      if (stale.length === 0) return prev;
+      const next = { ...prev };
+      for (const key of stale) delete next[key];
+      return next;
+    });
+  };
+
   const handleNext = () => {
     if (validateStep()) {
       onNext();
+      return;
     }
+    // Counts the attempt rather than watching `errors`, so the page only
+    // moves when someone presses the button - never while they type.
+    setFailedAttempt((n) => n + 1);
   };
 
   const isPasswordStrong = data.password && validatePassword(data.password);
@@ -94,14 +117,15 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
 
   return (
     <motion.div
+      ref={formRef}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
       className="space-y-6"
     >
       <div>
-        <h2 className="text-3xl font-bold text-navy-900 mb-2">Informations de base</h2>
-        <p className="text-gray-600">Commencez par nous dire qui vous êtes</p>
+        <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Informations de base')}</h2>
+        <p className="text-content-secondary">{t('Commencez par nous dire qui vous êtes')}</p>
       </div>
 
       {/* Two-column grid for desktop, single for mobile */}
@@ -109,11 +133,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Stage Name */}
         <motion.div variants={itemVariants}>
           <FormField
-            label="Nom de scène"
-            placeholder="Your stage name"
+            label={t('Nom de scène')}
+            placeholder={t('Votre nom de scène')}
             value={data.stageName}
-            onChange={(e) => onChange({ ...data, stageName: e.target.value })}
+            onChange={(e) => update({ stageName: e.target.value })}
             error={errors.stageName}
+            required
             disabled={isLoading}
           />
         </motion.div>
@@ -121,11 +146,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Birth Date */}
         <motion.div variants={itemVariants}>
           <DatePicker
-            label="Date de naissance"
+            label={t('Date de naissance')}
             placeholder="JJ/MM/AAAA"
             value={data.birthDate}
-            onChange={(value) => onChange({ ...data, birthDate: value })}
+            onChange={(value) => update({ birthDate: value })}
             error={errors.birthDate}
+            required
             disabled={isLoading}
           />
         </motion.div>
@@ -133,11 +159,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Last Name */}
         <motion.div variants={itemVariants}>
           <FormField
-            label="Nom"
-            placeholder="Your last name"
+            label={t('Nom')}
+            placeholder={t('Votre nom')}
             value={data.lastName}
-            onChange={(e) => onChange({ ...data, lastName: e.target.value })}
+            onChange={(e) => update({ lastName: e.target.value })}
             error={errors.lastName}
+            required
             disabled={isLoading}
           />
         </motion.div>
@@ -145,11 +172,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* First Name */}
         <motion.div variants={itemVariants}>
           <FormField
-            label="Prénom"
-            placeholder="Your first name"
+            label={t('Prénom')}
+            placeholder={t('Votre prénom')}
             value={data.firstName}
-            onChange={(e) => onChange({ ...data, firstName: e.target.value })}
+            onChange={(e) => update({ firstName: e.target.value })}
             error={errors.firstName}
+            required
             disabled={isLoading}
           />
         </motion.div>
@@ -158,11 +186,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             type="tel"
-            label="Numéro de téléphone"
+            label={t('Numéro de téléphone')}
             placeholder="+33 (0)6 00 00 00 00"
             value={data.phone}
-            onChange={(e) => onChange({ ...data, phone: e.target.value })}
+            onChange={(e) => update({ phone: e.target.value })}
             error={errors.phone}
+            required
             disabled={isLoading}
           />
         </motion.div>
@@ -171,11 +200,12 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <motion.div variants={itemVariants}>
           <FormField
             type="email"
-            label="Adresse email"
-            placeholder="your@email.com"
+            label={t('Adresse e-mail')}
+            placeholder={t('vous@exemple.com')}
             value={data.email}
-            onChange={(e) => onChange({ ...data, email: e.target.value })}
+            onChange={(e) => update({ email: e.target.value })}
             error={errors.email}
+            required
             disabled={isLoading}
           />
         </motion.div>
@@ -183,11 +213,11 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Country */}
         <motion.div variants={itemVariants} className="md:col-span-2">
           <SelectWithSearch
-            label="Choisir un pays"
-            placeholder="Sélectionner votre pays"
-            options={COUNTRIES.map(country => ({ value: country, label: country }))}
+            label={t('Choisir un pays')}
+            placeholder={t('Sélectionner votre pays')}
+            options={countryOptions(COUNTRIES)}
             value={data.country}
-            onChange={(value) => onChange({ ...data, country: value })}
+            onChange={(value) => update({ country: value })}
             error={errors.country}
             required
             disabled={isLoading}
@@ -197,39 +227,43 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Password */}
         <motion.div variants={itemVariants}>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-navy-900">
-              Mot de passe <span className="text-gold">*</span>
+            <label htmlFor="reg-password" className="block text-sm font-medium text-navy-900">
+              Mot de passe <span className="text-gold" aria-hidden="true">*</span>
             </label>
             <div className="relative">
               <input
+                id="reg-password"
                 type={showPassword ? 'text' : 'password'}
                 value={data.password}
-                onChange={(e) => onChange({ ...data, password: e.target.value })}
-                placeholder="Min 8 chars, uppercase, number, special"
+                onChange={(e) => update({ password: e.target.value, confirmPassword: data.confirmPassword })}
+                placeholder={t('8 caractères minimum, avec majuscule, chiffre et caractère spécial')}
                 disabled={isLoading}
                 className={`
-                  w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
-                  ${errors.password ? 'border-red-400' : isPasswordStrong ? 'border-green-400' : 'border-gray-200'}
-                  ${isLoading ? 'bg-gray-50 opacity-60' : 'bg-white'}
+                  w-full h-12 px-4 pr-12 rounded-card border-2 transition-all
+                  ${errors.password ? 'border-[var(--state-critical-line)]' : isPasswordStrong ? 'border-[var(--state-positive-line)]' : 'border-line'}
+                  ${isLoading ? 'bg-surface opacity-60' : 'bg-surface-raised'}
                   focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
                 `}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gold"
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                aria-pressed={showPassword}
+                className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-content-secondary hover:text-gold"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
             {isPasswordStrong && (
-              <div className="flex items-center gap-2 text-green-600 text-sm">
-                <CheckCircle2 size={16} /> Strong password
+              <div className="flex items-center gap-2 text-[var(--state-positive)] text-sm">
+                <CheckCircle2 size={16} /> Mot de passe robuste
               </div>
             )}
             {errors.password && (
-              <div className="flex items-center gap-2 text-red-500 text-sm">
-                <AlertCircle size={16} /> {errors.password}
+              <div className="field-error" role="alert">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <span>{errors.password}</span>
               </div>
             )}
           </div>
@@ -238,39 +272,43 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         {/* Confirm Password */}
         <motion.div variants={itemVariants}>
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-navy-900">
-              Confirmer le mot de passe <span className="text-gold">*</span>
+            <label htmlFor="reg-confirm-password" className="block text-sm font-medium text-navy-900">
+              Confirmer le mot de passe <span className="text-gold" aria-hidden="true">*</span>
             </label>
             <div className="relative">
               <input
+                id="reg-confirm-password"
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={data.confirmPassword}
-                onChange={(e) => onChange({ ...data, confirmPassword: e.target.value })}
-                placeholder="Confirm your password"
+                onChange={(e) => update({ confirmPassword: e.target.value })}
+                placeholder={t('Confirmez votre mot de passe')}
                 disabled={isLoading}
                 className={`
-                  w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
-                  ${errors.confirmPassword ? 'border-red-400' : data.confirmPassword && data.password === data.confirmPassword ? 'border-green-400' : 'border-gray-200'}
-                  ${isLoading ? 'bg-gray-50 opacity-60' : 'bg-white'}
+                  w-full h-12 px-4 pr-12 rounded-card border-2 transition-all
+                  ${errors.confirmPassword ? 'border-[var(--state-critical-line)]' : data.confirmPassword && data.password === data.confirmPassword ? 'border-[var(--state-positive-line)]' : 'border-line'}
+                  ${isLoading ? 'bg-surface opacity-60' : 'bg-surface-raised'}
                   focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
                 `}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gold"
+                aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher la confirmation du mot de passe'}
+                aria-pressed={showConfirmPassword}
+                className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-content-secondary hover:text-gold"
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
             {data.confirmPassword && data.password === data.confirmPassword && !errors.confirmPassword && (
-              <div className="flex items-center gap-2 text-green-600 text-sm">
-                <CheckCircle2 size={16} /> Passwords match
+              <div className="flex items-center gap-2 text-[var(--state-positive)] text-sm">
+                <CheckCircle2 size={16} /> Les mots de passe correspondent
               </div>
             )}
             {errors.confirmPassword && (
-              <div className="flex items-center gap-2 text-red-500 text-sm">
-                <AlertCircle size={16} /> {errors.confirmPassword}
+              <div className="field-error" role="alert">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <span>{errors.confirmPassword}</span>
               </div>
             )}
           </div>
@@ -283,18 +321,18 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
           <input
             type="checkbox"
             checked={data.agreeToTerms}
-            onChange={(e) => onChange({ ...data, agreeToTerms: e.target.checked })}
+            onChange={(e) => update({ agreeToTerms: e.target.checked })}
             disabled={isLoading}
-            className="w-6 h-6 mt-1 rounded-lg border-2 border-gray-300 cursor-pointer accent-gold"
+            className="w-6 h-6 shrink-0 mt-1 rounded-card border-2 border-line-strong cursor-pointer accent-gold"
           />
-          <span className="text-sm text-gray-700">
-            J'accepte les{' '}
+          <span className="text-sm text-content-secondary">
+            J’accepte les{' '}
             <a href="/terms" target="_blank" className="text-gold font-semibold hover:underline">
-              Conditions d'utilisation
+              {t('Conditions d’utilisation')}
             </a>{' '}
             et la{' '}
             <a href="/privacy" target="_blank" className="text-gold font-semibold hover:underline">
-              Politique de confidentialité
+              {t('Politique de confidentialité')}
             </a>
           </span>
         </label>
@@ -302,9 +340,11 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
           <motion.p
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-2 text-sm text-red-500"
+            className="field-error mt-2"
+            role="alert"
           >
-            {errors.agreeToTerms}
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <span>{errors.agreeToTerms}</span>
           </motion.p>
         )}
       </motion.div>
@@ -314,12 +354,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ data, onChange, onNext, isLoadin
         <button
           onClick={handleNext}
           disabled={isLoading}
-          className={`
-            w-full h-14 rounded-xl font-bold text-lg transition-all
-            bg-gold hover:bg-gold/90 text-navy-900
-            disabled:opacity-50 disabled:cursor-not-allowed
-            shadow-lg hover:shadow-xl hover:scale-[1.02]
-          `}
+          className="btn-gold btn-lg w-full"
         >
           {isLoading ? 'Chargement...' : 'Suivant'}
         </button>

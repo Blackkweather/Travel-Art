@@ -84,7 +84,9 @@ export interface Booking {
   startDate: string
   endDate: string
   status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED'
-  creditsUsed?: number // Deprecated - kept for backward compatibility
+  /** What the booking actually cost, frozen when it was created. */
+  creditCost?: number
+  creditsUsed?: number // Deprecated - the API always writes 0
   weeklyPaymentAmount?: number // Weekly payment in EUR (default: 200)
   numberOfWeeks?: number // Number of weeks for this booking
   totalPaymentAmount?: number // Total payment amount
@@ -168,6 +170,8 @@ export interface LoginCredentials {
 
 export interface RegisterData {
   role: 'ARTIST' | 'HOTEL'
+  /** Refused by the server unless literally true. */
+  acceptTerms?: boolean
   name: string
   firstName?: string
   lastName?: string
@@ -187,6 +191,14 @@ export interface RegisterData {
     categoryType?: string
     specificCategory?: string
     domain?: string
+  }
+  /** What the seven-step hotel form collected, written with the account. */
+  hotelProfile?: {
+    description?: string
+    city?: string
+    performanceSpots?: string
+    rooms?: string
+    repName?: string
   }
 }
 

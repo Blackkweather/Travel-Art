@@ -1,133 +1,123 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Mail, Phone, Instagram, Twitter, Facebook, Linkedin, MessageCircle } from 'lucide-react'
-import { getLogoUrl } from '@/config/assets'
+import { Instagram, Linkedin, Facebook } from 'lucide-react'
+import BrandWordmark from '@/components/BrandWordmark'
 import NewsletterSignup from './NewsletterSignup'
+import { t } from '@/i18n'
 
+const DISCOVER_LINKS = [
+  { to: '/experiences', label: t('Expériences') },
+  { to: '/how-it-works', label: t('Le principe') },
+  { to: '/top-artists', label: t('Artistes') },
+  { to: '/top-hotels', label: t('Hôtels') },
+  { to: '/faq', label: 'FAQ' },
+]
+
+const COMPANY_LINKS = [
+  { to: '/about', label: t('À propos') },
+  { to: '/partners', label: t('Partenaires') },
+]
+
+const LEGAL_LINKS = [
+  { to: '/privacy', label: t('Confidentialité') },
+  { to: '/terms', label: 'Conditions' },
+  { to: '/cookies', label: 'Cookies' },
+]
+
+const SOCIALS = [
+  { href: 'https://instagram.com', label: 'Instagram', Icon: Instagram },
+  { href: 'https://linkedin.com', label: 'LinkedIn', Icon: Linkedin },
+  { href: 'https://facebook.com', label: 'Facebook', Icon: Facebook },
+]
+
+/**
+ * Site footer. The logo previously rendered at h-36 (144px), dominating every
+ * page; it now matches the navigation at h-9.
+ */
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-50 text-navy py-16">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Logo and Description */}
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center mb-6">
-              <img 
-                src={getLogoUrl('transparent')} 
-                alt="Travel Art" 
-                className="h-36 w-auto object-contain"
-              />
-            </div>
-            <p className="text-gray-600 mb-6 max-w-md">
-              Connecting luxury hotels with talented artists to create unforgettable rooftop performances, 
-              intimate concerts, and magical experiences that inspire and delight guests worldwide.
+    <footer className="bg-[var(--surface-inverse)] text-[var(--text-on-inverse)] border-t border-line">
+      <div className="shell py-20">
+        <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-8 gap-y-14">
+          <div className="col-span-2 lg:col-span-4">
+            <BrandWordmark className="h-9 w-auto text-cream" />
+            <p className="mt-6 text-content-inverse/60 leading-relaxed max-w-[38ch]">
+              {t('Des résidences d’artistes au cœur des hôtels d’exception. Musiciens, plasticiens et interprètes, reçus là où leur travail trouve sa place.')}
             </p>
-            <div className="mb-6">
-              <h4 className="text-sm font-semibold text-navy mb-3">Stay Updated</h4>
+
+            <div className="mt-8 max-w-sm">
               <NewsletterSignup variant="inline" />
             </div>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-600 hover:text-gold transition-colors">
-                <Instagram className="w-6 h-6" />
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gold transition-colors">
-                <Twitter className="w-6 h-6" />
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gold transition-colors">
-                <Facebook className="w-6 h-6" />
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gold transition-colors">
-                <Linkedin className="w-6 h-6" />
-              </a>
-            </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-lg font-serif font-semibold mb-6 gold-underline">Quick Links</h3>
-            <ul className="space-y-3">
+          <nav className="lg:col-span-2 lg:col-start-6" aria-label={t('Découvrir')}>
+            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">{t('Découvrir')}</h3>
+            <ul className="space-y-1">
+              {DISCOVER_LINKS.map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="inline-flex items-center min-h-[44px] min-w-[44px] text-sm text-content-inverse/60 hover:text-gold-500 transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <nav className="lg:col-span-2" aria-label={t('La maison')}>
+            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">{t('La maison')}</h3>
+            <ul className="space-y-1">
+              {COMPANY_LINKS.map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="inline-flex items-center min-h-[44px] min-w-[44px] text-sm text-content-inverse/60 hover:text-gold-500 transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="lg:col-span-3">
+            <h3 className="font-sans text-sm font-semibold text-[var(--text-on-inverse)] mb-5">Contact</h3>
+            <ul className="space-y-3 text-sm text-content-inverse/60">
+              <li>Paris, France</li>
               <li>
-                <Link to="/how-it-works" className="text-gray-600 hover:text-gold transition-colors">
-                  How it Works
-                </Link>
-              </li>
-              <li>
-                <Link to="/partners" className="text-gray-600 hover:text-gold transition-colors">
-                  Partners
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="text-gray-600 hover:text-gold transition-colors">
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link to="/top-artists" className="text-gray-600 hover:text-gold transition-colors">
-                  Top Artists
-                </Link>
-              </li>
-              <li>
-                <Link to="/top-hotels" className="text-gray-600 hover:text-gold transition-colors">
-                  Top Hotels
-                </Link>
+                <a href="mailto:hello@travelart.com" className="inline-flex items-center min-h-[44px] hover:text-gold-500 transition-colors">
+                  hello@travelart.com
+                </a>
               </li>
             </ul>
-          </div>
 
-          {/* Contact Info */}
-          <div>
-            <h3 className="text-lg font-serif font-semibold mb-6 gold-underline">Contact</h3>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <MapPin className="w-5 h-5 text-gold flex-shrink-0" />
-                <span className="text-gray-600">Paris, France</span>
-              </div>
-              <a 
-                href="mailto:hello@travelart.com" 
-                className="flex items-center space-x-3 text-gray-600 hover:text-gold transition-colors group"
-              >
-                <Mail className="w-5 h-5 text-gold flex-shrink-0 group-hover:scale-110 transition-transform" />
-                <span>hello@travelart.com</span>
-              </a>
-              <a 
-                href="tel:+33123456789" 
-                className="flex items-center space-x-3 text-gray-600 hover:text-gold transition-colors group"
-              >
-                <Phone className="w-5 h-5 text-gold flex-shrink-0 group-hover:scale-110 transition-transform" />
-                <span>+33 1 23 45 67 89</span>
-              </a>
-              <a 
-                href="https://wa.me/33123456789?text=Hello%20Travel%20Art%2C%20I%20would%20like%20to%20know%20more%20about%20your%20services" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center space-x-3 text-gray-600 hover:text-gold transition-colors group"
-              >
-                <MessageCircle className="w-5 h-5 text-gold flex-shrink-0 group-hover:scale-110 transition-transform" />
-                <span>WhatsApp Us</span>
-              </a>
-            </div>
+            <ul className="flex gap-1 mt-6 -ml-3">
+              {SOCIALS.map(({ href, label, Icon }) => (
+                <li key={label}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="inline-flex h-11 w-11 items-center justify-center text-content-inverse/50 hover:text-gold-500 transition-colors"
+                  >
+                    <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-300 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-500 text-sm">
-            © 2024 Travel Art. All rights reserved.
+        <div className="border-t border-content-inverse/15 mt-16 pt-8 flex flex-col sm:flex-row justify-between gap-4">
+          <p className="text-sm text-content-inverse/50">
+            &copy; {new Date().getFullYear()} Travel Art
           </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link to="/privacy" className="text-gray-500 hover:text-gold transition-colors text-sm">
-              Privacy Policy
-            </Link>
-            <Link to="/terms" className="text-gray-500 hover:text-gold transition-colors text-sm">
-              Terms of Service
-            </Link>
-            <Link to="/cookies" className="text-gray-500 hover:text-gold transition-colors text-sm">
-              Cookie Policy
-            </Link>
-            <Link to="/about" className="text-gray-500 hover:text-gold transition-colors text-sm">
-              About
-            </Link>
-          </div>
+          <ul className="flex flex-wrap gap-x-6">
+            {LEGAL_LINKS.map((link) => (
+              <li key={link.to}>
+                <Link to={link.to} className="inline-flex items-center min-h-[44px] text-sm text-content-inverse/50 hover:text-gold-500 transition-colors">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>

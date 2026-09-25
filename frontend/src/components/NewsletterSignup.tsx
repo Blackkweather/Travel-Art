@@ -1,5 +1,8 @@
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
 import { Mail, Send, CheckCircle } from 'lucide-react'
+import { t, getLocale } from '@/i18n'
+import toast from 'react-hot-toast'
+import { apiClient } from '@/utils/api'
 
 interface NewsletterSignupProps {
   variant?: 'inline' | 'modal' | 'banner'
@@ -11,6 +14,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
   className = ''
 }) => {
   const [email, setEmail] = useState('')
+  const fieldId = useId()
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -20,20 +24,21 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
 
     setSubmitting(true)
     try {
-      // In production, this would call an API endpoint
-      // await apiClient.post('/newsletter/subscribe', { email })
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      // This used to be a one-second timer with the call commented out, so the
+      // form reported success and threw the address away.
+      await apiClient.post('/newsletter/subscribe', {
+        email,
+        locale: getLocale(),
+        source: variant,
+      })
+
       setSuccess(true)
       setEmail('')
-      
-      // Reset success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000)
-    } catch (error) {
-      console.error('Failed to subscribe:', error)
-      alert('Failed to subscribe. Please try again.')
+    } catch {
+      // A native alert() is the wrong register for this and blocks the page;
+      // the rest of the app reports failures as toasts.
+      toast.error(t('L’inscription a échoué. Veuillez réessayer.'))
     } finally {
       setSubmitting(false)
     }
@@ -46,37 +51,39 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
           <div className="flex items-center justify-center gap-2 mb-3">
             <Mail className="w-6 h-6 text-gold" />
             <h3 className="text-2xl font-serif font-bold">
-              Stay Inspired with Travel Art
+              {t('Restez inspiré avec Travel Art')}
             </h3>
           </div>
-          <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-            Get weekly updates on new artist residencies, exclusive experiences, and insider stories from luxury hotels.
+          <p className="text-white/75 mb-6 max-w-2xl mx-auto">
+            {t('Chaque semaine, les nouvelles résidences, les expériences exclusives et les coulisses de nos hôtels.')}
           </p>
           <form onSubmit={handleSubmit} className="max-w-md mx-auto flex gap-3">
             <div className="flex-1">
+              <label htmlFor={fieldId} className="sr-only">{t('Adresse e-mail')}</label>
               <input
                 type="email"
+                id={fieldId}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address"
-                className="w-full px-4 py-3 rounded-lg text-navy focus:outline-none focus:ring-2 focus:ring-gold"
+                placeholder={t('Saisissez votre adresse e-mail')}
+                className="w-full px-4 py-3 rounded-card text-content focus:outline-none focus:ring-2 focus:ring-gold"
                 required
               />
             </div>
             <button
               type="submit"
               disabled={submitting || success}
-              className="bg-gold text-navy px-6 py-3 rounded-lg font-semibold hover:bg-gold/90 transition-colors disabled:opacity-60 flex items-center space-x-2 whitespace-nowrap"
+              className="bg-gold text-navy px-6 py-3 rounded-card font-semibold hover:bg-gold/90 transition-colors disabled:opacity-60 flex items-center space-x-2 whitespace-nowrap"
             >
               {success ? (
                 <>
                   <CheckCircle className="w-5 h-5" />
-                  <span>Subscribed!</span>
+                  <span>{t('Inscription confirmée')}</span>
                 </>
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  <span>{submitting ? 'Subscribing...' : 'Subscribe'}</span>
+                  <span>{submitting ? 'Inscription…' : t('S’inscrire')}</span>
                 </>
               )}
             </button>
@@ -88,23 +95,25 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
 
   if (variant === 'modal') {
     return (
-      <div className={`bg-white rounded-xl shadow-luxury p-8 max-w-md ${className}`}>
+      <div className={`bg-surface-raised rounded-card shadow-luxury p-8 max-w-md ${className}`}>
         <div className="flex items-center gap-2 mb-3">
           <Mail className="w-6 h-6 text-gold" />
-          <h3 className="text-2xl font-serif font-bold text-navy">
-            Join Our Newsletter
+          <h3 className="text-2xl font-serif font-bold text-content">
+            {t('Notre lettre d’information')}
           </h3>
         </div>
-        <p className="text-gray-600 mb-6">
-          Get exclusive access to new artist residencies and luxury hotel experiences.
+        <p className="text-content-secondary mb-6">
+          {t('Un accès privilégié aux nouvelles résidences et aux expériences de nos hôtels.')}
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label htmlFor={fieldId} className="sr-only">{t('Adresse e-mail')}</label>
             <input
               type="email"
+              id={fieldId}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
+              placeholder={t('Saisissez votre adresse e-mail')}
               className="form-input w-full"
               required
             />
@@ -117,14 +126,14 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
             {success ? (
               <>
                 <CheckCircle className="w-5 h-5" />
-                <span>Subscribed!</span>
+                <span>{t('Inscription confirmée')}</span>
               </>
             ) : submitting ? (
-              'Subscribing...'
+              'Inscription…'
             ) : (
               <>
                 <Send className="w-5 h-5" />
-                <span>Subscribe</span>
+                <span>{t('S’abonner')}</span>
               </>
             )}
           </button>
@@ -138,11 +147,13 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
     <div className={`${className}`}>
       <form onSubmit={handleSubmit} className="flex gap-3">
         <div className="flex-1">
+          <label htmlFor={fieldId} className="sr-only">{t('Adresse e-mail')}</label>
           <input
             type="email"
+            id={fieldId}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email address"
+            placeholder={t('Saisissez votre adresse e-mail')}
             className="form-input w-full"
             required
           />
@@ -152,7 +163,7 @@ export const NewsletterSignup: React.FC<NewsletterSignupProps> = ({
           disabled={submitting || success}
           className="btn-primary disabled:opacity-60 px-6 whitespace-nowrap"
         >
-          {success ? '✓ Subscribed' : submitting ? '...' : 'Subscribe'}
+          {success ? '✓ Inscrit' : submitting ? '…' : 'S’inscrire'}
         </button>
       </form>
     </div>

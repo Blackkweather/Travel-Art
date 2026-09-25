@@ -1,314 +1,186 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
+import NotificationBell from '@/components/NotificationBell'
 import { useAuthStore } from '@/store/authStore'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { t } from '@/i18n'
+
+/**
+ * Header for the signed-in shell. It renders inside Layout, alongside Sidebar,
+ * which already carries the account navigation - so this bar deliberately
+ * carries only the public-facing links and the account actions. It used to
+ * repeat six marketing links that the sidebar also listed.
+ *
+ * Both the desktop nav and the mobile panel used to be wrapped in `{user && …}`.
+ * Layout returns null without a user, so that condition was always true here,
+ * but it also meant the signed-out branch of this component rendered a bar with
+ * no navigation at all if it were ever mounted outside Layout. The links are
+ * unconditional now and the account actions are what varies.
+ */
+
+const NAV_ITEMS = [
+  { to: '/experiences', label: t('Expériences') },
+  { to: '/top-artists', label: t('Artistes') },
+  { to: '/top-hotels', label: t('Hôtels') },
+  { to: '/how-it-works', label: t('Le principe') },
+]
 
 const Header: React.FC = () => {
   const { user, logout } = useAuthStore()
+  const { pathname } = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [headerScrolled, setHeaderScrolled] = useState(false)
-  
-  // Header scroll effect - same as SimpleNavbar
+
   useEffect(() => {
-    const handleScroll = () => {
-      setHeaderScrolled(window.scrollY > 50)
-    }
+    const handleScroll = () => setHeaderScrolled(window.scrollY > 50)
     window.addEventListener('scroll', handleScroll, { passive: true })
     handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-  
+
+  // A route change should never leave the panel hanging open behind the page.
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [pathname])
+
   const handleLogout = async () => {
-    // Only logout on explicit user action - prevent any automatic logout
-    const confirmLogout = window.confirm('Are you sure you want to logout?')
-    if (!confirmLogout) return
-    
-    // Clear local auth state
+    // Only ever on an explicit user action - never automatically. No
+    // confirmation: signing out costs one sign-in to undo, and a native dialog
+    // in front of it was friction on the one action people take deliberately.
     logout()
     window.location.href = '/'
   }
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen)
-  }
+  const linkClass =
+    'text-sm font-medium text-content transition-colors duration-300 relative group'
+
+  const underline = (active: boolean) =>
+    `absolute -bottom-1 left-0 h-px bg-gold transition-all duration-300 ${
+      active ? 'w-full' : 'w-0 group-hover:w-full'
+    }`
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        headerScrolled 
-          ? 'bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-lg' 
-          : 'bg-transparent'
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to={user ? "/dashboard" : "/"} className="hover:opacity-80 transition-all duration-300 hover:scale-105">
-              <img 
-                src={getLogoUrl('transparent')} 
-                alt="Travel Art" 
-                className="h-12 md:h-20 lg:h-24 xl:h-28 w-auto object-contain transition-all duration-300"
-              />
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
+          headerScrolled || isMobileMenuOpen
+            ? 'bg-surface-raised/95 backdrop-blur-md border-b border-line'
+            : 'bg-transparent'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between gap-6">
+          <div className="flex items-center gap-10">
+            <Link
+              to={user ? '/dashboard' : '/'}
+              className="shrink-0 hover:opacity-80 transition-opacity duration-300"
+              aria-label={t('Travel Art, accueil')}
+            >
+              {/* The lettering inherits the text colour, so the mark no
+                  longer needs a brightness/invert filter standing in for a
+                  second asset. */}
+              <BrandWordmark className="h-8 md:h-9 w-auto text-navy dark:text-cream" />
             </Link>
-            
-            {/* Desktop Navigation - Only show for logged-in users */}
-            {user && (
-              <nav className="hidden md:flex gap-8">
-                <Link 
-                  to="/how-it-works" 
-                  className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
-                  }`}
+
+            <nav className="hidden lg:flex gap-8" aria-label={t('Navigation principale')}>
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-current={pathname === item.to ? 'page' : undefined}
+                  className={linkClass}
                 >
-                  How it Works
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
-                  }`} />
+                  {item.label}
+                  <span className={underline(pathname === item.to)} />
                 </Link>
-                <Link 
-                  to="/partners" 
-                  className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
-                  }`}
-                >
-                  Partners
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
-                  }`} />
-                </Link>
-                <Link 
-                  to="/pricing" 
-                  className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
-                  }`}
-                >
-                  Pricing
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
-                  }`} />
-                </Link>
-                <Link 
-                  to="/top-artists" 
-                  className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
-                  }`}
-                >
-                  Top Artists
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
-                  }`} />
-                </Link>
-                <Link 
-                  to="/top-hotels" 
-                  className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
-                  }`}
-                >
-                  Top Hotels
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
-                  }`} />
-                </Link>
-                <Link 
-                  to="/experiences" 
-                  className={`text-sm font-semibold transition-all duration-300 relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
-                  }`}
-                >
-                  Experiences
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
-                  }`} />
-                </Link>
-              </nav>
-            )}
+              ))}
+            </nav>
           </div>
-          
-          {/* Action Buttons */}
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-5">
+            <LanguageSwitcher />
             {user ? (
               <>
-                <Link 
-                  to="/dashboard" 
-                  className={`text-sm font-semibold transition-all duration-300 hidden sm:block relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
-                  }`}
-                >
-                  Dashboard
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
-                  }`} />
+                {/* Sits before the dashboard link because it is the thing most
+                    likely to be the reason someone opened the app. */}
+                <NotificationBell />
+                <Link to="/dashboard" className={`${linkClass} hidden sm:block`}>
+                  {t('Tableau de bord')}
+                  <span className={underline(pathname === '/dashboard')} />
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="bg-teal-500 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-teal-400 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 relative overflow-hidden group"
-                  data-testid="user-menu"
-                >
-                  <span className="relative z-10">Logout</span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-teal-400 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <button onClick={handleLogout} className="btn-gold btn-sm" data-testid="user-menu">
+                  {t('Déconnexion')}
                 </button>
               </>
             ) : (
               <>
-                <Link 
-                  to="/login" 
-                  className={`text-sm font-semibold transition-all duration-300 hidden sm:block relative group ${
-                    headerScrolled ? 'text-gray-900' : 'text-gray-800'
-                  }`}
-                >
-                  Sign In
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${
-                    headerScrolled ? 'bg-teal-600' : 'bg-teal-600'
-                  }`} />
+                <Link to="/login" className={`${linkClass} hidden sm:block`}>
+                  {t('Connexion')}
+                  <span className={underline(pathname === '/login')} />
                 </Link>
-                <Link 
-                  to="/register"
-                  className="bg-teal-500 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-teal-400 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 relative overflow-hidden group"
-                >
-                  <span className="relative z-10">Join Now</span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-teal-400 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <Link to="/register" className="btn-gold btn-sm">
+                  {t('Nous rejoindre')}
                 </Link>
               </>
             )}
-          </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={toggleMobileMenu}
-            className={`md:hidden transition-colors p-2 ${
-              headerScrolled ? 'text-gray-900' : 'text-gray-800'
-            } hover:text-teal-500`}
-            aria-label="Toggle mobile menu"
-            data-testid="mobile-menu-toggle"
-          >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+            <button
+              onClick={() => setIsMobileMenuOpen((open) => !open)}
+              className="lg:hidden text-content hover:text-gold transition-colors p-1"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="header-mobile-nav"
+              aria-label={isMobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              data-testid="mobile-menu-toggle"
+            >
+              {isMobileMenuOpen
+                ? <X size={22} strokeWidth={1.5} aria-hidden="true" />
+                : <Menu size={22} strokeWidth={1.5} aria-hidden="true" />}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
+        <motion.nav
+          id="header-mobile-nav"
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className={`fixed top-[88px] left-0 right-0 z-40 border-b shadow-lg md:hidden transition-all duration-300 ${
-            headerScrolled 
-              ? 'bg-white/95 backdrop-blur-md border-gray-200/50' 
-              : 'bg-transparent border-white/10'
-          }`}
+          aria-label={t('Navigation principale')}
+          /* This was pinned to top-[88px] while the bar is 72px tall, leaving a
+             16px strip of the page showing through between the two. */
+          className="fixed top-[72px] left-0 right-0 z-40 lg:hidden border-b border-line bg-surface-raised/98 backdrop-blur-md"
           data-testid="mobile-menu"
         >
-          <div className="px-6 py-4 space-y-4">
-            {/* Mobile Navigation Links - Only show for logged-in users */}
-            {user && (
-              <div className="space-y-3">
-                <Link 
-                  to="/how-it-works" 
-                  className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  How it Works
-                </Link>
-                <Link 
-                  to="/partners" 
-                  className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Partners
-                </Link>
-                <Link 
-                  to="/pricing" 
-                  className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Pricing
-                </Link>
-                <Link 
-                  to="/top-artists" 
-                  className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Top Artists
-                </Link>
+          <ul className="px-6 py-4 flex flex-col">
+            {NAV_ITEMS.map((item) => (
+              <li key={item.to} className="border-b border-line/60 last:border-0">
                 <Link
-                  to="/top-hotels"
-                  className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  to={item.to}
+                  aria-current={pathname === item.to ? 'page' : undefined}
+                  className="block py-4 font-serif text-2xl text-content hover:text-gold transition-colors"
                 >
-                  Top Hotels
+                  {item.label}
                 </Link>
-                <Link
-                  to="/experiences"
-                  className={`block transition-colors font-medium py-2 ${
-                    headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Experiences
-                </Link>
-              </div>
-            )}
-            
-            {/* Mobile Action Buttons */}
-            <div className={`pt-4 border-t space-y-3 ${
-              headerScrolled ? 'border-gray-200/50' : 'border-white/10'
-            }`}>
+              </li>
+            ))}
+            <li className="pt-5">
+              <LanguageSwitcher compact />
+            </li>
+            <li className="pt-5 sm:hidden">
               {user ? (
-                <>
-                  <Link 
-                    to="/dashboard" 
-                    className={`block transition-colors font-medium py-2 ${
-                      headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <button
-                    onClick={() => {
-                      handleLogout()
-                      setIsMobileMenuOpen(false)
-                      window.location.href = '/'
-                    }}
-                    className="w-full bg-teal-500 text-white px-6 py-3 rounded-full font-bold hover:bg-teal-400 transition-all duration-300 text-center shadow-lg hover:shadow-xl"
-                  >
-                    Logout
-                  </button>
-                </>
+                <Link to="/dashboard" className="text-sm font-medium text-content-secondary hover:text-content">
+                  {t('Tableau de bord')}
+                </Link>
               ) : (
-                <>
-                  <Link 
-                    to="/login" 
-                    className={`block transition-colors font-medium py-2 ${
-                      headerScrolled ? 'text-gray-900 hover:text-teal-600' : 'text-gray-800 hover:text-teal-600'
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Link 
-                    to="/register" 
-                    className="block bg-teal-500 text-white px-6 py-3 rounded-full font-bold hover:bg-teal-400 transition-all duration-300 text-center shadow-lg hover:shadow-xl"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Join Travel Art
-                  </Link>
-                </>
+                <Link to="/login" className="text-sm font-medium text-content-secondary hover:text-content">
+                  {t('Connexion')}
+                </Link>
               )}
-            </div>
-          </div>
-        </motion.div>
+            </li>
+          </ul>
+        </motion.nav>
       )}
     </>
   )

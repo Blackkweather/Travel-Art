@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 // Artist Registration Form Types
 
 export interface BasicInfo {
@@ -46,26 +47,26 @@ export interface ArtistRegistrationData {
 
 // Category Options
 export const MAIN_CATEGORIES = [
-  { value: 'Musique', label: 'Musique (Music)' },
-  { value: 'Visuel', label: 'Visuel (Visual)' },
+  { value: 'Musique', label: 'Musique' },
+  { value: 'Visuel', label: 'Visuel' },
   { value: 'Arts & craft', label: 'Arts & craft' },
-  { value: 'Cirque', label: 'Cirque (Circus)' },
-  { value: 'Magie', label: 'Magie (Magic)' },
-  { value: 'Humour', label: 'Humour (Humor)' },
-  { value: 'Danse', label: 'Danse (Dance)' },
-  { value: 'Famille', label: 'Famille (Family)' },
+  { value: 'Cirque', label: 'Cirque' },
+  { value: 'Magie', label: 'Magie' },
+  { value: 'Humour', label: 'Humour' },
+  { value: 'Danse', label: 'Danse' },
+  { value: 'Famille', label: 'Famille' },
   { value: 'Lifestyle', label: 'Lifestyle' }
 ];
 
 export const AUDIENCE_TYPES = [
-  { value: 'Adultes', label: 'Adultes (Adults)' },
-  { value: 'Familles', label: 'Familles (Families)' }
+  { value: 'Adultes', label: 'Adultes' },
+  { value: 'Familles', label: 'Familles' }
 ];
 
 export const LANGUAGES = [
-  { value: 'Français', label: 'Français' },
+  { value: 'Français', label: t('Français') },
   { value: 'English', label: 'English' },
-  { value: 'Autre', label: 'Autre (Other)' }
+  { value: 'Autre', label: 'Autre' }
 ];
 
 // Subcategory mapping by main category
@@ -141,7 +142,7 @@ export const COUNTRIES = [
 export const VALIDATION = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   phone: /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/,
-  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/,
+  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/,
   date: /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/\d{4}$/
 };
 

@@ -5,67 +5,23 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
+import { I18nProvider, t } from './i18n'
 import './index.css'
-import 'leaflet/dist/leaflet.css'
 
-// Suppress YouTube iframe postMessage errors in development
-// These are harmless cross-origin warnings that occur when YouTube iframe tries to communicate
-const isDev = (import.meta.env as any).MODE === 'development' || window.location.hostname === 'localhost'
-if (isDev) {
-  const originalError = window.console.error
-  window.console.error = function(...args: any[]) {
-    const message = args[0]?.toString() || ''
-    // Suppress YouTube postMessage cross-origin errors (harmless in development)
-    if (message.includes('postMessage') && 
-        (message.includes('target origin') || message.includes('Failed to execute'))) {
-      return
-    }
-    originalError.apply(window.console, args)
-  }
-  
-  // Also suppress uncaught errors from YouTube iframe
-  window.addEventListener('error', (event) => {
-    if (event.message?.includes('postMessage') && 
-        (event.message.includes('target origin') || event.message.includes('Failed to execute'))) {
-      event.preventDefault()
-      return false
-    }
-  }, true)
-}
+// Two global error handlers used to sit here. Both existed only to swallow
+// what the ambient-audio YouTube iframe threw at React - postMessage
+// cross-origin warnings, and removeChild/insertBefore failures caused by
+// YouTube mutating DOM that React believed it owned. One of them monkey-
+// patched window.console.error. The iframe is gone, so what they were
+// suppressing cannot happen; keeping them would only hide real errors.
 
-// Global error handler for DOM manipulation errors
-// This catches errors that might slip through ErrorBoundary
-// Suppress YouTube/React DOM conflicts - these are harmless
-window.addEventListener('error', (event) => {
-  const error = event.error || new Error(event.message)
-  const isDOMError = 
-    error.message?.includes('removeChild') ||
-    error.message?.includes('insertBefore') ||
-    error.message?.includes('appendChild') ||
-    error.message?.includes('replaceChild') ||
-    error.message?.includes('Failed to execute') ||
-    error.name === 'NotFoundError' ||
-    error.name === 'HierarchyRequestError'
-  
-  // Check if it's related to YouTube player (harmless DOM conflicts)
-  const isYouTubeRelated = 
-    error.message?.includes('youtube') ||
-    error.message?.includes('YT') ||
-    error.stack?.includes('AmbientAudio') ||
-    document.querySelector('[data-youtube-player]')
-  
-  if (isDOMError && isYouTubeRelated && !event.defaultPrevented) {
-    // Suppress these errors - they're harmless conflicts between React and YouTube
-    event.preventDefault()
-    event.stopPropagation()
-    return false
-  }
-  
-  if (isDOMError && !event.defaultPrevented) {
-    console.warn('⚠️ DOM manipulation error caught globally:', error.message)
-    // Don't prevent default - let ErrorBoundary handle it
-  }
-}, true)
+// index.html carries a static French title, which is right for the default
+// language and wrong once someone switches. Set before the first render, so
+// there is no flash of the other language in the tab; a page that sets its own
+// title through SEOHead still wins, because its effect runs after this.
+document.title = t('Travel Art — Résidences d’artistes en hôtellerie d’exception')
+
+const isDev = import.meta.env.MODE === 'development'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -90,19 +46,21 @@ const AppContent = (
   >
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        <I18nProvider>
+          <App />
+        </I18nProvider>
         <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#14b8a6',
-              color: '#ffffff',
+              background: '#B99851',
+              color: '#14161A',
             },
             success: {
               iconTheme: {
-                primary: '#ffffff',
-                secondary: '#14b8a6',
+                primary: '#14161A',
+                secondary: '#B99851',
               },
             },
             error: {

@@ -1,11 +1,9 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useId, useMemo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Calendar, ChevronDown } from 'lucide-react';
-import { format, parse, isValid, startOfMonth, endOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay, getYear, getMonth, setYear, setMonth } from 'date-fns';
+import { ChevronLeft, ChevronRight, Calendar, ChevronDown, AlertCircle } from 'lucide-react';
+import { format, parse, isValid, startOfMonth, startOfWeek, addDays, addMonths, isSameMonth, isSameDay, getYear, getMonth, setYear, setMonth } from 'date-fns';
+import { MONTHS_FR, MONTHS_FR_FULL, WEEKDAYS_FR } from '@/utils/frenchDates';
 
-// French month names fallback
-const MONTHS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-const MONTHS_FR_FULL = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
 interface DatePickerProps {
   label?: string;
@@ -14,9 +12,10 @@ interface DatePickerProps {
   placeholder?: string;
   error?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
-const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeholder = 'JJ/MM/AAAA', error, disabled }) => {
+const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeholder = 'JJ/MM/AAAA', error, disabled, required = false }) => {
   const parsed = useMemo(() => {
     const p = parse(value, 'dd/MM/yyyy', new Date());
     return isValid(p) ? p : new Date(1990, 0, 1);
@@ -59,7 +58,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
 
   // Format input as user types (DD/MM/YYYY)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let inputVal = e.target.value;
+    const inputVal = e.target.value;
     
     // Handle backspace - allow deleting slashes
     if (inputVal.length < inputValue.length) {
@@ -73,7 +72,10 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
     
     // Format as DD/MM/YYYY
     if (newValue.length <= 2) {
-      newValue = newValue;
+      // Day-only input needs no separator yet, so the digits stand as typed.
+      // This branch previously read `newValue = newValue`, a self-assignment
+      // that did nothing; the branch itself is kept so the chain still reads
+      // as three explicit length cases.
     } else if (newValue.length <= 4) {
       newValue = newValue.slice(0, 2) + '/' + newValue.slice(2);
     } else {
@@ -100,13 +102,15 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
-    const end = endOfMonth(currentMonth);
     const grid: Date[] = [];
     for (let d = 0; d < 42; d++) {
       grid.push(addDays(start, d));
     }
     return grid;
   }, [currentMonth]);
+
+  const fieldId = useId();
+  const errorId = `${fieldId}-error`;
 
   const selectDate = (date: Date) => {
     const selected = format(date, 'dd/MM/yyyy');
@@ -117,8 +121,9 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
   return (
     <div className="w-full space-y-2" ref={ref}>
       {label && (
-        <motion.label initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="form-input-label flex items-center gap-2">
+        <motion.label htmlFor={fieldId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="form-input-label flex items-center gap-2">
           <span>{label}</span>
+          {required && <span className="text-gold -ml-1" aria-hidden="true">*</span>}
         </motion.label>
       )}
 
@@ -126,7 +131,10 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
         <div className="relative flex items-center">
           <input
             ref={inputRef}
+            id={fieldId}
             type="text"
+            aria-invalid={!!error}
+            aria-describedby={error ? errorId : undefined}
             value={inputValue}
             onChange={handleInputChange}
             onFocus={() => !disabled && setOpen(true)}
@@ -134,18 +142,20 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
             disabled={disabled}
             maxLength={10}
             className={`
-              w-full h-12 px-4 pr-12 rounded-xl border-2 transition-all
-              ${error ? 'border-red-400' : 'border-gray-200'}
-              ${disabled ? 'bg-gray-50 opacity-60 cursor-not-allowed' : 'bg-white'}
+              w-full h-12 px-4 pr-12 rounded-card border-2 transition-all
+              ${error ? 'border-[var(--state-critical-line)]' : 'border-line'}
+              ${disabled ? 'bg-surface opacity-60 cursor-not-allowed' : 'bg-surface-raised'}
               focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold
-              ${inputValue ? 'text-gray-900' : 'text-gray-500'}
+              ${inputValue ? 'text-content' : 'text-content-secondary'}
             `}
           />
           <button
             type="button"
             onClick={() => !disabled && setOpen((o) => !o)}
             disabled={disabled}
-            className="absolute right-3 text-gold hover:text-gold/80 transition-colors"
+            aria-label="Ouvrir le calendrier"
+            aria-expanded={open}
+            className="absolute right-0 flex h-11 w-11 items-center justify-center text-gold hover:text-gold-800 transition-colors"
           >
             <Calendar className="w-5 h-5" />
           </button>
@@ -158,14 +168,14 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
-              className="absolute z-50 mt-2 w-full bg-white border-2 border-gold rounded-xl shadow-xl"
+              className="absolute z-50 mt-2 w-full bg-surface-raised border-2 border-gold rounded-card shadow-xl"
             >
-              <div className="p-3 border-b border-gray-200">
+              <div className="p-3 border-b border-line">
                 <div className="flex items-center justify-between mb-2">
                   <button
                     type="button"
                     onClick={() => setCurrentMonth((m) => addMonths(m, -1))}
-                    className="p-2 rounded-lg hover:bg-gold/10 text-gray-900 transition-colors"
+                    className="p-2 rounded-card hover:bg-gold/10 text-content transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
@@ -176,7 +186,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                         setShowMonthPicker(!showMonthPicker);
                         setShowYearPicker(false);
                       }}
-                      className="px-3 py-1 rounded-lg hover:bg-gold/10 text-sm font-semibold text-gray-900 transition-colors flex items-center gap-1"
+                      className="px-3 py-1 rounded-card hover:bg-gold/10 text-sm font-semibold text-content transition-colors flex items-center gap-1"
                     >
                       {MONTHS_FR_FULL[getMonth(currentMonth)]}
                       <ChevronDown className="w-4 h-4" />
@@ -187,7 +197,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                         setShowYearPicker(!showYearPicker);
                         setShowMonthPicker(false);
                       }}
-                      className="px-3 py-1 rounded-lg hover:bg-gold/10 text-sm font-semibold text-gray-900 transition-colors flex items-center gap-1"
+                      className="px-3 py-1 rounded-card hover:bg-gold/10 text-sm font-semibold text-content transition-colors flex items-center gap-1"
                     >
                       {format(currentMonth, 'yyyy')}
                       <ChevronDown className="w-4 h-4" />
@@ -196,7 +206,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                   <button
                     type="button"
                     onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-                    className="p-2 rounded-lg hover:bg-gold/10 text-gray-900 transition-colors"
+                    className="p-2 rounded-card hover:bg-gold/10 text-content transition-colors"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -212,7 +222,6 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                       className="grid grid-cols-3 gap-2 mt-2"
                     >
                       {Array.from({ length: 12 }, (_, i) => {
-                        const monthDate = new Date(currentMonth.getFullYear(), i, 1);
                         const monthName = MONTHS_FR[i];
                         const isSelected = getMonth(currentMonth) === i;
                         return (
@@ -224,8 +233,8 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                               setShowMonthPicker(false);
                             }}
                             className={`
-                              py-2 px-3 rounded-lg text-sm font-medium transition-colors
-                              ${isSelected ? 'bg-gold text-white' : 'bg-gray-100 text-gray-700 hover:bg-gold/20'}
+                              py-2 px-3 rounded-card text-sm font-medium transition-colors
+                              ${isSelected ? 'bg-gold text-off-black' : 'bg-surface-sunken text-content-secondary hover:bg-gold/20'}
                             `}
                           >
                             {monthName}
@@ -257,8 +266,8 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                               setShowYearPicker(false);
                             }}
                             className={`
-                              py-2 px-3 rounded-lg text-sm font-medium transition-colors
-                              ${isSelected ? 'bg-gold text-white' : 'bg-gray-100 text-gray-700 hover:bg-gold/20'}
+                              py-2 px-3 rounded-card text-sm font-medium transition-colors
+                              ${isSelected ? 'bg-gold text-off-black' : 'bg-surface-sunken text-content-secondary hover:bg-gold/20'}
                             `}
                           >
                             {year}
@@ -270,14 +279,10 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                 </AnimatePresence>
               </div>
 
-              <div className="grid grid-cols-7 gap-1 px-3 pt-3 text-xs font-medium text-gray-500">
-                <div className="text-center">L</div>
-                <div className="text-center">M</div>
-                <div className="text-center">M</div>
-                <div className="text-center">J</div>
-                <div className="text-center">V</div>
-                <div className="text-center">S</div>
-                <div className="text-center">D</div>
+              <div className="grid grid-cols-7 gap-1 px-3 pt-3 text-xs font-medium text-content-secondary">
+                {WEEKDAYS_FR.map((day, i) => (
+                  <div key={i} className="text-center">{day}</div>
+                ))}
               </div>
 
               <div className="grid grid-cols-7 gap-1 p-3">
@@ -290,9 +295,9 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
                       type="button"
                       onClick={() => selectDate(day)}
                       className={`
-                        h-10 rounded-lg text-sm
-                        ${selected ? 'bg-gold text-white font-semibold' : inMonth ? 'text-gray-900' : 'text-gray-400'}
-                        hover:bg-gold/10 hover:text-gray-900 transition-colors
+                        h-10 rounded-card text-sm
+                        ${selected ? 'bg-gold text-off-black font-semibold' : inMonth ? 'text-content' : 'text-content-secondary'}
+                        hover:bg-gold/10 hover:text-content transition-colors
                       `}
                     >
                       {format(day, 'd')}
@@ -306,8 +311,9 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, value, onChange, placeho
       </div>
 
       {error && (
-        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-2 text-sm text-red-600">
-          {error}
+        <motion.div id={errorId} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="field-error" role="alert">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <span>{error}</span>
         </motion.div>
       )}
     </div>

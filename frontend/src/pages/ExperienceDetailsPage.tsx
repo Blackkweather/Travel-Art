@@ -1,23 +1,101 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Star, MapPin, Calendar, Music, Users, Globe, Clock, ArrowLeft, Award, Camera } from 'lucide-react'
+import { Star, MapPin, Calendar, Music, Users, Globe, Clock, ArrowLeft } from 'lucide-react'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import { tripsApi } from '@/utils/api'
+import { useAuthStore } from '@/store/authStore'
+import { experienceTypeLabel } from '@/utils/i18n'
+import { countryLabel } from '@/i18n/countries'
+import { parseJsonField } from '@/utils/apiPayload'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import SEOHead from '@/components/SEOHead'
+import { t } from '@/i18n'
+
+/**
+ * The programme's published terms.
+ *
+ * The complaint about this page was that it described a teak terrace over the
+ * Andaman Sea and stated not one condition, while the benchmark competitor wins
+ * on published specifics alone. These six are the same on every residency in
+ * the network - they are the programme's terms, not the property's - so they
+ * are written here rather than read off the row, and a hotel comparing two
+ * residencies finds the identical contract in both.
+ *
+ * Built inside the render rather than at module scope: t() reads the active
+ * locale when it is called, and a const evaluated at import time would freeze
+ * these in whatever language the first page load happened to use.
+ */
+const programmeTerms = () => [
+  { term: t('Durée'), detail: t('7 nuits, du jour d’arrivée au jour de départ.') },
+  {
+    term: t('Temps de scène'),
+    detail: t('12 heures sur la semaine, 2 heures par jour au maximum.')
+  },
+  {
+    term: t('Jours sans scène'),
+    detail: t('Rien le jour de l’arrivée, rien le jour du départ.')
+  },
+  {
+    term: t('Accueil'),
+    detail: t('Chambre double pour l’artiste et un accompagnant, en pension complète.')
+  },
+  {
+    term: t('La scène'),
+    detail: t('Mise à disposition par l’hôtel, montée et réglée avant les balances.')
+  },
+  {
+    term: t('Voyage'),
+    detail: t('Le trajet jusqu’au lieu reste à la charge de l’artiste.')
+  }
+]
 
 const ExperienceDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [experience, setExperience] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  /* Only a hotel can open a booking - `POST /bookings` returns 403 for every
+     other role - so the call to action leads each visitor to the step that is
+     actually available to them rather than to a form that would be rejected. */
+  const reserveLabel = !user
+    ? t('Demander cette résidence')
+    : user.role === 'HOTEL'
+      ? t('Réserver cet artiste')
+      : t('Voir mes résidences')
+
+  const reserveHint = !user
+    ? t('Créez un compte hôtel pour ouvrir une réservation, ou un compte artiste pour candidater au programme.')
+    : user.role === 'HOTEL'
+      ? t('Vous serez dirigé vers la fiche de l’artiste pour choisir vos dates.')
+      : t('Les réservations sont ouvertes par les hôtels. Vos dates apparaissent dans votre tableau de bord.')
+
+  const handleReserve = () => {
+    if (!user) {
+      navigate('/register', { state: { from: `/experience/${id}` } })
+      return
+    }
+    if (user.role === 'HOTEL') {
+      navigate('/dashboard/artists', {
+        state: {
+          prefillArtistId: experience?.artistId ?? null,
+          prefillArtistName: experience?.artist ?? null
+        }
+      })
+      return
+    }
+    navigate('/dashboard/bookings')
+  }
 
   // Fetch experience from API
   useEffect(() => {
     const fetchExperience = async () => {
       if (!id) {
-        setError('Experience ID is required')
+        setError(t('Identifiant d’expérience manquant'))
         setLoading(false)
         return
       }
@@ -29,37 +107,29 @@ const ExperienceDetailsPage: React.FC = () => {
         
         // The trips API returns data directly (not wrapped in success/data)
         // axios response structure: res.data is the actual response body
-        // Backend returns: { id, title, slug, description, priceFrom, priceTo, location, images, status }
-        let trip: any = res.data
-        
-        // Handle case where backend might wrap it (though trips API doesn't)
-        if (trip && typeof trip === 'object' && 'data' in trip && trip.data) {
-          trip = trip.data
-        }
-        
-        // Also handle ApiResponse structure (though trips doesn't use it)
-        if (trip && typeof trip === 'object' && 'success' in trip && trip.success && trip.data) {
-          trip = trip.data
-        }
+        // Backend returns: { id, title, slug, description, location, images, status }
+        // The endpoint now returns { success, data } like the rest of the API,
+        // so the two shape-detection branches that used to sit here are gone.
+        const trip: any = res.data?.data ?? res.data
         
         if (!trip || !trip.id) {
           console.error('ExperienceDetailsPage - Invalid trip data:', trip)
-          setError('Experience not found')
+          setError(t('Expérience introuvable'))
           setLoading(false)
           return
         }
         
         // Parse location (can be string or object)
-        let location: any = { city: 'Unknown', country: '', lat: 0, lng: 0 }
+        let location: any = { city: 'Lieu inconnu', country: '', lat: 0, lng: 0 }
         if (trip.location) {
           try {
             location = typeof trip.location === 'string' ? JSON.parse(trip.location) : trip.location
-          } catch (e) {
+          } catch {
             // If location is a plain string, try to extract city/country
             if (typeof trip.location === 'string') {
               const parts = trip.location.split(',').map(s => s.trim())
               location = {
-                city: parts[0] || 'Unknown',
+                city: parts[0] || 'Lieu inconnu',
                 country: parts[1] || '',
                 lat: 0,
                 lng: 0
@@ -69,58 +139,57 @@ const ExperienceDetailsPage: React.FC = () => {
         }
         
         // Parse images
-        let images: string[] = []
-        try {
-          images = Array.isArray(trip.images) ? trip.images : 
-            (typeof trip.images === 'string' ? JSON.parse(trip.images) : [])
-        } catch (e) {
-          images = []
-        }
-        
-        // Format price from priceFrom/priceTo
-        let priceDisplay = '€150 per person'
-        if (trip.priceFrom && trip.priceTo) {
-          priceDisplay = `€${Number(trip.priceFrom)} - €${Number(trip.priceTo)} per person`
-        } else if (trip.priceFrom) {
-          priceDisplay = `From €${Number(trip.priceFrom)} per person`
-        }
+        const images = Array.isArray(trip.images) ? trip.images : parseJsonField<string[]>(trip.images, [])
         
         setExperience({
           id: trip.id,
-          title: trip.title || 'Experience',
+          title: trip.title || t('Résidence'),
           location: {
-            city: location.city || 'Unknown',
+            city: location.city || 'Lieu inconnu',
             country: location.country || '',
             lat: location.lat || 0,
             lng: location.lng || 0
           },
-          artist: trip.artist?.user?.name || trip.artistName || 'Featured Artist',
-          hotel: trip.hotel?.name || trip.hotelName || 'Luxury Hotel',
+          artistId: trip.artistId ?? trip.artist?.id ?? null,
+          // /trips/:id returns { id, name, bio }; the list route returns a
+          // plain string. Neither is `user.name`, which is what this used to
+          // read - so it always showed the placeholder.
+          artist:
+            typeof trip.artist === 'string'
+              ? trip.artist
+              : trip.artist?.name || trip.artist?.user?.name || trip.artistName || t('Artiste en résidence'),
+          hotelId: trip.hotelId ?? trip.hotel?.id ?? null,
+          hotel:
+            typeof trip.hotel === 'string'
+              ? trip.hotel
+              : trip.hotel?.name || trip.hotelName || t('Lieu à confirmer'),
           date: trip.startDate || trip.date || new Date().toISOString().split('T')[0],
           image: images && images.length > 0 
             ? images[0] 
-            : 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200&h=600&fit=crop',
+            : '/images/headers/experiences.webp',
           type: trip.type || 'intimate',
           rating: trip.averageRating || trip.rating || 4.5,
-          description: trip.description || 'An amazing experience awaits.',
-          fullDescription: trip.description || 'An amazing experience awaits.',
-          duration: trip.duration || '2 hours',
-          capacity: trip.capacity || '50 guests',
-          price: priceDisplay,
-          includes: trip.includes || [
-            'Welcome reception',
-            'Performance',
-            'Refreshments',
-            'Venue access'
-          ],
-          schedule: trip.schedule || [],
-          artistBio: trip.artist?.bio || trip.artistBio || 'Talented artist with years of experience.',
-          venueDetails: trip.venueDetails || trip.hotel?.description || 'Beautiful venue setting.',
-          reviews: trip.reviews || []
+          description: trip.description || t('Le détail de cette résidence sera publié prochainement.'),
+          fullDescription: trip.description || t('Le détail de cette résidence sera publié prochainement.'),
+          // The programme's own terms, used when a row predates the seed that
+          // wrote them. The fallbacks used to read "2 hours" and "50 guests" -
+          // English, and both contradicting the published conditions.
+          duration: trip.duration || t('7 nuits'),
+          capacity: trip.capacity || t('Capacité à confirmer avec l’hôtel'),
+          // No invented inclusions: the terms block below states the contract,
+          // and a residency whose row is empty says nothing rather than
+          // promising a cocktail nobody agreed to.
+          includes: Array.isArray(trip.includes) ? trip.includes : [],
+          schedule: Array.isArray(trip.schedule) ? trip.schedule : [],
+          artistBio:
+            trip.artist?.bio || trip.artistBio || t('La biographie de l’artiste sera publiée prochainement.'),
+          venueDetails:
+            trip.venueDetails || trip.hotel?.description || t('Le détail du lieu sera publié prochainement.'),
+          reviews: Array.isArray(trip.reviews) ? trip.reviews : []
         })
       } catch (err: any) {
         console.error('Error fetching experience:', err)
-        setError('Failed to load experience. Please try again later.')
+        setError(t('Impossible de charger l’expérience. Réessayez plus tard.'))
       } finally {
         setLoading(false)
       }
@@ -132,11 +201,11 @@ const ExperienceDetailsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cream">
+      <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
           <LoadingSpinner />
-          <p className="mt-4 text-gray-600">Loading experience...</p>
+          <p className="mt-4 text-content-secondary">{t('Chargement de l’expérience…')}</p>
         </div>
         <Footer />
       </div>
@@ -145,13 +214,13 @@ const ExperienceDetailsPage: React.FC = () => {
 
   if (error || !experience) {
     return (
-      <div className="min-h-screen bg-cream">
+      <div className="min-h-screen bg-[var(--surface)]">
         <SimpleNavbar />
         <div className="container mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl font-serif font-bold text-navy mb-4">Experience Not Found</h1>
-          <p className="text-gray-600 mb-8">The experience you're looking for doesn't exist.</p>
+          <h1 className="text-4xl font-serif font-bold text-content mb-4">{t('Expérience introuvable')}</h1>
+          <p className="text-content-secondary mb-8">{t('L’expérience demandée n’existe pas.')}</p>
           <Link to="/experiences" className="btn-primary">
-            Back to Experiences
+            {t('Retour aux expériences')}
           </Link>
         </div>
         <Footer />
@@ -160,44 +229,61 @@ const ExperienceDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      <SimpleNavbar />
-      
-      {/* Hero Section */}
-      <div className="relative h-96 overflow-hidden">
-        <img
+    <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={
+          experience
+            ? `${experience.title} — Travel Art`
+            : t('Expérience — Travel Art')
+        }
+        description={
+          experience
+            ? `${experience.title} : une résidence d’artiste à ${experience.location?.city ?? t('l’hôtel')}. ${(experience.description ?? '').slice(0, 110)}`
+            : t('Une résidence d’artiste dans un hôtel d’exception.')
+        }
+        ogImage={experience?.image}
+      />
+      <SimpleNavbar overMedia />
+
+      {/* The experience photograph is the hero, so type on it stays white. The
+          back link sat at top-6, underneath the fixed 72px navigation bar. */}
+      <header className="relative h-[52vh] min-h-[380px] overflow-hidden">
+        <img loading="lazy" decoding="async"
           src={experience.image}
-          alt={experience.title}
+          alt=""
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-navy/60"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center text-white"
-          >
-            <span className="inline-block px-4 py-2 bg-gold/20 backdrop-blur-sm rounded-full text-sm font-semibold mb-4 capitalize">
-              {experience.type}
-            </span>
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-4">
-              {experience.title}
-            </h1>
-            <p className="text-xl flex items-center justify-center gap-2">
-              <MapPin className="w-5 h-5" />
-              {experience.location.city}, {experience.location.country}
-            </p>
-          </motion.div>
+        <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/40 to-navy/30"></div>
+
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="shell pb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <span className="inline-block px-3.5 py-1.5 bg-gold text-off-black rounded-control text-xs font-semibold uppercase tracking-wider">
+                {experienceTypeLabel(experience.type)}
+              </span>
+              <h1 className="mt-5 text-white max-w-[18ch]">
+                {experience.title}
+              </h1>
+              <p className="mt-4 text-lg text-white/85 flex items-center gap-2">
+                <MapPin className="w-5 h-5" aria-hidden="true" />
+                {experience.location.city}, {countryLabel(experience.location.country)}
+              </p>
+            </motion.div>
+          </div>
         </div>
+
         <Link
           to="/experiences"
-          className="absolute top-6 left-6 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-colors flex items-center gap-2"
+          className="absolute top-[88px] left-5 sm:left-8 lg:left-12 bg-black/35 backdrop-blur-sm text-white px-4 py-2.5 rounded-control hover:bg-black/55 transition-colors flex items-center gap-2 text-sm font-medium"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Experiences
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          {t('Retour aux expériences')}
         </Link>
-      </div>
+      </header>
 
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -208,38 +294,98 @@ const ExperienceDetailsPage: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="card-luxury"
+              className="panel p-6"
             >
-              <h2 className="text-3xl font-serif font-bold text-navy mb-4 gold-underline">
-                About This Experience
+              <h2 className="text-3xl font-serif font-bold text-content mb-4 gold-underline">
+                {t('À propos de cette expérience')}
               </h2>
-              <p className="text-gray-600 text-lg leading-relaxed mb-6">
+              <p className="text-content-secondary text-lg leading-relaxed mb-6">
                 {experience.fullDescription}
               </p>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-line">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Star className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-gray-500">Rating</p>
-                  <p className="text-xl font-bold text-navy">{experience.rating}</p>
+                  <p className="text-sm text-content-secondary">{t('Note')}</p>
+                  <p className="text-xl font-bold text-content">{experience.rating}</p>
                 </div>
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Clock className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-gray-500">Duration</p>
-                  <p className="text-sm font-bold text-navy">{experience.duration}</p>
+                  <p className="text-sm text-content-secondary">{t('Durée')}</p>
+                  <p className="text-sm font-bold text-content">{experience.duration}</p>
                 </div>
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
                     <Users className="w-6 h-6 text-gold" />
                   </div>
-                  <p className="text-sm text-gray-500">Capacity</p>
-                  <p className="text-sm font-bold text-navy">{experience.capacity}</p>
+                  <p className="text-sm text-content-secondary">{t('Capacité')}</p>
+                  <p className="text-sm font-bold text-content">{experience.capacity}</p>
+                </div>
+                {/* The grid was declared four columns wide and held three, so
+                    the row sat visibly off-centre. The fourth is the date,
+                    which belongs beside the other terms rather than only in
+                    the sidebar. */}
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-2">
+                    <Calendar className="w-6 h-6 text-gold" />
+                  </div>
+                  <p className="text-sm text-content-secondary">{t('Prochaine date')}</p>
+                  <p className="text-sm font-bold text-content">
+                    {new Date(experience.date).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
                 </div>
               </div>
+            </motion.div>
+
+            {/* The terms.
+                The programme's six conditions first - they are the same on
+                every residency and they are what a hotel signs - then what
+                this particular property puts on the table. */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="panel p-6"
+            >
+              <span className="eyebrow">{t('Les termes')}</span>
+              <h2 className="mt-3 text-3xl font-serif font-bold text-content mb-6 gold-underline">
+                {t('Ce que comprend la résidence')}
+              </h2>
+
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-5">
+                {programmeTerms().map((item) => (
+                  <div key={item.term} className="border-t border-line pt-4">
+                    <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-content-secondary">
+                      {item.term}
+                    </dt>
+                    <dd className="mt-1.5 text-content leading-relaxed">{item.detail}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              {experience.includes.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-line">
+                  <h3 className="font-serif text-xl text-content mb-4">
+                    {t('Sur place, la maison fournit')}
+                  </h3>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    {experience.includes.map((item: string, index: number) => (
+                      <li key={index} className="flex gap-3 text-content-secondary">
+                        <span aria-hidden="true" className="mt-2.5 h-px w-5 shrink-0 bg-gold/60" />
+                        <span className="leading-relaxed">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </motion.div>
 
             {/* Schedule */}
@@ -247,21 +393,21 @@ const ExperienceDetailsPage: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="card-luxury"
+              className="panel p-6"
             >
-              <h2 className="text-3xl font-serif font-bold text-navy mb-6 gold-underline">
-                Schedule
+              <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
+                {t('Programme')}
               </h2>
               <div className="space-y-4">
                 {experience.schedule.map((item: any, index: number) => (
                   <div
                     key={index}
-                    className="flex items-start gap-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0"
+                    className="flex items-start gap-4 pb-4 border-b border-line last:border-0 last:pb-0"
                   >
                     <div className="flex-shrink-0 w-24 text-gold font-semibold">
                       {item.time}
                     </div>
-                    <div className="flex-1 text-gray-600">
+                    <div className="flex-1 text-content-secondary">
                       {item.activity}
                     </div>
                   </div>
@@ -269,47 +415,32 @@ const ExperienceDetailsPage: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* What's Included */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="card-luxury"
-            >
-              <h2 className="text-3xl font-serif font-bold text-navy mb-6 gold-underline">
-                What's Included
-              </h2>
-              <ul className="space-y-3">
-                {experience.includes.map((item: string, index: number) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 bg-gold rounded-full"></div>
-                    </div>
-                    <span className="text-gray-600">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-
+            {/* The panel that stood here repeated experience.includes in
+                full, a second time, under the heading "Ce qui est compris" -
+                the same thirteen lines the terms panel above already lists
+                under "Sur place, la maison fournit". It was the earlier,
+                plainer version of that section and was never removed when the
+                richer one replaced it, so every residency page printed its
+                inclusions twice. */}
             {/* Artist Bio */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="card-luxury"
+              className="panel p-6"
             >
-              <h2 className="text-3xl font-serif font-bold text-navy mb-4 gold-underline">
-                About the Artist
+              <h2 className="text-3xl font-serif font-bold text-content mb-4 gold-underline">
+                {t('À propos de l’artiste')}
               </h2>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-16 h-16 bg-gold/20 rounded-control flex items-center justify-center flex-shrink-0">
                   <Music className="w-8 h-8 text-gold" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-serif font-semibold text-navy mb-2">
+                  <h3 className="text-xl font-serif font-semibold text-content mb-2">
                     {experience.artist}
                   </h3>
-                  <p className="text-gray-600">{experience.artistBio}</p>
+                  <p className="text-content-secondary">{experience.artistBio}</p>
                 </div>
               </div>
             </motion.div>
@@ -319,10 +450,10 @@ const ExperienceDetailsPage: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="card-luxury"
+              className="panel p-6"
             >
-              <h2 className="text-3xl font-serif font-bold text-navy mb-6 gold-underline">
-                Guest Reviews
+              <h2 className="text-3xl font-serif font-bold text-content mb-6 gold-underline">
+                {t('Avis des clients')}
               </h2>
               <div className="space-y-6">
                 {experience.reviews.map((review: any, index: number) => (
@@ -333,14 +464,14 @@ const ExperienceDetailsPage: React.FC = () => {
                           <Star
                             key={i}
                             className={`w-4 h-4 ${
-                              i < review.rating ? 'text-gold fill-current' : 'text-gray-300'
+                              i < review.rating ? 'text-gold fill-current' : 'text-content-secondary'
                             }`}
                           />
                         ))}
                       </div>
-                      <span className="font-semibold text-navy">{review.author}</span>
+                      <span className="font-semibold text-content">{review.author}</span>
                     </div>
-                    <p className="text-gray-600">{review.comment}</p>
+                    <p className="text-content-secondary">{review.comment}</p>
                   </div>
                 ))}
               </div>
@@ -353,24 +484,24 @@ const ExperienceDetailsPage: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="card-luxury sticky top-6"
+              className="panel p-6 sticky top-6"
             >
               <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-20 h-20 bg-gold/20 rounded-control flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-10 h-10 text-gold" />
                 </div>
-                <div className="text-2xl font-bold text-navy mb-2">
-                  {new Date(experience.date).toLocaleDateString('en-US', {
+                <div className="text-2xl font-bold text-content mb-2">
+                  {new Date(experience.date).toLocaleDateString('fr-FR', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
                 </div>
-                <div className="text-gray-600 mb-6">
+                <div className="text-content-secondary mb-6">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <MapPin className="w-4 h-4" />
-                    {experience.location.city}, {experience.location.country}
+                    {experience.location.city}, {countryLabel(experience.location.country)}
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <Music className="w-4 h-4" />
@@ -380,27 +511,30 @@ const ExperienceDetailsPage: React.FC = () => {
               </div>
 
               <div className="space-y-4 mb-6">
-                <div className="p-4 bg-gold/10 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Duration</p>
-                  <p className="font-semibold text-navy">{experience.duration}</p>
+                <div className="p-4 bg-gold/10 rounded-card">
+                  <p className="text-sm text-content-secondary mb-1">{t('Durée')}</p>
+                  <p className="font-semibold text-content">{experience.duration}</p>
                 </div>
-                <div className="p-4 bg-gold/10 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Capacity</p>
-                  <p className="font-semibold text-navy">{experience.capacity}</p>
+                <div className="p-4 bg-gold/10 rounded-card">
+                  <p className="text-sm text-content-secondary mb-1">{t('Capacité')}</p>
+                  <p className="font-semibold text-content">{experience.capacity}</p>
                 </div>
               </div>
 
-              <button className="w-full btn-primary text-lg py-4">
-                Book This Experience
+              <button onClick={handleReserve} className="w-full btn-primary text-lg py-4">
+                {reserveLabel}
               </button>
+              <p className="mt-3 text-[0.8125rem] leading-relaxed text-content-secondary">
+                {reserveHint}
+              </p>
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h4 className="font-semibold text-navy mb-3">Venue Details</h4>
+              <div className="mt-6 pt-6 border-t border-line">
+                <h4 className="font-semibold text-content mb-3">{t('Le lieu')}</h4>
                 <div className="flex items-start gap-2 mb-2">
                   <Globe className="w-4 h-4 text-gold mt-1 flex-shrink-0" />
-                  <p className="text-sm text-gray-600">{experience.hotel}</p>
+                  <p className="text-sm text-content-secondary">{experience.hotel}</p>
                 </div>
-                <p className="text-sm text-gray-600">{experience.venueDetails}</p>
+                <p className="text-sm text-content-secondary">{experience.venueDetails}</p>
               </div>
             </motion.div>
           </div>

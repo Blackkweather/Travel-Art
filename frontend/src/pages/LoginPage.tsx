@@ -1,18 +1,21 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/authStore'
-import { authApi } from '@/utils/api'
+
 import { LoginCredentials } from '@/types'
 import toast from 'react-hot-toast'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
+import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
 
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
 
   const {
     register,
@@ -20,20 +23,32 @@ const LoginPage: React.FC = () => {
     formState: { errors }
   } = useForm<LoginCredentials>()
 
+  // Pressing the browser back button can land here on the stale /login
+  // history entry left over from before a previous sign-in - send an
+  // already-authenticated visitor straight back to their dashboard instead
+  // of showing them an empty login form that looks like they were logged out.
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [user, navigate])
+
   const onSubmit = async (data: LoginCredentials) => {
     setIsLoading(true)
     try {
       // Use local database authentication
       const { login } = useAuthStore.getState()
       await login(data)
-      
-      toast.success('Welcome back!')
-      navigate('/dashboard')
+
+      toast.success(t('Bon retour'))
+      // replace: true keeps /login out of history so the back button can't
+      // land on it again after a successful sign-in
+      navigate('/dashboard', { replace: true })
     } catch (error: any) {
       const errorMessage = error.response?.data?.error?.message || 
                           error.errors?.[0]?.message || 
                           error.message || 
-                          'Login failed. Please check your credentials.'
+                          t('Connexion impossible. Vérifiez vos identifiants.')
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)
@@ -41,8 +56,13 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[var(--surface)]">
+      <SEOHead
+        title={t('Connexion — Travel Art')}
+        description={t('Accédez à votre espace Travel Art : vos résidences, vos réservations et votre profil.')}
+      />
       <SimpleNavbar />
+      <main id="contenu">
       
       <div className="flex items-center justify-center py-20 pt-32 px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -53,29 +73,13 @@ const LoginPage: React.FC = () => {
       >
         <div className="text-center">
           <div className="flex justify-center mb-8">
-            <img 
-              src={getLogoUrl('transparent')} 
-              alt="Travel Art" 
-              className="h-24 w-auto"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                const fallback = document.getElementById('logo-fallback-login')
-                if (fallback) {
-                  fallback.style.display = 'block'
-                }
-              }}
-            />
-            <div id="logo-fallback-login" className="hidden text-4xl font-serif font-bold">
-              <span className="text-navy">TRAVEL</span>
-              <span className="text-gold mx-2">+</span>
-              <span className="text-navy">ART</span>
-            </div>
+            <BrandWordmark className="h-24 w-auto text-navy dark:text-cream" />
           </div>
-          <h2 className="text-3xl font-serif font-bold text-navy gold-underline">
-            Welcome Back
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Sign in to your Travel Art account
+          <h1 className="text-3xl font-serif font-bold text-content gold-underline">
+            {t('Bon retour')}
+          </h1>
+          <p className="mt-2 text-content-secondary">
+            {t('Connectez-vous à votre compte Travel Art')}
           </p>
         </div>
 
@@ -83,9 +87,12 @@ const LoginPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="form-label">
-                Email Address
+                {t('Adresse e-mail')}
               </label>
               <input
+                id="email"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register('email', {
                   required: 'Email is required',
                   pattern: {
@@ -96,18 +103,21 @@ const LoginPage: React.FC = () => {
                 name="email"
                 type="email"
                 className="form-input"
-                placeholder="Enter your email"
+                placeholder={t('Saisissez votre e-mail')}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p id="email-error" role="alert" className="mt-1 text-sm text-[var(--state-critical)]">{errors.email.message}</p>
               )}
             </div>
 
             <div>
               <label htmlFor="password" className="form-label">
-                Password
+                {t('Mot de passe')}
               </label>
               <input
+                id="password"
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? "password-error" : undefined}
                 {...register('password', {
                   required: 'Password is required',
                   minLength: {
@@ -118,30 +128,30 @@ const LoginPage: React.FC = () => {
                 name="password"
                 type="password"
                 className="form-input"
-                placeholder="Enter your password"
+                placeholder={t('Saisissez votre mot de passe')}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p id="password-error" role="alert" className="mt-1 text-sm text-[var(--state-critical)]">{errors.password.message}</p>
               )}
             </div>
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <label htmlFor="remember-me" className="flex items-center min-h-[44px] cursor-pointer">
               <input
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-gold focus:ring-gold border-gray-300 rounded"
+                className="h-4 w-4 text-gold focus:ring-gold border-line rounded-card"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                Remember me
-              </label>
-            </div>
+              <span className="ml-2 block text-sm text-content-secondary">
+                {t('Se souvenir de moi')}
+              </span>
+            </label>
 
             <div className="text-sm">
-              <Link to="/forgot-password" className="text-gold hover:text-gold-600">
-                Forgot your password?
+              <Link to="/forgot-password" className="inline-flex items-center min-h-[44px] text-gold hover:text-gold-800">
+                {t('Mot de passe oublié ?')}
               </Link>
             </div>
           </div>
@@ -150,17 +160,17 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gold text-white py-3 text-lg rounded-lg font-semibold hover:bg-gold/90 transition-all duration-300 shadow-soft disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary btn-lg w-full"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Connexion…' : 'Se connecter'}
             </button>
           </div>
 
           <div className="text-center">
-            <p className="text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-gold hover:text-gold-600 font-medium">
-                Sign up here
+            <p className="text-content-secondary">
+              Pas encore de compte ?{' '}
+              <Link to="/register" className="text-gold hover:text-gold-800 font-medium">
+                {t('Créer un compte')}
               </Link>
             </p>
           </div>
@@ -168,14 +178,15 @@ const LoginPage: React.FC = () => {
 
         {import.meta.env.DEV && (
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500">
-              Demo credentials (Dev Only):
+            <p className="text-sm text-content-secondary">
+              {t('Identifiants de démonstration (développement) :')}
             </p>
           </div>
         )}
       </motion.div>
       </div>
       
+      </main>
       <Footer />
     </div>
   )

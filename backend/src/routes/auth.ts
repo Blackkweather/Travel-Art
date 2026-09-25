@@ -1,23 +1,80 @@
 import { Router } from 'express';
+import { createHash } from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import { CONSENT, LEGAL_VERSION, clientIp, hashIp } from '../config/legal';
 import { config } from '../config';
+import {
+  verificationEmail,
+  passwordResetEmail,
+  newRegistrationAdminAlert,
+} from '../services/email';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { getUserByEmail, createUser, initializeDatabase } from '../simple-db';
+// Imported statically. These three call sites each used `await import('../db')`,
+// which the serverless bundler does not trace, so on Vercel the import threw and
+// the surrounding catch reported "Database connection error" — registration,
+// referral attribution and /auth/me all failed against a perfectly healthy
+// database.
+import { prisma } from '../db';
 import { generateUniqueReferralCode } from '../utils/referralCode';
 
 const router = Router();
+
+// Short, non-reversible marker of a password hash, used to make reset tokens
+// single-use without adding a table.
+const passwordFingerprint = (passwordHash: string): string =>
+  createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
+
+/**
+ * One password policy, enforced everywhere a password is set.
+ *
+ * There were three. The registration form demanded a lower-case letter, an
+ * upper-case letter, a digit and a special character and said so in its
+ * placeholder; the register endpoint asked only for a letter and a digit; and
+ * reset-password asked for nothing beyond eight characters of anything. So the
+ * rule the product tells people is the rule could be sidestepped entirely by
+ * registering against the API directly, or - far more easily - by signing up
+ * and immediately resetting to `12345678`.
+ *
+ * A policy that only the form enforces is not a policy. This is the client's
+ * stated rule, which is the strictest of the three and the one users have
+ * already been promised, applied on the server where it cannot be skipped.
+ */
+const passwordPolicy = z
+  .string()
+  .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+  .max(128, 'Le mot de passe ne peut pas dépasser 128 caractères')
+  .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
+  .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
+  .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre')
+  .regex(
+    /[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/?]/,
+    'Le mot de passe doit contenir au moins un caractère spécial'
+  );
 
 // Validation schemas
 const registerSchema = z.object({
   role: z.enum(['ARTIST', 'HOTEL']),
   name: z.string().min(2).max(100),
   email: z.string().email(),
-  password: z.string().min(8),
+  password: passwordPolicy,
   phone: z.string().optional(),
-  locale: z.string().optional().default('en'),
+  /* Acceptance is a condition of creating the account, not a preference, so
+     only the literal `true` satisfies it: a missing field, a string, or an
+     unticked box are all refusals and all fail closed. A registration form
+     that collects this and an API that does not enforce it is the same as not
+     collecting it - the contract has to be formed on the server. */
+  acceptTerms: z.literal(true, {
+    errorMap: () => ({
+      message: 'Vous devez accepter les conditions générales et la politique de confidentialité.',
+    }),
+  }),
+  // The product is French; the form has no language picker, so every account
+  // was being stamped 'en' and the admin export reported it for all of them.
+  locale: z.string().optional().default('fr'),
   referralCode: z.string().optional(), // Accept referral code during registration
   // Artist-specific fields
   stageName: z.string().optional(),
@@ -31,6 +88,19 @@ const registerSchema = z.object({
     categoryType: z.string().optional(),
     specificCategory: z.string().optional(),
     domain: z.string().optional()
+  }).optional(),
+  // Hotel-specific fields. The seven-step form used to register, then POST the
+  // profile to an authenticated endpoint - which stopped working the moment
+  // registration stopped returning a session: the account was created and
+  // every answer after step 1 was dropped, with an error shown to someone whose
+  // account had in fact been made. The answers now arrive with the
+  // registration and are written in the same request.
+  hotelProfile: z.object({
+    description: z.string().optional(),
+    city: z.string().optional(),
+    performanceSpots: z.string().optional(),
+    rooms: z.string().optional(),
+    repName: z.string().optional(),
   }).optional()
 });
 
@@ -42,7 +112,7 @@ const loginSchema = z.object({
 // Register new user
 router.post('/register', asyncHandler(async (req, res) => {
   try {
-    const { role, name, email, password, phone, locale } = registerSchema.parse(req.body);
+    const { role, name, email, password, phone, locale, country, hotelProfile } = registerSchema.parse(req.body);
 
     // Ensure database is initialized
     await initializeDatabase();
@@ -54,7 +124,6 @@ router.post('/register', asyncHandler(async (req, res) => {
     let existingUser;
     try {
       // Check with normalized email (case-insensitive)
-      const { prisma } = await import('../db');
       existingUser = await prisma.user.findFirst({
         where: {
           email: {
@@ -84,12 +153,39 @@ router.post('/register', asyncHandler(async (req, res) => {
         name,
         passwordHash,
         role: role as 'ARTIST' | 'HOTEL',
-        language: locale || 'en',
+        language: locale || 'fr',
         phone: phone || null,
+        country: country || null,
       });
     } catch (dbError: any) {
       console.error('Database error during user creation:', dbError);
       throw new CustomError('Failed to create account. Please try again later.', 500);
+    }
+
+    /* Stamp the acceptance and write it to the ledger in the same breath as
+       the account. Two rows rather than one: the terms and the privacy policy
+       are separate documents and a person can be asked to re-accept one
+       without the other. Best-effort - a consent that fails to record must not
+       roll back an account that was created, but it is logged loudly, because
+       an account with no provable consent is a gap someone has to close. */
+    try {
+      const consentedAt = new Date();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { acceptedTermsAt: consentedAt, acceptedTermsVersion: LEGAL_VERSION },
+      });
+      await prisma.consentRecord.createMany({
+        data: [CONSENT.TERMS, CONSENT.PRIVACY].map((kind) => ({
+          userId: user.id,
+          kind,
+          version: LEGAL_VERSION,
+          granted: true,
+          ipHash: hashIp(clientIp(req as never)),
+          userAgent: String(req.headers['user-agent'] || '').slice(0, 255) || null,
+        })),
+      });
+    } catch (consentError) {
+      console.error('CONSENT NOT RECORDED for user', user.id, consentError);
     }
 
     // Create Artist or Hotel profile based on role
@@ -97,8 +193,6 @@ router.post('/register', asyncHandler(async (req, res) => {
     let inviterUserId: string | null = null;
     
     try {
-      const { prisma } = await import('../db');
-      
       // Handle referral code if provided
       const referralCode = req.body.referralCode as string | undefined;
       if (referralCode) {
@@ -124,7 +218,6 @@ router.post('/register', asyncHandler(async (req, res) => {
         const artisticProfile = req.body.artisticProfile;
         const stageName = req.body.stageName || name;
         const birthDate = req.body.birthDate;
-        const country = req.body.country;
         
         // Build discipline from artisticProfile if available
         let discipline = '';
@@ -196,11 +289,19 @@ router.post('/register', asyncHandler(async (req, res) => {
           data: {
             userId: user.id,
             name: name,
-            description: '',
-            location: JSON.stringify({ city: '', country: '', coords: { lat: 0, lng: 0 } }),
+            description: hotelProfile?.description || '',
+            // Coordinates stay absent rather than 0,0 - the form never asks for
+            // them, and 0,0 is a real place in the Atlantic that would put every
+            // new hotel on the map there.
+            location: JSON.stringify({
+              city: hotelProfile?.city || '',
+              country: country || '',
+            }),
+            contactPhone: phone || null,
+            repName: hotelProfile?.repName || null,
             images: JSON.stringify([]),
-            performanceSpots: JSON.stringify([]),
-            rooms: JSON.stringify([])
+            performanceSpots: hotelProfile?.performanceSpots || JSON.stringify([]),
+            rooms: hotelProfile?.rooms || JSON.stringify([])
           }
         });
         console.log(`✅ Hotel profile created for: ${user.email}`);
@@ -213,13 +314,37 @@ router.post('/register', asyncHandler(async (req, res) => {
     // Fetch user again with profile included
     const userWithProfile = await getUserByEmail(email);
 
-    // Generate JWT token
-    const token = (jwt.sign as any)(
-      { userId: user.id, role: user.role },
+    // A confirmation link, valid for a day. It is bound to the user id and to
+    // this purpose, so it cannot be replayed against any other endpoint that
+    // accepts a signed token.
+    const verifyToken = (jwt.sign as any)(
+      { userId: user.id, type: 'email-verification' },
       config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
+      { expiresIn: '24h' }
     );
+    const verifyLink = `${config.frontendUrl}/verify-email?token=${verifyToken}`;
 
+    // Deliberately not awaited, as the comment has always claimed: an account
+    // that exists with an unsent confirmation is recoverable, a registration
+    // the applicant was told had failed is not. Awaiting it put the mail
+    // round-trip inside the request, which is most of why registration took
+    // long enough for the browser to time out on it.
+    void verificationEmail(user.email, user.name, verifyLink).catch((err) => {
+      console.error('verification email failed for', user.email, err);
+    });
+
+    void newRegistrationAdminAlert({
+      name: user.name,
+      email: user.email,
+      role: user.role as 'ARTIST' | 'HOTEL',
+      country,
+    }).catch((err) => {
+      console.error('admin registration alert failed for', user.email, err);
+    });
+
+    // Deliberately no token. The account is PENDING until an administrator
+    // admits it, so issuing a session here would leave the client believing it
+    // is signed in while every authenticated call is refused.
     res.status(201).json({
       success: true,
       data: {
@@ -228,12 +353,12 @@ router.post('/register', asyncHandler(async (req, res) => {
           role: userWithProfile!.role,
           name: userWithProfile!.name,
           email: userWithProfile!.email,
-          phone: userWithProfile!.phone,
-          createdAt: userWithProfile!.createdAt,
-          artist: userWithProfile!.artist,
-          hotel: userWithProfile!.hotel
+          approvalStatus: userWithProfile!.approvalStatus,
+          emailVerified: userWithProfile!.emailVerified
         },
-        token
+        status: 'PENDING_REVIEW',
+        message:
+          'Votre demande a bien été enregistrée. Confirmez votre adresse e-mail, puis attendez la validation de votre compte par notre équipe.'
       }
     });
   } catch (error: any) {
@@ -268,14 +393,44 @@ router.post('/login', asyncHandler(async (req, res) => {
       throw new CustomError('Database connection error. Please try again later.', 500);
     }
 
-    if (!user || !user.isActive) {
-      throw new CustomError('Invalid credentials.', 401);
+    if (!user) {
+      throw new CustomError('Identifiants invalides.', 401);
     }
 
-    // Check password
+    // The password is verified before any account-state message is returned, so
+    // the endpoint cannot be used to enumerate which addresses are registered:
+    // without the correct password every branch below is unreachable.
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
-      throw new CustomError('Invalid credentials.', 401);
+      throw new CustomError('Identifiants invalides.', 401);
+    }
+
+    // Past this point the caller has proved they own the account, so telling
+    // them why they cannot get in reveals nothing to an attacker and saves an
+    // applicant from trying to "fix" a pending review with a password reset.
+    if (user.approvalStatus === 'PENDING') {
+      throw new CustomError(
+        'Votre demande d’inscription est en cours d’examen. Vous recevrez un e-mail dès qu’elle aura été traitée.',
+        403
+      );
+    }
+
+    if (user.approvalStatus === 'REJECTED') {
+      throw new CustomError(
+        user.approvalNote
+          ? `Votre demande d’inscription n’a pas été retenue. Motif : ${user.approvalNote}`
+          : 'Votre demande d’inscription n’a pas été retenue.',
+        403
+      );
+    }
+
+    if (!user.isActive) {
+      throw new CustomError(
+        user.approvalNote
+          ? `Ce compte a été suspendu. Motif : ${user.approvalNote}`
+          : 'Ce compte a été suspendu. Contactez l’administrateur du programme.',
+        403
+      );
     }
 
     // Generate JWT token
@@ -308,11 +463,9 @@ router.post('/login', asyncHandler(async (req, res) => {
     if (error.name === 'ZodError') {
       throw new CustomError('Invalid request data.', 400);
     }
-    // Handle other errors
+    // Handle other errors - never surface internal details to the client
     console.error('Login error:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    throw new CustomError(`Login failed: ${error.message || 'Unknown error'}. Please try again later.`, 500);
+    throw new CustomError('Login failed. Please try again later.', 500);
   }
 }));
 
@@ -339,9 +492,35 @@ router.get('/me', authenticate, asyncHandler(async (req: AuthRequest, res) => {
     throw new CustomError('User not found.', 404);
   }
 
+  // getUserByEmail returns the whole row, passwordHash included, and this
+  // handler used to serialise it straight to the client — so every session
+  // handed the browser the bcrypt hash of its own password, ready to be taken
+  // offline and attacked at leisure.
+  //
+  // Naming the fields rather than deleting the one known to be secret: with a
+  // denylist, the next column added to User ships to the client by default.
+  // clerkId, sessionsValidFrom and reviewedById were reaching it that way.
+  const u = user as Record<string, unknown>;
+  const safeUser = {
+    id: u.id,
+    role: u.role,
+    email: u.email,
+    name: u.name,
+    phone: u.phone,
+    country: u.country,
+    language: u.language,
+    isActive: u.isActive,
+    createdAt: u.createdAt,
+    approvalStatus: u.approvalStatus,
+    approvalNote: u.approvalNote,
+    emailVerified: u.emailVerified,
+    artist: u.artist,
+    hotel: u.hotel,
+  };
+
   res.json({
     success: true,
-    data: { user }
+    data: { user: safeUser }
   });
 }));
 
@@ -359,9 +538,11 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
 
   // Always return success for security (don't reveal if email exists)
   if (user) {
-    // Generate reset token (JWT with short expiry)
+    // Generate reset token (JWT with short expiry). Binding the token to the
+    // current password hash makes it single-use: resetting the password
+    // changes the hash and invalidates any outstanding token.
     const resetToken = jwt.sign(
-      { userId: user.id, type: 'password-reset' },
+      { userId: user.id, type: 'password-reset', pwh: passwordFingerprint(user.passwordHash) },
       config.jwtSecret,
       { expiresIn: '1h' }
     );
@@ -389,11 +570,19 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
       });
     }
 
-    // TODO: In production, send email with reset link
-    // Example: await sendEmail(user.email, 'Password Reset', { resetLink })
-    // For now, log in production too (remove in final version)
-    console.log(`Password reset requested for: ${email}`);
-    console.log(`Reset link: ${resetLink}`);
+    // The link is deliberately NOT logged - anyone with log access could use it
+    // to take over the account. A send failure is swallowed on purpose: the
+    // response is identical either way, so a caller cannot learn whether the
+    // address exists by watching for an error.
+    //
+    // Not awaited, for the same reason registration no longer awaits its
+    // confirmation mail: the round trip put the provider's latency inside the
+    // request, and a slow send became a failure reported for a reset that had
+    // actually been issued.
+    void passwordResetEmail(user.email, user.name, resetLink).catch((err) => {
+      console.error('password reset email failed for user', user.id, err);
+    });
+    console.log(`Password reset requested for user ${user.id}`);
   }
 
   res.json({
@@ -402,10 +591,74 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
   });
 }));
 
+/**
+ * End every session for the current user, including this one.
+ *
+ * Sets the revocation cutoff to now, so every token issued up to this moment is
+ * refused on its next request. The caller has to sign in again, which is the
+ * point: this is what you press when a laptop goes missing.
+ */
+router.post('/logout-all', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+  await prisma.user.update({
+    where: { id: req.user!.id },
+    data: { sessionsValidFrom: new Date() }
+  });
+
+  res.json({
+    success: true,
+    message: 'Toutes vos sessions ont été fermées. Reconnectez-vous.'
+  });
+}));
+
+// Confirm an email address from the link sent at registration.
+router.post('/verify-email', asyncHandler(async (req, res) => {
+  const { token } = z.object({ token: z.string() }).parse(req.body);
+
+  let payload: any;
+  try {
+    payload = jwt.verify(token, config.jwtSecret);
+  } catch {
+    throw new CustomError('Ce lien de confirmation est invalide ou a expiré.', 400);
+  }
+
+  // A signed token is not enough - it has to be a token minted for this
+  // purpose, or a session token would also pass verification here.
+  if (payload?.type !== 'email-verification' || !payload?.userId) {
+    throw new CustomError('Ce lien de confirmation est invalide.', 400);
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+  if (!user) {
+    throw new CustomError('Ce lien de confirmation est invalide.', 400);
+  }
+
+  // Idempotent: following the link twice is a normal thing for a person to do.
+  if (!user.emailVerified) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true, emailVerifiedAt: new Date() }
+    });
+  }
+
+  res.json({
+    success: true,
+    data: {
+      email: user.email,
+      approvalStatus: user.approvalStatus,
+      message:
+        user.approvalStatus === 'APPROVED'
+          ? 'Adresse confirmée. Vous pouvez vous connecter.'
+          : 'Adresse confirmée. Votre demande est en cours d’examen par notre équipe.'
+    }
+  });
+}));
+
 // Reset password with token
+/* Reset used to accept eight characters of anything, which made it the
+   cheapest way around every rule above. */
 const resetPasswordSchema = z.object({
   token: z.string(),
-  password: z.string().min(8)
+  password: passwordPolicy
 });
 
 router.post('/reset-password', asyncHandler(async (req, res) => {
@@ -422,7 +675,6 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
     await initializeDatabase();
     
     // Find user by ID using Prisma
-    const { prisma } = await import('../db');
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId }
     });
@@ -431,13 +683,24 @@ router.post('/reset-password', asyncHandler(async (req, res) => {
       throw new CustomError('User not found.', 404);
     }
 
+    // Reject tokens that were already used (the password has changed since the
+    // token was issued) or that predate this check.
+    if (decoded.pwh !== passwordFingerprint(user.passwordHash)) {
+      throw new CustomError('Invalid or expired token.', 400);
+    }
+
     // Hash new password
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Update password using Prisma
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash }
+      // Resetting a password ends every session opened with the old one. The
+      // reset token was already single-use (it is bound to a fingerprint of the
+      // old hash), but tokens handed out *before* the reset stayed valid until
+      // they expired - so an attacker who had signed in kept their session
+      // through the victim's password change. This closes that.
+      data: { passwordHash, sessionsValidFrom: new Date() }
     });
 
     res.json({

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { adminApi } from '@/utils/api'
-import { Calendar, MapPin, User, Building, Download, Filter, Clock, DollarSign } from 'lucide-react'
+import { Calendar, MapPin, User, Building, Filter, DollarSign } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import StatusBadge from '@/components/StatusBadge'
 import {
   Select,
   SelectContent,
@@ -9,6 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select'
+import { t } from '@/i18n'
+import { formatNumber, LOCALE } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
+import { parseJsonField } from '@/utils/apiPayload'
+import ExportButtons from '@/components/ExportButtons'
 
 interface BookingData {
   id: string
@@ -16,11 +22,11 @@ interface BookingData {
   endDate: string
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
   creditsUsed: number
+  creditCost?: number
   createdAt: string
   artist: {
     id: string
     discipline: string
-    priceRange: string
     user: {
       name: string
       email: string
@@ -68,7 +74,7 @@ const AdminBookings: React.FC = () => {
       setBookings(response.data.data.bookings)
       setTotalPages(response.data.data.pagination.pages)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch bookings')
+      setError(err.response?.data?.message || t('Impossible de charger les réservations pour le moment.'))
     } finally {
       setLoading(false)
     }
@@ -78,38 +84,8 @@ const AdminBookings: React.FC = () => {
     fetchBookings()
   }, [currentPage, selectedStatus])
 
-  const handleExport = async () => {
-    try {
-      const response = await adminApi.exportData('bookings')
-      const url = window.URL.createObjectURL(new Blob([response.data]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', 'bookings.csv')
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-    } catch (err: any) {
-      alert('Failed to export bookings')
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    const configs = {
-      PENDING: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'Pending' },
-      CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Confirmed' },
-      COMPLETED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
-      CANCELLED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' }
-    }
-    const config = configs[status as keyof typeof configs] || configs.PENDING
-    return (
-      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${config.bg} ${config.text}`}>
-        {config.label}
-      </span>
-    )
-  }
-
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(LOCALE, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -124,12 +100,8 @@ const AdminBookings: React.FC = () => {
   }
 
   const parseLocation = (locationString: string): string => {
-    try {
-      const location: LocationData = JSON.parse(locationString)
-      return `${location.city}, ${location.country}`
-    } catch {
-      return locationString
-    }
+    const location = parseJsonField<LocationData | null>(locationString, null)
+    return location ? `${location.city}, ${location.country}` : locationString
   }
 
   if (loading && bookings.length === 0) {
@@ -142,67 +114,40 @@ const AdminBookings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <SEOHead title={t('Réservations') + ' — Travel Art'} />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
-            Booking Management
+          <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
+            {t('Gestion des réservations')}
           </h1>
-          <p className="text-gray-600">
-            Monitor and manage all bookings across the platform.
+          <p className="text-content-secondary">
+            {t('Suivre et gérer l’ensemble des réservations de la plateforme.')}
           </p>
         </div>
-        <button
-          onClick={handleExport}
-          className="btn-secondary flex items-center space-x-2"
-        >
-          <Download className="w-4 h-4" />
-          <span>Export CSV</span>
-        </button>
+        <ExportButtons type="bookings" />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* One rule between four peers, not four boxed cards with four coloured
+          icons. The counts are the content; the icons repeated the label. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
         {[
-          { label: 'Total Bookings', value: bookings.length, icon: Calendar, color: 'text-blue-600' },
-          { 
-            label: 'Pending', 
-            value: bookings.filter(b => b.status === 'PENDING').length, 
-            icon: Clock, 
-            color: 'text-amber-600' 
-          },
-          { 
-            label: 'Confirmed', 
-            value: bookings.filter(b => b.status === 'CONFIRMED').length, 
-            icon: Calendar, 
-            color: 'text-green-600' 
-          },
-          { 
-            label: 'Completed', 
-            value: bookings.filter(b => b.status === 'COMPLETED').length, 
-            icon: Calendar, 
-            color: 'text-purple-600' 
-          }
-        ].map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <div key={index} className="card-luxury">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-navy">{stat.value}</p>
-                </div>
-                <Icon className={`w-8 h-8 ${stat.color}`} />
-              </div>
-            </div>
-          )
-        })}
+          { label: t('Réservations'), value: bookings.length },
+          { label: t('En attente'), value: bookings.filter(b => b.status === 'PENDING').length },
+          { label: t('Confirmées'), value: bookings.filter(b => b.status === 'CONFIRMED').length },
+          { label: t('Terminées'), value: bookings.filter(b => b.status === 'COMPLETED').length }
+        ].map((stat) => (
+          <div key={stat.label} className="stat rounded-none border-0">
+            <span className="stat__label">{stat.label}</span>
+            <span className="stat__value">{formatNumber(stat.value)}</span>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
       <div className="search-container">
         <div className="filters-row">
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
+            <Filter className="w-5 h-5 text-content-secondary flex-shrink-0" />
             <Select
               value={selectedStatus}
               onValueChange={(value) => {
@@ -211,14 +156,14 @@ const AdminBookings: React.FC = () => {
               }}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder={t('Tous les statuts')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="all">{t('Tous les statuts')}</SelectItem>
+                <SelectItem value="PENDING">{t('En attente')}</SelectItem>
+                <SelectItem value="CONFIRMED">{t('Confirmée')}</SelectItem>
+                <SelectItem value="COMPLETED">{t('Terminée')}</SelectItem>
+                <SelectItem value="CANCELLED">{t('Annulée')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -226,7 +171,7 @@ const AdminBookings: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-[var(--state-critical-wash)] border border-[var(--state-critical-line)] text-[var(--state-critical)] px-4 py-3 rounded-card">
           {error}
         </div>
       )}
@@ -234,7 +179,7 @@ const AdminBookings: React.FC = () => {
       {/* Bookings List */}
       <div className="space-y-4">
         {bookings.map((booking) => (
-          <div key={booking.id} className="card-luxury hover:shadow-lg transition-shadow">
+          <div key={booking.id} className="panel p-6 hover:shadow-lg transition-shadow">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Left Section - Main Info */}
               <div className="flex-1 space-y-3">
@@ -244,38 +189,35 @@ const AdminBookings: React.FC = () => {
                       <Calendar className="w-6 h-6 text-gold" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-navy text-lg">
-                        Booking #{booking.id.slice(0, 8)}
+                      <h3 className="font-serif text-lg text-content">
+                        {t('Réservation {id}', { id: booking.id.slice(0, 8).toUpperCase() })}
                       </h3>
-                      <p className="text-sm text-gray-500">
-                        Created {formatDate(booking.createdAt)}
+                      <p className="text-sm text-content-secondary">
+                        {t('Créée le {date}', { date: formatDate(booking.createdAt) })}
                       </p>
                     </div>
                   </div>
-                  {getStatusBadge(booking.status)}
+                  <StatusBadge status={booking.status} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Artist Info */}
-                  <div className="flex items-start space-x-3 bg-gray-50 p-3 rounded-lg">
-                    <User className="w-5 h-5 text-purple-600 mt-1" />
+                  <div className="flex items-start space-x-3 bg-surface p-3 rounded-card">
+                    <User className="w-5 h-5 text-gold mt-1" />
                     <div className="flex-1">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Artist</p>
-                      <p className="font-medium text-navy">{booking.artist.user.name}</p>
-                      <p className="text-sm text-gray-600">{booking.artist.discipline}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {booking.artist.priceRange}
-                      </p>
+                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">{t('Artiste')}</p>
+                      <p className="font-medium text-content">{booking.artist.user.name}</p>
+                      <p className="text-sm text-content-secondary">{booking.artist.discipline}</p>
                     </div>
                   </div>
 
                   {/* Hotel Info */}
-                  <div className="flex items-start space-x-3 bg-gray-50 p-3 rounded-lg">
-                    <Building className="w-5 h-5 text-blue-600 mt-1" />
+                  <div className="flex items-start space-x-3 bg-surface p-3 rounded-card">
+                    <Building className="w-5 h-5 text-[var(--state-info)] mt-1" />
                     <div className="flex-1">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hotel</p>
-                      <p className="font-medium text-navy">{booking.hotel.name}</p>
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                      <p className="text-xs text-content-secondary uppercase tracking-wide mb-1">{t('Hôtel')}</p>
+                      <p className="font-medium text-content">{booking.hotel.name}</p>
+                      <div className="flex items-center text-sm text-content-secondary mt-1">
                         <MapPin className="w-3 h-3 mr-1" />
                         {parseLocation(booking.hotel.location)}
                       </div>
@@ -286,33 +228,33 @@ const AdminBookings: React.FC = () => {
 
               {/* Right Section - Date & Credits */}
               <div className="lg:w-64 space-y-3">
-                <div className="bg-navy/5 p-4 rounded-lg">
+                <div className="bg-navy/5 p-4 rounded-card">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-gray-600">Duration</span>
-                    <span className="font-semibold text-navy">
+                    <span className="text-sm text-content-secondary">{t('Durée')}</span>
+                    <span className="font-semibold text-content">
                       {calculateDuration(booking.startDate, booking.endDate)}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-600 space-y-1">
+                  <div className="text-xs text-content-secondary space-y-1">
                     <div className="flex items-center justify-between">
-                      <span>Start:</span>
+                      <span>{t('Début :')}</span>
                       <span>{formatDate(booking.startDate)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>End:</span>
+                      <span>{t('Fin :')}</span>
                       <span>{formatDate(booking.endDate)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gold/10 p-4 rounded-lg">
+                <div className="bg-gold/10 p-4 rounded-card">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <DollarSign className="w-4 h-4 text-gold" />
-                      <span className="text-sm text-gray-600">Credits Used</span>
+                      <span className="text-sm text-content-secondary">{t('Crédits utilisés')}</span>
                     </div>
                     <span className="font-bold text-gold text-lg">
-                      {booking.creditsUsed}
+                      {booking.creditCost ?? booking.creditsUsed}
                     </span>
                   </div>
                 </div>
@@ -323,9 +265,9 @@ const AdminBookings: React.FC = () => {
       </div>
 
       {bookings.length === 0 && !loading && (
-        <div className="card-luxury text-center py-12">
-          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">No bookings found</p>
+        <div className="panel text-center py-12">
+          <Calendar className="w-12 h-12 text-content-secondary mx-auto mb-4" />
+          <p className="text-content-secondary">{t('Aucune réservation')}</p>
         </div>
       )}
 
@@ -337,17 +279,17 @@ const AdminBookings: React.FC = () => {
             disabled={currentPage === 1 || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Previous
+            {t('Précédent')}
           </button>
-          <span className="text-gray-600">
-            Page {currentPage} of {totalPages}
+          <span className="text-content-secondary">
+            {t('Page {current} sur {total}', { current: currentPage, total: totalPages })}
           </span>
           <button
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages || loading}
             className="btn-secondary disabled:opacity-50"
           >
-            Next
+            {t('Suivant')}
           </button>
         </div>
       )}

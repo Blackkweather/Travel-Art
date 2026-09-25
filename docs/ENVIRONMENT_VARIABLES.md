@@ -43,10 +43,11 @@ DATABASE_URL="file:./prisma/dev.db"
 DATABASE_URL="postgresql://user:password@host:5432/database"
 ```
 
-**Supabase Example:**
+**Neon example** (what this project actually uses; DIRECT_URL must be the
+non-pooler host, because `prisma migrate deploy` cannot run through PgBouncer):
 ```env
-DATABASE_URL="postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
-DIRECT_URL="postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres"
+DATABASE_URL="postgresql://USER:PASSWORD@ep-xxx-pooler.REGION.aws.neon.tech/travelart?sslmode=require&pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://USER:PASSWORD@ep-xxx.REGION.aws.neon.tech/travelart?sslmode=require"
 ```
 
 ### CORS Configuration
@@ -78,30 +79,22 @@ FRONTEND_URL=https://yourdomain.com
 
 ### Email Configuration (Optional)
 
+Sent over [Resend](https://resend.com) (`backend/src/services/email.ts`), not SMTP.
+Every send degrades gracefully rather than failing the request it's part of:
+with no `RESEND_API_KEY`, verification, password-reset and admin-alert emails
+are skipped and logged, and registration/reset still succeed.
+
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `SMTP_HOST` | No | - | SMTP server hostname |
-| `SMTP_PORT` | No | `587` | SMTP server port |
-| `SMTP_USER` | No | - | SMTP username |
-| `SMTP_PASS` | No | - | SMTP password |
-| `FROM_EMAIL` | No | `noreply@travelart.com` | Default sender email address |
+| `RESEND_API_KEY` | No | - | Resend API key. Unset means no email is ever sent. |
+| `RESEND_FROM` | No | `Travel Art <onboarding@resend.dev>` | Sender address. The default is Resend's shared sandbox sender, which works with no domain verified but is visibly not travelart.com. |
+| `ADMIN_NOTIFY_EMAIL` | No | - | Address that receives a "new application to review" email on every artist/hotel registration. Unset means no one is notified. |
 
-**Example (Gmail):**
+**Example:**
 ```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-FROM_EMAIL=noreply@travelart.com
-```
-
-**Example (SendGrid):**
-```env
-SMTP_HOST=smtp.sendgrid.net
-SMTP_PORT=587
-SMTP_USER=apikey
-SMTP_PASS=your-sendgrid-api-key
-FROM_EMAIL=noreply@travelart.com
+RESEND_API_KEY=re_your_api_key
+RESEND_FROM=Travel Art <noreply@travelart.com>
+ADMIN_NOTIFY_EMAIL=admissions@travelart.com
 ```
 
 ### Payment Configuration (Stripe)
@@ -117,21 +110,6 @@ FROM_EMAIL=noreply@travelart.com
 3. Copy your secret key
 4. For webhooks, go to Developers > Webhooks and create an endpoint
 
-### Clerk Authentication (Optional)
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `CLERK_SECRET_KEY` | No | - | Clerk secret key (starts with `sk_`) |
-| `CLERK_PUBLISHABLE_KEY` | No | - | Clerk publishable key (starts with `pk_`) |
-| `CLERK_WEBHOOK_SECRET` | No | - | Clerk webhook signing secret |
-
-**Getting Clerk Keys:**
-1. Sign up at https://clerk.com
-2. Create a new application
-3. Go to API Keys section
-4. Copy secret and publishable keys
-5. For webhooks, go to Webhooks section and create endpoint
-
 ---
 
 ## Frontend Environment Variables
@@ -142,23 +120,12 @@ Location: `frontend/.env`
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `VITE_API_URL` | **Yes** | - | Backend API URL |
+| `VITE_API_URL` | No | `/api` (relative) | Backend API URL. Leave unset for a same-origin deployment (the backend serves the built frontend and answers `/api/*` itself, which is how both Vercel and the Render setup in `render.yaml` are configured) - setting an absolute URL splits the app across two origins and makes CORS load-bearing again. |
 
-**Development:**
-```env
-VITE_API_URL=http://localhost:4000/api
-```
-
-**Production:**
+**Only needed when the frontend and API are on different origins:**
 ```env
 VITE_API_URL=https://api.yourdomain.com/api
 ```
-
-### Clerk Authentication
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `VITE_CLERK_PUBLISHABLE_KEY` | **Yes** | - | Clerk publishable key (starts with `pk_`) |
 
 ### CDN Configuration (Optional)
 
@@ -221,12 +188,11 @@ Backend:
 - [ ] `DATABASE_URL`
 - [ ] `CORS_ORIGIN`
 - [ ] `FRONTEND_URL`
-- [ ] `STRIPE_SECRET_KEY` (if using payments)
-- [ ] `CLERK_SECRET_KEY` (if using Clerk)
+- [ ] `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (if using payments)
+- [ ] `RESEND_API_KEY` (if sending email)
 
 Frontend:
-- [ ] `VITE_API_URL`
-- [ ] `VITE_CLERK_PUBLISHABLE_KEY`
+- [ ] `VITE_API_URL` (only if the frontend and API are on different origins)
 
 ### 3. Security Best Practices
 
@@ -260,7 +226,6 @@ Vite will replace `VITE_*` variables at build time. Missing variables will be `u
 **Authentication Issues:**
 - Verify `JWT_SECRET` is set
 - Check token expiration settings
-- Verify Clerk keys if using Clerk
 
 **File Upload Issues:**
 - Check `UPLOAD_PATH` exists and is writable
@@ -297,30 +262,20 @@ RATE_LIMIT_MAX_REQUESTS=100
 MAX_FILE_SIZE=10485760
 UPLOAD_PATH=./uploads
 
-# Email (Optional)
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-FROM_EMAIL=noreply@travelart.com
+# Email (Optional, sent over Resend - see backend/src/services/email.ts)
+RESEND_API_KEY=
+RESEND_FROM=
+ADMIN_NOTIFY_EMAIL=
 
 # Stripe (Optional)
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-
-# Clerk (Optional)
-CLERK_SECRET_KEY=
-CLERK_PUBLISHABLE_KEY=
-CLERK_WEBHOOK_SECRET=
 ```
 
 ### Frontend (.env)
 ```env
-# API
-VITE_API_URL=http://localhost:4000/api
-
-# Clerk
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+# API - leave unset for a same-origin deployment; see the note above
+VITE_API_URL=
 
 # CDN (Optional)
 VITE_CDN_PROVIDER=local

@@ -1,4 +1,5 @@
 import { VALIDATION, PASSWORD_REQUIREMENTS } from '@/types/artistRegistration';
+import { t } from '@/i18n'
 
 export class RegistrationValidator {
   /**
@@ -12,7 +13,17 @@ export class RegistrationValidator {
    * Validate phone number format
    */
   static validatePhone(phone: string): boolean {
-    return VALIDATION.phone.test(phone);
+    if (!phone) return false;
+
+    // The pattern alone accepts "123": its three digit groups are each 1-4
+    // wide with optional separators, so any run of three digits satisfies it.
+    // The shape check still runs first (it rejects letters and stray
+    // punctuation), then the digit count enforces a real number. E.164 puts
+    // that between 7 and 15 digits, country code included.
+    if (!VALIDATION.phone.test(phone)) return false;
+
+    const digitCount = phone.replace(/\D/g, '').length;
+    return digitCount >= 7 && digitCount <= 15;
   }
 
   /**
@@ -29,19 +40,19 @@ export class RegistrationValidator {
     }
 
     if (PASSWORD_REQUIREMENTS.uppercase && !/[A-Z]/.test(password)) {
-      errors.push('At least one uppercase letter required');
+      errors.push('Au moins une lettre majuscule');
     }
 
     if (PASSWORD_REQUIREMENTS.lowercase && !/[a-z]/.test(password)) {
-      errors.push('At least one lowercase letter required');
+      errors.push('Au moins une lettre minuscule');
     }
 
     if (PASSWORD_REQUIREMENTS.numbers && !/\d/.test(password)) {
-      errors.push('At least one number required');
+      errors.push('Au moins un chiffre');
     }
 
-    if (PASSWORD_REQUIREMENTS.special && !/[@$!%*?&#^()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      errors.push('At least one special character required');
+    if (PASSWORD_REQUIREMENTS.special && !/[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
+      errors.push(t('Au moins un caractère spécial'));
     }
 
     return {
@@ -60,7 +71,7 @@ export class RegistrationValidator {
     if (!VALIDATION.date.test(dateString)) {
       return {
         isValid: false,
-        error: 'Date format must be DD/MM/YYYY'
+        error: 'Le format attendu est JJ/MM/AAAA'
       };
     }
 
@@ -70,14 +81,14 @@ export class RegistrationValidator {
     if (month < 1 || month > 12) {
       return {
         isValid: false,
-        error: 'Invalid month'
+        error: 'Mois invalide'
       };
     }
 
     if (day < 1 || day > 31) {
       return {
         isValid: false,
-        error: 'Invalid day'
+        error: 'Jour invalide'
       };
     }
 
@@ -93,14 +104,14 @@ export class RegistrationValidator {
       if (actualAge < 13) {
         return {
           isValid: false,
-          error: 'You must be at least 13 years old'
+          error: 'Vous devez avoir au moins 13 ans'
         };
       }
     } else {
       if (age < 13) {
         return {
           isValid: false,
-          error: 'You must be at least 13 years old'
+          error: 'Vous devez avoir au moins 13 ans'
         };
       }
     }
@@ -121,7 +132,7 @@ export class RegistrationValidator {
     if (password !== confirmPassword) {
       return {
         isValid: false,
-        error: 'Passwords do not match'
+        error: 'Les mots de passe ne correspondent pas'
       };
     }
     return { isValid: true };
@@ -138,40 +149,40 @@ export class RegistrationValidator {
 
     // Required fields
     if (!basicInfo.stageName?.trim()) {
-      errors.stageName = 'Stage name is required';
+      errors.stageName = t('Le nom de scène est obligatoire');
     }
 
     if (!basicInfo.firstName?.trim()) {
-      errors.firstName = 'First name is required';
+      errors.firstName = t('Le prénom est obligatoire');
     }
 
     if (!basicInfo.lastName?.trim()) {
-      errors.lastName = 'Last name is required';
+      errors.lastName = 'Le nom est obligatoire';
     }
 
     if (!basicInfo.birthDate?.trim()) {
-      errors.birthDate = 'Birth date is required';
+      errors.birthDate = 'La date de naissance est obligatoire';
     } else {
       const birthDateValidation = this.validateBirthDate(basicInfo.birthDate);
       if (!birthDateValidation.isValid) {
-        errors.birthDate = birthDateValidation.error || 'Invalid birth date';
+        errors.birthDate = birthDateValidation.error || 'Date de naissance invalide';
       }
     }
 
     if (!basicInfo.phone?.trim()) {
-      errors.phone = 'Phone number is required';
+      errors.phone = t('Le numéro de téléphone est obligatoire');
     } else if (!this.validatePhone(basicInfo.phone)) {
-      errors.phone = 'Invalid phone number format';
+      errors.phone = t('Format de numéro de téléphone invalide');
     }
 
     if (!basicInfo.email?.trim()) {
-      errors.email = 'Email is required';
+      errors.email = t('L’adresse e-mail est obligatoire');
     } else if (!this.validateEmail(basicInfo.email)) {
-      errors.email = 'Invalid email address';
+      errors.email = 'Adresse e-mail invalide';
     }
 
     if (!basicInfo.password) {
-      errors.password = 'Password is required';
+      errors.password = 'Le mot de passe est obligatoire';
     } else {
       const passwordValidation = this.validatePassword(basicInfo.password);
       if (!passwordValidation.isValid) {
@@ -180,23 +191,23 @@ export class RegistrationValidator {
     }
 
     if (!basicInfo.confirmPassword) {
-      errors.confirmPassword = 'Confirm your password';
+      errors.confirmPassword = 'Confirmez votre mot de passe';
     } else {
       const matchValidation = this.validatePasswordMatch(
         basicInfo.password,
         basicInfo.confirmPassword
       );
       if (!matchValidation.isValid) {
-        errors.confirmPassword = matchValidation.error || 'Passwords do not match';
+        errors.confirmPassword = matchValidation.error || 'Les mots de passe ne correspondent pas';
       }
     }
 
     if (!basicInfo.country) {
-      errors.country = 'Country is required';
+      errors.country = 'Le pays est obligatoire';
     }
 
     if (!basicInfo.agreeToTerms) {
-      errors.agreeToTerms = 'You must agree to the terms and conditions';
+      errors.agreeToTerms = t('Vous devez accepter les conditions d’utilisation');
     }
 
     return {
@@ -215,15 +226,15 @@ export class RegistrationValidator {
     const errors: Record<string, string> = {};
 
     if (!artisticCategory.mainCategory) {
-      errors.mainCategory = 'Main category is required';
+      errors.mainCategory = t('La catégorie principale est obligatoire');
     }
 
     if (!artisticCategory.audienceType || artisticCategory.audienceType.length === 0) {
-      errors.audienceType = 'Select at least one audience type';
+      errors.audienceType = t('Sélectionnez au moins un type de public');
     }
 
     if (!artisticCategory.languages || artisticCategory.languages.length === 0) {
-      errors.languages = 'Select at least one language';
+      errors.languages = t('Sélectionnez au moins une langue');
     }
 
     return {
@@ -242,11 +253,11 @@ export class RegistrationValidator {
     const errors: Record<string, string> = {};
 
     if (!subcategory.categoryType) {
-      errors.categoryType = 'Category type is required';
+      errors.categoryType = t('Le type de catégorie est obligatoire');
     }
 
     if (!subcategory.domain) {
-      errors.domain = 'Domain is required';
+      errors.domain = 'Le domaine est obligatoire';
     }
 
     return {
@@ -302,6 +313,13 @@ export function calculateAge(dateString: string): number {
 
   const [day, month, year] = dateString.split('/').map(Number);
   const birthDate = new Date(year, month - 1, day);
+
+  // Anything that is not DD/MM/YYYY parses to NaN and produced an Invalid
+  // Date, which then propagated NaN out of this function into age checks and
+  // into the UI. An unparseable date is treated as "no age known", matching
+  // the empty-string case above.
+  if (Number.isNaN(birthDate.getTime())) return 0;
+
   const today = new Date();
 
   let age = today.getFullYear() - birthDate.getFullYear();
@@ -345,22 +363,22 @@ export function getPasswordStrength(password: string): number {
  * Get password strength label
  */
 export function getPasswordStrengthLabel(strength: number): string {
-  if (strength < 20) return 'Very weak';
-  if (strength < 40) return 'Weak';
-  if (strength < 60) return 'Fair';
-  if (strength < 80) return 'Good';
-  if (strength < 100) return 'Strong';
-  return 'Very strong';
+  if (strength < 20) return t('Très faible');
+  if (strength < 40) return 'Faible';
+  if (strength < 60) return 'Moyen';
+  if (strength < 80) return 'Bon';
+  if (strength < 100) return 'Robuste';
+  return t('Très robuste');
 }
 
 /**
  * Get password strength color
  */
 export function getPasswordStrengthColor(strength: number): string {
-  if (strength < 20) return 'text-red-600';
-  if (strength < 40) return 'text-orange-600';
-  if (strength < 60) return 'text-amber-600';
-  if (strength < 80) return 'text-lime-600';
-  if (strength < 100) return 'text-green-600';
-  return 'text-green-700';
+  /* Three steps, not six. The old ramp ran red-orange-amber-lime-green-green
+     across a palette that only has three meanings, so two of its bands were
+     indistinguishable to the eye and the last two were identical. */
+  if (strength < 40) return 'text-[var(--state-critical)]';
+  if (strength < 70) return 'text-[var(--state-caution)]';
+  return 'text-[var(--state-positive)]';
 }
