@@ -18,13 +18,38 @@
  * inline-styled, and built to read as text if the styles are dropped entirely.
  */
 import { Resend } from 'resend';
+import nodemailer, { type Transporter } from 'nodemailer';
 import { config } from '../config';
 
+/*
+ * Two ways out, in this order:
+ *
+ *   SMTP (SMTP_HOST + SMTP_USER + SMTP_PASS) - a mailbox such as Gmail with an
+ *   app password. Delivers to anyone without owning a domain, which is what
+ *   the site needs while it runs on travel-art.vercel.app: Resend refuses
+ *   every recipient but its own account owner until a domain is verified.
+ *
+ *   Resend (RESEND_API_KEY) - once the site has its own domain.
+ *
+ * Neither set: sends are skipped and logged, as before.
+ */
+const smtp: Transporter | null =
+  process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
+    ? nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 465),
+        secure: Number(process.env.SMTP_PORT || 465) === 465,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      })
+    : null;
+
 const apiKey = process.env.RESEND_API_KEY;
-const resend = apiKey ? new Resend(apiKey) : null;
+const resend = !smtp && apiKey ? new Resend(apiKey) : null;
 
 /** Resend's sandbox sender works with no domain set up; a real domain overrides it. */
-const FROM = process.env.RESEND_FROM || 'Travel Art <onboarding@resend.dev>';
+const FROM = smtp
+  ? process.env.SMTP_FROM || `Travel Art <${process.env.SMTP_USER}>`
+  : process.env.RESEND_FROM || 'Travel Art <onboarding@resend.dev>';
 
 /** Where a new-registration alert goes. Unset means no one is notified. */
 const ADMIN_NOTIFY_EMAIL = process.env.ADMIN_NOTIFY_EMAIL;
@@ -124,6 +149,25 @@ function renderText({ heading, body, action, footnote }: Template): string {
 }
 
 async function send(to: string, template: Template): Promise<SendResult> {
+  if (smtp) {
+    try {
+      const info = await smtp.sendMail({
+        from: FROM,
+        to,
+        subject: template.subject,
+        html: render(template),
+        text: renderText(template),
+        attachments: template.attachments?.map((a) => ({ filename: a.filename, content: a.content })),
+      });
+      console.log(`[email] sent "${template.subject}" to ${to} via SMTP (${info.messageId})`);
+      return { sent: true, id: info.messageId };
+    } catch (err: any) {
+      // The provider's own words (bad app password, daily limit) - never the password.
+      console.error(`[email] SMTP send failed to ${to}:`, err?.response || err?.message);
+      return { sent: false, error: err?.message ?? 'smtp error' };
+    }
+  }
+
   if (!resend) {
     // Not an error: the app is expected to run without a mail provider.
     console.warn(
@@ -501,5 +545,5 @@ export function referralInviteEmail(to: string, inviteeName: string, inviterName
   });
 }
 
-export const emailIsConfigured = Boolean(resend);
+export const emailIsConfigured = Boolean(smtp || resend);
 export { config };
