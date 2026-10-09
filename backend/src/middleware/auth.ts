@@ -1,11 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import { verifyToken } from '@clerk/backend';
-import { config } from '../config';
+import { prisma } from '../db';
+import { requestContext } from '../rlsContext';
+import { tokens } from '../services/tokens';
 import { CustomError } from './errorHandler';
-
-const prisma = new PrismaClient();
 
 export interface AuthRequest<
   P = any,
@@ -20,120 +18,92 @@ export interface AuthRequest<
   };
 }
 
-export const authenticate = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+function bearer(req: Request): string | undefined {
+  const header = req.header('Authorization');
+  if (!header || !header.startsWith('Bearer ')) return undefined;
+  return header.slice('Bearer '.length).trim() || undefined;
+}
+
+/**
+ * Resolve a session token to a user who may act right now, or say why not.
+ *
+ * Shared by `authenticate` and `optionalAuth` so the two can never disagree:
+ * optionalAuth used to skip the approval and revocation checks, so a rejected
+ * or signed-out-everywhere token still counted as signed in on the routes
+ * that use it.
+ */
+async function resolveSession(token: string) {
+  let payload;
   try {
-    const authHeader = req.header('Authorization');
-    const token = authHeader?.replace('Bearer ', '');
+    payload = tokens.session.verify(token);
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      throw new CustomError('Session expirée. Reconnectez-vous.', 401, { code: 'SESSION_EXPIRED' });
+    }
+    throw new CustomError('Session invalide. Reconnectez-vous.', 401, { code: 'SESSION_INVALID' });
+  }
 
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { id: true, role: true, email: true, isActive: true, approvalStatus: true, sessionsValidFrom: true },
+  });
+
+  if (!user || !user.isActive) {
+    throw new CustomError('Ce compte n’est pas actif.', 401, { code: 'ACCOUNT_INACTIVE' });
+  }
+
+  // An account admitted and then rejected loses access immediately, not when
+  // its token happens to expire.
+  if (user.approvalStatus !== 'APPROVED') {
+    throw new CustomError('Ce compte n’est pas actif.', 401, { code: 'ACCOUNT_INACTIVE' });
+  }
+
+  // Revocation: tokens minted before the cutoff are refused. One second of
+  // slack because `iat` is truncated to whole seconds.
+  if (user.sessionsValidFrom && typeof payload.iat === 'number') {
+    if (payload.iat * 1000 + 1000 < user.sessionsValidFrom.getTime()) {
+      throw new CustomError('Session expirée. Reconnectez-vous.', 401, { code: 'SESSION_REVOKED' });
+    }
+  }
+
+  return { id: user.id, role: user.role, email: user.email };
+}
+
+export const authenticate = async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const token = bearer(req);
     if (!token) {
-      throw new CustomError('Access denied. No token provided.', 401);
+      throw new CustomError('Connectez-vous pour continuer.', 401, { code: 'SESSION_MISSING' });
     }
-
-    // Try Clerk authentication first if configured
-    if (config.clerkSecretKey) {
-      try {
-        // Verify Clerk session token using verifyToken function
-        // verifyToken expects the token and secretKey option
-        const sessionClaims = await verifyToken(token, {
-          secretKey: config.clerkSecretKey
-        });
-        
-        if (sessionClaims && typeof sessionClaims === 'object' && 'sub' in sessionClaims) {
-          // Find user by Clerk ID (sub is the user ID in Clerk)
-          const user = await prisma.user.findFirst({
-            where: { 
-              clerkId: sessionClaims.sub as string,
-              isActive: true
-            },
-            select: { id: true, role: true, email: true, isActive: true }
-          });
-
-          if (user) {
-            req.user = user;
-            return next();
-          }
-        }
-      } catch (clerkError: any) {
-        // If Clerk verification fails, try JWT (backward compatibility)
-        // Only log if it's not a token format error (expected for JWT tokens)
-        if (!clerkError?.message?.includes('Invalid') && !clerkError?.message?.includes('token')) {
-          console.log('Clerk verification failed, trying JWT:', clerkError.message);
-        }
-      }
-    }
-
-    // Fallback to JWT authentication
-    try {
-      const decoded = jwt.verify(token, config.jwtSecret) as any;
-      
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
-        select: { id: true, role: true, email: true, isActive: true }
-      });
-
-      if (!user || !user.isActive) {
-        throw new CustomError('Invalid token or user not found.', 401);
-      }
-
-      req.user = user;
-      next();
-    } catch (jwtError) {
-      if (jwtError instanceof jwt.JsonWebTokenError) {
-        next(new CustomError('Invalid token.', 401));
-      } else {
-        next(jwtError);
-      }
-    }
+    req.user = await resolveSession(token);
+    // Everything downstream runs inside this store, so queries against the
+    // RLS-protected tables carry the caller's identity automatically.
+    requestContext.run({ userId: req.user.id, role: req.user.role }, () => next());
   } catch (error) {
     next(error);
   }
 };
 
 export const authorize = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+  return (req: AuthRequest, _res: Response, next: NextFunction): void => {
     if (!req.user) {
-      throw new CustomError('Authentication required.', 401);
+      return next(new CustomError('Connectez-vous pour continuer.', 401, { code: 'SESSION_MISSING' }));
     }
-
     if (!roles.includes(req.user.role)) {
-      throw new CustomError('Insufficient permissions.', 403);
+      return next(new CustomError('Accès refusé.', 403));
     }
-
     next();
   };
 };
 
-export const optionalAuth = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+/** Signed in if the token is good; anonymous (never an error) otherwise. */
+export const optionalAuth = async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
+  const token = bearer(req);
+  if (!token) return next();
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-
-    if (!token) {
-      return next();
-    }
-
-    const decoded = jwt.verify(token, config.jwtSecret) as any;
-    
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, role: true, email: true, isActive: true }
-    });
-
-    if (user && user.isActive) {
-      req.user = user;
-    }
-
-    next();
-  } catch (error) {
-    // For optional auth, we don't throw errors, just continue without user
+    req.user = await resolveSession(token);
+    requestContext.run({ userId: req.user.id, role: req.user.role }, () => next());
+  } catch {
     next();
   }
 };
-

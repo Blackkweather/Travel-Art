@@ -14,7 +14,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
   return (
     <div className="w-full mb-10">
       {/* Animated Progress Bar */}
-      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden mb-8">
+      <div className="relative h-2 bg-surface-sunken rounded-full overflow-hidden mb-8">
         <motion.div
           className="absolute top-0 left-0 h-full bg-gradient-to-r from-gold via-gold/90 to-gold rounded-full shadow-lg"
           initial={{ width: 0 }}
@@ -30,9 +30,13 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
       </div>
 
       {/* Step Labels with Enhanced Animations */}
-      <div className="flex justify-between relative">
+      {/* Hidden on phones: seven circles with 120px labels measured 450px
+          against a 390px screen, so the row pushed the whole signup page
+          sideways and step 7 fell off the edge. The bar above and the
+          named counter below say the same thing in the space available. */}
+      <div className="hidden sm:flex justify-between relative">
         {/* Connection Lines */}
-        <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 -z-10">
+        <div className="absolute top-5 left-0 right-0 h-0.5 bg-surface-sunken -z-10">
           <motion.div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-gold to-gold/50"
             initial={{ width: 0 }}
@@ -44,7 +48,6 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
         {steps.map((step, index) => {
           const isCompleted = index + 1 < currentStep;
           const isCurrent = index + 1 === currentStep;
-          const isUpcoming = index + 1 > currentStep;
 
           return (
             <motion.div
@@ -68,10 +71,10 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
                   relative w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold
                   transition-all duration-300 shadow-lg
                   ${isCompleted 
-                    ? 'bg-gold text-white' 
+                    ? 'bg-gold text-off-black' 
                     : isCurrent 
-                    ? 'bg-gold text-white ring-4 ring-gold/30' 
-                    : 'bg-gray-200 text-gray-500'
+                    ? 'bg-gold text-off-black ring-4 ring-gold/30' 
+                    : 'bg-surface-sunken text-content-secondary'
                   }
                 `}
                 whileHover={{ scale: 1.15 }}
@@ -117,7 +120,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
                   transition-colors duration-300
                   ${isCompleted || isCurrent 
                     ? 'text-gold font-semibold' 
-                    : 'text-gray-500'
+                    : 'text-content-secondary'
                   }
                 `}
                 animate={{
@@ -136,21 +139,29 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps, 
         key={currentStep}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mt-8"
+        className="text-center mt-4 sm:mt-8"
       >
-        <p className="text-sm text-gray-600">
-          Step{' '}
+        {/* Was "Step N of M" - the one English string left in the signup flow.
+            The animated colour also hardcoded #C9A63C, a gold from an earlier
+            palette, and #0B1F3F, which is only correct in the light theme. */}
+        <p className="text-sm text-content-secondary">
+          Étape{' '}
           <motion.span
             key={currentStep}
-            initial={{ scale: 1.5, color: '#C9A63C' }}
-            animate={{ scale: 1, color: '#0B1F3F' }}
+            initial={{ scale: 1.5, color: 'var(--gold)' }}
+            animate={{ scale: 1, color: 'var(--text-primary)' }}
             transition={{ duration: 0.3 }}
-            className="font-bold text-navy"
+            className="font-bold text-content"
           >
             {currentStep}
           </motion.span>
-          {' '}of{' '}
-          <span className="font-bold text-navy">{totalSteps}</span>
+          {' '}sur{' '}
+          <span className="font-bold text-content">{totalSteps}</span>
+        </p>
+        {/* The circle row is hidden here, so name the current step instead of
+            leaving the reader with a bare number. */}
+        <p className="sm:hidden mt-1 text-base font-semibold text-gold">
+          {steps[currentStep - 1]}
         </p>
       </motion.div>
     </div>

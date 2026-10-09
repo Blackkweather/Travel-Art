@@ -1,18 +1,62 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { User, LoginCredentials, RegisterData } from '@/types'
 import { authApi } from '@/utils/api'
+
+/** Why the session ended, shown once on the sign-in page. */
+export type SessionEndReason = 'expired' | 'revoked' | 'inactive' | null
 
 interface AuthState {
   user: User | null
   token: string | null
   isLoading: boolean
   isAuthenticated: boolean
+  sessionEndReason: SessionEndReason
   login: (credentials: LoginCredentials) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => void
+  /** The server refused the session: clear it and remember why. */
+  endSession: (reason: SessionEndReason) => void
   checkAuth: () => Promise<void>
   updateUser: (user: User) => void
+}
+
+/**
+ * One session per tab.
+ *
+ * The session used to live in localStorage alone, which every tab of the
+ * browser shares: sign in as the hotel in one tab and as an artist in
+ * another, and the first tab silently became the artist on its next refresh
+ * - two people's accounts taking turns in the same window.
+ *
+ * Each tab now keeps its own copy in sessionStorage and reads it first. The
+ * latest sign-in is also written to localStorage, so a tab opened afterwards
+ * (a link opened in a new tab, the site typed again) starts signed in as it.
+ */
+const tabStorage: StateStorage = {
+  getItem: (name) => {
+    try {
+      return sessionStorage.getItem(name) ?? localStorage.getItem(name)
+    } catch {
+      return null
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      sessionStorage.setItem(name, value)
+      localStorage.setItem(name, value)
+    } catch {
+      // Storage refused (private mode, quota): the session lasts for the page.
+    }
+  },
+  removeItem: (name) => {
+    try {
+      sessionStorage.removeItem(name)
+      localStorage.removeItem(name)
+    } catch {
+      /* ignore */
+    }
+  },
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -22,19 +66,14 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isLoading: false,
       isAuthenticated: false,
+      sessionEndReason: null,
 
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true })
         try {
           const response = await authApi.login(credentials)
           const { user, token } = response.data.data
-          
-          set({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false
-          })
+          set({ user, token, isAuthenticated: true, isLoading: false, sessionEndReason: null })
         } catch (error) {
           set({ isLoading: false })
           throw error
@@ -44,96 +83,59 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: RegisterData) => {
         set({ isLoading: true })
         try {
-          console.log('🔄 Registering user...', { email: data.email, role: data.role })
-          const response = await authApi.register(data)
-          console.log('📥 Registration response:', response.data)
-          
-          const { user, token } = response.data.data
-          console.log('✅ User registered successfully:', { userId: user.id, email: user.email, token: token ? '✓' : '✗' })
-          
-          set({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false
-          })
-          
-          console.log('💾 Auth state updated - user is now authenticated')
-        } catch (error: any) {
-          console.error('❌ Registration failed:', error.response?.data || error.message)
+          // No token comes back: the account is pending until confirmed and admitted.
+          await authApi.register(data)
+        } finally {
           set({ isLoading: false })
-          throw error
         }
       },
 
       logout: () => {
-        // Only clear local state - never auto-logout
-        // Logout must be explicitly triggered by user action in components
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false
-        })
+        set({ user: null, token: null, isAuthenticated: false, sessionEndReason: null })
       },
 
-      checkAuth: async () => {
-        const { token, user } = get()
-        
-        // If we have a user in state, keep them logged in
-        // Session persists until explicit logout
-        if (user && token) {
-          set({ isLoading: false, isAuthenticated: true })
-          return
-        }
-        
-        if (!token) {
-          set({ isLoading: false, isAuthenticated: false })
-          return
-        }
+      endSession: (reason) => {
+        set({ user: null, token: null, isAuthenticated: false, sessionEndReason: reason })
+      },
 
-        // If we have a token but no user, try to fetch user
-        // But don't clear auth on errors - keep session active
-        // Use a timeout to prevent blocking for too long
+      /**
+       * Ask the server who we are, every time the app starts.
+       *
+       * This used to trust whatever was in storage and never let go: a token
+       * that had expired, been revoked or belonged to a suspended account kept
+       * the dashboard on screen while every request behind it failed. Now a
+       * refusal signs the user out (the API client does it on any 401), and
+       * only a network failure keeps the stored session, so being offline for
+       * a moment does not log anyone out.
+       */
+      checkAuth: async () => {
+        const { token } = get()
+        if (!token) {
+          set({ isLoading: false, isAuthenticated: false, user: null })
+          return
+        }
         set({ isLoading: true })
         try {
-          // Add timeout to prevent blocking
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Auth check timeout')), 3000)
-          )
-          
-          const response = await Promise.race([
-            authApi.getCurrentUser(),
-            timeoutPromise
-          ]) as any
-          
-          set({
-            user: response.data.data.user,
-            isAuthenticated: true,
-            isLoading: false
-          })
-        } catch (error: any) {
-          // Keep user logged in even on auth errors or timeout
-          // Session persists until explicit logout
-          // Only clear loading state, don't clear auth
-          if (!error.message?.includes('timeout')) {
-            console.warn('Auth check failed, but keeping session active:', error)
-          }
+          const response = await authApi.getCurrentUser()
+          set({ user: response.data.data.user, isAuthenticated: true, isLoading: false })
+        } catch {
+          // A 401 has already ended the session in the API client.
           set({ isLoading: false })
-          // Don't clear user/token - keep them logged in
         }
       },
 
       updateUser: (user: User) => {
         set({ user })
-      }
+      },
     }),
     {
       name: 'travel-art-auth',
+      storage: createJSONStorage(() => tabStorage),
       partialize: (state) => ({
         user: state.user,
         token: state.token,
-        isAuthenticated: state.isAuthenticated
-      })
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 )

@@ -1,5 +1,6 @@
 import React from 'react'
 import { CheckCircle } from 'lucide-react'
+import { t } from '@/i18n'
 
 interface VerifiedBadgeProps {
   type?: 'artist' | 'hotel' | 'platform'
@@ -25,16 +26,16 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   }
 
   const colors = {
-    artist: 'text-purple-600',
-    hotel: 'text-green-600',
+    artist: 'text-gold',
+    hotel: 'text-[var(--state-positive)]',
     platform: 'text-gold'
   }
 
   return (
-    <div className={`inline-flex items-center space-x-1 ${className}`} title="Verified Account">
+    <div className={`inline-flex items-center space-x-1 ${className}`} title={t('Compte vérifié')}>
       <CheckCircle className={`${sizeClasses[size]} ${colors[type]} fill-current`} />
       <span className={`${textSizes[size]} font-semibold ${colors[type]}`}>
-        Verified
+        {t('Vérifié')}
       </span>
     </div>
   )

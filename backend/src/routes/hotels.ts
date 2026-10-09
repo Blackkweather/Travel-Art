@@ -1,967 +1,236 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
+import { listableHotelWhere, ownHotelSelect, publicHotelSelect, toOwnHotel, toPublicHotel } from '../views/hotel';
+import { listableArtistWhere } from '../views/artist';
+import { hotelProfileUpdateSchema, normalizePhone } from '../shared/validation';
+import { parseVideoUrl } from '../shared/media';
+import { conflictFromUniqueError, findIdentityConflicts, hotelKey } from '../services/identity';
+import { removeStoredFile } from '../services/storage';
 
 const router = Router();
 
-// Get all hotels (for admin/moderation)
-router.get('/', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  try {
-    const { page = '1', limit = '50' } = req.query;
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum;
+async function myHotel(userId: string) {
+  const hotel = await prisma.hotel.findUnique({ where: { userId }, select: { id: true, name: true, city: true, country: true } });
+  if (!hotel) throw new CustomError('Profil hôtel introuvable.', 404);
+  return hotel;
+}
 
-    const [hotels, total] = await Promise.all([
-      prisma.hotel.findMany({
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              country: true
-            }
-          }
-        },
-        skip,
-        take: limitNum,
-        orderBy: { createdAt: 'desc' }
-      }).catch(() => []),
-      prisma.hotel.count().catch(() => 0)
-    ]);
+/** Own-hotel routes take the id in the path for the client's convenience; it must be the caller's. */
+async function assertOwnHotel(req: AuthRequest, hotelId: string) {
+  const hotel = await prisma.hotel.findFirst({ where: { id: hotelId, userId: req.user!.id }, select: { id: true } });
+  // 404 rather than 403, so the route cannot be used to learn which ids exist.
+  if (!hotel) throw new CustomError('Hôtel introuvable.', 404);
+}
 
-    // Format hotels for moderation view
-    const formattedHotels = hotels.map(hotel => {
-      let location = null;
-      if (hotel.location) {
-        try {
-          location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-        } catch (e) {
-          // If parsing fails, use as string
-          location = typeof hotel.location === 'string' ? hotel.location : null;
-        }
-      }
-      return {
-        id: hotel.id,
-        userId: hotel.userId,
-        user: hotel.user,
-        name: hotel.name,
-        location: location
-      };
-    });
+const programmeSelect = {
+  audiences: true, styles: true, eventTypes: true, appreciated: true, disliked: true,
+  hasStage: true, stageDimensions: true, hasSound: true, soundDetails: true, lighting: true,
+  hasScreens: true, hasCrew: true, collaborationTypes: true, conditions: true, durationType: true,
+  residenceDuration: true, openDates: true, offersLodging: true, offersMeals: true, offersTransport: true,
+  facilities: true, freedomLevel: true, expectations: true, possibilities: true, otherDetails: true,
+  artistTypesNeeded: true, flowDescription: true, perWeek: true, perMonth: true, responseDelay: true,
+  validationProcess: true, decisionMaker: true,
+} as const;
 
-    res.json({
-      success: true,
-      data: formattedHotels,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum)
-      }
-    });
-  } catch (error: any) {
-    console.error('Error fetching hotels:', error);
-    throw new CustomError('Failed to fetch hotels', 500);
-  }
-}));
-
-// Validation schemas
-const hotelProfileSchema = z.object({
-  name: z.string().min(2).max(100).optional(),
-  description: z.string().min(10).max(1000).optional(),
-  location: z.string().optional(), // JSON string
-  contactPhone: z.string().optional(),
-  images: z.string().optional(), // JSON string
-  performanceSpots: z.string().optional(), // JSON string
-  rooms: z.string().optional(), // JSON string
-  repName: z.string().optional(),
-  profilePicture: z.string().optional(),
-  responsiblePhone: z.string().optional(), // Phone number for WhatsApp contact
-  responsibleEmail: z.string().email().optional(), // Email for direct contact
-  responsibleName: z.string().optional() // Name of the responsible person
-});
-
-const roomAvailabilitySchema = z.object({
-  roomId: z.string(),
-  dateFrom: z.string(),
-  dateTo: z.string(),
-  price: z.number().optional()
-});
-
-const creditPurchaseSchema = z.object({
-  amount: z.number().positive(),
-  credits: z.number().positive()
-});
-
-const bookingSchema = z.object({
-  artistId: z.string(),
-  startDate: z.string(),
-  endDate: z.string(),
-  specialRequests: z.string().optional()
-});
-
-const ratingSchema = z.object({
-  stars: z.number().min(1).max(5),
-  textReview: z.string().min(10).max(500)
-});
-
-// Get hotel by user ID
-router.get('/user/:userId', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const { userId } = req.params;
-
-  // Users can only access their own hotel data unless they're admin
-  if (req.user!.role !== 'ADMIN' && req.user!.id !== userId) {
-    throw new CustomError('Access denied.', 403);
-  }
-
-  let hotel = await prisma.hotel.findUnique({
+async function loadOwnHotel(userId: string) {
+  const row = await prisma.hotel.findUnique({
     where: { userId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          country: true,
-          createdAt: true
-        }
-      },
-      credits: true,
-      bookings: {
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          artist: {
-            include: {
-              user: {
-                select: { name: true, email: true }
-              }
-            }
-          }
-        }
-      },
-      transactions: {
-        take: 10,
-        orderBy: { createdAt: 'desc' }
-      }
-    }
+    select: { ...ownHotelSelect(), programme: { select: programmeSelect } },
   });
+  if (!row) throw new CustomError('Profil hôtel introuvable.', 404);
+  return { ...toOwnHotel(row), programme: row.programme };
+}
 
-  // If hotel doesn't exist and user is a hotel, create a default one
-  if (!hotel && req.user!.role === 'HOTEL' && req.user!.id === userId) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (user) {
-      // Create location JSON string
-      const location = JSON.stringify({
-        city: '',
-        country: user.country || '',
-        coords: null
-      });
-      
-      hotel = await prisma.hotel.create({
-        data: {
-          userId: userId,
-          name: user.name,
-          description: '',
-          location: location,
-          contactPhone: user.phone || null,
-          repName: null
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              country: true,
-              createdAt: true
-            }
-          },
-          credits: true,
-          bookings: {
-            take: 10,
-            orderBy: { createdAt: 'desc' },
-            include: {
-              artist: {
-                include: {
-                  user: {
-                    select: { name: true, email: true }
-                  }
-                }
-              }
-            }
-          },
-          transactions: {
-            take: 10,
-            orderBy: { createdAt: 'desc' }
-          }
-        }
-      });
-    }
-  }
+// ------------------------------------------------------------- admin list
 
-  if (!hotel) {
-    throw new CustomError('Hotel not found.', 404);
-  }
-
-  // Calculate available credits
-  const credits = hotel.credits[0];
-  const availableCredits = credits ? credits.totalCredits - credits.usedCredits : 0;
-  const totalSpent = hotel.transactions
-    .filter(t => t.type === 'CREDIT_PURCHASE')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  let location = null;
-  let images = [];
-  let performanceSpots = [];
-  let rooms = [];
-  
-  if (hotel.location) {
-    try {
-      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch (e) {
-      location = null;
-    }
-  }
-  
-  if (hotel.images) {
-    try {
-      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch (e) {
-      images = [];
-    }
-  }
-  
-  if (hotel.performanceSpots) {
-    try {
-      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch (e) {
-      performanceSpots = [];
-    }
-  }
-  
-  if (hotel.rooms) {
-    try {
-      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch (e) {
-      rooms = [];
-    }
-  }
-
+router.get('/', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const page = Math.max(parseInt(String(req.query.page ?? '1'), 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? '50'), 10) || 50, 1), 100);
+  const [rows, total] = await Promise.all([
+    prisma.hotel.findMany({
+      select: { id: true, userId: true, name: true, city: true, country: true, user: { select: { id: true, name: true, email: true, country: true } } },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.hotel.count(),
+  ]);
   res.json({
     success: true,
-    data: {
-      ...hotel,
-      availableCredits,
-      totalSpent,
-      totalBookings: hotel.bookings.length,
-      location: location,
-      images: images,
-      performanceSpots: performanceSpots,
-      rooms: rooms
-    }
+    data: rows.map((h) => ({ ...h, location: { city: h.city, country: h.country } })),
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
   });
 }));
 
-// Get hotel profile
-router.get('/:id', asyncHandler(async (req, res) => {
-  const { id } = req.params;
+// ------------------------------------------------------------- own profile
 
-  const hotel = await prisma.hotel.findUnique({
-    where: { id },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          country: true,
-          createdAt: true
-        }
-      },
-      availabilities: {
-        where: {
-          dateFrom: { gte: new Date() }
-        },
-        orderBy: { dateFrom: 'asc' }
-      }
-    }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel not found.', 404);
-  }
-
-  let location = null;
-  let images = [];
-  let performanceSpots = [];
-  let rooms = [];
-  
-  if (hotel.location) {
-    try {
-      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch (e) {
-      location = null;
-    }
-  }
-  
-  if (hotel.images) {
-    try {
-      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch (e) {
-      images = [];
-    }
-  }
-  
-  if (hotel.performanceSpots) {
-    try {
-      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch (e) {
-      performanceSpots = [];
-    }
-  }
-  
-  if (hotel.rooms) {
-    try {
-      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch (e) {
-      rooms = [];
-    }
-  }
-
-  res.json({
-    success: true,
-    data: {
-      ...hotel,
-      location: location,
-      images: images,
-      performanceSpots: performanceSpots,
-      rooms: rooms
-    }
-  });
-}));
-
-// Get current user's hotel profile
 router.get('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const hotel = await prisma.hotel.findUnique({
-    where: { userId: req.user!.id },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          country: true,
-          createdAt: true
-        }
-      },
-      availabilities: {
-        where: {
-          dateFrom: { gte: new Date() }
-        },
-        orderBy: { dateFrom: 'asc' }
-      }
-    }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel profile not found', 404);
-  }
-
-  // Parse JSON fields
-  let location = null;
-  let images = [];
-  let performanceSpots = [];
-  let rooms = [];
-  
-  if (hotel.location) {
-    try {
-      location = typeof hotel.location === 'string' ? JSON.parse(hotel.location) : hotel.location;
-    } catch (e) {
-      location = null;
-    }
-  }
-  
-  if (hotel.images) {
-    try {
-      images = typeof hotel.images === 'string' ? JSON.parse(hotel.images) : hotel.images;
-    } catch (e) {
-      images = [];
-    }
-  }
-  
-  if (hotel.performanceSpots) {
-    try {
-      performanceSpots = typeof hotel.performanceSpots === 'string' ? JSON.parse(hotel.performanceSpots) : hotel.performanceSpots;
-    } catch (e) {
-      performanceSpots = [];
-    }
-  }
-  
-  if (hotel.rooms) {
-    try {
-      rooms = typeof hotel.rooms === 'string' ? JSON.parse(hotel.rooms) : hotel.rooms;
-    } catch (e) {
-      rooms = [];
-    }
-  }
-
-  res.json({
-    success: true,
-    data: {
-      ...hotel,
-      location,
-      images,
-      performanceSpots,
-      rooms
-    }
-  });
+  res.json({ success: true, data: await loadOwnHotel(req.user!.id) });
 }));
 
-// Update hotel profile (own profile)
 router.put('/me', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const profileData = hotelProfileSchema.parse(req.body);
+  const input = hotelProfileUpdateSchema.parse(req.body);
+  const userId = req.user!.id;
+  const current = await myHotel(userId);
 
-  const hotel = await prisma.hotel.findUnique({
-    where: { userId: req.user!.id }
-  });
+  const { spaces, programme, country, ...fields } = input;
+  const data: Record<string, unknown> = { ...fields };
+  if (country !== undefined) data.country = country;
 
-  if (!hotel) {
-    throw new CustomError('Hotel profile not found', 404);
+  // Renaming or moving the hotel re-checks that no other account holds the pair.
+  const name = input.name ?? current.name;
+  const city = input.city ?? current.city;
+  if (input.name !== undefined || input.city !== undefined) {
+    data.nameKey = hotelKey(name, city);
+    const conflicts = await findIdentityConflicts({ hotelName: name, hotelCity: city, excludeUserId: userId });
+    if (conflicts.name) throw new CustomError(conflicts.name, 409, { fields: { name: conflicts.name } });
   }
 
-  const updatedHotel = await prisma.hotel.update({
-    where: { id: hotel.id },
-    data: profileData,
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          country: true
-        }
-      }
-    }
-  });
-
-  res.json({
-    success: true,
-    data: updatedHotel
-  });
-}));
-
-// Create or update hotel profile (legacy endpoint for backward compatibility)
-router.post('/', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const profileData = hotelProfileSchema.parse(req.body);
-
-  const hotel = await prisma.hotel.upsert({
-    where: { userId: req.user!.id },
-    update: profileData,
-    create: {
-      userId: req.user!.id,
-      ...profileData
-    } as any,
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          country: true
-        }
-      }
-    }
-  });
-
-  res.json({
-    success: true,
-    data: hotel
-  });
-}));
-
-// Delete hotel profile
-router.delete('/:id', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-
-  const hotel = await prisma.hotel.findFirst({
-    where: { id, userId: req.user!.id }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel not found or access denied.', 404);
-  }
-
-  await prisma.hotel.delete({ where: { id } });
-
-  res.json({
-    success: true,
-    data: { id }
-  });
-}));
-// Add room availability
-router.post('/:id/rooms', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { roomId, dateFrom, dateTo, price } = roomAvailabilitySchema.parse(req.body);
-
-  // Verify hotel belongs to user
-  const hotel = await prisma.hotel.findFirst({
-    where: { id, userId: req.user!.id }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel not found or access denied.', 404);
-  }
-
-  const availability = await prisma.availability.create({
-    data: {
-      hotelId: id,
-      roomId,
-      dateFrom: new Date(dateFrom),
-      dateTo: new Date(dateTo),
-      price
-    }
-  });
-
-  res.status(201).json({
-    success: true,
-    data: availability
-  });
-}));
-
-// Get hotel credits
-router.get('/:id/credits', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-
-  // Verify hotel belongs to user
-  const hotel = await prisma.hotel.findFirst({
-    where: { id, userId: req.user!.id }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel not found or access denied.', 404);
-  }
-
-  // Get or create credits record
-  const credits = await prisma.credit.findUnique({
-    where: { hotelId: id }
-  });
-
-  const availableCredits = credits ? credits.totalCredits - credits.usedCredits : 0;
-
-  res.json({
-    success: true,
-    data: {
-      availableCredits,
-      totalCredits: credits?.totalCredits || 0,
-      usedCredits: credits?.usedCredits || 0
-    }
-  });
-}));
-
-// Purchase credits
-router.post('/:id/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { amount, credits } = creditPurchaseSchema.parse(req.body);
-
-  // Verify hotel belongs to user
-  const hotel = await prisma.hotel.findFirst({
-    where: { id, userId: req.user!.id }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel not found or access denied.', 404);
-  }
-
-  // Update credits
-  const creditRecord = await prisma.credit.upsert({
-    where: { hotelId: id },
-    update: {
-      totalCredits: { increment: credits }
-    },
-    create: {
-      hotelId: id,
-      totalCredits: credits,
-      usedCredits: 0
-    }
-  });
-
-  // Create transaction record
-  const transaction = await prisma.transaction.create({
-    data: {
-      hotelId: id,
-      type: 'CREDIT_PURCHASE',
-      amount
-    }
-  });
-
-  res.json({
-    success: true,
-    data: {
-      credits: creditRecord,
-      transaction
-    }
-  });
-}));
-
-// Browse artists with filters
-router.get('/:id/artists', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { discipline, location, dateFrom, dateTo, page = '1', limit = '10' } = req.query;
-
-  const pageNum = parseInt(page as string);
-  const limitNum = parseInt(limit as string);
-  const skip = (pageNum - 1) * limitNum;
-
-  const where: any = {};
-
-  if (discipline) {
-    where.discipline = { contains: discipline as string };
-  }
-
-  if (dateFrom && dateTo) {
-    where.availability = {
-      some: {
-        dateFrom: { lte: new Date(dateTo as string) },
-        dateTo: { gte: new Date(dateFrom as string) }
-      }
-    };
-  }
-
-  const [artists, total] = await Promise.all([
-    prisma.artist.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            country: true
-          }
-        },
-        availability: {
-          where: {
-            dateFrom: { gte: new Date() }
-          },
-          orderBy: { dateFrom: 'asc' },
-          take: 1
-        }
-      },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' } as any
-    }),
-    prisma.artist.count({ where })
-  ]);
-
-  let filteredArtists = artists;
-  if (location) {
-    const loc = String(location).toLowerCase();
-    filteredArtists = artists.filter(a => a.user?.country?.toLowerCase().includes(loc));
-  }
-
-  // Add rating badges for each artist
-  const artistsWithBadges = await Promise.all(
-    filteredArtists.map(async (artist) => {
-      const ratings = await prisma.rating.findMany({
-        where: { artistId: artist.id },
-        select: { stars: true }
+  for (const key of ['contactPhone', 'responsiblePhone'] as const) {
+    const value = input[key];
+    if (value && !normalizePhone(value, country ?? current.country)) {
+      throw new CustomError('Numéro de téléphone invalide pour ce pays', 400, {
+        fields: { [key]: 'Numéro de téléphone invalide pour ce pays' },
       });
-
-      let ratingBadge = null;
-      if (ratings.length > 0) {
-        const avgRating = ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length;
-        if (avgRating >= 4.5) {
-          ratingBadge = 'Top 10% Performer';
-        } else if (avgRating >= 4.0) {
-          ratingBadge = 'Excellent Performer';
-        } else if (avgRating >= 3.5) {
-          ratingBadge = 'Good Performer';
-        }
-      }
-
-      let images = [];
-      let videos = [];
-      let mediaUrls = [];
-      
-      if (artist.images) {
-        try {
-          images = typeof artist.images === 'string' ? JSON.parse(artist.images) : artist.images;
-        } catch (e) {
-          images = [];
-        }
-      }
-      
-      if (artist.videos) {
-        try {
-          videos = typeof artist.videos === 'string' ? JSON.parse(artist.videos) : artist.videos;
-        } catch (e) {
-          videos = [];
-        }
-      }
-      
-      if (artist.mediaUrls) {
-        try {
-          mediaUrls = typeof artist.mediaUrls === 'string' ? JSON.parse(artist.mediaUrls) : artist.mediaUrls;
-        } catch (e) {
-          mediaUrls = [];
-        }
-      }
-
-      return {
-        ...artist,
-        ratingBadge,
-        images: images,
-        videos: videos,
-        mediaUrls: mediaUrls
-      };
-    })
-  );
-
-  res.json({
-    success: true,
-    data: {
-      artists: artistsWithBadges,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum)
-      }
     }
-  });
+  }
+
+  try {
+    // Ownership was established by myHotel() above; hotels are not RLS-scoped.
+    await prismaAdmin.$transaction(async (tx) => {
+      await tx.hotel.update({ where: { id: current.id }, data });
+
+      if (programme) {
+        await tx.hotelProgramme.upsert({
+          where: { hotelId: current.id },
+          create: { hotelId: current.id, ...programme },
+          update: programme,
+        });
+      }
+
+      // Spaces are edited as a list and saved as a list: the submitted one
+      // replaces what was there. Their media are links, never uploads, so
+      // nothing in storage is orphaned by the replacement.
+      if (spaces) {
+        await tx.hotelSpace.deleteMany({ where: { hotelId: current.id } });
+        for (const [index, space] of spaces.entries()) {
+          await tx.hotelSpace.create({
+            data: {
+              hotelId: current.id,
+              name: space.name,
+              type: space.type,
+              setting: space.setting,
+              capacity: space.capacity,
+              description: space.description,
+              hours: space.hours,
+              noiseLevel: space.noiseLevel,
+              position: index,
+              media: {
+                create: space.media.map((url, i) => {
+                  const video = parseVideoUrl(url);
+                  return video
+                    ? { kind: 'VIDEO' as const, provider: video.provider, url: video.url, externalId: video.externalId, position: i }
+                    : { kind: 'IMAGE' as const, provider: 'LINK' as const, url, position: i };
+                }),
+              },
+            },
+          });
+        }
+      }
+    });
+  } catch (error) {
+    const conflict = conflictFromUniqueError(error);
+    if (conflict) throw new CustomError(Object.values(conflict)[0], 409, { fields: conflict });
+    throw error;
+  }
+
+  res.json({ success: true, data: await loadOwnHotel(userId) });
 }));
 
-// Request booking
-router.post('/:id/bookings', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { artistId, startDate, endDate } = bookingSchema.parse(req.body);
-
-  // Verify hotel belongs to user
-  const hotel = await prisma.hotel.findFirst({
-    where: { id, userId: req.user!.id }
+/** Remove one of my gallery photos. Only rows I own; only files we stored leave storage. */
+router.delete('/me/media/:mediaId', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const hotel = await myHotel(req.user!.id);
+  const media = await prisma.media.findFirst({
+    where: { id: req.params.mediaId, hotelId: hotel.id },
+    select: { id: true, provider: true, storageKey: true, url: true },
   });
+  if (!media) throw new CustomError('Média introuvable.', 404);
+  await prisma.media.delete({ where: { id: media.id } });
+  if (media.provider === 'UPLOAD' && media.storageKey) await removeStoredFile(media.url, media.storageKey);
+  res.json({ success: true, data: { id: media.id } });
+}));
 
-  if (!hotel) {
-    throw new CustomError('Hotel not found or access denied.', 404);
-  }
+// --------------------------------------------------------------- shortlist
 
-  // Validate dates first
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const now = new Date();
-  
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw new CustomError('Invalid date format. Please use ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)', 400);
-  }
-  
-  if (start < now) {
-    throw new CustomError('Start date must be in the future', 400);
-  }
-  
-  if (end <= start) {
-    throw new CustomError('End date must be after start date', 400);
-  }
-  
-  // Calculate weekly payment (consistent with bookings route)
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const numberOfWeeks = Math.max(1, Math.ceil(diffDays / 7)); // Minimum 1 week
-  
-  // Validate booking duration (max 52 weeks)
-  if (numberOfWeeks > 52) {
-    throw new CustomError('Booking duration cannot exceed 52 weeks (1 year)', 400);
-  }
-  
-  const weeklyPaymentAmount = 200.0; // Fixed weekly rate
-  const totalPaymentAmount = numberOfWeeks * weeklyPaymentAmount;
-
-  // Verify artist exists
-  const artist = await prisma.artist.findUnique({
-    where: { id: artistId },
-    include: { user: true }
-  });
-
-  if (!artist) {
-    throw new CustomError('Artist not found.', 404);
-  }
-
-  // Check artist availability
-  const isAvailable = await prisma.artistAvailability.findFirst({
-    where: {
-      artistId,
-      dateFrom: { lte: end },
-      dateTo: { gte: start }
-    }
-  });
-
-  if (!isAvailable) {
-    throw new CustomError('Artist is not available for the selected dates. Please check the artist\'s availability calendar.', 400);
-  }
-
-  // Create booking with weekly payment
-  const booking = await prisma.booking.create({
-    data: {
-      hotelId: id,
-      artistId,
-      startDate: start,
-      endDate: end,
-      status: 'PENDING',
-      creditsUsed: 0, // Deprecated - kept for backward compatibility
-      weeklyPaymentAmount,
-      numberOfWeeks,
-      totalPaymentAmount,
-      paymentStatus: 'PENDING'
+router.get('/:id/favorites', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  await assertOwnHotel(req, req.params.id);
+  const favorites = await prisma.hotelFavorite.findMany({
+    where: { hotelId: req.params.id, artist: listableArtistWhere },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      hotelId: true,
+      artistId: true,
+      createdAt: true,
+      artist: { select: { id: true, stageName: true, discipline: true, profilePicture: true, user: { select: { name: true } } } },
     },
-    include: {
-      artist: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true
-            }
-          }
-        }
-      }
-    }
   });
-
-  // Create pending transaction for the booking payment
-  await prisma.transaction.create({
-    data: {
-      hotelId: id,
-      artistId,
-      type: 'BOOKING_FEE',
-      amount: totalPaymentAmount,
-      status: 'PENDING'
-    }
-  });
-
-  res.status(201).json({
-    success: true,
-    message: `Booking request created. Payment required: €${totalPaymentAmount.toFixed(2)} (${numberOfWeeks} week${numberOfWeeks > 1 ? 's' : ''} × €${weeklyPaymentAmount}/week)`,
-    data: {
-      ...booking,
-      weeklyPaymentAmount,
-      numberOfWeeks,
-      totalPaymentAmount,
-      paymentStatus: 'PENDING'
-    }
-  });
+  res.json({ success: true, data: favorites });
 }));
 
-// Confirm booking (processes payment)
-router.post('/:id/bookings/:bookingId/confirm', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id, bookingId } = req.params;
-
-  // Verify hotel belongs to user
-  const hotel = await prisma.hotel.findFirst({
-    where: { id, userId: req.user!.id }
+router.post('/:id/favorites', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  await assertOwnHotel(req, req.params.id);
+  const { artistId } = z.object({ artistId: z.string().min(1) }).parse(req.body);
+  const artist = await prisma.artist.findFirst({ where: { id: artistId, ...listableArtistWhere }, select: { id: true } });
+  if (!artist) throw new CustomError('Artiste introuvable.', 404);
+  // Shortlisting twice is the same intent as once: success, not a conflict.
+  const favorite = await prisma.hotelFavorite.upsert({
+    where: { hotelId_artistId: { hotelId: req.params.id, artistId } },
+    create: { hotelId: req.params.id, artistId },
+    update: {},
   });
+  res.status(201).json({ success: true, data: favorite });
+}));
 
-  if (!hotel) {
-    throw new CustomError('Hotel not found or access denied.', 404);
-  }
+router.delete('/:id/favorites/:artistId', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  await assertOwnHotel(req, req.params.id);
+  await prisma.hotelFavorite.deleteMany({ where: { hotelId: req.params.id, artistId: req.params.artistId } });
+  res.json({ success: true, data: { hotelId: req.params.id, artistId: req.params.artistId, removed: true } });
+}));
 
-  // Get booking
-  const booking = await prisma.booking.findFirst({
-    where: { id: bookingId, hotelId: id, status: 'PENDING' }
-  });
-
-  if (!booking) {
-    throw new CustomError('Booking not found or already processed.', 404);
-  }
-
-  // Process payment for booking
-  // In a real implementation, you would integrate with a payment gateway here
-  // For now, we'll mark the payment as completed and update booking status
-  
-  const [updatedBooking, transaction] = await Promise.all([
-    prisma.booking.update({
-      where: { id: bookingId },
-      data: { 
-        status: 'CONFIRMED',
-        paymentStatus: 'PAID'
-      }
-    }),
-    prisma.transaction.updateMany({
-      where: {
-        hotelId: id,
-        artistId: booking.artistId,
-        type: 'BOOKING_FEE',
-        status: 'PENDING'
-      },
-      data: {
-        status: 'COMPLETED'
-      }
-    })
-  ]);
-
+router.get('/:id/credits', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  await assertOwnHotel(req, req.params.id);
+  const credits = await prisma.credit.findUnique({ where: { hotelId: req.params.id } });
   res.json({
     success: true,
-    message: `Booking confirmed! Payment of €${(booking.totalPaymentAmount || 0).toFixed(2)} processed successfully.`,
     data: {
-      booking: updatedBooking,
-      paymentAmount: booking.totalPaymentAmount || 0,
-      weeklyPayment: booking.weeklyPaymentAmount || 200,
-      numberOfWeeks: booking.numberOfWeeks || 0,
-      paymentStatus: 'PAID'
-    }
+      availableCredits: credits ? credits.totalCredits - credits.usedCredits : 0,
+      totalCredits: credits?.totalCredits ?? 0,
+      usedCredits: credits?.usedCredits ?? 0,
+    },
   });
 }));
 
-// Rate artist after stay
-router.post('/:id/bookings/:bookingId/rate', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id, bookingId } = req.params;
-  const { stars, textReview } = ratingSchema.parse(req.body);
+// ----------------------------------------------------------- public profile
 
-  // Verify hotel belongs to user
-  const hotel = await prisma.hotel.findFirst({
-    where: { id, userId: req.user!.id }
+router.get('/:id', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+  const viewer = req.user!;
+  const row = await prisma.hotel.findFirst({
+    where: {
+      id: req.params.id,
+      ...(viewer.role === 'ADMIN' ? {} : { OR: [listableHotelWhere, { userId: viewer.id }] }),
+    },
+    select: publicHotelSelect(),
   });
+  if (!row) throw new CustomError('Hôtel introuvable.', 404);
 
-  if (!hotel) {
-    throw new CustomError('Hotel not found or access denied.', 404);
-  }
+  const stars = await prisma.rating.findMany({ where: { hotelId: row.id }, select: { stars: true } });
+  const averageRating = stars.length ? Math.round((stars.reduce((s, r) => s + r.stars, 0) / stars.length) * 10) / 10 : null;
 
-  // Get booking
-  const booking = await prisma.booking.findFirst({
-    where: { id: bookingId, hotelId: id, status: 'COMPLETED' }
-  });
-
-  if (!booking) {
-    throw new CustomError('Booking not found or not completed.', 404);
-  }
-
-  // Check if already rated
-  const existingRating = await prisma.rating.findFirst({
-    where: { bookingId }
-  });
-
-  if (existingRating) {
-    throw new CustomError('Artist has already been rated for this booking.', 400);
-  }
-
-  // Create rating
-  const rating = await prisma.rating.create({
-    data: {
-      bookingId,
-      hotelId: id,
-      artistId: booking.artistId,
-      stars,
-      textReview,
-      isVisibleToArtist: false // Artists cannot see numeric ratings
-    }
-  });
-
-  res.status(201).json({
-    success: true,
-    data: rating
-  });
+  res.json({ success: true, data: toPublicHotel(row, { averageRating, ratingCount: stars.length }) });
 }));
 
 export { router as hotelRoutes };
-

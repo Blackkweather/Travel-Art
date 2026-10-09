@@ -1,13 +1,32 @@
 import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { User, Building, ArrowRight } from 'lucide-react'
 import { ArtistRegistrationFlow, HotelRegistrationFlow } from '@/components/registration'
-import { getLogoUrl } from '@/config/assets'
+import BrandWordmark from '@/components/BrandWordmark'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
+import { t } from '@/i18n'
+import SEOHead from '@/components/SEOHead'
+
+const ROLE_FROM_PARAM: Record<string, 'ARTIST' | 'HOTEL'> = {
+  artist: 'ARTIST',
+  hotel: 'HOTEL',
+}
 
 const RegisterPage: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState<'ARTIST' | 'HOTEL' | null>(null)
+  const [searchParams] = useSearchParams()
+  // Every "Je suis artiste" / "Je suis un hôtel" CTA across the site links
+  // here with ?role=..., but nothing ever read it: visitors landed on the
+  // picker regardless and had to choose their role a second time.
+  const [selectedRole, setSelectedRole] = useState<'ARTIST' | 'HOTEL' | null>(
+    /* Lower-cased before the lookup. Every link inside the app spells it
+       `?role=artist`, but the map only had lowercase keys and did no
+       normalising, so `?role=ARTIST` - the spelling anyone writing a campaign
+       URL or sharing a link by hand would reach for - fell through to the
+       picker and asked them to choose a second time. */
+    () => ROLE_FROM_PARAM[(searchParams.get('role') || '').trim().toLowerCase()] || null
+  )
   const [hoveredRole, setHoveredRole] = useState<'ARTIST' | 'HOTEL' | null>(null)
 
   // If role is selected, show the appropriate registration flow with smooth transition
@@ -39,9 +58,13 @@ const RegisterPage: React.FC = () => {
 
   // Show role selection screen with enhanced UI
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-cream via-white to-cream">
+    <div className="flex flex-col min-h-screen bg-surface">
+      <SEOHead
+        title={t('Rejoindre Travel Art — Inscription')}
+        description={t('Artiste ou hôtel : créez votre compte et rejoignez le programme de résidences Travel Art.')}
+      />
       <SimpleNavbar />
-      <main className="flex-1 container mx-auto px-4 py-12 md:py-16">
+      <main className="flex-1 container mx-auto px-4 pt-28 pb-12 md:pb-16">
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}
           <motion.div
@@ -56,17 +79,22 @@ const RegisterPage: React.FC = () => {
               transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
               className="inline-block mb-6"
             >
-              <img
-                src={getLogoUrl('transparent')}
-                alt="Travel Art Logo"
-                className="w-40 h-40 md:w-56 md:h-56 object-contain mx-auto"
+              <BrandWordmark
+                className="w-40 md:w-56 h-auto mx-auto text-navy dark:text-cream"
+                title="Logo Travel Art"
               />
             </motion.div>
-            <h1 className="text-3xl md:text-4xl font-bold text-navy mb-4 bg-gradient-to-r from-navy to-navy/80 bg-clip-text text-transparent">
-              Join Travel Art
+            {/* This carried three competing text colours at once: text-white,
+                text-transparent, and a navy gradient clipped to the glyphs.
+                Only one text-color utility can win, and it was text-white -
+                so the page title rendered white on a white page and the
+                heading was invisible. The gradient-clipped-to-text trick buys
+                nothing over a solid navy heading here, so it is gone. */}
+            <h1 className="mb-4">
+              Rejoindre Travel Art
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto">
-              Choose your role and start your journey with us
+            <p className="text-lg md:text-xl text-content-secondary max-w-2xl mx-auto">
+              {t('Choisissez votre rôle et commencez l’aventure')}
             </p>
           </motion.div>
 
@@ -78,13 +106,14 @@ const RegisterPage: React.FC = () => {
             className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10"
           >
             {/* Artist Option */}
-            <motion.div
+            <motion.button
+              type="button"
               onHoverStart={() => setHoveredRole('ARTIST')}
               onHoverEnd={() => setHoveredRole(null)}
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedRole('ARTIST')}
-              className="group relative overflow-hidden rounded-3xl border-2 border-gray-200 bg-white shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
+              className="group relative block w-full text-left overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
               <motion.div
@@ -94,7 +123,7 @@ const RegisterPage: React.FC = () => {
               
               {/* Border Glow Effect */}
               <motion.div
-                className="absolute inset-0 rounded-3xl border-2 border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                className="absolute inset-0 rounded-card border-2 border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 initial={false}
               />
 
@@ -106,18 +135,18 @@ const RegisterPage: React.FC = () => {
                       rotate: hoveredRole === 'ARTIST' ? 5 : 0,
                     }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className="w-24 h-24 rounded-full bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center mx-auto shadow-lg"
+                    className="w-24 h-24 rounded-control bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center mx-auto shadow-lg"
                   >
                     <User className="w-12 h-12 text-gold" />
                   </motion.div>
                   
                   <div>
-                    <h3 className="text-3xl font-bold text-navy mb-3 group-hover:text-gold transition-colors duration-300">
-                      Artist
+                    <h3 className="text-3xl font-bold text-content mb-3 group-hover:text-gold transition-colors duration-300">
+                      {t('Artiste')}
                     </h3>
-                    <p className="text-lg text-gray-600 mb-4">Perform & Create</p>
-                    <p className="text-sm text-gray-500 leading-relaxed">
-                      3-step detailed registration form to showcase your artistic profile, categories, and specialties
+                    <p className="text-lg text-content-secondary mb-4">{t('Jouer et créer')}</p>
+                    <p className="text-sm text-content-secondary leading-relaxed">
+                      {t('Un formulaire en 3 étapes pour présenter votre profil, vos catégories et vos spécialités')}
                     </p>
                   </div>
 
@@ -129,21 +158,22 @@ const RegisterPage: React.FC = () => {
                     transition={{ type: "spring", stiffness: 400 }}
                     className="flex items-center justify-center gap-2 text-gold font-semibold mt-6"
                   >
-                    <span>Get Started</span>
+                    <span>{t('Commencer')}</span>
                     <ArrowRight className="w-5 h-5" />
                   </motion.div>
                 </div>
               </div>
-            </motion.div>
+            </motion.button>
 
             {/* Hotel Option */}
-            <motion.div
+            <motion.button
+              type="button"
               onHoverStart={() => setHoveredRole('HOTEL')}
               onHoverEnd={() => setHoveredRole(null)}
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedRole('HOTEL')}
-              className="group relative overflow-hidden rounded-3xl border-2 border-gray-200 bg-white shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
+              className="group relative block w-full text-left overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
               <motion.div
@@ -153,7 +183,7 @@ const RegisterPage: React.FC = () => {
               
               {/* Border Glow Effect */}
               <motion.div
-                className="absolute inset-0 rounded-3xl border-2 border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                className="absolute inset-0 rounded-card border-2 border-gold opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 initial={false}
               />
 
@@ -165,18 +195,18 @@ const RegisterPage: React.FC = () => {
                       rotate: hoveredRole === 'HOTEL' ? -5 : 0,
                     }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className="w-24 h-24 rounded-full bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center mx-auto shadow-lg"
+                    className="w-24 h-24 rounded-control bg-gradient-to-br from-gold/20 to-gold/10 flex items-center justify-center mx-auto shadow-lg"
                   >
                     <Building className="w-12 h-12 text-gold" />
                   </motion.div>
                   
                   <div>
-                    <h3 className="text-3xl font-bold text-navy mb-3 group-hover:text-gold transition-colors duration-300">
-                      Hotel
+                    <h3 className="text-3xl font-bold text-content mb-3 group-hover:text-gold transition-colors duration-300">
+                      {t('Hôtel')}
                     </h3>
-                    <p className="text-lg text-gray-600 mb-4">Host & Entertain</p>
-                    <p className="text-sm text-gray-500 leading-relaxed">
-                      7-step comprehensive registration form covering ambiance, equipment, collaboration terms, and logistics
+                    <p className="text-lg text-content-secondary mb-4">{t('Accueillir et programmer')}</p>
+                    <p className="text-sm text-content-secondary leading-relaxed">
+                      {t('Un formulaire en 7 étapes couvrant l’ambiance, l’équipement, les conditions de collaboration et la logistique')}
                     </p>
                   </div>
 
@@ -188,12 +218,12 @@ const RegisterPage: React.FC = () => {
                     transition={{ type: "spring", stiffness: 400 }}
                     className="flex items-center justify-center gap-2 text-gold font-semibold mt-6"
                   >
-                    <span>Get Started</span>
+                    <span>{t('Commencer')}</span>
                     <ArrowRight className="w-5 h-5" />
                   </motion.div>
                 </div>
               </div>
-            </motion.div>
+            </motion.button>
           </motion.div>
 
           {/* Additional Info */}
@@ -203,10 +233,10 @@ const RegisterPage: React.FC = () => {
             transition={{ delay: 0.6, duration: 0.5 }}
             className="text-center mt-12"
           >
-            <p className="text-sm text-gray-500">
-              Already have an account?{' '}
+            <p className="text-sm text-content-secondary">
+              Déjà un compte ?{' '}
               <a href="/login" className="text-gold font-semibold hover:underline transition-colors">
-                Sign in here
+                {t('Se connecter')}
               </a>
             </p>
           </motion.div>

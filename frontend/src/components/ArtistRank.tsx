@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { t } from '@/i18n'
 
 export type RankTier = 'red' | 'blue' | 'green' | 'gold' | 'platinum' | 'diamond'
 
@@ -10,36 +11,50 @@ interface ArtistRankProps {
   animated?: boolean
 }
 
+/**
+ * Rank tiers, as a single ascending metal scale: grey, bronze, gold, bright
+ * gold, platinum, diamond.
+ *
+ * The previous palette was blue, purple, green, gold, grey and cyan — five
+ * hues foreign to a navy-and-gold brand, and they read as arbitrary rather
+ * than as a progression. Nothing indicated that "Skilled" outranked "Rising".
+ * Every value here is chosen to stay legible on the dark surface.
+ *
+ * The keys are historic tier ids and are deliberately left alone: they are
+ * persisted and matched by getQuickRank below. They have never described the
+ * colour anyway — `red` was blue and `blue` was purple. The label is what a
+ * visitor actually reads.
+ */
 export const RANK_CONFIG = {
   red: {
-    color: '#2563EB',
-    label: 'Rising',
-    description: 'Starting tier - Welcome!'
+    color: '#8A93A6',
+    label: t('Révélation'),
+    description: 'Premier palier — bienvenue'
   },
   blue: {
-    color: '#8B5CF6',
-    label: 'Skilled',
-    description: 'Building reputation'
+    color: '#A8763C',
+    label: t('Confirmé'),
+    description: t('Réputation en construction')
   },
   green: {
-    color: '#059669',
+    color: '#B99851',
     label: 'Expert',
-    description: 'Highly experienced'
+    description: t('Grande expérience')
   },
   gold: {
-    color: '#C9A63C',
-    label: 'Artist',
-    description: 'Top-tier professional'
+    color: '#DAC189',
+    label: 'Artiste',
+    description: t('Professionnel de premier plan')
   },
   platinum: {
-    color: '#9CA3AF',
-    label: 'Master',
-    description: 'Elite performer'
+    color: '#D6DAE0',
+    label: t('Maître'),
+    description: t('Artiste d’élite')
   },
   diamond: {
-    color: '#06B6D4',
-    label: 'Superstar',
-    description: 'On request only'
+    color: '#F0F6FF',
+    label: t('Tête d’affiche'),
+    description: t('Sur demande uniquement')
   }
 }
 
@@ -116,7 +131,7 @@ export const ArtistRank: React.FC<ArtistRankProps> = ({
           <span className={`font-semibold ${sizeConfig.fontSize}`} style={{ color: config.color }}>
             {config.label}
           </span>
-          <span className="text-xs text-gray-500">{config.description}</span>
+          <span className="text-xs text-content-secondary">{config.description}</span>
         </div>
       )}
     </div>

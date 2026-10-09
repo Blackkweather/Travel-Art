@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface RadioButtonProps {
@@ -50,12 +51,12 @@ const RadioButton: React.FC<RadioButtonProps> = ({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="w-2.5 h-2.5 bg-white rounded-full"
+              className="w-2.5 h-2.5 bg-surface-raised rounded-full"
             />
           )}
         </motion.div>
       </div>
-      <span className={`text-base font-medium ${checked ? 'text-navy-900' : 'text-gray-700'}`}>
+      <span className={`text-base font-medium ${checked ? 'text-navy-900' : 'text-content-secondary'}`}>
         {label}
       </span>
     </motion.label>
@@ -89,7 +90,7 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="w-full"
     >
-      <div className="bg-beige-50 rounded-2xl p-6 border-2 border-beige-100">
+      <div className="bg-beige-50 rounded-card p-6 border-2 border-beige-100">
         {label && (
           <label className="block text-lg font-semibold text-navy-900 mb-4">
             {label}
@@ -115,9 +116,11 @@ const RadioGroup: React.FC<RadioGroupProps> = ({
           <motion.p
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 text-sm text-red-500"
+            className="field-error"
+            role="alert"
           >
-            {error}
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <span>{error}</span>
           </motion.p>
         )}
       </div>

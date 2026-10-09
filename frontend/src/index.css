@@ -1,51 +1,745 @@
+﻿/* Self-hosted variable fonts. Loading these here rather than via a Google
+   Fonts <link> removes a render-blocking third-party request. */
+@import '@fontsource-variable/newsreader';
+@import '@fontsource-variable/inter';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom CSS Variables - Travel Art */
+/* Semantic design tokens. Sections tint within a theme, they never invert:
+   every surface below belongs to the same light or dark family. */
 :root {
   --navy: #0B1F3F;
-  --gold: #14b8a6;
-  --cream: #F9F8F3;
-  --off-black: #111111;
-  --primary-navy: #0B1F3F;
-  --gold-accent: #14b8a6;
-  --cream-bg: #F9F8F3;
-  --text-dark: #0B1F3F;
-  --border-light: #e5e7eb;
-  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-luxury: 0 25px 50px -12px rgba(11, 31, 63, 0.25);
-  --gradient-navy-gold: linear-gradient(135deg, #0B1F3F 0%, #14b8a6 100%);
-  --gradient-gold-navy: linear-gradient(135deg, #14b8a6 0%, #0B1F3F 100%);
-  --gradient-overlay: linear-gradient(135deg, rgba(11, 31, 63, 0.8) 0%, rgba(20, 184, 166, 0.2) 100%);
+  --gold: #B99851;
+  /* #B99851 is the compass-rose gold and stays exactly as it is for fills,
+     borders and anything sitting on navy. As *text on a light surface* it
+     measures 2.74:1, which fails even the 3:1 large-text bar, so gold text
+     resolves to the 700 step of the same ramp (5.78:1 on white). Same hue,
+     legible weight. On dark surfaces it resolves to the 300 step instead -
+     the pairing `.btn-gold-outline` was already making by hand. */
+  --gold-text: #7B6231;
+  --off-black: #14161A;
+
+  /* Warm neutrals. The page is white and the tinted bands are warm, not grey:
+     a warm off-white beside navy reads as paper and photography, which is the
+     register this product wants. A cold #FAFAFA beside navy reads as a SaaS
+     dashboard. Sand is the secondary-button fill. */
+  --sand: #E8DFD2;
+  --clay: #BF2F17;
+
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --surface-sunken: #FDFBF9;
+  --surface-warm: #F6EFE7;
+  --surface-inverse: #0B1F3F;
+
+  /* Channel twins, for the alpha-capable Tailwind tokens. Keep in step with
+     the hex values above. */
+  --surface-rgb: 255 255 255;
+  --surface-raised-rgb: 255 255 255;
+  --surface-sunken-rgb: 253 251 249;
+  --surface-warm-rgb: 246 239 231;
+  --surface-inverse-rgb: 11 31 63;
+
+  --text-primary-rgb: 11 31 63;
+  --text-secondary-rgb: 90 100 120;
+  --text-on-inverse-rgb: 253 251 249;
+  --border-subtle-rgb: 231 225 216;
+  --border-strong-rgb: 201 192 178;
+
+  --text-primary: #0B1F3F;
+  /* Navy-tinted rather than neutral grey, so secondary text belongs to the
+     same family as the headings above it. 4.9:1 on white. */
+  --text-secondary: #5A6478;
+  --text-on-inverse: #FDFBF9;
+  --text-on-gold: #14161A;
+
+  /* Hairlines are warm too - a cold grey rule across a warm band is visible
+     as a different colour, not just a lighter one. */
+  --border-subtle: #E7E1D8;
+  --border-strong: #C9C0B2;
+
+  /* Shadows are tinted to the navy base - never pure black on light surfaces. */
+  --shadow-soft: 0 1px 2px rgba(11, 31, 63, 0.06), 0 2px 8px rgba(11, 31, 63, 0.04);
+  --shadow-medium: 0 4px 12px rgba(11, 31, 63, 0.08), 0 12px 32px rgba(11, 31, 63, 0.06);
+  --shadow-large: 0 12px 32px rgba(11, 31, 63, 0.10), 0 32px 64px rgba(11, 31, 63, 0.08);
+  --shadow-luxury: 0 24px 64px rgba(11, 31, 63, 0.18);
+
+  /* Status. Desaturated and darkened off the stock ramps so they read as
+     part of a warm navy page: each hue is pulled toward the navy base and
+     each wash is warm rather than pure-tinted white. All four clear 4.5:1 on
+     their own wash. Critical is the brand's clay, darkened, rather than a
+     seventh red entering the palette. */
+  --state-positive: #2F6B4F;
+  --state-positive-wash: #EDF4EF;
+  --state-positive-line: #C3DACC;
+
+  --state-caution: #8A5A18;
+  --state-caution-wash: #FAF2E4;
+  --state-caution-line: #E5D3AE;
+
+  --state-critical: #A32A14;
+  --state-critical-wash: #FAEDEA;
+  --state-critical-line: #E8C8C0;
+
+  --state-info: #2B4A7A;
+  --state-info-wash: #EDF1F7;
+  --state-info-line: #C7D3E4;
+
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Aliases for the older variable names still referenced further down this
+     file and in styles/registration.css. They resolve to the tokens above so
+     the legacy rules stay in step with the theme instead of silently
+     falling back to unstyled defaults. */
+  --primary-navy: var(--navy);
+  --gold-accent: var(--gold);
+  --cream: var(--surface);
+  --cream-bg: var(--surface);
+  --text-dark: var(--text-primary);
+  --border-light: var(--border-subtle);
+  --gradient-overlay: linear-gradient(135deg, rgba(11, 31, 63, 0.85) 0%, rgba(185, 152, 81, 0.18) 100%);
+}
+
+/* The site is designed light-first. Dark mode stays supported and every token
+   below has a light counterpart above, so a surface that follows the tokens
+   follows the theme. --surface-warm is the one that needs thought: in dark
+   there is no warm paper to tint, so it becomes a slightly raised navy. */
+.dark {
+  --surface: #0C1526;
+  --surface-raised: #121E33;
+  --surface-sunken: #08101D;
+  --surface-warm: #101B2E;
+  --surface-inverse: #FDFBF9;
+
+  --surface-rgb: 12 21 38;
+  --surface-raised-rgb: 18 30 51;
+  --surface-sunken-rgb: 8 16 29;
+  --surface-warm-rgb: 16 27 46;
+  --surface-inverse-rgb: 253 251 249;
+
+  --text-primary-rgb: 244 244 245;
+  --text-secondary-rgb: 161 161 170;
+  --text-on-inverse-rgb: 11 31 63;
+  --border-subtle-rgb: 30 44 69;
+  --border-strong-rgb: 44 61 90;
+
+  --sand: #2C3D5A;
+
+  --text-primary: #F4F4F5;
+  --text-secondary: #A1A1AA;
+  --text-on-inverse: #0B1F3F;
+  --text-on-gold: #14161A;
+  --gold-text: #DAC189;
+
+  --border-subtle: #1E2C45;
+  --border-strong: #2C3D5A;
+
+  /* In dark the relationship inverts: the hue becomes the light element and
+     the wash a barely-lifted navy, so the badge still reads as a tinted chip
+     rather than a bright block. */
+  --state-positive: #7FC49E;
+  --state-positive-wash: #14261D;
+  --state-positive-line: #24422F;
+
+  --state-caution: #E0B871;
+  --state-caution-wash: #2A2113;
+  --state-caution-line: #473721;
+
+  --state-critical: #E89A87;
+  --state-critical-wash: #2B1712;
+  --state-critical-line: #4A2820;
+
+  --state-info: #93B4E0;
+  --state-info-wash: #16223A;
+  --state-info-line: #263A5C;
+
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.40);
+  --shadow-large: 0 16px 48px rgba(0, 0, 0, 0.50);
+  --shadow-luxury: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--text-primary);
+  }
+
+  /* Display type carries the brand. Newsreader is a text-first serif with low
+     stroke contrast, so unlike the Cormorant it replaces it holds up at 700
+     and stays readable down to subheading sizes instead of going spindly.
+     Tight tracking keeps it from feeling loose at large sizes. */
+  h1, h2, h3 {
+    font-family: theme('fontFamily.serif');
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  /* Visible, brand-coloured focus for keyboard users on every interactive
+     element. */
+  :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+}
+
+/* Any motion beyond a hover tint collapses to static for users who ask for it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Custom Components - Travel Art */
 @layer components {
+  /* Buttons are uppercase and semibold at a real reading size, not a hairline
+     of tracked-out 11px type. The previous scale (0.6875rem / 0.14em) is what
+     an engraved luxury wordmark wants; it is not what someone filling in a
+     seven-step registration form on a phone wants, and it was the single
+     biggest legibility problem in the app. 0.9375rem with modest tracking
+     stays clearly branded and is readable at arm's length.
+
+     min-height 48px meets the WCAG 2.2 target-size guidance on every variant,
+     so no call site has to remember to pad a small button up to a tappable
+     one. Every button presses down 1px on :active so a click feels physical. */
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap
+           rounded-control min-h-[48px] px-7 py-3.5
+           text-[0.9375rem] font-semibold uppercase leading-none
+           transition-all duration-200 ease-entrance
+           active:translate-y-px
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:active:translate-y-0;
+    letter-spacing: 0.04em;
+  }
+
+  /* Primary sits on the inverse surface rather than a fixed navy, so it stays
+     legible in both themes: navy with a near-white label on light, a light bar
+     with a navy label on dark.
+
+     Hover goes to gold rather than to transparent. A filled button that empties
+     on hover reads as losing state; filling with the accent reads as the
+     control lighting up, and it is what puts gold in front of the user at the
+     exact moment they are deciding to act. Gold is light, so its label is
+     near-black throughout - white on gold fails AA.
+
+     Buttons are flat. Depth comes from the 1px press only. */
   .btn-primary {
-    @apply bg-navy text-white px-8 py-4 rounded-lg font-semibold hover:bg-navy/90 transition-all duration-300 shadow-soft border-0;
+    @apply btn-base bg-[var(--surface-inverse)] text-[var(--text-on-inverse)]
+           border border-[var(--surface-inverse)]
+           hover:bg-gold hover:border-gold hover:text-off-black;
   }
-  
+
+  /* Sand fill. The quiet companion to primary: present enough to be found,
+     never competing with it. */
   .btn-secondary {
-    @apply bg-transparent text-navy border-2 border-navy px-8 py-4 rounded-lg font-semibold hover:bg-navy hover:text-white transition-all duration-300 shadow-soft;
+    @apply btn-base bg-[var(--sand)] text-navy border border-[var(--sand)]
+           hover:bg-navy hover:border-navy hover:text-white
+           dark:text-white dark:hover:bg-white dark:hover:text-navy;
   }
-  
+
   .btn-gold {
-    @apply bg-gold text-white px-8 py-4 rounded-lg font-semibold hover:bg-gold/90 transition-all duration-300 shadow-soft border-0;
+    @apply btn-base bg-gold text-off-black border border-gold
+           hover:bg-navy hover:border-navy hover:text-white;
   }
-  
+
   .btn-gold-outline {
-    @apply bg-transparent text-gold border-2 border-gold px-8 py-4 rounded-lg font-semibold hover:bg-gold hover:text-white transition-all duration-300 shadow-soft;
+    @apply btn-base bg-transparent text-gold-700 border border-gold
+           hover:bg-gold hover:text-off-black dark:text-gold-300;
   }
-  
-  .card-luxury {
-    @apply bg-white rounded-xl shadow-soft p-8 border border-gray-100;
+
+  /* The registration flows mark their tertiary "add another" controls with
+     btn-outline. It had no definition in any loaded stylesheet, so those
+     buttons rendered as bare browser chrome inside a designed form. */
+  .btn-outline {
+    @apply btn-base bg-[var(--surface-raised)] text-[var(--text-primary)]
+           border border-[var(--border-strong)]
+           hover:border-gold hover:text-gold;
   }
-  
+
+  /* Text-only tertiary action. Used where a bordered button would add a third
+     box to a row that already has two. */
+  .btn-ghost {
+    @apply btn-base bg-transparent text-[var(--text-primary)] border border-transparent
+           hover:text-gold;
+  }
+
+  /* Size modifiers. These must stay below every .btn-* variant: @apply inlines
+     the utilities into the rule, so with equal specificity it is source order
+     that decides, and a modifier has to be able to override .btn-base.
+     Call sites previously reached for `!px-6 !py-2.5` to shrink a nav button,
+     which forced an !important into the markup for something the system should
+     own.
+
+     btn-sm keeps the 44px floor rather than dropping to the visual minimum:
+     small here means less horizontal weight, not a smaller tap target. */
+  /* Accept / decline pairs appeared on six screens, each hand-rolled as a
+     solid `bg-green-600` beside a solid `bg-red-600`. Two saturated fills
+     side by side make the destructive option as loud as the constructive one,
+     and neither belonged to this palette. The confirming action is the
+     ordinary primary button; declining is an outline that only commits to
+     colour on hover, so the dangerous choice is legible but never the loudest
+     thing on the row. */
+  .btn-danger {
+    @apply btn-base border bg-transparent;
+    border-color: var(--state-critical-line);
+    color: var(--state-critical);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background-color: var(--state-critical-wash);
+    border-color: var(--state-critical);
+  }
+
+  .btn-sm {
+    @apply min-h-[44px] px-5 py-2.5 text-[0.8125rem];
+    letter-spacing: 0.05em;
+  }
+
+  .btn-lg {
+    @apply min-h-[56px] px-9 py-[1.125rem] text-base;
+  }
+
+  /* A button that has to sit on top of photography. The dark scrim keeps the
+     label legible whatever the image behind it does. */
+  .btn-on-media {
+    @apply btn-base border border-white/70 text-white bg-black/25 backdrop-blur-sm
+           hover:bg-white hover:text-navy hover:border-white;
+  }
+
+  /* Club Med Live marks its forward actions with a trailing arrow. It is a
+     small thing that makes a row of buttons scannable by shape as well as by
+     label: the one that moves you onward is the one with the arrow. The arrow
+     slides on hover, and holds still under prefers-reduced-motion because the
+     blanket rule at the top of this file zeroes the transition. */
+  .btn-arrow::after {
+    content: "\2192";
+    @apply inline-block transition-transform duration-200 ease-entrance;
+    font-size: 1.1em;
+    line-height: 1;
+  }
+
+  .btn-arrow:hover::after {
+    transform: translateX(3px);
+  }
+
   .card-experience {
-    @apply relative overflow-hidden rounded-xl shadow-medium transition-all duration-500 cursor-pointer;
+    @apply relative overflow-hidden rounded-card shadow-medium transition-all duration-500 cursor-pointer;
+  }
+
+  /* Shared page shell so sections align to one measure across the site. */
+  .shell {
+    @apply mx-auto w-full max-w-shell px-5 sm:px-8 lg:px-12;
+  }
+
+  /* ---- Signature motifs -------------------------------------------------
+     Four devices carry the identity across every page. They exist as classes
+     rather than as ad-hoc markup so a new page inherits the language for free
+     instead of reinventing it slightly differently. */
+
+  /* The spark: a small square rotated 45deg. It marks a category, separates
+     items in a marquee, and terminates a rule. Sized in em so it scales with
+     whatever type it sits beside. */
+  .spark {
+    @apply inline-block align-middle bg-gold shrink-0;
+    width: 0.5em;
+    height: 0.5em;
+    transform: rotate(45deg);
+  }
+
+  /* The eyebrow: a small tracked label above a heading, saying what kind of
+     thing follows. This is the one place uppercase micro-type belongs. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2.5 text-[0.75rem] font-semibold uppercase
+           text-[var(--text-secondary)];
+    letter-spacing: 0.16em;
+  }
+
+  .eyebrow::before {
+    content: "";
+    @apply inline-block align-middle bg-gold shrink-0;
+    width: 0.5em;
+    height: 0.5em;
+    transform: rotate(45deg);
+  }
+
+  /* A rule that draws itself in when its section scrolls into view, finished
+     with a spark. Add .is-revealed (the ScrollAnimationWrapper does this) to
+     trigger. Without JS it renders drawn, never blank. */
+  /* A hairline closing a page header, finished with the gold spark. It was
+     built to draw itself in on scroll via an .is-pending class, but nothing
+     ever applied that class, so the transition was dead and the rule always
+     rendered drawn. Rather than wire up an animation that only decorates, the
+     rule stays static: it organises the header, which is the job it is
+     actually doing. */
+  .rule-reveal {
+    @apply relative block h-px w-full bg-[var(--border-strong)];
+  }
+
+  .rule-reveal::after {
+    content: "";
+    @apply absolute right-0 bg-gold;
+    width: 8px;
+    height: 8px;
+    top: -3.5px;
+    transform: rotate(45deg);
+  }
+
+  /* Outlined display type for the marquee: white fill, navy outline. Painted
+     with four offset shadows rather than -webkit-text-stroke, which thins
+     inconsistently across browsers and clips the leftmost stem in Safari. */
+  .text-outline {
+    /* The fill is the page surface, not `transparent`. With a transparent fill
+       the four offset shadows show through the middle of every letter and
+       merge into a solid shape - the exact opposite of an outline. Filling
+       with the surface colour hides the shadow copies behind the glyph and
+       leaves only the 1px of each that sticks out past its edge. */
+    color: var(--surface);
+    -webkit-text-fill-color: var(--surface);
+    text-shadow:
+      -1px 0 var(--text-primary), 0 1px var(--text-primary),
+      1px 0 var(--text-primary), 0 -1px var(--text-primary);
+  }
+
+  /* ---- Section bands ----------------------------------------------------
+     Pages alternate white and warm. Two adjacent bands must never share a
+     tone, which is the rule that keeps a long page legible as a sequence of
+     ideas rather than one continuous scroll. */
+  .band {
+    @apply py-20 md:py-28 lg:py-32 bg-[var(--surface)];
+  }
+
+  .band-warm {
+    @apply py-20 md:py-28 lg:py-32 bg-[var(--surface-warm)];
+  }
+
+  .band-inverse {
+    @apply py-20 md:py-28 lg:py-32 bg-[var(--surface-inverse)] text-[var(--text-on-inverse)];
+  }
+
+  /* Headings inside an inverse band inherit the band's colour rather than the
+     page's, so a navy section does not need every child annotated with
+     text-white at the call site. */
+  .band-inverse h1,
+  .band-inverse h2,
+  .band-inverse h3 {
+    color: inherit;
+  }
+
+  /* ---- Editorial card ---------------------------------------------------
+     The Backstages pattern: full-bleed image, then type below it on the page
+     surface - not floating in a shadowed box. The image is the card; the
+     border is a hairline, and the lift on hover is the image scaling inside a
+     fixed frame rather than the whole card jumping. */
+  /* `group` is deliberately NOT applied here. Tailwind rejects `@apply group`
+     outright - it is a marker class the variant system reads from the markup,
+     not a rule that can be composed into another class - so this definition
+     failed the build the moment anything used it. That is also the proof it
+     never had: the class was written in the rebuild and referenced by no page
+     until now, so the error had nowhere to surface. Call sites add `group`
+     themselves, which is what `group-hover` on the media image needs. */
+  .editorial-card {
+    @apply relative flex flex-col overflow-hidden rounded-card
+           bg-[var(--surface-raised)] border border-[var(--border-subtle)]
+           transition-shadow duration-300 hover:shadow-medium
+           focus-within:shadow-medium;
+  }
+
+  .editorial-card__media {
+    @apply relative overflow-hidden aspect-[4/3] bg-[var(--surface-sunken)];
+  }
+
+  .editorial-card__media img {
+    @apply h-full w-full object-cover transition-transform duration-700 ease-entrance
+           group-hover:scale-[1.04];
+  }
+
+  .editorial-card__body {
+    @apply flex flex-1 flex-col gap-3 p-6;
+  }
+
+  /* A link laid over the whole card so the entire surface is clickable, while
+     the accessible name still comes from the real heading link. */
+  .editorial-card__link::after {
+    content: "";
+    @apply absolute inset-0;
+  }
+
+  /* ---- Product surfaces -------------------------------------------------
+     Everything above this point is the marketing language. What follows is
+     the same system spoken at product scale: dashboards, tables, forms. It
+     exists because the signed-in half of the site had no vocabulary of its
+     own and reached for `.card-luxury` - a box with a gold gradient bar
+     across the top - 62 times. That bar put the accent on the container
+     rather than on anything the user needed to look at, and repeated down a
+     column of six it read as an admin template, not as this brand. */
+
+  /* The panel is the flat replacement: a hairline, the raised surface, and
+     nothing else. Emphasis comes from the type inside it. */
+  .panel {
+    @apply rounded-card border border-line bg-surface-raised;
+  }
+
+  /* Panels that are their own click target get the hover; static containers
+     must not, or a whole dashboard twitches under the pointer. */
+  .panel-interactive {
+    @apply panel transition-colors duration-200 hover:border-line-strong
+           focus-within:border-line-strong;
+  }
+
+  .panel-head {
+    @apply flex flex-wrap items-baseline justify-between gap-3
+           border-b border-line px-6 py-5;
+  }
+
+  .panel-head h2,
+  .panel-head h3 {
+    @apply text-lg;
+  }
+
+  .panel-body {
+    @apply p-6;
+  }
+
+  /* The stat tile. The number is the content, so it is set in the display
+     serif at a size nothing else on the page competes with, and the label is
+     the eyebrow's micro-type. No icon in a tinted circle: four of those in a
+     row, each a different hue, is the single most template-like shape in the
+     product, and the hues carried no meaning - they were decoration applied
+     per tile in source order. */
+  .stat {
+    @apply flex flex-col gap-2 rounded-card border border-line
+           bg-surface-raised px-6 py-6;
+  }
+
+  .stat__label {
+    @apply text-[0.6875rem] font-semibold uppercase text-content-secondary;
+    letter-spacing: 0.14em;
+  }
+
+  .stat__value {
+    @apply font-serif text-[2.5rem] font-bold leading-none text-content;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat__note {
+    @apply text-[0.8125rem] text-content-secondary;
+  }
+
+  /* ---- Data tables ------------------------------------------------------
+     Rules, not stripes. A zebra table is a grid of filled cells; this is a
+     list of records separated by hairlines, which is how the rest of the site
+     divides things. */
+  .data-table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+
+  .data-table thead th {
+    @apply whitespace-nowrap border-b border-line px-6 py-4
+           text-[0.6875rem] font-semibold uppercase text-content-secondary;
+    letter-spacing: 0.12em;
+  }
+
+  .data-table tbody td {
+    @apply border-b border-line px-6 py-5 align-middle text-content;
+  }
+
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .data-table tbody tr {
+    @apply transition-colors duration-150;
+  }
+
+  .data-table tbody tr:hover {
+    @apply bg-surface-sunken;
+  }
+
+  .data-table td.numeric,
+  .data-table th.numeric {
+    @apply text-right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Status ------------------------------------------------------------
+     Status is the one place a colour other than gold is allowed, because here
+     the colour carries meaning a label alone would have to spell out. The
+     four hues are desaturated and darkened against the stock Tailwind ramps
+     so they sit in a warm navy page rather than shouting out of it, and each
+     badge pairs its hue with a text label - colour is never the only carrier.
+     Anything that is not one of these four states is `neutral`. */
+  .badge {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-control
+           border px-2.5 py-1 text-[0.6875rem] font-semibold uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .badge-neutral {
+    @apply badge border-line-strong bg-surface-sunken text-content-secondary;
+  }
+
+  .badge-positive {
+    @apply badge;
+    border-color: var(--state-positive-line);
+    background-color: var(--state-positive-wash);
+    color: var(--state-positive);
+  }
+
+  .badge-caution {
+    @apply badge;
+    border-color: var(--state-caution-line);
+    background-color: var(--state-caution-wash);
+    color: var(--state-caution);
+  }
+
+  .badge-critical {
+    @apply badge;
+    border-color: var(--state-critical-line);
+    background-color: var(--state-critical-wash);
+    color: var(--state-critical);
+  }
+
+  .badge-info {
+    @apply badge;
+    border-color: var(--state-info-line);
+    background-color: var(--state-info-wash);
+    color: var(--state-info);
+  }
+
+  /* A full-width message, not a badge: form errors, empty-state warnings,
+     confirmation after a save. */
+  .notice {
+    @apply flex items-start gap-3 rounded-card border px-4 py-3.5 text-sm;
+  }
+
+  .notice-positive {
+    @apply notice;
+    border-color: var(--state-positive-line);
+    background-color: var(--state-positive-wash);
+    color: var(--state-positive);
+  }
+
+  .notice-caution {
+    @apply notice;
+    border-color: var(--state-caution-line);
+    background-color: var(--state-caution-wash);
+    color: var(--state-caution);
+  }
+
+  .notice-critical {
+    @apply notice;
+    border-color: var(--state-critical-line);
+    background-color: var(--state-critical-wash);
+    color: var(--state-critical);
+  }
+
+  .notice-info {
+    @apply notice;
+    border-color: var(--state-info-line);
+    background-color: var(--state-info-wash);
+    color: var(--state-info);
+  }
+
+  /* ---- Page head --------------------------------------------------------
+     The signed-in pages opened with a sans-serif h1 and a grey line of help
+     text, which is the one place the brand voice was most obviously absent.
+     This is the marketing header at product scale: eyebrow, serif title,
+     hairline. */
+  .page-head {
+    @apply flex flex-col gap-3 pb-6;
+  }
+
+  .page-head__title {
+    @apply font-serif text-[2rem] leading-tight text-content md:text-[2.5rem];
+  }
+
+  .page-head__lede {
+    @apply max-w-[60ch] text-[0.9375rem] text-content-secondary;
+  }
+
+  /* ---- Legal prose ------------------------------------------------------
+     The three policy documents. Their headings previously carried the same
+     `text-2xl font-serif font-semibold` as a marketing section title, so a
+     clause heading inside a document shouted at the same volume as the name of
+     a landing-page band. Here the hierarchy is internal to the document: the
+     heading is a size above its own body and nothing more. */
+  .legal-prose {
+    @apply mt-14 max-w-prose text-content-secondary;
+  }
+
+  .legal-prose > * + * {
+    @apply mt-5;
+  }
+
+  .legal-prose h2 {
+    @apply mt-12 font-serif text-xl text-content;
+  }
+
+  .legal-prose h3 {
+    @apply mt-8 font-serif text-lg text-content;
+  }
+
+  .legal-prose p {
+    @apply leading-relaxed;
+  }
+
+  .legal-prose ul {
+    @apply space-y-2 pl-5;
+    list-style: none;
+  }
+
+  .legal-prose ul > li {
+    @apply relative leading-relaxed;
+  }
+
+  /* The gold spark stands in for the disc, so the list marker belongs to this
+     site rather than to the browser default. */
+  .legal-prose ul > li::before {
+    content: "";
+    @apply absolute bg-gold;
+    left: -1.25rem;
+    top: 0.6em;
+    width: 0.4em;
+    height: 0.4em;
+    transform: rotate(45deg);
+  }
+
+  .legal-prose a {
+    @apply text-gold underline underline-offset-4;
+  }
+
+  /* ---- Empty state ------------------------------------------------------
+     A panel with nothing in it should say why, in the display face, rather
+     than rendering an empty grid. */
+  .empty-state {
+    @apply flex flex-col items-center gap-3 px-6 py-16 text-center;
+  }
+
+  .empty-state__title {
+    @apply font-serif text-xl text-content;
+  }
+
+  .empty-state__body {
+    @apply max-w-[46ch] text-sm text-content-secondary;
+  }
+
+  /* Airy by default: VISUAL_DENSITY 3. */
+  .section-y {
+    @apply py-24 md:py-32 lg:py-40;
   }
   
   /* Scrollbar Hide - for horizontal carousels */
@@ -60,61 +754,57 @@
   
   .card-experience:hover {
     @apply shadow-luxury transform scale-105;
-  }
-  
-  .card-showcase {
-    @apply bg-white rounded-xl shadow-soft p-6 border border-gray-100 transition-all duration-300 hover:shadow-medium hover:scale-105;
-  }
-  
-  .gold-underline {
-    @apply relative;
-  }
-  
-  .gold-underline::after {
-    content: '';
-    @apply absolute bottom-0 left-0 w-16 h-0.5 bg-gold;
-  }
-  
-  .shadow-soft {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-  
-  .shadow-medium {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-  
-  .shadow-luxury {
-    box-shadow: 0 25px 50px -12px rgba(11, 31, 63, 0.25);
-  }
-  
+  }  
+  /* The .shadow-soft / .shadow-medium / .shadow-luxury rules that sat here are
+     gone. They were dead: Tailwind emits the same class names from theme
+     .boxShadow, and its utilities layer outranks this components layer, so
+     these never won. tailwind.config.js now maps those four utilities onto the
+     same --shadow-* tokens, which gets the theme-aware behaviour these were
+     reaching for and leaves one definition instead of two. */
+
+  /* Inputs sit on a sunken surface so the field reads as a well rather than a
+     white box punched into a dark page. Placeholder contrast is deliberately
+     kept above the AA floor. */
   .form-input {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-gold transition-colors;
+    @apply w-full px-4 py-3 rounded-card transition-colors
+           bg-[var(--surface-sunken)] text-[var(--text-primary)]
+           border border-[var(--border-strong)]
+           placeholder:text-[var(--text-secondary)]
+           focus:border-gold focus:ring-2 focus:ring-gold/40;
   }
-  
+
   .form-label {
-    @apply block text-sm font-medium text-navy mb-2;
+    @apply block text-sm font-medium text-[var(--text-primary)] mb-2;
   }
-  
-  .hero-title {
-    @apply text-6xl md:text-8xl font-serif font-bold text-white mb-6 drop-shadow-lg leading-tight;
+
+  /* Alias used by the registration steps. Same role as form-label; kept so the
+     existing markup resolves instead of falling back to unstyled text. */
+  .form-input-label {
+    @apply form-label;
   }
-  
+
+  /* Error text must clear AA on the dark surface; red-600 does not. */
+  .form-error {
+    @apply mt-1 text-sm text-red-400;
+  }
+
+  /* One field-error presentation for the whole app. Five field components -
+     FormField, DatePicker, SelectWithSearch, CheckboxGroup and RadioGroup -
+     each rendered their own: a tinted pill with an icon in one, bare red-600
+     text in another, bare red-500 in three more. Two problems with that
+     besides the inconsistency: a form showing errors on a text input and a
+     date picker at once showed two different kinds of error, and red-500 on
+     white is 3.7:1, under the 4.5:1 floor for body text. red-600 clears it.
+
+     Set on the wrapper; the icon is supplied by the call site so it can be
+     omitted where the message sits inside a group label. */
+  .field-error {
+    @apply mt-2 flex items-start gap-2 text-sm text-red-600 dark:text-red-400
+           bg-red-50 dark:bg-red-500/10 px-2.5 py-2 rounded-card;
+  }  
   .hero-subtitle {
     @apply text-xl md:text-2xl text-white/90 mb-8 max-w-4xl mx-auto drop-shadow-md leading-relaxed;
-  }
-  
-  .section-title {
-    @apply text-4xl md:text-5xl font-serif font-bold text-navy mb-6 text-center;
-  }
-  
-  .section-subtitle {
-    @apply text-xl text-gray-600 max-w-3xl mx-auto mb-12 text-center leading-relaxed;
-  }
-  
-  .compass-scroll {
-    @apply absolute bottom-8 left-1/2 transform -translate-x-1/2 text-gold animate-bounce;
-  }
-  
+  }  
   .parallax-bg {
     @apply absolute inset-0 bg-cover bg-center bg-no-repeat;
     transform: translateZ(0);
@@ -124,12 +814,7 @@
   .gradient-overlay {
     @apply absolute inset-0;
     background: var(--gradient-overlay);
-  }
-  
-  .experience-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8;
-  }
-  
+  }  
   .step-connector {
     @apply absolute top-1/2 left-full w-16 h-0.5 bg-gold transform -translate-y-1/2;
   }
@@ -140,12 +825,7 @@
   
   .carousel-track {
     @apply flex transition-transform duration-500 ease-out;
-  }
-  
-  .carousel-item {
-    @apply flex-shrink-0 mx-4;
-  }
-}
+  }}
 
 /* Custom Colors */
 .text-navy {
@@ -156,8 +836,11 @@
   background-color: var(--navy);
 }
 
-.text-gold {
-  color: var(--gold);
+.text-gold,
+.hover\:text-gold:hover,
+.focus\:text-gold:focus,
+.group:hover .group-hover\:text-gold {
+  color: var(--gold-text);
 }
 
 .bg-gold {
@@ -168,10 +851,14 @@
   background-color: var(--cream);
 }
 
-/* Fonts */
-.font-serif {
-  font-family: 'Playfair Display', serif;
-}
+/* The `.font-serif { font-family: 'Playfair Display', serif }` rule that sat
+   here is removed. Playfair Display is not loaded anywhere in this project -
+   the two self-hosted families are Cormorant Garamond and Outfit - so the
+   declaration fell through to the generic `serif` keyword and every display
+   heading on the site rendered in Times New Roman. Because the rule sat
+   outside @layer it also outranked Tailwind's own `font-serif`, so the
+   Cormorant token configured in tailwind.config.js never applied to anything.
+   Tailwind's utility is now the only definition. */
 
 /* Animations */
 @keyframes fadeInUp {
@@ -207,12 +894,12 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--surface-sunken);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--gold);
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -221,47 +908,76 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--cream-bg);
-  color: var(--text-dark);
+  background-color: var(--surface);
+  color: var(--text-primary);
+  /* 16px, matching the reference. The app previously inherited the browser
+     default and then fought it with per-component overrides. */
+  font-size: 16px;
   line-height: 1.6;
 }
 
-/* Typography */
+/* Display type. Newsreader is a low-contrast text serif, so it stays solid at
+   700 all the way down to h4 - the sans only takes over at h5/h6, where type
+   is functioning as a label rather than as a voice.
+
+   Sizes are fluid via clamp() so a heading is never set for one viewport and
+   awkward on every other. The steps between levels are wide enough (roughly
+   1.5x, 1.35x, 1.2x) that two adjacent headings read as different ranks
+   without needing a colour or a rule to separate them. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Playfair Display', serif;
-  font-weight: 600;
-  line-height: 1.2;
+  font-weight: 700;
+  line-height: 1.15;
   margin: 0;
 }
 
+h1, h2, h3, h4 {
+  font-family: 'Newsreader Variable', Newsreader, Georgia, serif;
+  letter-spacing: -0.015em;
+}
+
+h5, h6 {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
 h1 {
-  font-size: 3rem;
-  font-weight: 700;
+  font-size: clamp(2.5rem, 5.5vw, 4.75rem);
+  line-height: 1.05;
 }
 
 h2 {
-  font-size: 2.25rem;
+  font-size: clamp(1.875rem, 3.6vw, 3.125rem);
+  line-height: 1.1;
   position: relative;
 }
 
 h3 {
-  font-size: 1.875rem;
+  font-size: clamp(1.375rem, 2.2vw, 1.875rem);
+  line-height: 1.2;
 }
 
 h4 {
-  font-size: 1.5rem;
+  font-size: clamp(1.125rem, 1.5vw, 1.375rem);
+  line-height: 1.3;
 }
 
 h5 {
-  font-size: 1.25rem;
+  font-size: 1rem;
 }
 
 h6 {
-  font-size: 1.125rem;
+  font-size: 0.875rem;
+}
+
+h5 {
+  font-size: 1.0625rem;
+}
+
+h6 {
+  font-size: 0.9375rem;
 }
 
 /* Gold Underline Effect */
@@ -280,152 +996,74 @@ h6 {
   transition: width 0.3s ease;
 }
 
-.gold-underline:hover::after {
+/* A heading is a block, so `left: 0` pins the rule to the left edge of the
+   whole line box - correct under a left-aligned heading, but under a centred
+   one it leaves the rule stranded out to the side of the text with nothing
+   above it. Of the 37 call sites most are left-aligned dashboard headings;
+   the centred ones (login, password reset, the centred section titles) get
+   the rule centred to match. Centring is applied by the heading itself or by
+   an ancestor, so both are covered. */
+.gold-underline.text-center::after,
+.text-center .gold-underline::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Growing to the full width of the heading on hover is right for a link. On a
+   static page title - which is what all 37 of these are - it means the rule
+   twitches whenever the pointer crosses the heading. */
+a.gold-underline:hover::after,
+.gold-underline a:hover::after {
   width: 100%;
 }
 
-/* Button Styles */
-.btn-primary {
-  background-color: var(--primary-navy) !important;
-  color: white !important;
-  border: none !important;
-  padding: 12px 24px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-  text-align: center !important;
-  box-shadow: var(--shadow-soft) !important;
-}
-
-.btn-primary:hover {
-  background-color: #1a2f5f !important;
-  transform: translateY(-2px) !important;
-  box-shadow: var(--shadow-medium) !important;
-}
-
-.btn-secondary {
-  background-color: transparent !important;
-  color: var(--primary-navy) !important;
-  border: 2px solid var(--primary-navy) !important;
-  padding: 10px 22px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-  text-align: center !important;
-  box-shadow: var(--shadow-soft) !important;
-}
-
-.btn-secondary:hover {
-  background-color: var(--primary-navy) !important;
-  color: white !important;
-  transform: translateY(-2px) !important;
-  box-shadow: var(--shadow-medium) !important;
-}
-
-.btn-gold {
-  background-color: var(--gold-accent) !important;
-  color: white !important;
-  border: none !important;
-  padding: 12px 24px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-  text-align: center !important;
-  box-shadow: var(--shadow-soft) !important;
-}
-
-.btn-gold:hover {
-  background-color: #0d9488 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: var(--shadow-medium) !important;
-}
+/* The button rules that used to sit here were a second, older definition of
+   .btn-primary / .btn-secondary / .btn-gold. Being outside @layer and marked
+   !important, they beat the design-system versions above, so the whole site
+   rendered 8px-radius buttons with the pre-rebrand padding and a white label
+   on gold (which fails AA). The design system is now the only definition. */
 
 /* Card Styles */
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-soft);
-  transition: all 0.3s ease;
-  border: 1px solid var(--border-light);
-}
-
-.card:hover {
-  box-shadow: var(--shadow-medium);
-  transform: translateY(-4px);
-}
-
-.card-luxury {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-large);
-  transition: all 0.3s ease;
-  border: 1px solid var(--border-light);
-  position: relative;
-  overflow: hidden;
-}
-
-.card-luxury::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--gold-accent), var(--primary-navy));
-}
-
-.card-luxury:hover {
-  box-shadow: var(--shadow-large);
-  transform: translateY(-6px);
-}
-
 /* Form Styles */
 .form-group {
   margin-bottom: 24px;
 }
 
-.form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: var(--text-dark);
-}
+/* .form-label is defined once, in @layer components above. The copy that sat
+   here overrode it with a heavier weight and different spacing. */
 
+/* This rule sits outside @layer, so it overrides the component class above.
+   It previously forced background-color: white, which on the dark theme meant
+   white text on a white field. */
 .form-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid var(--border-light);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background-color: white;
+  background-color: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.form-input::placeholder {
+  color: var(--text-secondary);
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--gold-accent);
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(185, 152, 81, 0.25);
 }
 
 .form-textarea {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid var(--border-light);
-  border-radius: 8px;
+  border-radius: 3px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background-color: white;
+  background-color: var(--surface-sunken);
   resize: vertical;
   min-height: 120px;
 }
@@ -433,7 +1071,7 @@ h6 {
 .form-textarea:focus {
   outline: none;
   border-color: var(--gold-accent);
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+  box-shadow: 0 0 0 3px rgba(185, 152, 81, 0.25);
 }
 
 /* Loading Animation */
@@ -463,7 +1101,7 @@ h6 {
 }
 
 .compass-loader::before {
-  content: '🧭';
+  content: 'ðŸ§­';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -475,14 +1113,19 @@ h6 {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  /* Horizontal only. The `padding: 0 20px` shorthand this replaces also zeroed
+     padding-top, and because this rule sits outside @layer it overrode any
+     vertical padding utility, pushing page content under the fixed header. */
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 /* (reverted readability block) */
 
 @media (max-width: 640px) {
   .container {
-    padding: 0 16px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   
   h1 {
@@ -491,22 +1134,19 @@ h6 {
   
   h2 {
     font-size: 1.875rem;
-  }
-  
-  .card-luxury {
-    padding: 24px;
-  }
-}
+  }}
 
 @media (min-width: 641px) and (max-width: 1024px) {
   .container {
-    padding: 0 24px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
 
 @media (min-width: 1025px) {
   .container {
-    padding: 0 32px;
+    padding-left: 32px;
+    padding-right: 32px;
   }
 }
 
@@ -529,85 +1169,11 @@ h6 {
   }
 }
 
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-
-.mt-8 {
-  margin-top: 2rem;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.p-8 {
-  padding: 2rem;
-}
-
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-.gap-8 {
-  gap: 2rem;
-}
-
-.grid {
-  display: grid;
-}
-
-.grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-
-.grid-cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.grid-cols-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (min-width: 640px) {
-  .sm\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .lg\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
+/* Hand-written copies of .flex, .grid, .grid-cols-*, .gap-*, .mb-*, .mt-*,
+   .p-* and the sm:/lg: grid variants used to live here. Tailwind already
+   generates all of them, and because these sat outside @layer they took
+   precedence over Tailwind's utilities layer — so a one-off `gap-2` or
+   `grid-cols-4` in a component silently lost to the fixed value above. */
 
 /* Animation Classes */
 .fade-in {
@@ -668,11 +1234,6 @@ h6 {
     box-shadow: 0 0 30px rgba(201, 166, 60, 0.6);
   }
 }
-
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -681,13 +1242,6 @@ h6 {
     background-position: 200% 0;
   }
 }
-
-.shimmer {
-  background: linear-gradient(90deg, transparent, rgba(201, 166, 60, 0.4), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
 @keyframes bounce-gentle {
   0%, 100% {
     transform: translateY(0);
@@ -696,11 +1250,6 @@ h6 {
     transform: translateY(-10px);
   }
 }
-
-.bounce-gentle {
-  animation: bounce-gentle 3s ease-in-out infinite;
-}
-
 @keyframes float-enhanced {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -811,19 +1360,6 @@ h6 {
   animation-play-state: paused;
 }
 
-/* Enhanced Card Hover Effects */
-.card-luxury {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-style: preserve-3d;
-}
-
-.card-luxury:hover {
-  transform: translateY(-8px) rotateX(2deg) rotateY(2deg);
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(201, 166, 60, 0.1);
-}
-
 /* Particle Canvas Styling */
 #particles-js {
   background: transparent;
@@ -851,32 +1387,9 @@ h6 {
   background: var(--navy) !important;
 }
 
-/* Enhanced Button Effects */
-.btn-primary,
-.btn-secondary,
-.btn-gold {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-primary::before,
-.btn-secondary::before,
-.btn-gold::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.btn-primary:hover::before,
-.btn-secondary:hover::before,
-.btn-gold:hover::before {
-  left: 100%;
-}
+/* The white sweep-on-hover pseudo-element that used to be layered onto every
+   button belonged to the pre-rebrand button set that has been removed. The
+   design system expresses press feedback with active:translate-y-px instead. */
 
 /* Typed.js Cursor Styling */
 .typed-cursor {
@@ -912,204 +1425,47 @@ h6 {
 
 /* Loading States */
 .loading-shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--surface-sunken) 25%, var(--border-subtle) 50%, var(--surface-sunken) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 /* Responsive Enhancements - Travel Art */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.5rem !important;
-    line-height: 1.1 !important;
-  }
-  
+@media (max-width: 768px) {  
   .hero-subtitle {
     font-size: 1.125rem !important;
-  }
-  
-  .section-title {
-    font-size: 2.5rem !important;
-  }
-  
-  .section-subtitle {
-    font-size: 1.125rem !important;
-  }
-  
-  .card-luxury:hover {
-    transform: translateY(-4px);
-  }
-  
-  .card-experience:hover {
+  }  .card-experience:hover {
     transform: scale(1.02);
+  }  
+  /* Mobile-specific improvements */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
-  
-  .float-animation {
-    animation-duration: 4s;
-  }
-  
-  .experience-grid {
-    grid-template-columns: 1fr !important;
-    gap: 1.5rem !important;
-  }
-  
-  .carousel-item {
-    width: 280px !important;
-  }
-  
+
+  /* Better touch targets. The padding/font-size overrides that used to sit
+     alongside this are gone — they re-styled every button on mobile and beat
+     any per-instance sizing. The 44px floor is kept: it is an accessibility
+     minimum, not a visual preference. */
+  button,
   .btn-primary,
   .btn-secondary,
   .btn-gold,
-  .btn-gold-outline {
-    padding: 0.75rem 1.5rem !important;
-    font-size: 0.875rem !important;
-  }
-
-  /* Mobile-specific improvements */
-  .container {
-    padding: 0 1rem !important;
+  .btn-gold-outline,
+  .btn-outline {
+    min-height: 44px;
+    min-width: 44px;
   }
   
-  /* Better touch targets */
-  button, 
-  .btn-primary, 
-  .btn-secondary, 
-  .btn-gold, 
-  .btn-gold-outline {
-    min-height: 44px !important;
-    min-width: 44px !important;
-  }
-  
-  /* Improved mobile navigation */
-  .mobile-menu {
-    position: fixed;
-    top: 55px;
-    left: 0;
-    right: 0;
-    background: rgba(11, 31, 63, 0.95);
-    backdrop-filter: blur(10px);
-    z-index: 40;
-  }
-  
-  /* Mobile-friendly cards */
-  .card-luxury {
-    margin: 0.5rem !important;
-    padding: 1rem !important;
-  }
-  
-  /* Better mobile spacing */
-  .section-padding {
-    padding: 2rem 0 !important;
-  }
-  
-  /* Mobile typography improvements */
-  h1 {
-    font-size: 1.875rem !important;
-    line-height: 1.2 !important;
-  }
-  
-  h2 {
-    font-size: 1.5rem !important;
-    line-height: 1.3 !important;
-  }
-  
-  h3 {
-    font-size: 1.25rem !important;
-    line-height: 1.4 !important;
-  }
-  
-  p {
-    font-size: 0.875rem !important;
-    line-height: 1.5 !important;
-  }
+  /* The h1/h2/h3/p !important block that sat here is gone. h1-h3 now size
+     themselves with clamp() against the viewport, which is what this was
+     hand-rolling, and the !important flags meant no page could ever set its
+     own heading size on mobile. `p { font-size: 0.875rem !important }` was the
+     damaging one: it forced *every* paragraph on the site down to 14px below
+     768px and beat every text-base / text-lg / text-xl utility in the markup,
+     so lead paragraphs and body copy rendered identically. */
 }
 
-@media (max-width: 640px) {
-  .hero-title {
-    font-size: 2rem !important;
-  }
-  
-  .section-title {
-    font-size: 2rem !important;
-  }
-  
-  .card-luxury {
-    padding: 1.5rem !important;
-  }
-  
-  .carousel-item {
-    width: 260px !important;
-  }
-  
-  .compass-scroll {
-    bottom: 1rem !important;
-  }
-  
-  .compass-scroll svg {
-    width: 1.5rem !important;
-    height: 1.5rem !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .experience-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-  
-  .carousel-item {
-    width: 320px !important;
-  }
-}
-
-@media (min-width: 1280px) {
-  .carousel-item {
-    width: 360px !important;
-  }
-}
-
-/* Accessibility Improvements */
-@media (prefers-reduced-motion: reduce) {
-  .float-animation,
-  .gradient-text,
-  .pulse-glow,
-  .shimmer,
-  .bounce-gentle {
-    animation: none !important;
-  }
-  
-  .card-luxury:hover {
-    transform: none !important;
-  }
-}
-
-/* Enhanced Card Styling - Always Classy Colors */
-  .card-luxury {
-    background: #ffffff !important;
-    border: 1px solid rgba(201, 166, 60, 0.15) !important;
-    border-radius: 1rem !important;
-    padding: 1.5rem 2rem !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    position: relative !important;
-    overflow: hidden !important;
-  }
-
-  .card-luxury::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--gold-accent) 0%, rgba(20, 184, 166, 0.3) 100%);
-    opacity: 0.6;
-  }
-
-  .card-luxury:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06) !important;
-    border-color: rgba(201, 166, 60, 0.3) !important;
-  }
 
 /* Logo styling - clean and transparent */
 img[src*="logo-transparent.png"] {
@@ -1128,10 +1484,10 @@ img[src*="logo-transparent.png"] {
 .search-container {
   position: relative;
   z-index: 2;
-  background: #fff;
+  background: var(--surface-raised);
   padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  box-shadow: var(--shadow-soft);
   margin-bottom: 1rem;
   overflow: hidden;
   box-sizing: border-box;
@@ -1157,13 +1513,13 @@ input[type="text"].search-input,
 .search-input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 3.5rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
   font-size: 1rem;
   outline: none;
   box-sizing: border-box;
   transition: all 0.3s ease;
-  background-color: #fff;
+  background-color: var(--surface-sunken);
 }
 
 input[type="search"]:focus,
@@ -1184,7 +1540,7 @@ input[type="text"].search-input:focus,
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--text-secondary);
   width: 1.25rem;
   height: 1.25rem;
   pointer-events: none;
@@ -1196,12 +1552,12 @@ input[type="text"].search-input:focus,
 select.form-input {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
   font-size: 1rem;
   outline: none;
   box-sizing: border-box;
-  background-color: #fff;
+  background-color: var(--surface-sunken);
   transition: all 0.3s ease;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
@@ -1220,7 +1576,7 @@ select.form-input:focus {
 .advanced-filters {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -1272,20 +1628,7 @@ select.form-input:focus {
 
   .dashboard-subtitle {
     font-size: 0.9375rem;
-  }
-
-  .section-title {
-    font-size: 1.25rem;
-  }
-
-  .card-luxury {
-    padding: 1.25rem 1.5rem !important;
-  }
-
-  .dashboard-stat-card {
-    padding: 1.25rem;
-  }
-}
+  }}
 
 /* Prevent scroll overlap */
 .search-container,
@@ -1301,42 +1644,7 @@ html {
 }
 
 /* Dashboard Refinements */
-.dashboard-stat-card {
-  background: #ffffff;
-  border: 1px solid rgba(201, 166, 60, 0.15);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.dashboard-stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--gold-accent) 0%, rgba(201, 166, 60, 0.3) 100%);
-  opacity: 0.6;
-}
-
-.dashboard-stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  border-color: rgba(201, 166, 60, 0.3);
-}
-
 /* Section Dividers */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(201, 166, 60, 0.3) 50%, transparent 100%);
-  margin: 2rem 0;
-  border: none;
-}
-
 /* Count-up Animation */
 @keyframes countUp {
   from {
@@ -1387,10 +1695,13 @@ html {
 
 /* Typography Improvements */
 .dashboard-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Newsreader Variable', Newsreader, Georgia, serif;
   font-size: 2rem;
   font-weight: 700;
-  color: var(--primary-navy);
+  /* Was var(--primary-navy), a fixed dark navy. The product ships a dark
+     theme, so every dashboard heading rendered navy on navy and was
+     invisible. Follows the text token instead. */
+  color: var(--text-primary);
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
@@ -1398,111 +1709,263 @@ html {
 .dashboard-subtitle {
   font-size: 1rem;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
+/* A blanket `.grid { gap }` at three breakpoints used to sit here. It applied
+   to every grid on the site and, being outside @layer, overrode whatever
+   gap-* a component asked for.
 
-.section-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--primary-navy);
-  letter-spacing: -0.01em;
-  margin-bottom: 1.5rem;
+   The navbar and logo-sizing overrides that followed it are gone too. They
+   targeted `.navbar-transparent`, `nav[class*="fixed"]`, `nav.bg-navy` and
+   `nav img[alt="Travel Art"]` — selectors that match nothing since the header
+   rebuild, where every bar is a <header class="fixed …"> that styles itself
+   and <nav> holds only the link list. They forced a 112px logo and a
+   transparent background on anything that did match. */
+
+/* Two rules used to sit here, both trying to keep content clear of the fixed
+   72px navigation bar, and both doing damage.
+
+   `main[class*="flex-1"] { padding-top: 72px }` matched any <main> whose class
+   list happened to contain "flex-1", and because it is a plain selector
+   outside @layer it outranked every Tailwind pt-* utility. So a page could set
+   pt-28 and silently get 72px - flush with the bar, no breathing room. It was
+   also invisible from the markup: nothing about `flex-1` says "padding".
+   Pages now state their own top padding and it is honoured.
+
+   `.dashboard-content` was the other half of the same selector and appears
+   nowhere in src/.
+
+   `.space-y-8:first-child, .dashboard-title:first-child { margin-top: 0
+   !important }` was an !important rule keyed on utility classes, which meant
+   no first-child heading anywhere on the site could ever be given a top
+   margin. */
+
+/* ---------------------------------------------------------------------------
+   The intro panel.
+
+   Deliberately plain CSS rather than the GSAP timeline the hero uses: this
+   runs before that timeline exists, and the two fighting over the first
+   second of the page is exactly the kind of thing that produces a flash of
+   half-drawn brand. Everything here is transform and opacity, so it stays on
+   the compositor and cannot jank the hero's first frame.
+   --------------------------------------------------------------------------- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0B1F3F;
+  overflow: hidden;
+  cursor: pointer;
+  transform: translateY(0);
+  /* A long, weighted curve: slow to release, quick through the middle, easing
+     into the stop. A linear or ease-out lift reads as a panel being deleted;
+     this reads as something being raised. */
+  transition: transform 1s cubic-bezier(0.76, 0, 0.24, 1);
+  will-change: transform;
 }
 
-.section-subtitle {
-  font-size: 0.875rem;
+/* The house lights going up. The panel lifts clear of the viewport rather
+   than fading, so the hero is revealed from the bottom edge up instead of
+   materialising through a dissolve - and because the hero has been sitting
+   there fully drawn the whole time, what appears is a finished page rather
+   than one still assembling itself.
+   101% rather than 100% so no hairline of navy is left on a fractional
+   device-pixel boundary. */
+.intro--leaving {
+  transform: translateY(-101%);
+  pointer-events: none;
+}
+
+/* The type leaves first and travels less, so it does not smear upward with
+   the panel it is printed on. */
+.intro--leaving .intro__stage {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.4s ease-out, transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.intro--leaving .intro__skip {
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+/* The curtain's hem: a gold line on the trailing edge, so the eye has
+   something to follow up and out of frame. It exists only during the lift. */
+.intro__hem {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: #B99851;
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+}
+
+.intro--leaving .intro__hem {
+  opacity: 1;
+}
+
+/* The plate sits behind everything at low opacity: it is texture, not
+   content, and the type must stay legible whether or not it ever arrives. */
+.intro__plate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.38;
+  animation: intro-plate 4s ease-out both;
+}
+
+@keyframes intro-plate {
+  from { transform: scale(1.08); }
+  to   { transform: scale(1); }
+}
+
+.intro__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% 50%, rgba(11, 31, 63, 0.35) 0%, rgba(11, 31, 63, 0.92) 100%);
+}
+
+.intro__stage {
+  position: relative;
+  transition: opacity 0.4s ease-out, transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.intro__mark {
+  width: 46px;
+  height: 46px;
+  color: #B99851;
+  opacity: 0;
+  animation: intro-mark 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@keyframes intro-mark {
+  from { opacity: 0; transform: scale(0.82) rotate(-18deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.intro__wordmark {
+  margin: 22px 0 0;
+  font-family: 'Newsreader Variable', Newsreader, Georgia, serif;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  /* letter-spacing puts a trailing gap after the last letter; this pulls the
+     block back so it reads as centred rather than a touch left. */
+  text-indent: 0.34em;
+  color: #F9F8F3;
+  opacity: 0;
+  animation: intro-rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+}
+
+.intro__rule {
+  display: block;
+  width: 0;
+  height: 1px;
+  margin: 20px 0 0;
+  background: #B99851;
+  animation: intro-rule 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1.1s both;
+}
+
+@keyframes intro-rule {
+  from { width: 0; opacity: 0; }
+  to   { width: 132px; opacity: 1; }
+}
+
+.intro__line {
+  margin: 20px 0 0;
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+  font-size: clamp(0.82rem, 2.1vw, 1rem);
+  font-weight: 300;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(232, 223, 210, 0.82);
+  opacity: 0;
+  animation: intro-rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.45s both;
+}
+
+@keyframes intro-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.intro__skip {
+  position: absolute;
+  right: 28px;
+  bottom: 26px;
+  padding: 8px 14px;
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+  font-size: 0.7rem;
   font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(232, 223, 210, 0.7);
+  background: transparent;
+  border: 1px solid rgba(232, 223, 210, 0.28);
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0;
+  transition: color 0.3s, border-color 0.3s;
+  animation: intro-rise 0.6s ease-out 1.9s both;
 }
 
-/* Responsive Grid Improvements */
-@media (max-width: 640px) {
-  .grid {
-    gap: 1rem;
+.intro__skip:hover,
+.intro__skip:focus-visible {
+  color: #F9F8F3;
+  border-color: rgba(232, 223, 210, 0.7);
+}
+
+/* Belt and braces: the component already refuses to mount under reduced
+   motion, but if it ever renders anyway nothing here should move. */
+@media (prefers-reduced-motion: reduce) {
+  .intro__plate,
+  .intro__mark,
+  .intro__wordmark,
+  .intro__rule,
+  .intro__line,
+  .intro__skip {
+    animation: none;
+    opacity: 1;
+  }
+  .intro__rule { width: 132px; }
+
+  .intro,
+  .intro--leaving,
+  .intro--leaving .intro__stage {
+    transition: none;
   }
 }
 
-@media (min-width: 641px) and (max-width: 1024px) {
-  .grid {
-    gap: 1.25rem;
-  }
+/* Leaflet ships 30x30 zoom controls, which is under the 44px touch guideline
+   the rest of the site now meets. The map is the only third-party UI on the
+   page, so it is brought into line here rather than left as the one control a
+   thumb misses. Markers keep their own size: they are pins on a map, and
+   inflating them would change what the map shows. */
+.leaflet-touch .leaflet-bar a.leaflet-control-zoom-in,
+.leaflet-touch .leaflet-bar a.leaflet-control-zoom-out,
+.leaflet-bar a.leaflet-control-zoom-in,
+.leaflet-bar a.leaflet-control-zoom-out {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
 }
 
-@media (min-width: 1025px) {
-  .grid {
-    gap: 1.5rem;
-  }
-}
-
-/* Header/Navbar Styles - Transparent with subtle blur */
-.navbar-transparent,
-nav[class*="fixed"] {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  background: transparent !important;
-  backdrop-filter: blur(8px) !important;
-  z-index: 50 !important;
-  box-shadow: none !important;
-  transition: background 0.3s ease !important;
-}
-
-/* Hide any solid blue navbars */
-.navbar-blue,
-.topbar-blue,
-nav.bg-navy:not([class*="mobile"]) {
-  display: none !important;
-}
-
-/* Logo sizing - matches production LandingPage */
-.navbar-logo img,
-nav img[alt="Travel Art"] {
-  height: 48px !important;
-  width: auto !important;
-  max-width: 100%;
-  object-fit: contain;
-}
-
-@media (min-width: 768px) {
-  .navbar-logo img,
-  nav img[alt="Travel Art"] {
-    height: 80px !important;
-  }
-}
-
-@media (min-width: 1024px) {
-  .navbar-logo img,
-  nav img[alt="Travel Art"] {
-    height: 96px !important;
-  }
-}
-
-@media (min-width: 1280px) {
-  .navbar-logo img,
-  nav img[alt="Travel Art"] {
-    height: 112px !important;
-  }
-}
-
-@media (max-width: 767px) {
-  .navbar-logo img,
-  nav img[alt="Travel Art"] {
-    height: 48px !important;
-  }
-}
-
-/* Dashboard content spacing - prevent overlap with fixed navbar */
-.dashboard-content,
-main[class*="flex-1"] {
-  padding-top: 55px !important;
-}
-
-/* Ensure page content doesn't overlap navbar */
-.space-y-8:first-child,
-.dashboard-title:first-child {
-  margin-top: 0 !important;
+/* L.divIcon ships a white background and a border by default, which would
+   frame every map pin in a white box. The pin is the SVG, nothing else. */
+.residency-pin {
+  background: transparent;
+  border: 0;
 }

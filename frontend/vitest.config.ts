@@ -30,7 +30,13 @@ export default defineConfig({
     },
   },
   resolve: {
+    // The shared files live under backend/; their bare imports must resolve
+    // to this app's copies, not to backend/node_modules.
+    dedupe: ['zod', 'libphonenumber-js'],
     alias: {
+      // The validation rules, categories and statuses the API enforces, used
+      // as-is so the form and the server can never disagree.
+      '@shared': path.resolve(__dirname, '../backend/src/shared'),
       '@': path.resolve(__dirname, './src'),
       '@/components': path.resolve(__dirname, './src/components'),
       '@/pages': path.resolve(__dirname, './src/pages'),

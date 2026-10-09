@@ -1,166 +1,679 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
+//
+// Structure rules for this file:
+//   - No JSON stored as text. A list of things is a table (Media, HotelSpace)
+//     or a typed array column; a free-form editorial blob is `Json` (jsonb).
+//   - Every status is an enum. The allowed transitions between them live in
+//     src/shared/status.ts, which the API enforces and the client reads.
+//   - Nothing here is serialised to a client directly. Responses are built in
+//     src/views/, which names every field that leaves the server.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Vercel Functions run on Amazon Linux; without this target the query engine
+  // built for the local platform is the only one bundled and requests fail.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum Role {
+  ARTIST
+  HOTEL
+  ADMIN
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+/// The artist's membership state as shown on the profile. Derived from the
+/// Membership rows, which are authoritative.
+enum ArtistMembershipStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  PENDING
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+/// Where a media item lives. Only UPLOAD rows point at a file this platform
+/// stores, and only those may ever be deleted from storage.
+enum MediaProvider {
+  UPLOAD
+  LINK
+  YOUTUBE
+  VIMEO
+  INSTAGRAM
+}
+
+enum SpaceSetting {
+  INDOOR
+  OUTDOOR
+}
+
+/// What the stay includes for food, as agreed in the convention.
+enum BoardType {
+  ROOM_ONLY
+  BREAKFAST
+  HALF_BOARD
+  FULL_BOARD
+  ALL_INCLUSIVE
+}
+
+/// Who pays for the journey, as agreed in the convention.
+enum TransportTerms {
+  HOTEL_PAYS
+  ARTIST_PAYS
+  SHARED
+  NOT_NEEDED
+}
+
+/// The three signatories of the tripartite convention.
+enum ConventionParty {
+  HOTEL
+  PARTICIPANT
+  COORDINATOR
+}
+
+/// The coordinator's flat 89 € fee, owed when a hotel cancels after the
+/// convention was signed (article 14).
+enum FeeStatus {
+  DUE
+  PAID
+  WAIVED
+}
+
+/// The participant's claim for non-refundable transport costs (article 14).
+enum TransportClaimStatus {
+  SUBMITTED
+  PAID
+  REJECTED
+}
+
+/// Whether a video is shown to belong to the artist who posted it.
+enum MediaVerification {
+  UNVERIFIED
+  VERIFIED
+  REJECTED
+}
+
+enum TripStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LedgerReason {
+  PURCHASE
+  BOOKING_SPEND
+  BOOKING_REFUND
+  ADMIN_ADJUSTMENT
+  PROMOTIONAL_GRANT
+}
+
+enum MembershipTier {
+  ARTIST
+  PROFESSIONAL
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// ============================================================================
+// Accounts
+// ============================================================================
+
 model User {
   id           String   @id @default(cuid())
-  role         String   @default("ARTIST") // ARTIST, HOTEL, ADMIN
+  role         Role     @default(ARTIST)
+  /// Always stored trimmed and lower-cased; the unique index is therefore
+  /// case-insensitive in practice.
   email        String   @unique
   passwordHash String
   name         String
   phone        String?
-  createdAt    DateTime @default(now())
+  /// The phone in E.164 ("+212612345678"), unique: one number, one account.
+  phoneE164    String?  @unique
   country      String?
-  language     String   @default("en")
+  language     String   @default("fr")
   isActive     Boolean  @default(true)
-  clerkId      String?  @unique // Clerk user ID for authentication
+  createdAt    DateTime @default(now())
 
-  // Relations
-  artist       Artist?
-  hotel        Hotel?
-  notifications Notification[]
-  referralsSent Referral[] @relation("Referrer")
-  referralsReceived Referral[] @relation("Referee")
-  adminLogs    AdminLog[]
+  // --- Admission ----------------------------------------------------------
+  // A new account is not usable until an administrator admits it. `isActive`
+  // means "suspended by an admin later"; the two are kept apart so an
+  // application nobody has read is distinguishable from a revoked account.
+  approvalStatus ApprovalStatus @default(PENDING)
+  approvalNote   String? // Reason shown to the applicant when rejected
+  reviewedAt     DateTime?
+  reviewedById   String?
 
+  // --- Email confirmation -------------------------------------------------
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+
+  // --- Session revocation -------------------------------------------------
+  // Tokens issued before this instant are refused. Bumped when a password
+  // changes, when an administrator suspends or rejects the account, and when a
+  // user signs out everywhere.
+  sessionsValidFrom DateTime?
+
+  // --- Consent ------------------------------------------------------------
+  // NULL marks an account created before consent was recorded; it is never
+  // backfilled, because that would invent a consent nobody gave.
+  acceptedTermsAt      DateTime?
+  acceptedTermsVersion String?
+
+  artist            Artist?
+  hotel             Hotel?
+  notifications     Notification[]
+  referralsSent     Referral[]      @relation("Referrer")
+  referralsReceived Referral[]      @relation("Referee")
+  payments          Payment[]
+  adminLogs         AdminLog[]
+  consents          ConsentRecord[]
+
+  @@index([role, approvalStatus])
   @@map("users")
 }
 
+/// An append-only record of every consent given or withdrawn. A withdrawal is
+/// a new row with granted = false, never an edit of the row that granted it.
+model ConsentRecord {
+  id      String  @id @default(cuid())
+  userId  String
+  /// TERMS, PRIVACY, COOKIES_ANALYTICS
+  kind    String
+  version String
+  granted Boolean
+
+  /// Stored as a salted hash, never in the clear.
+  ipHash    String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind])
+  @@index([createdAt])
+  @@map("consent_records")
+}
+
+// ============================================================================
+// Artists
+// ============================================================================
+
 model Artist {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  stageName         String?  // Artist's stage/professional name
-  birthDate         String?  // Artist's birth date (DD/MM/YYYY format)
-  phone             String?  // Artist's phone number
-  bio               String?
-  discipline        String
-  priceRange        String
-  membershipStatus  String   @default("INACTIVE") // ACTIVE, INACTIVE, EXPIRED, PENDING
+  id               String                 @id @default(cuid())
+  userId           String                 @unique
+  stageName        String?
+  /// foldKey(stageName): lower-case, no accents, letters and digits only.
+  /// Unique, so "Dj Mehdi" and "DJ MÉHDI" cannot both register.
+  stageNameKey     String?                @unique
+  birthDate        DateTime?              @db.Date
+  bio              String?
+  priceRange       String                 @default("")
+  membershipStatus ArtistMembershipStatus @default(INACTIVE)
   membershipRenewal DateTime?
-  images            String?  // JSON string of image URLs
-  videos            String?  // JSON string of video URLs
-  mediaUrls         String?  // JSON string of media URLs
-  profilePicture    String?  // Main profile picture URL
-  artisticProfile   String?  // JSON string: {mainCategory, secondaryCategory, audienceType, languages, categoryType, specificCategory, domain}
-  referralCode      String   @unique @default(cuid())
-  loyaltyPoints     Int      @default(0)
-  createdAt         DateTime @default(now())
+  profilePicture   String?
+  referralCode     String                 @unique @default(cuid())
+  loyaltyPoints    Int                    @default(0)
 
-  // Relations
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  availability      ArtistAvailability[]
-  bookings          Booking[]
-  ratings           Rating[]
-  transactions      Transaction[]
-  trips             Trip[]   // Experiences featuring this artist
+  // --- Category -----------------------------------------------------------
+  // The taxonomy lives in src/shared/categories.ts. `discipline` is the
+  // display label derived from these, kept as a column so browse can filter
+  // and sort on it without recomputing.
+  mainCategory      String?
+  secondaryCategory String?
+  categoryType      String?
+  specificCategory  String?
+  domain            String?
+  /// For a tribute act: who the tribute is to.
+  tributeTo         String?
+  discipline        String   @default("")
+  audienceTypes     String[] @default([])
+  languages         String[] @default([])
+  otherLanguages    String?
 
+  /// What a hotel pays, in credits, to book this artist. Set by an admin;
+  /// deliberately not derived from rank (rank is reputation earned here).
+  bookingCreditCost Int @default(5)
+
+  /// Written into a video's description to prove the channel is the
+  /// artist's own (see services/videoVerification.ts). Issued on first use.
+  verificationCode String? @unique
+
+  createdAt DateTime @default(now())
+
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media        Media[]
+  availability ArtistAvailability[]
+  bookings     Booking[]
+  ratings      Rating[]
+  trips        Trip[]
+  memberships  Membership[]
+  favoritedBy  HotelFavorite[]
+
+  @@index([mainCategory])
+  @@index([discipline])
   @@map("artists")
 }
 
-model Hotel {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  name            String
-  description     String?
-  location        String   // JSON string: {city, country, coords}
-  contactPhone    String?
-  images          String?  // JSON string of image URLs
-  profilePicture  String?  // Main profile picture URL
-  performanceSpots String? // JSON string of performance spots
-  rooms           String?  // JSON string of room data
-  repName         String?
-  responsiblePhone String? // Phone number for WhatsApp contact (responsible person)
-  responsibleEmail String? // Email for direct contact (responsible person)
-  responsibleName  String? // Name of the responsible person for contact
-  createdAt       DateTime @default(now())
-
-  // Relations
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  availabilities  Availability[]
-  bookings        Booking[]
-  ratings         Rating[]
-  credits         Credit[]
-  transactions    Transaction[]
-  trips           Trip[]   // Experiences at this hotel
-
-  @@map("hotels")
-}
-
-model Availability {
-  id        String   @id @default(cuid())
-  hotelId   String
-  roomId    String
-  dateFrom  DateTime
-  dateTo    DateTime
-  price     Float?
-
-  // Relations
-  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-
-  @@map("availabilities")
-}
-
 model ArtistAvailability {
-  id        String   @id @default(cuid())
-  artistId  String
-  dateFrom  DateTime
-  dateTo    DateTime
+  id       String   @id @default(cuid())
+  artistId String
+  dateFrom DateTime
+  dateTo   DateTime
 
-  // Relations
-  artist    Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
 
+  @@index([artistId])
   @@map("artist_availability")
 }
 
+// ============================================================================
+// Hotels
+// ============================================================================
+
+model Hotel {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  name        String
+  /// foldKey(name) + "|" + foldKey(city). Unique: the same hotel cannot be
+  /// registered twice in the same city.
+  nameKey     String? @unique
+  description String?
+
+  // --- Where --------------------------------------------------------------
+  city      String  @default("")
+  country   String  @default("")
+  address   String?
+  latitude  Float?
+  longitude Float?
+
+  // --- What ---------------------------------------------------------------
+  hotelType String?
+  roomCount Int?
+
+  // --- Online -------------------------------------------------------------
+  website      String?
+  instagramUrl String?
+  facebookUrl  String?
+  youtubeUrl   String?
+
+  // --- Contact ------------------------------------------------------------
+  contactPhone     String?
+  repName          String?
+  responsiblePhone String?
+  responsibleEmail String?
+  responsibleName  String?
+
+  // --- Legal identity, as the convention names the hotel -----------------
+  // Asked when the hotel first signs a convention, then kept for the next.
+  legalName          String?
+  legalForm          String?
+  /// RC, or the local company register number outside Morocco.
+  registrationNumber String?
+  /// ICE, or the local tax identifier outside Morocco.
+  taxId              String?
+  signatoryName      String?
+  signatoryTitle     String?
+
+  profilePicture String?
+  createdAt      DateTime @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programme      HotelProgramme?
+  spaces         HotelSpace[]
+  media          Media[]
+  availabilities Availability[]
+  bookings       Booking[]
+  ratings        Rating[]
+  credits        Credit[]
+  creditLedger   CreditLedger[]
+  trips          Trip[]
+  favorites      HotelFavorite[]
+
+  @@index([latitude, longitude])
+  @@index([country, city])
+  @@map("hotels")
+}
+
+/// What the hotel told us at registration about the artists it wants and how
+/// it works with them. One row per hotel, edited from the hotel profile.
+model HotelProgramme {
+  id      String @id @default(cuid())
+  hotelId String @unique
+
+  // Audience and atmosphere
+  audiences   String[] @default([])
+  styles      String[] @default([])
+  eventTypes  String[] @default([])
+  appreciated String?
+  disliked    String?
+
+  // Equipment
+  hasStage        Boolean @default(false)
+  stageDimensions String?
+  hasSound        Boolean @default(false)
+  soundDetails    String?
+  lighting        String?
+  hasScreens      Boolean @default(false)
+  hasCrew         Boolean @default(false)
+
+  // Collaboration
+  collaborationTypes String[] @default([])
+  conditions         String?
+  durationType       String?
+  residenceDuration  String?
+  openDates          String?
+
+  // Logistics
+  offersLodging   Boolean @default(false)
+  offersMeals     Boolean @default(false)
+  offersTransport Boolean @default(false)
+  facilities      String?
+
+  // Artistic freedom
+  freedomLevel      String?
+  expectations      String[] @default([])
+  possibilities     String[] @default([])
+  otherDetails      String?
+  artistTypesNeeded String?
+  flowDescription   String?
+  perWeek           Int?
+  perMonth          Int?
+
+  // Decision process
+  responseDelay     String?
+  validationProcess String?
+  decisionMaker     String?
+
+  updatedAt DateTime @updatedAt
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("hotel_programmes")
+}
+
+/// A place in the hotel where a performance can happen: a rooftop, a
+/// ballroom, a pool deck.
+model HotelSpace {
+  id          String        @id @default(cuid())
+  hotelId     String
+  name        String
+  /// Free label from the seed and the form: ballroom, lounge, pool, beach...
+  type        String?
+  setting     SpaceSetting?
+  capacity    Int?
+  description String?
+  hours       String?
+  noiseLevel  String?
+  position    Int           @default(0)
+
+  hotel Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  media Media[]
+
+  @@index([hotelId])
+  @@map("hotel_spaces")
+}
+
+model Availability {
+  id       String   @id @default(cuid())
+  hotelId  String
+  roomId   String
+  dateFrom DateTime
+  dateTo   DateTime
+  price    Float?
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("availabilities")
+}
+
+// ============================================================================
+// Media
+// ============================================================================
+
+/// A photo or a video belonging to exactly one owner: an artist, a hotel, a
+/// hotel space or a trip. The CHECK constraint in the migration enforces the
+/// "exactly one".
+model Media {
+  id       String        @id @default(cuid())
+  artistId String?
+  hotelId  String?
+  spaceId  String?
+  tripId   String?
+
+  kind     MediaKind
+  provider MediaProvider
+  url      String
+  /// The provider's own id (a YouTube video id), when there is one.
+  externalId String?
+  /// Storage pathname for provider UPLOAD. Present only on files this
+  /// platform stored, and the only thing a delete is ever allowed to remove.
+  storageKey String?
+  title      String?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  // --- Ownership (artist videos) -------------------------------------------
+  verification       MediaVerification @default(UNVERIFIED)
+  /// CODE_IN_DESCRIPTION, SAME_CHANNEL or ADMIN.
+  verificationMethod String?
+  verificationNote   String?
+  verifiedAt         DateTime?
+  /// The channel the provider reports the video belongs to.
+  authorName         String?
+  authorUrl          String?
+
+  artist Artist?     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  hotel  Hotel?      @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  space  HotelSpace? @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  trip   Trip?       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([artistId, kind])
+  @@index([hotelId, kind])
+  @@index([spaceId])
+  @@index([tripId])
+  @@map("media")
+}
+
+// ============================================================================
+// Bookings
+// ============================================================================
+
 model Booking {
-  id                String   @id @default(cuid())
-  hotelId           String
-  artistId          String
-  startDate         DateTime
-  endDate           DateTime
-  status            String   @default("PENDING") // PENDING, CONFIRMED, REJECTED, COMPLETED, CANCELLED
-  creditsUsed       Int      @default(0) // Deprecated - kept for backward compatibility
-  weeklyPaymentAmount Float  @default(200.0) // Weekly payment amount in EUR
-  numberOfWeeks      Int      // Number of weeks for this booking
-  totalPaymentAmount Float   // Total payment (weeklyPaymentAmount * numberOfWeeks)
-  paymentStatus      String   @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
-  notes              String?
-  createdAt         DateTime @default(now())
+  id        String        @id @default(cuid())
+  hotelId   String
+  artistId  String
+  startDate DateTime
+  endDate   DateTime
+  status    BookingStatus @default(PENDING)
+  /// What this booking cost the hotel in credits, frozen at creation.
+  creditCost Int     @default(0)
+  notes      String?
+  createdAt  DateTime @default(now())
 
-  // Relations
-  hotel             Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  artist            Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  ratings           Rating[]
+  // --- The convention ------------------------------------------------------
+  // What the tripartite exchange convention fills in for each collaboration:
+  // the stay is for two, nobody is paid, and both sides' values are written.
+  companionName          String?
+  boardType              BoardType?
+  transportTerms         TransportTerms?
+  transportNotes         String?
+  performanceDescription String?
+  performanceSchedule    String?
+  stayValueCents         Int?
+  performanceValueCents  Int?
+  currency               String          @default("EUR")
+  roomType               String?
+  includedServices       String?
+  performanceLocation    String?
+  performanceDuration    String?
+  technicalConditions    String?
+  socialContent          String?
 
+  // --- Signature ------------------------------------------------------------
+  /// Set when the hotel and the participant have both signed: the
+  /// convention's "validation définitive".
+  conventionFinalizedAt DateTime?
+  /// SHA-256 of the terms both parties signed.
+  conventionHash        String?
+  /// The signed PDF, kept as the record: it holds identity numbers, so it is
+  /// served through the API to the parties and never from public storage.
+  conventionPdf         Bytes?
+
+  // --- How it ended ---------------------------------------------------------
+  respondedAt        DateTime?
+  cancelledAt        DateTime?
+  cancelledByRole    Role?
+  cancellationReason String?
+
+  hotel      Hotel                 @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  artist     Artist                @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  ratings    Rating[]
+  signatures ConventionSignature[]
+  claim      CancellationClaim?
+
+  @@index([hotelId])
+  @@index([artistId])
+  @@index([status])
+  @@index([startDate])
   @@map("bookings")
 }
 
+/// One party's electronic signature of a booking's convention. The identity
+/// block is what the convention prints for that party, frozen as signed.
+model ConventionSignature {
+  id           String          @id @default(cuid())
+  bookingId    String
+  party        ConventionParty
+  userId       String?
+  signerName   String
+  signerTitle  String?
+  identity     Json            @default("{}")
+  /// The terms hash at the moment of signing; must equal the other party's.
+  documentHash String
+  ipHash       String?
+  userAgent    String?
+  signedAt     DateTime        @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, party])
+  @@map("convention_signatures")
+}
+
+/// What a hotel owes after cancelling a signed convention (article 14): the
+/// coordinator's flat fee, and the participant's justified transport costs.
+model CancellationClaim {
+  id        String @id @default(cuid())
+  bookingId String @unique
+
+  feeCents     Int       @default(8900)
+  feeStatus    FeeStatus @default(DUE)
+  feeDueAt     DateTime
+  feeSettledAt DateTime?
+  feeNote      String?
+
+  /// False when the hotel paid the journey or none was needed.
+  transportEligible    Boolean
+  transportStatus      TransportClaimStatus?
+  transportAmountCents Int?
+  transportNote        String?
+  transportProofUrls   String[]              @default([])
+  transportProofKeys   String[]              @default([])
+  transportSubmittedAt DateTime?
+  transportDueAt       DateTime?
+  transportSettledAt   DateTime?
+  transportSettleNote  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking  Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([feeStatus])
+  @@index([transportStatus])
+  @@map("cancellation_claims")
+}
+
 model Rating {
-  id                   String   @id @default(cuid())
-  bookingId            String
-  hotelId              String
-  artistId             String
-  stars                Int
-  textReview           String
-  createdAt            DateTime @default(now())
-  isVisibleToArtist    Boolean  @default(false)
+  id                String   @id @default(cuid())
+  /// One rating per booking.
+  bookingId         String   @unique
+  hotelId           String
+  artistId          String
+  stars             Int
+  textReview        String
+  createdAt         DateTime @default(now())
+  isVisibleToArtist Boolean  @default(false)
 
-  // Relations
-  booking              Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  hotel                Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  artist               Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel   Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  artist  Artist  @relation(fields: [artistId], references: [id], onDelete: Cascade)
 
+  @@index([artistId])
+  @@index([hotelId])
   @@map("ratings")
 }
+
+model HotelFavorite {
+  id        String   @id @default(cuid())
+  hotelId   String
+  artistId  String
+  createdAt DateTime @default(now())
+
+  hotel  Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, artistId])
+  @@index([hotelId])
+  @@index([artistId])
+}
+
+// ============================================================================
+// Billing
+// ============================================================================
 
 model Credit {
   id           String @id @default(cuid())
@@ -168,38 +681,132 @@ model Credit {
   totalCredits Int    @default(0)
   usedCredits  Int    @default(0)
 
-  // Relations
-  hotel        Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@map("credits")
 }
 
-model Transaction {
-  id        String   @id @default(cuid())
-  hotelId   String?
-  artistId  String?
-  type      String   // CREDIT_PURCHASE, MEMBERSHIP, BOOKING_FEE, REFUND, WEEKLY_PAYMENT
-  amount    Float
-  status    String   @default("PENDING") // PENDING, COMPLETED, FAILED, REFUNDED
-  createdAt DateTime @default(now())
+model CreditLedger {
+  id        String       @id @default(cuid())
+  hotelId   String
+  delta     Int
+  reason    LedgerReason
+  bookingId String?
+  paymentId String?
+  note      String?
+  createdAt DateTime     @default(now())
 
-  // Relations
-  hotel     Hotel?   @relation(fields: [hotelId], references: [id], onDelete: SetNull)
-  artist    Artist?  @relation(fields: [artistId], references: [id], onDelete: SetNull)
+  hotel   Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
-  @@map("transactions")
+  @@index([hotelId])
+  @@index([createdAt])
+  @@index([bookingId])
+  @@index([paymentId])
+  @@map("credit_ledger")
 }
 
-model Referral {
-  id             String   @id @default(cuid())
-  inviterUserId   String
-  inviteeUserId   String
-  rewardPoints    Int      @default(100)
-  createdAt       DateTime @default(now())
+model CreditPackage {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  credits      Int
+  bonusCredits Int      @default(0)
+  priceCents   Int
+  currency     String   @default("EUR")
+  active       Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  // Relations
-  inviter         User     @relation("Referrer", fields: [inviterUserId], references: [id], onDelete: Cascade)
-  invitee         User     @relation("Referee", fields: [inviteeUserId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([active])
+  @@map("credit_packages")
+}
+
+model Membership {
+  id          String           @id @default(cuid())
+  artistId    String
+  tier        MembershipTier
+  priceCents  Int
+  currency    String           @default("EUR")
+  status      MembershipStatus @default(PENDING)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  stripeSubId String?          @unique
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  artist   Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([artistId])
+  @@index([status])
+  @@index([endsAt])
+  @@map("memberships")
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  stripePaymentIntentId String?       @unique
+  stripeSessionId       String?       @unique
+  actorUserId           String
+  amountCents           Int
+  currency              String        @default("EUR")
+  status                PaymentStatus @default(PENDING)
+  packageId             String?
+  membershipId          String?
+  claimId               String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  actor         User               @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  creditPackage CreditPackage?     @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  membership    Membership?        @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  claim         CancellationClaim? @relation(fields: [claimId], references: [id], onDelete: SetNull)
+  ledgerEntries CreditLedger[]
+
+  @@index([actorUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([membershipId])
+  @@index([packageId])
+  @@index([claimId])
+  @@map("payments")
+}
+
+/// Stripe events this server has claimed. `processedAt` is set only after the
+/// handler finished, so a crash mid-way leaves the event retryable.
+model WebhookEvent {
+  id            String    @id @default(cuid())
+  stripeEventId String    @unique
+  type          String
+  claimedAt     DateTime  @default(now())
+  processedAt   DateTime?
+  payload       String?
+
+  @@index([type])
+  @@index([processedAt])
+  @@map("webhook_events")
+}
+
+// ============================================================================
+// Platform
+// ============================================================================
+
+model Referral {
+  id            String   @id @default(cuid())
+  inviterUserId String
+  inviteeUserId String
+  rewardPoints  Int      @default(100)
+  /// Set when the points were credited - on the invitee's admission, not on
+  /// sign-up, so a referral code cannot be farmed with throwaway accounts.
+  rewardedAt    DateTime?
+  createdAt     DateTime @default(now())
+
+  inviter User @relation("Referrer", fields: [inviterUserId], references: [id], onDelete: Cascade)
+  invitee User @relation("Referee", fields: [inviteeUserId], references: [id], onDelete: Cascade)
 
   @@unique([inviterUserId, inviteeUserId])
   @@map("referrals")
@@ -208,65 +815,93 @@ model Referral {
 model Notification {
   id        String   @id @default(cuid())
   userId    String
-  type      String   // BOOKING_CONFIRMED, BOOKING_CANCELLED, RATING_RECEIVED, MEMBERSHIP_EXPIRING, REFERRAL_REWARD, ADMIN_NOTIFICATION
-  payload   String   // JSON string
+  /// BOOKING_REQUESTED, BOOKING_CONFIRMED, ... - see services/notifications.ts
+  type      String
+  payload   Json     @default("{}")
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("notifications")
 }
 
 model AdminLog {
-  id           String   @id @default(cuid())
-  action       String
-  actorUserId  String
-  targetId     String?
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  action      String
+  actorUserId String
+  targetId    String?
+  createdAt   DateTime @default(now())
 
-  // Relations
-  actor        User     @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  actor User @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
 
+  @@index([actorUserId])
   @@map("admin_logs")
 }
 
-// Travel Art MVP - Trip model (public experiences)
+/// Editorial experiences shown on /experiences. Written by the seed, read by
+/// everyone; schedule and reviews are presentation content, hence jsonb.
 model Trip {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
-  slug        String   @unique
+  slug        String     @unique
   description String
   priceFrom   Decimal
   priceTo     Decimal
-  location    String   // JSON string: {city, country, lat, lng}
-  images      String   // JSON string array of image URLs
-  status      String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
-  
-  // Additional experience details
-  artistId    String?  // Optional link to Artist
-  hotelId     String?  // Optional link to Hotel
-  type        String?  // rooftop, intimate, workshop, residency
-  rating      Float?   @default(4.5)
-  date        DateTime? // Experience date
-  duration    String?  // e.g., "2 hours", "7 days"
-  capacity    String?  // e.g., "50 guests", "25 participants"
-  schedule    String?  // JSON string array: [{time, activity}]
-  includes    String?  // JSON string array of included items
-  artistBio   String?  // Artist biography for this experience
-  venueDetails String? // Venue/hotel details for this experience
-  reviews     String?  // JSON string array: [{author, rating, comment}]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  city        String     @default("")
+  country     String     @default("")
+  latitude    Float?
+  longitude   Float?
+  status      TripStatus @default(DRAFT)
 
-  // Relations
-  artist      Artist?  @relation(fields: [artistId], references: [id], onDelete: SetNull)
-  hotel       Hotel?   @relation(fields: [hotelId], references: [id], onDelete: SetNull)
+  artistId     String?
+  hotelId      String?
+  type         String? // rooftop, intimate, workshop, residency
+  rating       Float?    @default(4.5)
+  date         DateTime?
+  duration     String?
+  capacity     String?
+  /// [{ time, activity }]
+  schedule     Json      @default("[]")
+  includes     String[]  @default([])
+  artistBio    String?
+  venueDetails String?
+  /// [{ author, rating, comment }]
+  reviews      Json      @default("[]")
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  artist Artist? @relation(fields: [artistId], references: [id], onDelete: SetNull)
+  hotel  Hotel?  @relation(fields: [hotelId], references: [id], onDelete: SetNull)
+  media  Media[]
+
+  @@index([artistId])
+  @@index([hotelId])
+  @@index([latitude, longitude])
   @@map("trips")
 }
 
-// Note: Using String fields for some legacy enums for compatibility
-// Valid values are documented in the model field comments above
+/// Request counters for the rate limiter. In memory they reset per server
+/// instance, and on serverless every instance is a fresh count - so the
+/// "10 failed logins" limit was 10 per instance, not 10.
+model RateLimitBucket {
+  key     String   @id
+  hits    Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+  @@map("rate_limit_buckets")
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  locale         String    @default("fr")
+  source         String?
+  createdAt      DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  @@index([createdAt])
+}

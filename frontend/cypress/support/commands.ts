@@ -60,7 +60,7 @@ Cypress.Commands.add('waitForApi', (alias: string, expectedStatus: number = 200)
  * Check element has proper color contrast
  * @example cy.checkColorContrast('button', '#0B1F3F', '#FFFFFF')
  */
-Cypress.Commands.add('checkColorContrast', (selector: string, bgColor: string, textColor: string) => {
+Cypress.Commands.add('checkColorContrast', (selector: string, _bgColor: string, _textColor: string) => {
   cy.get(selector).then(($el) => {
     const bg = Cypress.$($el[0]).css('background-color')
     const color = Cypress.$($el[0]).css('color')

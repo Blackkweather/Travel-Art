@@ -150,9 +150,8 @@ describe('Security Tests', () => {
         cy.get('input[name="email"]').type('test@example.com')
         cy.get('input[name="password"]').type('password123')
         cy.get('button[type="submit"]').click()
-        
-        // In a real scenario, verify console.log doesn't contain passwords
-        // This is a simplified check
+
+        cy.wrap(consoleSpy).should('not.be.calledWithMatch', /password123/)
       })
     })
   })

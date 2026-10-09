@@ -3,6 +3,8 @@
  * Centralized error logging for the application
  */
 
+import { useAuthStore } from '../store/authStore';
+
 export enum ErrorSeverity {
   LOW = 'low',
   MEDIUM = 'medium',
@@ -156,7 +158,7 @@ class ErrorLogger {
    * Send error to external logging service
    * TODO: Integrate with Sentry, LogRocket, or similar service
    */
-  private async sendToService(log: ErrorLog) {
+  private async sendToService(_log: ErrorLog) {
     try {
       // Example: Send to your backend API
       // await fetch('/api/logs/error', {
@@ -185,10 +187,7 @@ class ErrorLogger {
    */
   private getUserId(): string | undefined {
     try {
-      // Import dynamically to avoid circular dependencies
-      const { useAuthStore } = require('../store/authStore');
-      const user = useAuthStore.getState().user;
-      return user?.id;
+      return useAuthStore.getState().user?.id;
     } catch {
       return undefined;
     }

@@ -1,260 +1,143 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
-import fs from 'fs';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { prisma } from '../db';
+import { detectImageType, looksLikeMarkup } from '../services/fileType';
+import { removeStoredFile, storageKeyFromUrl, storeFile } from '../services/storage';
+import { mediaSelect, toMediaDTO } from '../views/media';
 
 const router = Router();
 
-// Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads/profile-pictures');
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const filename = `${uuidv4()}${ext}`;
-    cb(null, filename);
-  }
-});
+export const MAX_IMAGES = 30;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  // Allow only images
-  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-  if (allowedMimes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
-  }
-};
-
+/**
+ * A cheap first pass on the declared type, to avoid buffering obvious
+ * nonsense. Not the control that decides - assertRealImage() reads the bytes.
+ */
 const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB max file size
-  }
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_FILE_BYTES, files: 10 },
+  fileFilter: (_req, file, cb) => {
+    if (['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'].includes(file.mimetype)) cb(null, true);
+    else cb(new CustomError('Formats acceptés : JPEG, PNG, GIF, WebP.', 400));
+  },
 });
 
-// Error handling middleware for multer
-const handleMulterError = (err: any, req: any, res: any, next: any) => {
+/** The file's own leading bytes decide what it is, not the request. */
+function assertRealImage(file: Express.Multer.File) {
+  const detected = detectImageType(file.buffer);
+  if (!detected) throw new CustomError('Ce fichier n’est pas une image valide. Formats acceptés : JPEG, PNG, GIF, WebP.', 400);
+  if (looksLikeMarkup(file.buffer)) throw new CustomError('Ce fichier a été refusé pour des raisons de sécurité.', 400);
+  return detected;
+}
+
+const handleMulterError = (err: any, _req: any, _res: any, next: any) => {
   if (err instanceof multer.MulterError) {
-    console.error('❌ Multer error:', err);
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        success: false,
-        message: 'File too large. Maximum size is 5MB.'
-      });
-    }
-    return res.status(400).json({
-      success: false,
-      message: err.message || 'File upload error'
-    });
+    const message =
+      err.code === 'LIMIT_FILE_SIZE'
+        ? 'Image trop lourde : 5 Mo maximum.'
+        : err.code === 'LIMIT_FILE_COUNT'
+          ? '10 images maximum par envoi.'
+          : 'Envoi du fichier impossible.';
+    return next(new CustomError(message, 400));
   }
-  if (err) {
-    console.error('❌ Upload error:', err);
-    return res.status(400).json({
-      success: false,
-      message: err.message || 'File upload failed'
-    });
-  }
-  next();
+  next(err);
 };
 
-// Upload profile picture
-router.post('/profile-picture', authenticate, upload.single('profilePicture'), handleMulterError, asyncHandler(async (req: AuthRequest, res) => {
-  console.log('📤 Upload request received');
-  console.log('Request body keys:', Object.keys(req.body));
-  console.log('Request file:', req.file ? {
-    fieldname: req.file.fieldname,
-    originalname: req.file.originalname,
-    filename: req.file.filename,
-    mimetype: req.file.mimetype,
-    size: req.file.size
-  } : 'No file');
-  
-  if (!req.file) {
-    console.error('❌ No file in request');
-    console.error('Request headers:', req.headers);
-    throw new CustomError('No file uploaded', 400);
+async function ownerOf(userId: string, role: string) {
+  if (role === 'ARTIST') {
+    const artist = await prisma.artist.findUnique({ where: { userId }, select: { id: true, profilePicture: true } });
+    if (!artist) throw new CustomError('Profil artiste introuvable.', 404);
+    return { kind: 'artist' as const, ...artist };
   }
-
-  const user = req.user!;
-  console.log('👤 User:', { id: user.id, role: user.role });
-  const fileUrl = `/uploads/profile-pictures/${req.file.filename}`;
-  console.log('📁 File URL:', fileUrl);
-
-  // Update user's profile picture based on role
-  if (user.role === 'ARTIST') {
-    const artist = await prisma.artist.findUnique({
-      where: { userId: user.id }
-    });
-
-    if (!artist) {
-      throw new CustomError('Artist profile not found', 404);
-    }
-
-    await prisma.artist.update({
-      where: { id: artist.id },
-      data: { profilePicture: fileUrl }
-    });
-  } else if (user.role === 'HOTEL') {
-    const hotel = await prisma.hotel.findUnique({
-      where: { userId: user.id }
-    });
-
-    if (!hotel) {
-      throw new CustomError('Hotel profile not found', 404);
-    }
-
-    await prisma.hotel.update({
-      where: { id: hotel.id },
-      data: { profilePicture: fileUrl }
-    });
+  if (role === 'HOTEL') {
+    const hotel = await prisma.hotel.findUnique({ where: { userId }, select: { id: true, profilePicture: true } });
+    if (!hotel) throw new CustomError('Profil hôtel introuvable.', 404);
+    return { kind: 'hotel' as const, ...hotel };
   }
+  throw new CustomError('Accès refusé.', 403);
+}
 
-  res.json({
-    success: true,
-    data: {
-      url: fileUrl,
-      message: 'Profile picture uploaded successfully'
-    }
-  });
+async function setProfilePicture(owner: Awaited<ReturnType<typeof ownerOf>>, url: string | null) {
+  if (owner.kind === 'artist') await prisma.artist.update({ where: { id: owner.id }, data: { profilePicture: url } });
+  else await prisma.hotel.update({ where: { id: owner.id }, data: { profilePicture: url } });
+
+  // The picture being replaced goes too, if it is a file we stored.
+  const previousKey = owner.profilePicture ? storageKeyFromUrl(owner.profilePicture) : null;
+  if (owner.profilePicture && previousKey && owner.profilePicture !== url) {
+    await removeStoredFile(owner.profilePicture, previousKey);
+  }
+}
+
+router.post(
+  '/profile-picture',
+  authenticate,
+  authorize('ARTIST', 'HOTEL'),
+  upload.single('profilePicture'),
+  handleMulterError,
+  asyncHandler(async (req: AuthRequest, res) => {
+    if (!req.file) throw new CustomError('Aucun fichier reçu.', 400);
+    const type = assertRealImage(req.file);
+    const owner = await ownerOf(req.user!.id, req.user!.role);
+    const stored = await storeFile(req.file.buffer, type, 'profile-pictures');
+    await setProfilePicture(owner, stored.url);
+    res.json({ success: true, data: { url: stored.url, message: 'Photo de profil mise à jour.' } });
+  })
+);
+
+router.delete('/profile-picture', authenticate, authorize('ARTIST', 'HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const owner = await ownerOf(req.user!.id, req.user!.role);
+  await setProfilePicture(owner, null);
+  res.json({ success: true, data: { url: null } });
 }));
 
-// Upload multiple media files (images/videos for portfolio)
-router.post('/media', authenticate, upload.array('media', 10), asyncHandler(async (req: AuthRequest, res) => {
-  if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
-    throw new CustomError('No files uploaded', 400);
-  }
+/** Gallery photos. Each becomes a media row owned by the caller. */
+router.post(
+  '/media',
+  authenticate,
+  authorize('ARTIST', 'HOTEL'),
+  upload.array('media', 10),
+  handleMulterError,
+  asyncHandler(async (req: AuthRequest, res) => {
+    const files = (req.files as Express.Multer.File[]) ?? [];
+    if (files.length === 0) throw new CustomError('Aucun fichier reçu.', 400);
 
-  const user = req.user!;
-  const files = req.files as Express.Multer.File[];
-  const urls = files.map(file => `/uploads/profile-pictures/${file.filename}`);
+    // Every file is checked before any is stored, so a bad one in a batch
+    // does not leave the good ones half-written.
+    const types = files.map(assertRealImage);
+    const owner = await ownerOf(req.user!.id, req.user!.role);
+    const ownerWhere: { artistId?: string; hotelId?: string } =
+      owner.kind === 'artist' ? { artistId: owner.id } : { hotelId: owner.id };
 
-  // For artists, add to their media gallery
-  if (user.role === 'ARTIST') {
-    const artist = await prisma.artist.findUnique({
-      where: { userId: user.id }
-    });
-
-    if (!artist) {
-      throw new CustomError('Artist profile not found', 404);
+    const existing = await prisma.media.count({ where: { ...ownerWhere, kind: 'IMAGE' } });
+    if (existing + files.length > MAX_IMAGES) {
+      throw new CustomError(`${MAX_IMAGES} photos maximum. Il vous reste ${Math.max(MAX_IMAGES - existing, 0)} place(s).`, 400);
     }
 
-    // Parse existing media URLs
-    let existingUrls: string[] = [];
-    if (artist.mediaUrls) {
-      try {
-        existingUrls = JSON.parse(artist.mediaUrls);
-      } catch (e) {
-        existingUrls = [];
-      }
+    const created = [];
+    for (let i = 0; i < files.length; i++) {
+      const stored = await storeFile(files[i].buffer, types[i], 'media');
+      created.push(
+        await prisma.media.create({
+          data: {
+            artistId: ownerWhere.artistId,
+            hotelId: ownerWhere.hotelId,
+            kind: 'IMAGE',
+            provider: 'UPLOAD',
+            url: stored.url,
+            storageKey: stored.storageKey,
+            position: existing + i,
+          },
+          select: mediaSelect,
+        })
+      );
     }
 
-    // Add new URLs
-    const updatedUrls = [...existingUrls, ...urls];
-
-    await prisma.artist.update({
-      where: { id: artist.id },
-      data: { mediaUrls: JSON.stringify(updatedUrls) }
-    });
-  }
-
-  res.json({
-    success: true,
-    data: {
-      urls,
-      message: 'Media files uploaded successfully'
-    }
-  });
-}));
-
-// Delete uploaded file
-router.delete('/file', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const { url } = req.body;
-  
-  if (!url) {
-    throw new CustomError('File URL is required', 400);
-  }
-
-  // Verify the file belongs to the user
-  const user = req.user!;
-  let authorized = false;
-
-  if (user.role === 'ARTIST') {
-    const artist = await prisma.artist.findUnique({
-      where: { userId: user.id }
-    });
-    
-    if (artist) {
-      if (artist.profilePicture === url) {
-        authorized = true;
-        await prisma.artist.update({
-          where: { id: artist.id },
-          data: { profilePicture: null }
-        });
-      } else if (artist.mediaUrls) {
-        const mediaUrls = JSON.parse(artist.mediaUrls);
-        if (mediaUrls.includes(url)) {
-          authorized = true;
-          const updatedUrls = mediaUrls.filter((u: string) => u !== url);
-          await prisma.artist.update({
-            where: { id: artist.id },
-            data: { mediaUrls: JSON.stringify(updatedUrls) }
-          });
-        }
-      }
-    }
-  } else if (user.role === 'HOTEL') {
-    const hotel = await prisma.hotel.findUnique({
-      where: { userId: user.id }
-    });
-    
-    if (hotel && hotel.profilePicture === url) {
-      authorized = true;
-      await prisma.hotel.update({
-        where: { id: hotel.id },
-        data: { profilePicture: null }
-      });
-    }
-  }
-
-  if (!authorized) {
-    throw new CustomError('Unauthorized to delete this file', 403);
-  }
-
-  // Delete the physical file
-  const filePath = path.join(__dirname, '../..', url);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-
-  res.json({
-    success: true,
-    message: 'File deleted successfully'
-  });
-}));
+    const media = created.map(toMediaDTO);
+    res.status(201).json({ success: true, data: { media, urls: media.map((m) => m.url) } });
+  })
+);
 
 export { router as uploadRoutes };
-
-
-
-
-
-
-
-
-
-
-
-
-

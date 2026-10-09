@@ -1,142 +1,64 @@
-import request from 'supertest';
-import bcrypt from 'bcryptjs';
-import { app } from '../index';
-import { prisma, initializeDatabase } from '../db';
+import { api, auth, artistRegistration, makeAdmin, makeArtist, prismaAdmin, resetDb } from './helpers';
 
-async function createAdmin(email: string, password: string) {
-  const passwordHash = await bcrypt.hash(password, 10);
-  return prisma.user.create({
-    data: {
-      email,
-      name: 'Admin User',
-      passwordHash,
-      role: 'ADMIN',
-      isActive: true,
-    },
-  });
-}
+beforeEach(resetDb);
+afterAll(() => prismaAdmin.$disconnect());
 
-describe('Admin API - bookings overview', () => {
-  const adminEmail = `admin-${Date.now()}@example.com`;
-  const password = 'AdminP@ss123';
+describe('admissions', () => {
+  it('refuses to admit an unconfirmed address, then admits it once confirmed', async () => {
+    const admin = await makeAdmin();
+    const body = artistRegistration();
+    await api().post('/api/auth/register').send(body);
+    const user = await prismaAdmin.user.findUnique({ where: { email: body.email.toLowerCase() } });
 
-  beforeAll(async () => {
-    process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./prisma/dev.db';
-    await initializeDatabase();
+    const early = await api().post(`/api/admin/admissions/${user!.id}/approve`).set(auth(admin.token));
+    expect(early.status).toBe(409);
+    expect(early.body.error.code).toBe('EMAIL_NOT_VERIFIED');
 
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
-    await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
-    }).catch(() => undefined);
-
-    const admin = await createAdmin(adminEmail, password);
-
-    // Seed hotel + artist + bookings
-    const passwordHash = await bcrypt.hash('SecureP@ss123', 10);
-    const hotelUser = await prisma.user.create({
-      data: {
-        email: `hotel-admin-${Date.now()}@example.com`,
-        name: 'Hotel Admin',
-        passwordHash,
-        role: 'HOTEL',
-      },
-    });
-    const artistUser = await prisma.user.create({
-      data: {
-        email: `artist-admin-${Date.now()}@example.com`,
-        name: 'Artist Admin',
-        passwordHash,
-        role: 'ARTIST',
-      },
-    });
-
-    const hotel = await prisma.hotel.create({
-      data: {
-        userId: hotelUser.id,
-        name: 'Admin Hotel',
-        description: 'Hotel for admin tests',
-        location: JSON.stringify({ city: 'Rome', country: 'Italy' }),
-      },
-    });
-
-    const artist = await prisma.artist.create({
-      data: {
-        userId: artistUser.id,
-        bio: 'Admin Artist',
-        discipline: 'Dance',
-        priceRange: '$$',
-        membershipStatus: 'ACTIVE',
-      },
-    });
-
-    await prisma.booking.createMany({
-      data: [
-        {
-          hotelId: hotel.id,
-          artistId: artist.id,
-          startDate: new Date(),
-          endDate: new Date(),
-          status: 'PENDING',
-          creditsUsed: 1,
-        },
-        {
-          hotelId: hotel.id,
-          artistId: artist.id,
-          startDate: new Date(),
-          endDate: new Date(),
-          status: 'CONFIRMED',
-          creditsUsed: 1,
-        },
-      ],
-    });
+    await prismaAdmin.user.update({ where: { id: user!.id }, data: { emailVerified: true } });
+    expect((await api().post(`/api/admin/admissions/${user!.id}/approve`).set(auth(admin.token))).status).toBe(200);
+    expect((await prismaAdmin.user.findUnique({ where: { id: user!.id } }))!.approvalStatus).toBe('APPROVED');
   });
 
-  afterAll(async () => {
-    await prisma.booking.deleteMany().catch(() => undefined);
-    await prisma.artist.deleteMany().catch(() => undefined);
-    await prisma.hotel.deleteMany().catch(() => undefined);
-    await prisma.user.deleteMany({
-      where: { email: { contains: '@example.com' } },
-    }).catch(() => undefined);
-    await prisma.$disconnect().catch(() => undefined);
+  it('credits referral points on admission, not on sign-up', async () => {
+    const admin = await makeAdmin();
+    const inviter = await makeArtist();
+    const body = artistRegistration({ referralCode: inviter.user.artist!.referralCode });
+    await api().post('/api/auth/register').send(body);
+
+    const points = async () => (await prismaAdmin.artist.findUnique({ where: { id: inviter.artistId } }))!.loyaltyPoints;
+    expect(await points()).toBe(0);
+
+    const user = await prismaAdmin.user.update({ where: { email: body.email.toLowerCase() }, data: { emailVerified: true } });
+    await api().post(`/api/admin/admissions/${user.id}/approve`).set(auth(admin.token));
+    expect(await points()).toBe(100);
+    // Re-approving does not pay twice.
+    await api().post(`/api/admin/admissions/${user.id}/approve`).set(auth(admin.token));
+    expect(await points()).toBe(100);
   });
 
-  it('TC-ADM-001: should return all bookings for admin', async () => {
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: adminEmail, password });
+  it('shows the applicant’s category and videos for review', async () => {
+    const admin = await makeAdmin();
+    const pending = await makeArtist({ approved: false });
+    await prismaAdmin.media.create({
+      data: { artistId: pending.artistId, kind: 'VIDEO', provider: 'YOUTUBE', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', externalId: 'dQw4w9WgXcQ' },
+    });
+    const res = await api().get('/api/admin/admissions').set(auth(admin.token));
+    const app = res.body.data.applications.find((a: any) => a.id === pending.user.id);
+    expect(app.artist).toMatchObject({ specificCategory: 'Yoga', videos: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'] });
+    expect(app.emailVerified).toBe(false);
+  });
 
-    const token = loginRes.body.data.token;
-
-    const res = await request(app)
-      .get('/api/admin/bookings')
-      .set('Authorization', `Bearer ${token}`);
-
+  it('never returns password hashes when suspending or activating', async () => {
+    const admin = await makeAdmin();
+    const artist = await makeArtist();
+    const res = await api().post(`/api/admin/users/${artist.user.id}/suspend`).set(auth(admin.token)).send({ reason: 'Comportement inapproprié' });
     expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.bookings.length).toBeGreaterThanOrEqual(2);
+    expect(JSON.stringify(res.body)).not.toMatch(/passwordHash|\$2[aby]\$/);
   });
 
-  it('TC-ADM-001 (filter): should filter bookings by status', async () => {
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: adminEmail, password });
-
-    const token = loginRes.body.data.token;
-
-    const res = await request(app)
-      .get('/api/admin/bookings?status=CONFIRMED')
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(res.status).toBe(200);
-    const bookings = res.body.data.bookings;
-    expect(bookings.length).toBeGreaterThanOrEqual(1);
-    expect(bookings.every((b: any) => b.status === 'CONFIRMED')).toBe(true);
+  it('is closed to everyone but admins', async () => {
+    const artist = await makeArtist();
+    expect((await api().get('/api/admin/admissions').set(auth(artist.token))).status).toBe(403);
+    expect((await api().get('/api/admin/admissions')).status).toBe(401);
   });
 });
-
-
-
-

@@ -1,164 +1,91 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, MapPin, Clock, Star, CheckCircle, XCircle, AlertCircle, Search, User, Music } from 'lucide-react'
-import { useAuthStore } from '@/store/authStore'
-import { hotelsApi, bookingsApi } from '@/utils/api'
+import { Calendar, Search } from 'lucide-react'
+import { bookingsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import StatusBadge from '@/components/StatusBadge'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import ConventionSummary from '@/components/ConventionSummary'
+import ConventionPanel from '@/components/convention/ConventionPanel'
+import ClaimPanel from '@/components/convention/ClaimPanel'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import { personName, extractArray } from '@/utils/apiPayload'
+import type { Booking } from '@/types'
+import { t } from '@/i18n'
+import { formatNumber } from '@/utils/i18n'
+import SEOHead from '@/components/SEOHead'
 
-interface Booking {
-  id: string
-  artist: {
-    id: string
-    name: string
-    discipline: string
-    image?: string
-    rating?: number
-  }
-  hotelId: string
-  startDate: string
-  endDate: string
-  status: string
-  creditsUsed?: number // Deprecated
-  weeklyPaymentAmount?: number
-  numberOfWeeks?: number
-  totalPaymentAmount?: number
-  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
-  performanceSpot?: string
-  notes?: string
-}
+const apiMessage = (error: any, fallback: string) => error?.response?.data?.error?.message || fallback
 
 const HotelBookings: React.FC = () => {
-  const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState<'all' | Booking['status']>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [bookings, setBookings] = useState<Booking[]>([])
 
+  const [cancelling, setCancelling] = useState<Booking | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const [ratingFor, setRatingFor] = useState<Booking | null>(null)
+  const [stars, setStars] = useState(5)
+  const [review, setReview] = useState('')
+  const [shareWithArtist, setShareWithArtist] = useState(true)
+
+  const reload = () =>
+    bookingsApi
+      .list({ limit: 100 })
+      .then((res) => setBookings(extractArray<Booking>(res.data?.data, 'bookings')))
+      .catch(() => toast.error(t('Impossible de charger les réservations')))
+      .finally(() => setLoading(false))
+
   useEffect(() => {
-    const fetchBookings = async () => {
-      if (!user?.id) return
+    reload()
+    // Back from paying the cancellation fee.
+    const fee = new URLSearchParams(window.location.search).get('fee')
+    if (fee === 'paid') toast.success(t('Paiement reçu. Merci : le dossier sera marqué réglé dans un instant.'))
+    if (fee === 'cancelled') toast(t('Paiement interrompu : rien n’a été débité.'))
+  }, [])
 
-      try {
-        setLoading(true)
+  const replace = (updated: Booking) => setBookings((list) => list.map((b) => (b.id === updated.id ? updated : b)))
 
-        // Get hotel profile
-        const hotelRes = await hotelsApi.getByUser(user.id)
-        const hotel = hotelRes.data?.data
-        if (!hotel) return
-
-        // Get bookings for this hotel
-        const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
-        // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
-        const bookingsDataRaw = bookingsRes.data?.data
-        const bookingsData = Array.isArray(bookingsDataRaw) 
-          ? bookingsDataRaw 
-          : (bookingsDataRaw?.bookings || [])
-        
-        // Transform bookings to match component format
-        const transformedBookings = bookingsData.map((b: any) => ({
-          id: b.id,
-          artist: {
-            id: b.artist?.id || '',
-            name: b.artist?.name || 'Unknown Artist',
-            discipline: b.artist?.discipline || '',
-            image: b.artist?.image || 'https://via.placeholder.com/100?text=Artist',
-            rating: b.artist?.rating || 0
-          },
-          hotelId: b.hotelId,
-          startDate: b.startDate,
-          endDate: b.endDate,
-          status: b.status.toLowerCase(),
-          creditsUsed: b.creditsUsed || 0,
-          performanceSpot: b.performanceSpot || 'TBD',
-          notes: b.notes || '',
-          // Calculate duration
-          duration: calculateDuration(b.startDate, b.endDate),
-          // Format date/time
-          date: b.startDate,
-          time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          // Additional fields for display
-          guestCount: 0, // Would need to come from booking details
-          performanceType: b.performanceType || 'Performance',
-          contactEmail: b.artist?.email || '',
-          contactPhone: b.artist?.phone || ''
-        }))
-
-        setBookings(transformedBookings)
-      } catch (error) {
-        console.error('Error fetching bookings:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchBookings()
-  }, [user?.id])
-
-  const calculateDuration = (start: string, end: string): string => {
-    const startDate = new Date(start)
-    const endDate = new Date(end)
-    const diffMs = endDate.getTime() - startDate.getTime()
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-    
-    if (diffHours > 0) {
-      return diffMins > 0 ? `${diffHours}h ${diffMins}m` : `${diffHours} hour${diffHours > 1 ? 's' : ''}`
-    }
-    return `${diffMins} minute${diffMins !== 1 ? 's' : ''}`
-  }
-
-  const handleStatusUpdate = async (bookingId: string, status: 'CONFIRMED' | 'REJECTED' | 'CANCELLED') => {
+  /* A hotel can withdraw a request before the artist answers, and cancel a
+     confirmed residency. The second has a cost under the convention, which
+     the dialog states before the hotel commits to it. */
+  const confirmCancel = async () => {
+    if (!cancelling) return
+    setBusy(true)
     try {
-      await bookingsApi.updateStatus(bookingId, status)
-      // Notification
-      const statusText = status === 'CONFIRMED' ? 'confirmed' : status === 'REJECTED' ? 'rejected' : 'cancelled'
-      console.log(`Booking ${statusText} successfully`)
-      alert(`Booking ${statusText} successfully`)
-      
-      // Refresh bookings - get hotel first
-      const hotelRes = await hotelsApi.getByUser(user?.id || '')
-      const hotel = hotelRes.data?.data
-      if (!hotel) return
-
-      const bookingsRes = await bookingsApi.list({ hotelId: hotel.id })
-      // API returns { bookings: [...], pagination: {...} } or sometimes just [...]
-      const bookingsDataRaw = bookingsRes.data?.data
-      const bookingsData = Array.isArray(bookingsDataRaw) 
-        ? bookingsDataRaw 
-        : (bookingsDataRaw?.bookings || [])
-      
-      const transformedBookings = bookingsData.map((b: any) => ({
-        id: b.id,
-        artist: {
-          id: b.artist?.id || '',
-          name: b.artist?.name || 'Unknown Artist',
-          discipline: b.artist?.discipline || '',
-          image: b.artist?.image || 'https://via.placeholder.com/100?text=Artist',
-          rating: b.artist?.rating || 0
-        },
-        hotelId: b.hotelId,
-        startDate: b.startDate,
-        endDate: b.endDate,
-        status: b.status.toLowerCase(),
-        creditsUsed: b.creditsUsed || 0,
-        performanceSpot: b.performanceSpot || 'TBD',
-        notes: b.notes || '',
-        duration: calculateDuration(b.startDate, b.endDate),
-        date: b.startDate,
-        time: new Date(b.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        guestCount: 0,
-        performanceType: b.performanceType || 'Performance',
-        contactEmail: b.artist?.email || '',
-        contactPhone: b.artist?.phone || ''
-      }))
-      
-      setBookings(transformedBookings)
+      const res = await bookingsApi.updateStatus(cancelling.id, 'CANCELLED', cancelReason.trim() || undefined)
+      replace(res.data.data)
+      toast.success(cancelling.status === 'PENDING' ? t('Demande annulée') : t('Résidence annulée'))
+      setCancelling(null)
     } catch (error) {
-      console.error('Error updating booking status:', error)
-      alert('Failed to update booking status')
+      toast.error(apiMessage(error, t('Impossible d’annuler cette réservation')))
+    } finally {
+      setBusy(false)
     }
   }
-  
+
+  const submitRating = async () => {
+    if (!ratingFor) return
+    setBusy(true)
+    try {
+      await bookingsApi.rate({ bookingId: ratingFor.id, stars, textReview: review.trim(), isVisibleToArtist: shareWithArtist })
+      toast.success(t('Évaluation enregistrée'))
+      setBookings((list) =>
+        list.map((b) => (b.id === ratingFor.id ? { ...b, ratings: [{ id: 'new', stars, textReview: review, createdAt: new Date().toISOString(), isVisibleToArtist: shareWithArtist }] } : b))
+      )
+      setRatingFor(null)
+    } catch (error) {
+      toast.error(apiMessage(error, t('Échec de l’enregistrement')))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -167,96 +94,49 @@ const HotelBookings: React.FC = () => {
     )
   }
 
-  const filteredBookings = bookings.filter(booking => {
-    const matchesFilter = filter === 'all' || booking.status === filter
-    const matchesSearch = booking.artist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (booking.performanceSpot || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (booking.notes || '').toLowerCase().includes(searchTerm.toLowerCase())
-    
-    return matchesFilter && matchesSearch
+  const term = searchTerm.trim().toLowerCase()
+  const filtered = bookings.filter((b) => {
+    if (filter !== 'all' && b.status !== filter) return false
+    if (!term) return true
+    return [personName(b.artist), b.artist?.discipline, b.notes, b.convention?.performanceDescription]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(term))
   })
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircle className="w-5 h-5 text-green-600" />
-      case 'pending':
-        return <AlertCircle className="w-5 h-5 text-amber-600" />
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-blue-600" />
-      case 'cancelled':
-        return <XCircle className="w-5 h-5 text-red-600" />
-      default:
-        return <AlertCircle className="w-5 h-5 text-gray-600" />
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800'
-      case 'pending':
-        return 'bg-amber-100 text-amber-800'
-      case 'completed':
-        return 'bg-blue-100 text-blue-800'
-      case 'cancelled':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
   const stats = [
-    { label: 'Total Bookings', value: bookings.length, icon: Calendar },
-    { label: 'Confirmed', value: bookings.filter(b => b.status === 'confirmed').length, icon: CheckCircle },
-    { label: 'Pending', value: bookings.filter(b => b.status === 'pending').length, icon: AlertCircle },
-    { label: 'Completed', value: bookings.filter(b => b.status === 'completed').length, icon: Star }
+    { label: t('Réservations'), value: bookings.length },
+    { label: t('Confirmées'), value: bookings.filter((b) => b.status === 'CONFIRMED').length },
+    { label: t('En attente'), value: bookings.filter((b) => b.status === 'PENDING').length },
+    { label: t('Terminées'), value: bookings.filter((b) => b.status === 'COMPLETED').length },
   ]
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      <SEOHead title={t('Réservations') + ' — Travel Art'} />
       <div>
-        <h1 className="text-3xl font-serif font-bold text-navy mb-2 gold-underline">
-          Hotel Bookings
-        </h1>
-        <p className="text-gray-600">
-          Manage your artist bookings and performance schedules
-        </p>
+        <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">{t('Réservations de l’hôtel')}</h1>
+        <p className="text-content-secondary">{t('Gérez vos réservations d’artistes et votre programmation')}</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="card-luxury text-center"
-            >
-              <div className="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Icon className="w-6 h-6 text-gold" />
-              </div>
-              <h3 className="text-2xl font-bold text-navy mb-2">{stat.value}</h3>
-              <p className="text-gray-600">{stat.label}</p>
-            </motion.div>
-          )
-        })}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
+        {stats.map((stat) => (
+          <div key={stat.label} className="stat rounded-none border-0">
+            <span className="stat__label">{stat.label}</span>
+            <span className="stat__value">{formatNumber(stat.value)}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Search and Filters */}
       <div className="search-container">
         <div className="filters-row">
           <div className="flex-1">
-            <label className="form-label">Search Bookings</label>
+            <label className="form-label" htmlFor="booking-search">{t('Rechercher une réservation')}</label>
             <div className="search-icon-container">
               <Search className="search-icon" />
               <input
+                id="booking-search"
                 type="text"
-                placeholder="Search by artist, venue, or performance type..."
+                placeholder={t('Rechercher par artiste ou prestation…')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -265,153 +145,79 @@ const HotelBookings: React.FC = () => {
             </div>
           </div>
           <div className="md:w-48">
-            <label className="form-label">Filter by Status</label>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="filter-select"
-              data-testid="status-filter"
-            >
-              <option value="all">All Status</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+            <label className="form-label" htmlFor="booking-status">{t('Filtrer par statut')}</label>
+            <select id="booking-status" value={filter} onChange={(e) => setFilter(e.target.value as any)} className="filter-select" data-testid="status-filter">
+              <option value="all">{t('Tous les statuts')}</option>
+              <option value="PENDING">{t('En attente')}</option>
+              <option value="CONFIRMED">{t('Confirmée')}</option>
+              <option value="COMPLETED">{t('Terminée')}</option>
+              <option value="REJECTED">{t('Refusée')}</option>
+              <option value="CANCELLED">{t('Annulée')}</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Bookings List */}
       <div className="space-y-6" data-testid="bookings-list">
-        {filteredBookings.map((booking, index) => (
+        {filtered.map((booking, index) => (
           <motion.div
             key={booking.id}
             data-testid="booking-item"
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: index * 0.1 }}
-            className="card-luxury"
+            transition={{ duration: 0.4, delay: Math.min(index, 6) * 0.05 }}
+            className="panel p-6"
           >
-            <div className="flex flex-col lg:flex-row gap-6">
-              {/* Artist Info */}
-              <div className="flex items-start space-x-4">
+            <div className="flex flex-col gap-6 lg:flex-row">
+              <div className="flex items-start gap-4 lg:w-64">
                 <img
-                  src={booking.artist.image}
-                  alt={booking.artist.name}
+                  decoding="async"
+                  loading="lazy"
+                  src={booking.artist?.profilePicture || '/images/placeholder-experience.webp'}
+                  alt=""
                   className="w-16 h-16 rounded-full object-cover"
                 />
-                <div>
-                  <h3 className="text-xl font-serif font-semibold text-navy mb-1">
-                    {booking.artist.name}
-                  </h3>
-                  <p className="text-gold font-medium mb-2">{booking.artist.discipline}</p>
-                  {booking.artist.rating > 0 && (
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Star className="w-4 h-4 text-gold" />
-                      <span className="text-sm text-gray-600">{booking.artist.rating.toFixed(1)}</span>
-                    </div>
-                  )}
+                <div className="min-w-0">
+                  <h3 className="truncate text-xl font-serif font-semibold text-content">{personName(booking.artist)}</h3>
+                  <p className="text-gold font-medium">{booking.artist?.discipline}</p>
+                  <p className="mt-2 flex items-center text-sm text-content-secondary">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {new Date(booking.startDate).toLocaleDateString('fr-FR')} → {new Date(booking.endDate).toLocaleDateString('fr-FR')}
+                  </p>
                 </div>
               </div>
 
-              {/* Booking Details */}
               <div className="flex-1" data-testid="booking-details">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-navy mb-2">Performance Details</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <span>{new Date(booking.startDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-2" />
-                        <span>{new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        <span>{booking.performanceSpot || 'TBD'}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Music className="w-4 h-4 mr-2" />
-                        <span>{booking.artist?.discipline || 'Performance'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium text-navy mb-2">Payment Info</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      {booking.totalPaymentAmount && (
-                        <div className="flex items-center justify-between">
-                          <span>Total Payment:</span>
-                          <span className="font-bold text-gold">€{booking.totalPaymentAmount.toFixed(2)}</span>
-                        </div>
-                      )}
-                      {booking.numberOfWeeks && booking.weeklyPaymentAmount && (
-                        <div className="flex items-center justify-between">
-                          <span>{booking.numberOfWeeks} week{booking.numberOfWeeks > 1 ? 's' : ''} × €{booking.weeklyPaymentAmount}/week</span>
-                        </div>
-                      )}
-                      {booking.paymentStatus && (
-                        <div className="flex items-center justify-between mt-2">
-                          <span>Status:</span>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            booking.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
-                            booking.paymentStatus === 'PENDING' ? 'bg-amber-100 text-amber-800' :
-                            booking.paymentStatus === 'REFUNDED' ? 'bg-blue-100 text-blue-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {booking.paymentStatus}
-                          </span>
-                        </div>
-                      )}
-                      {booking.notes && <div className="mt-2 pt-2 border-t border-gray-200">Notes: {booking.notes}</div>}
-                    </div>
-                  </div>
-                </div>
+                <ConventionSummary booking={booking} viewer="HOTEL" />
+                <ConventionPanel booking={booking} viewer="HOTEL" onChanged={reload} />
+                <ClaimPanel booking={booking} viewer="HOTEL" onChanged={reload} />
+                {booking.notes && <p className="mt-3 rounded-card bg-surface p-3 text-sm text-content-secondary">{booking.notes}</p>}
 
-                {booking.notes && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-navy mb-2">Notes</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                      {booking.notes}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${getStatusColor(booking.status)}`}>
-                    {getStatusIcon(booking.status)}
-                    <span className="ml-1 capitalize">{booking.status}</span>
-                  </span>
-                  
-                  <div className="flex space-x-2">
-                    {booking.status === 'pending' && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <StatusBadge status={booking.status.toLowerCase()} />
+                  <div className="flex flex-wrap gap-2">
+                    {booking.status === 'PENDING' && (
                       <>
-                        <button 
-                          onClick={() => handleStatusUpdate(booking.id, 'CONFIRMED')}
-                          className="btn-primary text-sm"
-                        >
-                          Confirm
-                        </button>
-                        <button 
-                          onClick={() => handleStatusUpdate(booking.id, 'REJECTED')}
-                          className="btn-secondary text-sm"
-                        >
-                          Decline
+                        <span className="self-center text-sm text-content-secondary">{t('En attente de la réponse de l’artiste')}</span>
+                        <button onClick={() => { setCancelling(booking); setCancelReason('') }} className="btn-secondary text-sm" data-testid="withdraw-request">
+                          {t('Annuler la demande')}
                         </button>
                       </>
                     )}
-                    {booking.status === 'confirmed' && (
-                      <button className="btn-secondary text-sm">View Details</button>
+                    {booking.status === 'CONFIRMED' && (
+                      <button onClick={() => { setCancelling(booking); setCancelReason('') }} className="btn-ghost text-sm">
+                        {t('Annuler la résidence')}
+                      </button>
                     )}
-                    {booking.status === 'completed' && (
-                      <button className="btn-primary text-sm">Rate Artist</button>
+                    {booking.status === 'COMPLETED' && !booking.ratings?.length && (
+                      <button onClick={() => { setRatingFor(booking); setStars(5); setReview(''); setShareWithArtist(true) }} className="btn-primary text-sm">
+                        {t('Évaluer l’artiste')}
+                      </button>
                     )}
-                    {booking.status === 'cancelled' && (
-                      <button className="btn-secondary text-sm">Re-book</button>
+                    {(booking.status === 'CANCELLED' || booking.status === 'REJECTED') && (
+                      <button onClick={() => navigate('/dashboard/artists')} className="btn-secondary text-sm">
+                        {t('Reprogrammer')}
+                      </button>
                     )}
                   </div>
                 </div>
@@ -421,32 +227,100 @@ const HotelBookings: React.FC = () => {
         ))}
       </div>
 
-      {/* No Results */}
-      {filteredBookings.length === 0 && (
+      {filtered.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Calendar className="w-12 h-12 text-gray-400" />
-          </div>
-          <h3 className="text-xl font-serif font-semibold text-navy mb-2">
-            No Bookings Found
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {searchTerm || filter !== 'all' 
-              ? 'Try adjusting your search criteria or filters'
-              : 'You haven\'t made any bookings yet'
-            }
+          <h3 className="text-xl font-serif font-semibold text-content mb-2">{t('Aucune réservation')}</h3>
+          <p className="text-content-secondary mb-6">
+            {searchTerm || filter !== 'all' ? t('Essayez d’élargir votre recherche ou vos filtres') : t('Vous n’avez encore aucune réservation')}
           </p>
           {(searchTerm || filter !== 'all') && (
-            <button
-              onClick={() => {
-                setSearchTerm('')
-                setFilter('all')
-              }}
-              className="btn-primary"
-            >
-              Clear Filters
+            <button onClick={() => { setSearchTerm(''); setFilter('all') }} className="btn-primary">
+              {t('Réinitialiser les filtres')}
             </button>
           )}
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={Boolean(cancelling)}
+        title={cancelling?.status === 'CONFIRMED' ? t('Annuler une résidence confirmée ?') : t('Annuler cette demande ?')}
+        body={
+          <>
+            {cancelling?.status === 'CONFIRMED' && cancelling.signing?.finalizedAt ? (
+              <p>
+                {t('La convention est signée. Son article 14 s’applique : vous réglez des frais de dossier de 89 € au coordinateur et, si le transport était à la charge de l’artiste, vous lui remboursez ses frais non remboursables sur justificatifs, sous 15 jours. Les crédits de cette résidence ne sont pas restitués.')}
+              </p>
+            ) : cancelling?.status === 'CONFIRMED' ? (
+              <p>
+                {t('La convention n’est pas encore signée par les deux parties : aucun frais n’est dû. Les crédits de cette résidence ne sont pas restitués.')}
+              </p>
+            ) : (
+              <p>{t('La demande est retirée et vos crédits vous sont restitués.')}</p>
+            )}
+            <label className="form-label mt-4 block" htmlFor="cancel-reason">{t('Motif (communiqué à l’artiste)')}</label>
+            <textarea id="cancel-reason" className="form-input w-full" rows={3} maxLength={500} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} />
+          </>
+        }
+        confirmLabel={t('Confirmer l’annulation')}
+        onConfirm={confirmCancel}
+        onCancel={() => setCancelling(null)}
+        busy={busy}
+      />
+
+      {ratingFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="rating-title">
+          <div className="panel w-full max-w-lg p-6">
+            <h3 id="rating-title" className="font-serif text-xl text-content">{t('Évaluer l’artiste')}</h3>
+            <p className="mt-1 text-sm text-content-secondary">{personName(ratingFor.artist)}</p>
+
+            <div className="mt-6">
+              <span className="stat__label">{t('Note')}</span>
+              <div className="mt-2 flex gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setStars(n)}
+                    aria-label={`${n} / 5`}
+                    aria-pressed={stars === n}
+                    className={`h-10 w-10 rounded-card border text-sm font-semibold transition-colors ${
+                      n <= stars ? 'border-gold bg-gold text-[var(--text-on-gold)]' : 'border-line text-content-secondary hover:border-line-strong'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="form-label" htmlFor="rating-review">{t('Commentaire')}</label>
+              <textarea
+                id="rating-review"
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
+                rows={4}
+                maxLength={1000}
+                className="form-input w-full"
+                placeholder={t('Ce qui s’est bien passé, ce qui pourrait être amélioré…')}
+              />
+              <p className="mt-1 text-[0.8125rem] text-content-secondary">
+                {review.trim().length < 10 ? t('Encore {n} caractère(s).', { n: String(10 - review.trim().length) }) : `${review.length} / 1000`}
+              </p>
+            </div>
+
+            <label className="mt-4 flex items-start gap-3 text-sm text-content">
+              <input type="checkbox" className="mt-1" checked={shareWithArtist} onChange={(e) => setShareWithArtist(e.target.checked)} />
+              <span>{t('Partager cette évaluation avec l’artiste (elle peut alors apparaître sur le site)')}</span>
+            </label>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={() => setRatingFor(null)} className="btn-ghost btn-sm">{t('Annuler')}</button>
+              <button disabled={busy || review.trim().length < 10} onClick={submitRating} className="btn-primary btn-sm">
+                {busy ? t('Enregistrement…') : t('Envoyer')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

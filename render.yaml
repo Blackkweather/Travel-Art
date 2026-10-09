@@ -1,66 +1,128 @@
+# One web service serves both the API and the SPA.
+#
+# The previous version of this file split the app into a static site plus an API
+# service. That is the arrangement that made deep links 404 in production: a
+# static host has no route for /terms, and the SPA's index.html was never
+# returned as a fallback. backend/src/index.ts already mounts the built frontend
+# and returns index.html for every non-/api path, so serving both from the same
+# process makes /terms, /pricing and /top-artists work the way they do locally.
+#
+# Same origin also means the browser never makes a cross-origin API call, so
+# CORS stops being load-bearing.
+#
+# The database is the existing Neon project (us-east-1); Render does not
+# provision one. The region below is virginia to sit next to it.
+
 services:
-  # Backend Web Service
   - type: web
-    name: travel-art-backend
-    env: node
-    plan: starter
-    region: oregon
-    buildCommand: cd backend && npm install && npx prisma migrate deploy && npm run build
-    startCommand: cd backend && npm run start
+    name: travel-art
+    runtime: node
+    # Free instances spin down after ~15 minutes idle; the next request pays a
+    # cold start of roughly 50 seconds. Worth knowing before a demo, and worth
+    # revisiting if the site starts taking real checkout traffic.
+    plan: free
+    region: virginia
+    healthCheckPath: /health
+
+    # Root install is needed for the workspace scripts; `npm run build` then
+    # installs and builds backend (prisma generate + tsc) and frontend in turn.
+    # Migrations run after the client is generated and before the new instance
+    # is promoted.
+    buildCommand: npm ci && npm run build && npm --prefix backend run prisma:deploy
+    # cwd stays at the repo root, which is where index.ts resolves frontend/dist.
+    startCommand: npm start
+
     envVars:
+      - key: NODE_VERSION
+        value: "22"
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+
+      # ---- Database (Neon) -------------------------------------------------
+      # DATABASE_URL: the -pooler host. DIRECT_URL: the same host without
+      # -pooler — prisma migrate deploy cannot run through PgBouncer.
       - key: DATABASE_URL
-        fromDatabase:
-          name: travel-art-db
-          property: connectionString
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+
+      # ---- Auth ------------------------------------------------------------
+      # Must be at least 32 characters; config.ts throws on boot otherwise.
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: JWT_REFRESH_EXPIRES_IN
         value: 30d
+
+      # ---- Public origin ---------------------------------------------------
+      # Set both to the service's own URL (https://travel-art.onrender.com, or
+      # the custom domain once attached). FRONTEND_URL is not decorative: it
+      # builds the Stripe checkout success/cancel URLs and the password-reset
+      # link. Render cannot interpolate a scheme onto a fromService host, so
+      # these are set by hand.
+      - key: FRONTEND_URL
+        sync: false
       - key: CORS_ORIGIN
-        fromService:
-          type: static_site
-          name: travel-art-frontend
-          property: url
+        sync: false
+
+      # ---- Rate limiting ---------------------------------------------------
       - key: RATE_LIMIT_WINDOW_MS
-        value: 900000
+        value: "900000"
       - key: RATE_LIMIT_MAX_REQUESTS
-        value: 100
+        # One person working normally exhausts 100 in a quarter of an hour:
+        # the notification bell polls every 60s and the dashboard spends
+        # another dozen or so per few pages. Past the cap every call 429s,
+        # including paying for credits. The login/reset limiter is separate.
+        value: "1000"
+
+      # ---- Uploads ---------------------------------------------------------
+      # Render's filesystem is ephemeral and is wiped on every deploy, so
+      # BLOB_READ_WRITE_TOKEN is required rather than optional here: without it
+      # upload.ts falls back to writing under ./uploads and every uploaded image
+      # disappears at the next deploy. @vercel/blob is a plain HTTPS client and
+      # works from Render.
+      - key: BLOB_READ_WRITE_TOKEN
+        sync: false
       - key: MAX_FILE_SIZE
-        value: 10485760
+        value: "10485760"
       - key: UPLOAD_PATH
         value: ./uploads
-      - key: FROM_EMAIL
-        value: noreply@travelart.com
+
+      # ---- Stripe ----------------------------------------------------------
+      # Point the webhook endpoint at https://<your-domain>/api/payments/webhook
+      # and copy the signing secret it issues into STRIPE_WEBHOOK_SECRET.
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: SMTP_HOST
+
+      # ---- Email -------------------------------------------------------------
+      # Sent over Resend (services/email.ts), not SMTP - this used to list
+      # SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS, which nothing in the app
+      # reads. Setting those did nothing; verification, password-reset and
+      # admin-alert emails all silently no-op without RESEND_API_KEY, which
+      # is the one that actually matters here.
+      - key: RESEND_API_KEY
         sync: false
-      - key: SMTP_PORT
-        value: 587
-      - key: SMTP_USER
+      # Optional: defaults to Resend's sandbox sender (onboarding@resend.dev),
+      # which works with no domain set up but is visibly not travelart.com.
+      - key: RESEND_FROM
         sync: false
-      - key: SMTP_PASS
+      # Optional: who gets a "new application to review" email. Unset means
+      # no one is notified and applications rely on someone checking the
+      # admissions console.
+      - key: ADMIN_NOTIFY_EMAIL
         sync: false
 
-  # Frontend Static Site
-  - type: static_site
-    name: travel-art-frontend
-    buildCommand: cd frontend && npm install && npm run build
-    publishPath: frontend/dist
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: travel-art-backend
-          property: url
+      # ---- Frontend build-time values --------------------------------------
+      # Read by Vite during the build, so they must exist on this service even
+      # though it is the backend that runs. VITE_API_URL is deliberately absent:
+      # utils/api.ts defaults to a relative /api, which is what same-origin
+      # hosting wants. Setting it to an absolute URL would reintroduce the
+      # cross-origin split this file exists to remove.
       - key: VITE_MODE
         value: production
       - key: VITE_CDN_PROVIDER
@@ -75,14 +137,3 @@ services:
         sync: false
       - key: VITE_LOGO_TRANSPARENT_URL
         sync: false
-      - key: VITE_CLERK_PUBLISHABLE_KEY
-        sync: false
-
-databases:
-  # PostgreSQL Database
-  - name: travel-art-db
-    databaseName: travelart
-    user: travelart
-    plan: starter
-    region: oregon
-

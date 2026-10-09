@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface CheckboxProps {
@@ -46,7 +47,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
           }}
           transition={{ duration: 0.2 }}
           className={`
-            w-6 h-6 rounded-lg border-2 flex items-center justify-center
+            w-6 h-6 rounded-card border-2 flex items-center justify-center
             transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : 'group-hover:border-gold'}
           `}
         >
@@ -54,7 +55,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
             <motion.svg
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="w-4 h-4 text-white"
+              className="w-4 h-4 text-content"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -64,7 +65,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
           )}
         </motion.div>
       </div>
-      <span className={`text-base font-medium ${checked ? 'text-navy-900' : 'text-gray-700'}`}>
+      <span className={`text-base font-medium ${checked ? 'text-navy-900' : 'text-content-secondary'}`}>
         {label}
       </span>
     </motion.label>
@@ -108,7 +109,7 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="w-full"
     >
-      <div className="bg-beige-50 rounded-2xl p-6 border-2 border-beige-100">
+      <div className="bg-beige-50 rounded-card p-6 border-2 border-beige-100">
         {label && (
           <label className="block text-lg font-semibold text-navy-900 mb-4">
             {label}
@@ -135,9 +136,11 @@ const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
           <motion.p
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 text-sm text-red-500"
+            className="field-error"
+            role="alert"
           >
-            {error}
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <span>{error}</span>
           </motion.p>
         )}
       </div>

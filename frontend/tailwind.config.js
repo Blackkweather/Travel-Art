@@ -3,6 +3,7 @@ module.exports = {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -19,19 +20,38 @@ module.exports = {
           800: '#243b53',
           900: '#0B1F3F',
         },
+        // Sampled from the compass rose in the brand wordmark (#B99851).
+        // This token was previously teal, which clashed with the gold logo it
+        // sat beside. Gold is the single accent for the whole site.
         gold: {
-          DEFAULT: '#14b8a6',
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
+          DEFAULT: '#B99851',
+          50: '#FBF8F1',
+          100: '#F4ECD9',
+          200: '#E8D8B4',
+          300: '#DAC189',
+          400: '#CAAC6C',
+          500: '#B99851',
+          600: '#9B7C3E',
+          700: '#7B6231',
+          800: '#5A4827',
+          900: '#3B301B',
         },
+        // Sand: the secondary-button fill and the quiet band tint. Warm, so it
+        // sits with the gold rather than against it.
+        sand: {
+          DEFAULT: '#E8DFD2',
+          50: '#FDFBF9',
+          100: '#F6EFE7',
+          200: '#E8DFD2',
+          300: '#D9CDBB',
+          400: '#C9BAA3',
+          500: '#B3A188',
+          600: '#8F806C',
+          700: '#6B6051',
+          800: '#484036',
+          900: '#24201B',
+        },
+        clay: '#BF2F17',
         cream: {
           DEFAULT: '#F9F8F3',
           50: '#F9F8F3',
@@ -45,11 +65,77 @@ module.exports = {
           800: '#4f4745',
           900: '#251c20',
         },
-        'off-black': '#111111'
+        'off-black': '#111111',
+
+        // Semantic surfaces and text, resolved from the CSS custom properties
+        // in index.css. Using these instead of bg-white / text-gray-900 is what
+        // lets a screen follow the theme: the .dark class swaps the underlying
+        // variables and every surface moves with it. Pages that hardcode grey
+        // scales are frozen in the light theme no matter what the toggle says.
+        // Expressed as channels with <alpha-value> so the opacity modifier
+        // works: bg-surface/95, text-content-inverse/70, border-line/40. Given
+        // a plain var() holding a hex string Tailwind cannot substitute an
+        // alpha, and it silently emits the colour at full opacity - which is
+        // how the navigation bar ended up fully transparent over dark bands.
+        // The --*-rgb twins are defined beside the hex tokens in index.css.
+        surface: {
+          DEFAULT: 'rgb(var(--surface-rgb) / <alpha-value>)',
+          raised: 'rgb(var(--surface-raised-rgb) / <alpha-value>)',
+          sunken: 'rgb(var(--surface-sunken-rgb) / <alpha-value>)',
+          warm: 'rgb(var(--surface-warm-rgb) / <alpha-value>)',
+          inverse: 'rgb(var(--surface-inverse-rgb) / <alpha-value>)',
+        },
+        content: {
+          DEFAULT: 'rgb(var(--text-primary-rgb) / <alpha-value>)',
+          secondary: 'rgb(var(--text-secondary-rgb) / <alpha-value>)',
+          inverse: 'rgb(var(--text-on-inverse-rgb) / <alpha-value>)',
+        },
+        line: {
+          DEFAULT: 'rgb(var(--border-subtle-rgb) / <alpha-value>)',
+          strong: 'rgb(var(--border-strong-rgb) / <alpha-value>)',
+        },
       },
+      // Newsreader for display, Inter for UI - the pairing the reference site
+      // uses. Newsreader is a low-contrast text serif, which is the reason it
+      // replaces Cormorant Garamond here: Cormorant is a display Garamond that
+      // goes thin and grey below ~1.25rem, so it could only ever carry h1-h3
+      // and left every card title and table heading on the sans. Newsreader
+      // holds its colour down to subheading sizes, so the serif can run
+      // further into the page and the brand voice reaches more of the product.
+      // Both self-hosted through fontsource - no render-blocking Google Fonts
+      // request.
       fontFamily: {
-        'serif': ['Playfair Display', 'serif'],
-        'sans': ['Inter', 'sans-serif'],
+        'serif': ['"Newsreader Variable"', 'Newsreader', 'Georgia', 'serif'],
+        'sans': ['"Inter Variable"', 'Inter', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        // The shape system, and the only radii allowed on this site.
+        //
+        // 3px, matching the reference. Near-sharp keeps the editorial, printed
+        // feel - photography and type both meet the grid at hard edges - while
+        // the single pixel over the previous 2px takes the hard mechanical
+        // edge off controls the user actually touches. `control` was once
+        // 999px, which put pill buttons against square photography and read as
+        // consumer-app chrome.
+        //
+        // Circles and capsules keep Tailwind's own `rounded-full`, which stays
+        // correct for the things that are actually round: avatars, status dots,
+        // spinners, progress tracks and status chips. Those are objects, not
+        // controls, so they are outside this scale by design.
+        'card': '3px',
+        'control': '3px',
+      },
+      maxWidth: {
+        // 1280 rather than 1400. The reference holds its content to 1185px and
+        // that restraint is most of why it reads as editorial: a 1400px measure
+        // stretches a three-card row wide enough that the eye stops reading it
+        // as a row. 1280 keeps large screens generous without losing the
+        // column.
+        'shell': '1280px',
+        'prose': '65ch',
+      },
+      transitionTimingFunction: {
+        'entrance': 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       spacing: {
         '18': '4.5rem',
@@ -105,13 +191,16 @@ module.exports = {
           '50%': { transform: 'translateY(-25px) translateX(-5px)' },
           '75%': { transform: 'translateY(-10px) translateX(3px)' },
         },
+        // rgba(20, 184, 166) is teal - left over from the palette that shipped
+        // before gold became the single accent. An animation named goldGlow
+        // was pulsing teal against a navy-and-gold page.
         goldGlow: {
-          '0%, 100%': { boxShadow: '0 0 5px rgba(20, 184, 166, 0.3)' },
-          '50%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.6), 0 0 30px rgba(20, 184, 166, 0.4)' },
+          '0%, 100%': { boxShadow: '0 0 5px rgba(185, 152, 81, 0.3)' },
+          '50%': { boxShadow: '0 0 20px rgba(185, 152, 81, 0.6), 0 0 30px rgba(185, 152, 81, 0.4)' },
         },
         pulseGlow: {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.3)' },
-          '50%': { boxShadow: '0 0 30px rgba(20, 184, 166, 0.6)' },
+          '0%, 100%': { boxShadow: '0 0 20px rgba(185, 152, 81, 0.3)' },
+          '50%': { boxShadow: '0 0 30px rgba(185, 152, 81, 0.6)' },
         },
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
@@ -126,11 +215,18 @@ module.exports = {
           '100%': { transform: 'translateX(-100%)' },
         }
       },
+      // Resolved from the CSS custom properties in index.css so a shadow
+      // re-tints when the theme flips. These were four hardcoded pure-black
+      // values, and because Tailwind's utilities layer outranks the @layer
+      // components block where index.css defines the same four class names,
+      // these were the shadows that actually rendered - the navy-tinted,
+      // theme-aware ones in index.css never applied to anything. Pure black
+      // shadows on a navy surface are what made cards look muddy.
       boxShadow: {
-        'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'medium': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'large': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        'luxury': '0 25px 50px -12px rgba(11, 31, 63, 0.25)',
+        'soft': 'var(--shadow-soft)',
+        'medium': 'var(--shadow-medium)',
+        'large': 'var(--shadow-large)',
+        'luxury': 'var(--shadow-luxury)',
       }
     },
   },
