@@ -250,6 +250,13 @@ async function grantMembership(
       data: { status: 'ACTIVE', startsAt, endsAt },
     });
 
+    // Moving between plans (50 € to 100 €, or back): the plan just paid for
+    // replaces the one held, instead of both staying active side by side.
+    await tx.membership.updateMany({
+      where: { artistId: membership.artistId, status: 'ACTIVE', id: { not: membershipId } },
+      data: { status: 'CANCELLED' },
+    });
+
     await tx.artist.update({
       where: { id: membership.artistId },
       data: { membershipStatus: 'ACTIVE', membershipRenewal: endsAt },

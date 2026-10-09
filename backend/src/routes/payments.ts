@@ -189,6 +189,16 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
     throw new CustomError('Artist not found or access denied', 404);
   }
 
+  // Paying again for the plan already held would only buy a second, parallel year.
+  const current = await prisma.membership.findFirst({
+    where: { artistId: artist.id, status: 'ACTIVE' },
+    orderBy: { createdAt: 'desc' },
+    select: { tier: true },
+  });
+  if (current?.tier === membershipType) {
+    throw new CustomError('Vous avez déjà cette formule.', 409, { code: 'ALREADY_ON_PLAN' });
+  }
+
   if (!isStripeConfigured() || !stripe) {
     console.warn(
       `Blocked membership purchase: ${stripeUnavailableReason()} (artist ${artistId}, tier ${membershipType})`

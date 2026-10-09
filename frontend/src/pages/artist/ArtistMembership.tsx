@@ -107,9 +107,16 @@ const ArtistMembership: React.FC = () => {
     
     try {
       setProcessing(true)
-      await paymentsApi.membership(artistId, membershipType, 'CARD')
-      showToast(t('Adhésion mise à jour'))
-      await fetchArtistProfile() // Refresh profile after purchase
+      // The API opens a Stripe Checkout page; the plan changes only once
+      // Stripe confirms the payment. This used to drop the link and say
+      // "Adhésion mise à jour", so nobody ever reached the payment step.
+      const res = await paymentsApi.membership(artistId, membershipType, 'CARD')
+      const checkoutUrl = res.data?.data?.checkoutUrl
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl
+        return
+      }
+      showToast(t('Le paiement n’a pas pu démarrer.'))
     } catch (e: any) {
       console.error('Membership purchase error:', e)
       // The server explains *why* it refused (for example that payment
