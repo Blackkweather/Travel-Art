@@ -113,6 +113,7 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
     // is the only place the credits are actually granted.
     client_reference_id: payment.id,
     metadata: {
+      app: 'travel-art',
       paymentId: payment.id,
       hotelId: hotel.id,
       packageId: selectedPackage.id,
@@ -237,6 +238,7 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
     client_reference_id: payment.id,
     // Echoed back on the webhook, which is the only place the tier is granted.
     metadata: {
+      app: 'travel-art',
       paymentId: payment.id,
       membershipId: membership.id,
       artistId: artist.id,

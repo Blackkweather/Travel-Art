@@ -176,7 +176,7 @@ router.post('/:id/fee/checkout', authenticate, authorize('HOTEL'), asyncHandler(
     mode: 'payment',
     client_reference_id: payment.id,
     // Echoed back on the webhook, the only place the fee is marked paid.
-    metadata: { paymentId: payment.id, claimId: claim.id },
+    metadata: { app: 'travel-art', paymentId: payment.id, claimId: claim.id },
     line_items: [
       {
         quantity: 1,

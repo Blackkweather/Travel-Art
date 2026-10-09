@@ -54,6 +54,18 @@ router.post('/', async (req: Request, res: Response) => {
     return res.status(400).json({ received: false, error: 'Invalid signature' });
   }
 
+  /* The Stripe account is shared with another application, whose checkouts
+     arrive here too. Ours carry metadata.app = 'travel-art' (sessions opened
+     before that tag carry one of our own ids); anything else is someone
+     else's payment, acknowledged so Stripe stops retrying, and left alone. */
+  if (event.type === 'checkout.session.completed') {
+    const meta = (event.data.object as Stripe.Checkout.Session).metadata ?? {};
+    const ours = meta.app === 'travel-art' || Boolean(meta.paymentId && (meta.packageId || meta.membershipId || meta.claimId));
+    if (!ours) {
+      return res.status(200).json({ received: true, ignored: 'not a Travel Art checkout' });
+    }
+  }
+
   // Ignore event types this handler does not act on, before recording
   // anything. The configured endpoint subscribes to the full Stripe event
   // catalogue, so claiming every delivery would fill webhook_events with
