@@ -37,7 +37,7 @@ const STEPS = [
     lede: t('Les hôtels invitent les artistes pour un concert sur les toits, un set intimiste ou un événement particulier. Les artistes reçoivent l’hébergement et une scène dans un cadre d’exception.'),
     points: [
       t('Demande de dates en quelques clics'),
-      t('Adhésion annuelle pour les artistes'),
+      t('Convention signée en ligne'),
       t('Réservation sécurisée'),
       t('Conditions d’annulation souples'),
     ],
@@ -66,7 +66,7 @@ const STEPS = [
     title: t('Grandir et rayonner'),
     lede: t('Les artistes accumulent des nuits d’hébergement et étoffent leur portfolio. Les hôtels enrichissent l’expérience de leurs clients. Les deux élargissent leur réseau.'),
     points: [
-      t('Artistes : hébergement offert pendant la résidence'),
+      t('Artistes : un séjour pour deux pendant la résidence'),
       t('Hôtels : une expérience client singulière'),
       t('Programme de parrainage'),
       t('Points de fidélité'),
@@ -81,7 +81,7 @@ const HowItWorksPage: React.FC = () => {
     <div className="min-h-screen bg-[var(--surface)]">
       <SEOHead
         title={t('Le principe du programme — Travel Art')}
-        description={t('Comment fonctionne une résidence Travel Art : candidature, sélection, séjour tout compris et représentation.')}
+        description={t('Comment fonctionne une résidence Travel Art : candidature, sélection, convention, séjour pour deux et prestation.')}
       />
       <SimpleNavbar overMedia />
       <main id="contenu">

@@ -29,7 +29,7 @@ const STEPS = [
   {
     title: t('La résidence a lieu'),
     body: t(
-      'Voyage, hébergement et repas sont réglés avant l’arrivée. L’artiste garde ses honoraires et ses œuvres.'
+      'Une convention tripartite fixe le séjour, la prestation et le transport avant le départ. L’artiste garde ses droits sur ses œuvres.'
     ),
   },
 ]

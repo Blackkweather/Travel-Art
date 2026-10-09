@@ -16,6 +16,7 @@ import { prisma } from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { CONSENT, LEGAL_VERSION, clientIp, hashIp } from '../config/legal';
+import { removeStoredFile, storageKeyFromUrl } from '../services/storage';
 
 const router = Router();
 
@@ -49,21 +50,26 @@ router.get('/export', authenticate, asyncHandler(async (req: AuthRequest, res) =
       },
       artist: {
         select: {
-          id: true, stageName: true, birthDate: true, phone: true, bio: true,
-          discipline: true, priceRange: true, membershipStatus: true,
-          membershipRenewal: true, images: true, videos: true, mediaUrls: true,
-          profilePicture: true, artisticProfile: true, referralCode: true,
+          id: true, stageName: true, birthDate: true, bio: true,
+          discipline: true, mainCategory: true, secondaryCategory: true, categoryType: true,
+          specificCategory: true, tributeTo: true, audienceTypes: true, languages: true,
+          otherLanguages: true, priceRange: true, membershipStatus: true,
+          membershipRenewal: true, profilePicture: true, referralCode: true,
           loyaltyPoints: true, createdAt: true,
+          media: { select: { kind: true, provider: true, url: true, createdAt: true } },
           availability: { select: { dateFrom: true, dateTo: true } },
         },
       },
       hotel: {
         select: {
-          id: true, name: true, description: true, location: true,
-          contactPhone: true, images: true, profilePicture: true,
-          performanceSpots: true, rooms: true, repName: true,
+          id: true, name: true, description: true, city: true, country: true, address: true,
+          hotelType: true, roomCount: true, website: true, instagramUrl: true, facebookUrl: true,
+          youtubeUrl: true, contactPhone: true, profilePicture: true, repName: true,
           responsibleName: true, responsibleEmail: true, responsiblePhone: true,
           createdAt: true,
+          media: { select: { kind: true, provider: true, url: true, createdAt: true } },
+          spaces: { select: { name: true, type: true, setting: true, capacity: true, description: true, hours: true, noiseLevel: true } },
+          programme: true,
           availabilities: { select: { dateFrom: true, dateTo: true } },
         },
       },
@@ -84,9 +90,11 @@ router.get('/export', authenticate, asyncHandler(async (req: AuthRequest, res) =
     ? await prisma.booking.findMany({
         where: bookingWhere,
         select: {
-          id: true, startDate: true, endDate: true, status: true,
-          numberOfWeeks: true, creditCost: true, totalPaymentAmount: true,
-          paymentStatus: true, notes: true, createdAt: true,
+          id: true, startDate: true, endDate: true, status: true, creditCost: true, notes: true,
+          companionName: true, boardType: true, transportTerms: true, transportNotes: true,
+          performanceDescription: true, performanceSchedule: true, stayValueCents: true,
+          performanceValueCents: true, currency: true, cancelledAt: true, cancellationReason: true,
+          createdAt: true,
         },
         orderBy: { createdAt: 'asc' },
       })
@@ -153,7 +161,11 @@ router.delete('/account', authenticate, asyncHandler(async (req: AuthRequest, re
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: { artist: true, hotel: true },
+    select: {
+      passwordHash: true,
+      artist: { select: { id: true, profilePicture: true } },
+      hotel: { select: { id: true, profilePicture: true } },
+    },
   });
   if (!user) throw new CustomError('User not found', 404);
 
@@ -179,15 +191,25 @@ router.delete('/account', authenticate, asyncHandler(async (req: AuthRequest, re
      is the worst of both. */
   const erasure: Prisma.PrismaPromise<unknown>[] = [];
 
+  // Files we stored for this person, removed from storage once the rows are gone.
+  const ownerWhere = user.artist ? { artistId: user.artist.id } : user.hotel ? { hotelId: user.hotel.id } : null;
+  const storedFiles = ownerWhere
+    ? await prisma.media.findMany({
+        where: { ...ownerWhere, provider: 'UPLOAD', storageKey: { not: null } },
+        select: { url: true, storageKey: true },
+      })
+    : [];
+  const picture = user.artist?.profilePicture ?? user.hotel?.profilePicture ?? null;
+
   if (user.artist) {
     erasure.push(
       prisma.artistAvailability.deleteMany({ where: { artistId: user.artist.id } }),
+      prisma.media.deleteMany({ where: { artistId: user.artist.id } }),
       prisma.artist.update({
         where: { id: user.artist.id },
         data: {
-          stageName: null, birthDate: null, phone: null, bio: null,
-          images: null, videos: null, mediaUrls: null, profilePicture: null,
-          artisticProfile: null, membershipStatus: 'INACTIVE',
+          stageName: null, stageNameKey: null, birthDate: null, bio: null, profilePicture: null,
+          tributeTo: null, otherLanguages: null, discipline: '', membershipStatus: 'INACTIVE',
         },
       })
     );
@@ -195,11 +217,15 @@ router.delete('/account', authenticate, asyncHandler(async (req: AuthRequest, re
 
   if (user.hotel) {
     erasure.push(
+      prisma.media.deleteMany({ where: { hotelId: user.hotel.id } }),
+      prisma.hotelSpace.deleteMany({ where: { hotelId: user.hotel.id } }),
+      prisma.hotelProgramme.deleteMany({ where: { hotelId: user.hotel.id } }),
       prisma.hotel.update({
         where: { id: user.hotel.id },
         data: {
-          description: null, contactPhone: null, images: null,
-          profilePicture: null, repName: null, responsibleName: null,
+          name: 'Hôtel supprimé', nameKey: null, description: null, address: null,
+          website: null, instagramUrl: null, facebookUrl: null, youtubeUrl: null,
+          contactPhone: null, profilePicture: null, repName: null, responsibleName: null,
           responsibleEmail: null, responsiblePhone: null,
         },
       })
@@ -216,6 +242,7 @@ router.delete('/account', authenticate, asyncHandler(async (req: AuthRequest, re
         email: tombstone,
         name: 'Compte supprimé',
         phone: null,
+        phoneE164: null,
         country: null,
         passwordHash: deadPassword,
         isActive: false,
@@ -226,6 +253,10 @@ router.delete('/account', authenticate, asyncHandler(async (req: AuthRequest, re
   );
 
   await prisma.$transaction(erasure);
+
+  for (const file of storedFiles) await removeStoredFile(file.url, file.storageKey!);
+  const pictureKey = picture ? storageKeyFromUrl(picture) : null;
+  if (picture && pictureKey) await removeStoredFile(picture, pictureKey);
 
   res.json({
     success: true,

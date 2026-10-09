@@ -11,7 +11,6 @@ import { z } from 'zod';
 import { prisma } from '../db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
-import { parseJsonField } from '../utils/parseJsonField';
 
 const router = Router();
 
@@ -54,7 +53,7 @@ router.get(
           type: n.type,
           read: n.read,
           createdAt: n.createdAt,
-          payload: parseJsonField<Record<string, unknown>>(n.payload, {}),
+          payload: (n.payload ?? {}) as Record<string, unknown>,
         })),
       },
     });

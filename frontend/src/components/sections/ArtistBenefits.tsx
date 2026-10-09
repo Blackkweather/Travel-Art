@@ -10,21 +10,21 @@ import { t } from '@/i18n'
  * were not being sold with the same care.
  *
  * Every figure here is what the product actually charges: the tiers are the
- * ones /api/payments/membership bills, and the fee and travel terms are the
- * ones stated on the landing page and in the booking flow.
+ * ones /api/payments/membership bills, and the stay and travel terms are the
+ * ones the tripartite agreement sets out.
  */
 
 const TERMS = [
   {
-    title: t('Vos honoraires, entiers'),
+    title: t('Un séjour pour deux'),
     body: t(
-      'Travel Art ne prélève aucune commission sur ce que l’hôtel vous verse. Ce qui est convenu est ce que vous touchez.'
+      'Votre prestation s’échange contre un séjour à l’hôtel, pour vous et la personne de votre choix. Travel Art ne prélève rien côté artiste.'
     ),
   },
   {
-    title: t('Vous n’avancez rien'),
+    title: t('Votre billet protégé'),
     body: t(
-      'Voyage, hébergement et repas sont réglés par l’hôtel avant votre arrivée. C’est ce qui rend une date à l’autre bout du monde possible.'
+      'Le transport se décide avant le départ. Si l’hôtel annule après la signature de la convention, il vous rembourse les billets engagés.'
     ),
   },
   {
@@ -66,7 +66,7 @@ export default function ArtistBenefits() {
             {t('Rejoindre le programme')}
           </Link>
           <p className="text-sm text-content-secondary">
-            {t('Adhésion annuelle à partir de 50 € — aucune commission sur vos cachets.')}
+            {t('Candidature lue à la main, réponse sous trois semaines.')}
           </p>
         </div>
       </div>

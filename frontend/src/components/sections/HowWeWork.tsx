@@ -6,8 +6,9 @@ import { t } from '@/i18n'
  * The about page listed four values as words - Exigence, Clarté,
  * Accompagnement - which every company on earth also lists. This is the same
  * position stated as commitments that can be checked against the product:
- * applications really are read by hand, the artist side really is
- * commission-free, and the travel really is settled before arrival.
+ * applications really are read by hand, each residency has someone to call,
+ * and the travel really is settled before arrival. Nothing about money: the
+ * owner's rule for every page read before sign-up.
  */
 
 const COMMITMENTS = [
@@ -18,15 +19,15 @@ const COMMITMENTS = [
     ),
   },
   {
-    title: t('Nous ne prenons rien sur le travail des artistes'),
+    title: t('Nous accompagnons chaque résidence'),
     body: t(
-      'Notre revenu vient des crédits achetés par les hôtels et d’une adhésion annuelle. Pas des cachets. Un artiste qui joue mieux ne nous rapporte pas davantage, et c’est voulu.'
+      'Un interlocuteur des deux côtés, de la première proposition au dernier soir. Quand une question se pose sur place, quelqu’un répond — y compris un dimanche.'
     ),
   },
   {
     title: t('Nous réglons la logistique avant, pas après'),
     body: t(
-      'Voyage, hébergement et repas sont engagés avant l’arrivée de l’artiste. Personne ne doit avancer trois semaines de frais pour une date.'
+      'Dates, séjour, prestation et transport sont écrits dans une convention signée avant le départ. Personne ne découvre une condition en arrivant.'
     ),
   },
   {

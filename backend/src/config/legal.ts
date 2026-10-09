@@ -37,11 +37,13 @@ export function hashIp(ip: string | undefined): string | null {
     .slice(0, 32);
 }
 
-/** The address Express saw, honouring the proxy chain when one is trusted. */
-export function clientIp(req: { ip?: string; headers: Record<string, unknown> }): string | undefined {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0].trim();
-  }
+/**
+ * The address Express resolved, which already honours `trust proxy`.
+ *
+ * This used to read the first X-Forwarded-For entry itself. That entry is
+ * whatever the client chose to send - only the hops added by our own proxy are
+ * trustworthy - so the recorded address was forgeable.
+ */
+export function clientIp(req: { ip?: string; headers?: Record<string, unknown> }): string | undefined {
   return req.ip;
 }

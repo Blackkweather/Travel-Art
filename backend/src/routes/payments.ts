@@ -260,75 +260,54 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
   });
 }));
 
-// Get transactions for a user
+/**
+ * Payment history for the signed-in account, from the payments Stripe
+ * actually processed. (This read a transactions table that only ever held the
+ * fixed 200 EUR/week booking "fees", which the exchange model never charges.)
+ * The shape matches what the credits and membership screens already read.
+ */
 router.get('/transactions', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const { limit = '50', page = '1' } = req.query;
-  const limitNum = parseInt(limit as string);
-  const pageNum = parseInt(page as string);
-  const skip = (pageNum - 1) * limitNum;
+  const page = Math.max(parseInt(String(req.query.page ?? '1'), 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? '50'), 10) || 50, 1), 100);
+  const where = req.user!.role === 'ADMIN' ? {} : { actorUserId: req.user!.id };
 
-  const where: any = {};
-
-  // Filter by user role
-  if (req.user!.role === 'HOTEL') {
-    const hotel = await prisma.hotel.findUnique({
-      where: { userId: req.user!.id }
-    });
-    if (hotel) {
-      where.hotelId = hotel.id;
-    }
-  } else if (req.user!.role === 'ARTIST') {
-    const artist = await prisma.artist.findUnique({
-      where: { userId: req.user!.id }
-    });
-    if (artist) {
-      where.artistId = artist.id;
-    }
-  }
-
-  const [transactions, total] = await Promise.all([
-    prisma.transaction.findMany({
+  const [rows, total, sum] = await Promise.all([
+    prisma.payment.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      skip,
-      take: limitNum,
-      include: {
-        hotel: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        },
-        artist: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
-      }
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true, amountCents: true, currency: true, status: true, createdAt: true,
+        creditPackage: { select: { name: true, credits: true, bonusCredits: true } },
+        membership: { select: { tier: true } },
+        claimId: true,
+      },
     }),
-    prisma.transaction.count({ where })
+    prisma.payment.count({ where }),
+    prisma.payment.aggregate({ where: { ...where, status: 'SUCCEEDED' }, _sum: { amountCents: true } }),
   ]);
+
+  const transactions = rows.map((p) => ({
+    id: p.id,
+    type: p.membership ? 'MEMBERSHIP' : p.claimId ? 'CANCELLATION_FEE' : p.status === 'REFUNDED' ? 'REFUND' : 'CREDIT_PURCHASE',
+    amount: p.amountCents / 100,
+    currency: p.currency,
+    status: p.status === 'SUCCEEDED' ? 'COMPLETED' : p.status,
+    description: p.creditPackage
+      ? `${p.creditPackage.name} (${p.creditPackage.credits + p.creditPackage.bonusCredits} crédits)`
+      : p.membership ? `Adhésion ${p.membership.tier}` : p.claimId ? 'Frais de dossier (annulation après signature)' : null,
+    createdAt: p.createdAt,
+  }));
 
   res.json({
     success: true,
     data: {
       transactions,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum)
-      },
-      totalRevenue: await prisma.transaction.aggregate({
-        where,
-        _sum: { amount: true }
-      }).then(result => result._sum.amount || 0)
-    }
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      totalRevenue: (sum._sum.amountCents ?? 0) / 100,
+    },
   });
 }));
 
 export { router as paymentRoutes };
-

@@ -62,6 +62,20 @@ function describe(n: Notification): string {
       return t('{who} ne retient pas ces dates', { who }) + (when ? ` · ${when}` : '')
     case 'BOOKING_CANCELLED':
       return t('{who} annule la résidence', { who }) + (when ? ` · ${when}` : '')
+    case 'CONVENTION_TO_SIGN':
+      return t('Convention à signer avec {who}', { who }) + (when ? ` · ${when}` : '')
+    case 'CONVENTION_SIGNED':
+      return t('La convention avec {who} est signée', { who })
+    case 'CANCELLATION_FEE_DUE':
+      return t('Frais d’annulation à régler : résidence de {who}', { who })
+    case 'TRANSPORT_CLAIM_OPEN':
+      return t('{who} a annulé : demandez le remboursement de votre transport', { who })
+    case 'TRANSPORT_CLAIM_SUBMITTED':
+      return t('{who} demande le remboursement de son transport', { who })
+    case 'TRANSPORT_CLAIM_SETTLED':
+      return t('Votre demande de remboursement a été traitée')
+    case 'VIDEO_VERIFIED':
+      return t('Une de vos vidéos est vérifiée')
     case 'RATING_REQUESTED':
       return t('Comment s’est passée la résidence de {who} ?', { who })
     case 'RATING_RECEIVED':

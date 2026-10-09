@@ -6,7 +6,6 @@ import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 import toast from 'react-hot-toast'
-import { parseJsonField } from '@/utils/apiPayload'
 import { formatShortDate } from '@/utils/i18n'
 import ExportButtons from '@/components/ExportButtons'
 
@@ -25,7 +24,8 @@ interface UserData {
   }
   hotel?: {
     name: string
-    location: string
+    city?: string
+    country?: string
   }
 }
 
@@ -230,10 +230,7 @@ const AdminUsers: React.FC = () => {
                       <div className="text-sm">
                         <div className="text-content font-medium">{user.hotel.name}</div>
                         <div className="text-content-secondary text-xs mt-1">
-                          {(() => {
-                            const loc = parseJsonField<any>(user.hotel.location, null)
-                            return loc ? `${loc.city}, ${loc.country}` : user.hotel.location
-                          })()}
+                          {[user.hotel.city, user.hotel.country].filter(Boolean).join(', ')}
                         </div>
                       </div>
                     )}

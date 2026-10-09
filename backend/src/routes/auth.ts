@@ -1,643 +1,441 @@
-import { Router } from 'express';
-import { createHash } from 'crypto';
+import { Router, Request } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { CONSENT, LEGAL_VERSION, clientIp, hashIp } from '../config/legal';
 import { config } from '../config';
-import {
-  verificationEmail,
-  passwordResetEmail,
-  newRegistrationAdminAlert,
-} from '../services/email';
+import { verificationEmail, passwordResetEmail, newRegistrationAdminAlert } from '../services/email';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
-import { getUserByEmail, createUser, initializeDatabase } from '../simple-db';
-// Imported statically. These three call sites each used `await import('../db')`,
-// which the serverless bundler does not trace, so on Vercel the import threw and
-// the surrounding catch reported "Database connection error" — registration,
-// referral attribution and /auth/me all failed against a perfectly healthy
-// database.
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { generateUniqueReferralCode } from '../utils/referralCode';
+import { tokens, passwordFingerprint } from '../services/tokens';
+import { domainAcceptsMail } from '../services/emailDomain';
+import { verifyCaptcha } from '../services/captcha';
+import { conflictFromUniqueError, findIdentityConflicts, hotelKey } from '../services/identity';
+import { sessionUserSelect } from '../views/user';
+import {
+  ArtistRegistration,
+  HotelRegistration,
+  artistRegistrationSchema,
+  checkEmail,
+  hotelRegistrationSchema,
+  loginEmailSchema,
+  nameKey,
+  normalizePhone,
+  passwordSchema,
+} from '../shared/validation';
+import { disciplineLabel } from '../shared/categories';
+import { parseVideoUrl } from '../shared/media';
+import { missingVideos, newVerificationCode } from '../services/videoVerification';
 
 const router = Router();
 
-// Short, non-reversible marker of a password hash, used to make reset tokens
-// single-use without adding a table.
-const passwordFingerprint = (passwordHash: string): string =>
-  createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
+// Compared against when the address is unknown, so "no such account" takes
+// as long as "wrong password". Built on first use, at the same cost factor as
+// real hashes, rather than at start-up where it would slow every cold start.
+let dummyHash: Promise<string> | undefined;
+const getDummyHash = () => (dummyHash ??= bcrypt.hash(`unused-${Date.now()}`, 12));
+
+const verifyLinkFor = (user: { id: string; email: string }) =>
+  `${config.frontendUrl}/verify-email?token=${tokens.emailVerification.sign(user)}`;
 
 /**
- * One password policy, enforced everywhere a password is set.
- *
- * There were three. The registration form demanded a lower-case letter, an
- * upper-case letter, a digit and a special character and said so in its
- * placeholder; the register endpoint asked only for a letter and a digit; and
- * reset-password asked for nothing beyond eight characters of anything. So the
- * rule the product tells people is the rule could be sidestepped entirely by
- * registering against the API directly, or - far more easily - by signing up
- * and immediately resetting to `12345678`.
- *
- * A policy that only the form enforces is not a policy. This is the client's
- * stated rule, which is the strictest of the three and the one users have
- * already been promised, applied on the server where it cannot be skipped.
+ * The domain must exist and accept mail. Kept out of the shared schema
+ * because it needs the network; everything else about the address was already
+ * decided there.
  */
-const passwordPolicy = z
-  .string()
-  .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
-  .max(128, 'Le mot de passe ne peut pas dépasser 128 caractères')
-  .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
-  .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
-  .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre')
-  .regex(
-    /[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/?]/,
-    'Le mot de passe doit contenir au moins un caractère spécial'
-  );
+async function assertMailableDomain(email: string) {
+  const domain = email.split('@')[1];
+  if (domain && !(await domainAcceptsMail(domain))) {
+    throw new CustomError('Ce domaine n’accepte pas d’e-mails. Vérifiez votre adresse.', 400, {
+      fields: { email: 'Ce domaine n’accepte pas d’e-mails. Vérifiez votre adresse.' },
+    });
+  }
+}
 
-// Validation schemas
-const registerSchema = z.object({
-  role: z.enum(['ARTIST', 'HOTEL']),
-  name: z.string().min(2).max(100),
-  email: z.string().email(),
-  password: passwordPolicy,
-  phone: z.string().optional(),
-  /* Acceptance is a condition of creating the account, not a preference, so
-     only the literal `true` satisfies it: a missing field, a string, or an
-     unticked box are all refusals and all fail closed. A registration form
-     that collects this and an API that does not enforce it is the same as not
-     collecting it - the contract has to be formed on the server. */
-  acceptTerms: z.literal(true, {
-    errorMap: () => ({
-      message: 'Vous devez accepter les conditions générales et la politique de confidentialité.',
-    }),
-  }),
-  // The product is French; the form has no language picker, so every account
-  // was being stamped 'en' and the admin export reported it for all of them.
-  locale: z.string().optional().default('fr'),
-  referralCode: z.string().optional(), // Accept referral code during registration
-  // Artist-specific fields
-  stageName: z.string().optional(),
-  birthDate: z.string().optional(),
-  country: z.string().optional(),
-  artisticProfile: z.object({
-    mainCategory: z.string().optional(),
-    secondaryCategory: z.string().optional(),
-    audienceType: z.array(z.string()).optional(),
-    languages: z.array(z.string()).optional(),
-    categoryType: z.string().optional(),
-    specificCategory: z.string().optional(),
-    domain: z.string().optional()
-  }).optional(),
-  // Hotel-specific fields. The seven-step form used to register, then POST the
-  // profile to an authenticated endpoint - which stopped working the moment
-  // registration stopped returning a session: the account was created and
-  // every answer after step 1 was dropped, with an error shown to someone whose
-  // account had in fact been made. The answers now arrive with the
-  // registration and are written in the same request.
-  hotelProfile: z.object({
-    description: z.string().optional(),
-    city: z.string().optional(),
-    performanceSpots: z.string().optional(),
-    rooms: z.string().optional(),
-    repName: z.string().optional(),
-  }).optional()
-});
+/** Parse with the right schema for the role, so errors name the right fields. */
+function parseRegistration(body: any): ArtistRegistration | HotelRegistration {
+  if (body?.role === 'HOTEL') return hotelRegistrationSchema.parse(body);
+  if (body?.role === 'ARTIST') return artistRegistrationSchema.parse(body);
+  throw new CustomError('Choisissez un type de compte.', 400, { fields: { role: 'Choisissez un type de compte.' } });
+}
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string()
-});
+function mediaRow(url: string, position: number) {
+  const video = parseVideoUrl(url);
+  return video
+    ? { kind: 'VIDEO' as const, provider: video.provider, url: video.url, externalId: video.externalId, position }
+    : { kind: 'IMAGE' as const, provider: 'LINK' as const, url, position };
+}
 
-// Register new user
-router.post('/register', asyncHandler(async (req, res) => {
+// ---------------------------------------------------------------- register
+
+router.post('/register', asyncHandler(async (req: Request, res) => {
+  const data = parseRegistration(req.body);
+
+  if (!(await verifyCaptcha(data.captchaToken, req.ip))) {
+    throw new CustomError('La vérification anti-robot a échoué. Rechargez la page et réessayez.', 400, {
+      code: 'CAPTCHA_FAILED',
+    });
+  }
+
+  await assertMailableDomain(data.email);
+
+  const phoneE164 = normalizePhone(data.phone, data.country)!;
+  const isArtist = data.role === 'ARTIST';
+  const artist = isArtist ? (data as ArtistRegistration) : null;
+  const hotel = !isArtist ? (data as HotelRegistration) : null;
+
+  const conflicts = await findIdentityConflicts({
+    email: data.email,
+    phoneE164,
+    stageName: artist?.stageName,
+    hotelName: hotel?.name,
+    hotelCity: hotel?.city,
+  });
+  if (Object.keys(conflicts).length > 0) {
+    throw new CustomError(Object.values(conflicts)[0], 409, { fields: conflicts, code: 'IDENTITY_TAKEN' });
+  }
+
+  // The videos must exist and be visible. A provider that does not answer is
+  // given the benefit of the doubt; the review looks at them anyway.
+  const signupVideos = artist ? artist.videoUrls.map((u) => parseVideoUrl(u)!) : [];
+  if (signupVideos.length) {
+    const missing = await missingVideos(signupVideos);
+    if (missing.length) {
+      const fields = Object.fromEntries(missing.map((i) => [`videoUrls.${i}`, 'Vidéo introuvable ou privée : vérifiez le lien et sa visibilité.']));
+      throw new CustomError('Une de vos vidéos est introuvable ou privée.', 400, { fields });
+    }
+  }
+
+  // A code that does not belong to an admitted artist is ignored, not an
+  // error: the person did nothing wrong by following an old link.
+  const inviter = data.referralCode
+    ? await prismaAdmin.artist.findFirst({
+        where: { referralCode: data.referralCode.trim().toUpperCase(), user: { approvalStatus: 'APPROVED', isActive: true } },
+        select: { userId: true },
+      })
+    : null;
+
+  const passwordHash = await bcrypt.hash(data.password, 12);
+  const displayName = artist ? `${artist.firstName} ${artist.lastName}` : hotel!.name;
+  const referralCode = artist ? await generateUniqueReferralCode(artist.stageName) : undefined;
+  const now = new Date();
+  const ipHash = hashIp(clientIp(req as never));
+  const userAgent = String(req.headers['user-agent'] || '').slice(0, 255) || null;
+
+  /* One transaction: the account, its profile, its consent and its referral
+     either all exist or none do. Profile creation used to be best-effort,
+     which left accounts with no artist or hotel row that every screen then
+     failed on. */
+  let user: { id: string; email: string; name: string; role: string };
   try {
-    const { role, name, email, password, phone, locale, country, hotelProfile } = registerSchema.parse(req.body);
-
-    // Ensure database is initialized
-    await initializeDatabase();
-
-    // Normalize email to lowercase for case-insensitive check
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    // Check if user already exists with error handling
-    let existingUser;
-    try {
-      // Check with normalized email (case-insensitive)
-      existingUser = await prisma.user.findFirst({
-        where: {
-          email: {
-            equals: normalizedEmail,
-            mode: 'insensitive'
-          }
-        }
+    user = await prismaAdmin.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: data.email,
+          name: displayName,
+          passwordHash,
+          role: data.role,
+          language: data.locale,
+          phone: data.phone.trim(),
+          phoneE164,
+          country: data.country,
+          acceptedTermsAt: now,
+          acceptedTermsVersion: LEGAL_VERSION,
+        },
+        select: { id: true, email: true, name: true, role: true },
       });
-    } catch (dbError: any) {
-      console.error('Database error during registration check:', dbError);
-      throw new CustomError('Database connection error. Please try again later.', 500);
-    }
 
-    if (existingUser) {
-      throw new CustomError('An account with this email address already exists. Please use a different email or try logging in.', 400);
-    }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    // Create user with error handling
-    // Use normalized email (lowercase) for storage
-    let user;
-    try {
-      user = await createUser({
-        email: normalizedEmail,
-        name,
-        passwordHash,
-        role: role as 'ARTIST' | 'HOTEL',
-        language: locale || 'fr',
-        phone: phone || null,
-        country: country || null,
-      });
-    } catch (dbError: any) {
-      console.error('Database error during user creation:', dbError);
-      throw new CustomError('Failed to create account. Please try again later.', 500);
-    }
-
-    /* Stamp the acceptance and write it to the ledger in the same breath as
-       the account. Two rows rather than one: the terms and the privacy policy
-       are separate documents and a person can be asked to re-accept one
-       without the other. Best-effort - a consent that fails to record must not
-       roll back an account that was created, but it is logged loudly, because
-       an account with no provable consent is a gap someone has to close. */
-    try {
-      const consentedAt = new Date();
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { acceptedTermsAt: consentedAt, acceptedTermsVersion: LEGAL_VERSION },
-      });
-      await prisma.consentRecord.createMany({
+      await tx.consentRecord.createMany({
         data: [CONSENT.TERMS, CONSENT.PRIVACY].map((kind) => ({
-          userId: user.id,
+          userId: created.id,
           kind,
           version: LEGAL_VERSION,
           granted: true,
-          ipHash: hashIp(clientIp(req as never)),
-          userAgent: String(req.headers['user-agent'] || '').slice(0, 255) || null,
+          ipHash,
+          userAgent,
         })),
       });
-    } catch (consentError) {
-      console.error('CONSENT NOT RECORDED for user', user.id, consentError);
-    }
 
-    // Create Artist or Hotel profile based on role
-    let referralCodeToUse: string | undefined = undefined;
-    let inviterUserId: string | null = null;
-    
-    try {
-      // Handle referral code if provided
-      const referralCode = req.body.referralCode as string | undefined;
-      if (referralCode) {
-        // Find artist with this referral code
-        const referrerArtist = await prisma.artist.findFirst({
-          where: { referralCode: referralCode.toUpperCase() },
-          include: { user: true }
-        });
-        
-        if (referrerArtist) {
-          inviterUserId = referrerArtist.userId;
-          console.log(`📝 Referral code found: ${referralCode} (inviter: ${referrerArtist.user.name})`);
-        } else {
-          console.warn(`⚠️  Invalid referral code provided: ${referralCode}`);
-        }
-      }
-      
-      if (role === 'ARTIST') {
-        // Generate unique referral code for new artist
-        referralCodeToUse = await generateUniqueReferralCode(name);
-        
-        // Extract artisticProfile data if provided
-        const artisticProfile = req.body.artisticProfile;
-        const stageName = req.body.stageName || name;
-        const birthDate = req.body.birthDate;
-        
-        // Build discipline from artisticProfile if available
-        let discipline = '';
-        if (artisticProfile?.mainCategory) {
-          discipline = artisticProfile.mainCategory;
-          if (artisticProfile.specificCategory) {
-            discipline += ` - ${artisticProfile.specificCategory}`;
-          }
-        }
-        
-        const artist = await prisma.artist.create({
+      if (artist) {
+        await tx.artist.create({
           data: {
-            userId: user.id,
-            stageName: stageName,
-            birthDate: birthDate || null,
-            phone: phone || null,
-            bio: '',
-            discipline: discipline || '',
-            priceRange: '',
-            membershipStatus: 'INACTIVE',
-            images: JSON.stringify([]),
-            videos: JSON.stringify([]),
-            mediaUrls: JSON.stringify([]),
-            profilePicture: null,
-            artisticProfile: artisticProfile ? JSON.stringify(artisticProfile) : null,
-            loyaltyPoints: 0,
-            referralCode: referralCodeToUse
-          }
+            userId: created.id,
+            stageName: artist.stageName,
+            stageNameKey: nameKey(artist.stageName),
+            birthDate: artist.birthDate,
+            referralCode: referralCode!,
+            mainCategory: artist.mainCategory,
+            categoryType: artist.categoryType,
+            specificCategory: artist.specificCategory || null,
+            tributeTo: artist.tributeTo,
+            secondaryCategory: artist.secondaryCategory,
+            discipline: disciplineLabel(artist),
+            audienceTypes: artist.audienceTypes,
+            languages: artist.languages,
+            otherLanguages: artist.otherLanguages,
+            verificationCode: newVerificationCode(),
+            media: {
+              create: signupVideos.map((video, position) => ({
+                kind: 'VIDEO' as const,
+                provider: video.provider,
+                url: video.url,
+                externalId: video.externalId,
+                position,
+              })),
+            },
+          },
         });
-        console.log(`✅ Artist profile created for: ${user.email} with referral code: ${referralCodeToUse}`);
-        
-        // Create referral record if referral code was used
-        if (inviterUserId) {
-          try {
-            await prisma.referral.create({
-              data: {
-                inviterUserId: inviterUserId,
-                inviteeUserId: user.id,
-                rewardPoints: 100 // Default reward points
-              }
-            });
-            
-            // Update inviter's loyalty points
-            await prisma.artist.update({
-              where: { userId: inviterUserId },
-              data: {
-                loyaltyPoints: {
-                  increment: 100
-                }
-              }
-            });
-            
-            // Set new user's loyalty points too
-            await prisma.artist.update({
-              where: { id: artist.id },
-              data: {
-                loyaltyPoints: 100
-              }
-            });
-            
-            console.log(`✅ Referral tracked: ${inviterUserId} referred ${user.id}`);
-          } catch (refError: any) {
-            console.error('Error creating referral record:', refError);
-            // Don't fail registration if referral tracking fails
-          }
-        }
-      } else if (role === 'HOTEL') {
-        await prisma.hotel.create({
+      } else if (hotel) {
+        await tx.hotel.create({
           data: {
-            userId: user.id,
-            name: name,
-            description: hotelProfile?.description || '',
-            // Coordinates stay absent rather than 0,0 - the form never asks for
-            // them, and 0,0 is a real place in the Atlantic that would put every
-            // new hotel on the map there.
-            location: JSON.stringify({
-              city: hotelProfile?.city || '',
-              country: country || '',
-            }),
-            contactPhone: phone || null,
-            repName: hotelProfile?.repName || null,
-            images: JSON.stringify([]),
-            performanceSpots: hotelProfile?.performanceSpots || JSON.stringify([]),
-            rooms: hotelProfile?.rooms || JSON.stringify([])
-          }
+            userId: created.id,
+            name: hotel.name,
+            nameKey: hotelKey(hotel.name, hotel.city),
+            description: hotel.description,
+            city: hotel.city,
+            country: hotel.country,
+            address: hotel.address,
+            hotelType: hotel.hotelType,
+            roomCount: hotel.roomCount,
+            website: hotel.website,
+            instagramUrl: hotel.instagramUrl,
+            facebookUrl: hotel.facebookUrl,
+            youtubeUrl: hotel.youtubeUrl,
+            contactPhone: data.phone.trim(),
+            repName: hotel.contactName,
+            responsibleName: hotel.contactName,
+            responsibleEmail: data.email,
+            responsiblePhone: data.phone.trim(),
+            programme: { create: hotel.programme ?? {} },
+            spaces: {
+              create: hotel.spaces.map((space, index) => ({
+                name: space.name,
+                type: space.type,
+                setting: space.setting,
+                capacity: space.capacity,
+                description: space.description,
+                hours: space.hours,
+                noiseLevel: space.noiseLevel,
+                position: index,
+                media: { create: space.media.map((url, i) => mediaRow(url, i)) },
+              })),
+            },
+          },
         });
-        console.log(`✅ Hotel profile created for: ${user.email}`);
       }
-    } catch (profileError: any) {
-      console.error('Error creating profile:', profileError);
-      // Don't fail registration if profile creation fails - user can create it later
-    }
 
-    // Fetch user again with profile included
-    const userWithProfile = await getUserByEmail(email);
-
-    // A confirmation link, valid for a day. It is bound to the user id and to
-    // this purpose, so it cannot be replayed against any other endpoint that
-    // accepts a signed token.
-    const verifyToken = (jwt.sign as any)(
-      { userId: user.id, type: 'email-verification' },
-      config.jwtSecret,
-      { expiresIn: '24h' }
-    );
-    const verifyLink = `${config.frontendUrl}/verify-email?token=${verifyToken}`;
-
-    // Deliberately not awaited, as the comment has always claimed: an account
-    // that exists with an unsent confirmation is recoverable, a registration
-    // the applicant was told had failed is not. Awaiting it put the mail
-    // round-trip inside the request, which is most of why registration took
-    // long enough for the browser to time out on it.
-    void verificationEmail(user.email, user.name, verifyLink).catch((err) => {
-      console.error('verification email failed for', user.email, err);
-    });
-
-    void newRegistrationAdminAlert({
-      name: user.name,
-      email: user.email,
-      role: user.role as 'ARTIST' | 'HOTEL',
-      country,
-    }).catch((err) => {
-      console.error('admin registration alert failed for', user.email, err);
-    });
-
-    // Deliberately no token. The account is PENDING until an administrator
-    // admits it, so issuing a session here would leave the client believing it
-    // is signed in while every authenticated call is refused.
-    res.status(201).json({
-      success: true,
-      data: {
-        user: {
-          id: userWithProfile!.id,
-          role: userWithProfile!.role,
-          name: userWithProfile!.name,
-          email: userWithProfile!.email,
-          approvalStatus: userWithProfile!.approvalStatus,
-          emailVerified: userWithProfile!.emailVerified
-        },
-        status: 'PENDING_REVIEW',
-        message:
-          'Votre demande a bien été enregistrée. Confirmez votre adresse e-mail, puis attendez la validation de votre compte par notre équipe.'
+      if (inviter) {
+        // Points are credited when this account is admitted (see admin.ts).
+        await tx.referral.create({ data: { inviterUserId: inviter.userId, inviteeUserId: created.id } });
       }
+
+      return created;
     });
-  } catch (error: any) {
-    // If it's already a CustomError, re-throw it
-    if (error instanceof CustomError) {
-      throw error;
-    }
-    // Handle Zod validation errors
-    if (error.name === 'ZodError') {
-      throw new CustomError('Invalid request data.', 400);
-    }
-    // Handle other errors
-    console.error('Registration error:', error);
-    throw new CustomError('Registration failed. Please try again later.', 500);
+  } catch (error) {
+    const fields = conflictFromUniqueError(error);
+    if (fields) throw new CustomError(Object.values(fields)[0], 409, { fields, code: 'IDENTITY_TAKEN' });
+    throw error;
   }
-}));
 
-// Login user
-router.post('/login', asyncHandler(async (req, res) => {
-  try {
-    const { email, password } = loginSchema.parse(req.body);
-
-    // Ensure database is initialized
-    await initializeDatabase();
-
-    // Find user with error handling for database issues
-    let user;
-    try {
-      user = await getUserByEmail(email);
-    } catch (dbError: any) {
-      console.error('Database error during login:', dbError);
-      throw new CustomError('Database connection error. Please try again later.', 500);
-    }
-
-    if (!user) {
-      throw new CustomError('Identifiants invalides.', 401);
-    }
-
-    // The password is verified before any account-state message is returned, so
-    // the endpoint cannot be used to enumerate which addresses are registered:
-    // without the correct password every branch below is unreachable.
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-    if (!isValidPassword) {
-      throw new CustomError('Identifiants invalides.', 401);
-    }
-
-    // Past this point the caller has proved they own the account, so telling
-    // them why they cannot get in reveals nothing to an attacker and saves an
-    // applicant from trying to "fix" a pending review with a password reset.
-    if (user.approvalStatus === 'PENDING') {
-      throw new CustomError(
-        'Votre demande d’inscription est en cours d’examen. Vous recevrez un e-mail dès qu’elle aura été traitée.',
-        403
-      );
-    }
-
-    if (user.approvalStatus === 'REJECTED') {
-      throw new CustomError(
-        user.approvalNote
-          ? `Votre demande d’inscription n’a pas été retenue. Motif : ${user.approvalNote}`
-          : 'Votre demande d’inscription n’a pas été retenue.',
-        403
-      );
-    }
-
-    if (!user.isActive) {
-      throw new CustomError(
-        user.approvalNote
-          ? `Ce compte a été suspendu. Motif : ${user.approvalNote}`
-          : 'Ce compte a été suspendu. Contactez l’administrateur du programme.',
-        403
-      );
-    }
-
-    // Generate JWT token
-    const token = (jwt.sign as any)(
-      { userId: user.id, role: user.role },
-      config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
-    );
-
-    res.json({
-      success: true,
-      data: {
-        user: {
-          id: user.id,
-          role: user.role,
-          name: user.name,
-          email: user.email,
-          artist: user.artist,
-          hotel: user.hotel
-        },
-        token
-      }
-    });
-  } catch (error: any) {
-    // If it's already a CustomError, re-throw it
-    if (error instanceof CustomError) {
-      throw error;
-    }
-    // Handle Zod validation errors
-    if (error.name === 'ZodError') {
-      throw new CustomError('Invalid request data.', 400);
-    }
-    // Handle other errors - never surface internal details to the client
-    console.error('Login error:', error);
-    throw new CustomError('Login failed. Please try again later.', 500);
-  }
-}));
-
-// Refresh token
-router.post('/refresh', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const token = (jwt.sign as any)(
-    { userId: req.user!.id, role: req.user!.role },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn }
+  // After the commit, and not awaited: an account with an unsent e-mail is
+  // recoverable (resend-verification), a registration reported as failed
+  // when it succeeded is not.
+  void verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
+    console.error('verification email failed for user', user.id, err)
   );
+  void newRegistrationAdminAlert({
+    name: user.name,
+    email: user.email,
+    role: user.role as 'ARTIST' | 'HOTEL',
+    country: data.country,
+  }).catch((err) => console.error('admin registration alert failed for user', user.id, err));
 
-  res.json({
+  // No session: the account cannot act until it is confirmed and admitted.
+  res.status(201).json({
     success: true,
-    data: { token }
+    data: {
+      user: { id: user.id, role: user.role, name: user.name, email: user.email, approvalStatus: 'PENDING', emailVerified: false },
+      status: 'PENDING_REVIEW',
+      message:
+        'Votre demande a bien été enregistrée. Confirmez votre adresse e-mail, puis attendez la validation de votre compte par notre équipe.',
+    },
   });
 }));
 
-// Get current user
-router.get('/me', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  await initializeDatabase();
-  const user = await getUserByEmail(req.user!.email);
-  
-  if (!user) {
-    throw new CustomError('User not found.', 404);
-  }
-
-  // getUserByEmail returns the whole row, passwordHash included, and this
-  // handler used to serialise it straight to the client — so every session
-  // handed the browser the bcrypt hash of its own password, ready to be taken
-  // offline and attacked at leisure.
-  //
-  // Naming the fields rather than deleting the one known to be secret: with a
-  // denylist, the next column added to User ships to the client by default.
-  // clerkId, sessionsValidFrom and reviewedById were reaching it that way.
-  const u = user as Record<string, unknown>;
-  const safeUser = {
-    id: u.id,
-    role: u.role,
-    email: u.email,
-    name: u.name,
-    phone: u.phone,
-    country: u.country,
-    language: u.language,
-    isActive: u.isActive,
-    createdAt: u.createdAt,
-    approvalStatus: u.approvalStatus,
-    approvalNote: u.approvalNote,
-    emailVerified: u.emailVerified,
-    artist: u.artist,
-    hotel: u.hotel,
-  };
-
-  res.json({
-    success: true,
-    data: { user: safeUser }
-  });
-}));
-
-// Forgot password - generate reset token
-const forgotPasswordSchema = z.object({
-  email: z.string().email()
-});
-
-router.post('/forgot-password', asyncHandler(async (req, res) => {
-  const { email } = forgotPasswordSchema.parse(req.body);
-
-  await initializeDatabase();
-  // Find user
-  const user = await getUserByEmail(email);
-
-  // Always return success for security (don't reveal if email exists)
-  if (user) {
-    // Generate reset token (JWT with short expiry). Binding the token to the
-    // current password hash makes it single-use: resetting the password
-    // changes the hash and invalidates any outstanding token.
-    const resetToken = jwt.sign(
-      { userId: user.id, type: 'password-reset', pwh: passwordFingerprint(user.passwordHash) },
-      config.jwtSecret,
-      { expiresIn: '1h' }
-    );
-
-    const resetLink = `${config.frontendUrl || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-
-    // In development, log the reset link to console and include it in response
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔐 Password Reset Token Generated:');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`Email: ${email}`);
-      console.log(`Reset Link: ${resetLink}`);
-      console.log(`Token: ${resetToken}`);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
-      return res.json({
-        success: true,
-        message: 'If an account exists with that email, you will receive reset instructions.',
-        // Include reset link in dev mode for testing
-        dev: {
-          resetLink,
-          token: resetToken,
-          note: 'This is only visible in development mode'
-        }
-      });
-    }
-
-    // The link is deliberately NOT logged - anyone with log access could use it
-    // to take over the account. A send failure is swallowed on purpose: the
-    // response is identical either way, so a caller cannot learn whether the
-    // address exists by watching for an error.
-    //
-    // Not awaited, for the same reason registration no longer awaits its
-    // confirmation mail: the round trip put the provider's latency inside the
-    // request, and a slow send became a failure reported for a reset that had
-    // actually been issued.
-    void passwordResetEmail(user.email, user.name, resetLink).catch((err) => {
-      console.error('password reset email failed for user', user.id, err);
-    });
-    console.log(`Password reset requested for user ${user.id}`);
-  }
-
-  res.json({
-    success: true,
-    message: 'If an account exists with that email, you will receive reset instructions.'
-  });
-}));
+// --------------------------------------------------------- availability check
 
 /**
- * End every session for the current user, including this one.
+ * Live feedback for the registration form: is this address usable, is this
+ * phone or name taken? Answers only for the fields sent, and only with the
+ * problems found - an empty `fields` means everything sent is fine.
  *
- * Sets the revocation cutoff to now, so every token issued up to this moment is
- * refused on its next request. The caller has to sign in again, which is the
- * point: this is what you press when a laptop goes missing.
+ * This does say whether an e-mail is registered. So does the register
+ * endpoint itself (it has to), so nothing new is disclosed; both sit behind a
+ * database-backed rate limit.
  */
-router.post('/logout-all', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  await prisma.user.update({
-    where: { id: req.user!.id },
-    data: { sessionsValidFrom: new Date() }
+const availabilitySchema = z.object({
+  email: z.string().max(254).optional(),
+  phone: z.string().max(40).optional(),
+  country: z.string().max(80).optional(),
+  stageName: z.string().max(60).optional(),
+  hotelName: z.string().max(120).optional(),
+  city: z.string().max(80).optional(),
+});
+
+router.post('/check-availability', asyncHandler(async (req, res) => {
+  const probe = availabilitySchema.parse(req.body);
+  const fields: Record<string, string> = {};
+  let suggestion: string | undefined;
+
+  let email: string | undefined;
+  if (probe.email) {
+    const verdict = checkEmail(probe.email);
+    if (!verdict.ok) {
+      fields.email = verdict.message!;
+      suggestion = verdict.suggestion;
+    } else if (!(await domainAcceptsMail(verdict.email.split('@')[1]))) {
+      fields.email = 'Ce domaine n’accepte pas d’e-mails. Vérifiez votre adresse.';
+    } else {
+      email = verdict.email;
+    }
+  }
+
+  let phoneE164: string | null = null;
+  if (probe.phone) {
+    phoneE164 = normalizePhone(probe.phone, probe.country);
+    if (!phoneE164) fields.phone = 'Numéro de téléphone invalide pour ce pays';
+  }
+
+  const conflicts = await findIdentityConflicts({
+    email,
+    phoneE164,
+    stageName: probe.stageName,
+    hotelName: probe.hotelName,
+    hotelCity: probe.city,
   });
+
+  res.json({ success: true, data: { fields: { ...conflicts, ...fields }, ...(suggestion ? { suggestion } : {}) } });
+}));
+
+// ------------------------------------------------------------------- login
+
+const loginSchema = z.object({
+  email: loginEmailSchema,
+  password: z.string({ required_error: 'Indiquez votre mot de passe' }).min(1, 'Indiquez votre mot de passe').max(128),
+});
+
+router.post('/login', asyncHandler(async (req, res) => {
+  const { email, password } = loginSchema.parse(req.body);
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      role: true,
+      passwordHash: true,
+      approvalStatus: true,
+      approvalNote: true,
+      isActive: true,
+      emailVerified: true,
+    },
+  });
+
+  // The password is checked before any account state is revealed, so this
+  // endpoint cannot be used to learn which addresses are registered.
+  const valid = await bcrypt.compare(password, user?.passwordHash ?? (await getDummyHash()));
+  if (!user || !valid) {
+    throw new CustomError('E-mail ou mot de passe incorrect.', 401, { code: 'BAD_CREDENTIALS' });
+  }
+
+  if (user.approvalStatus === 'PENDING') {
+    if (!user.emailVerified) {
+      throw new CustomError(
+        'Confirmez d’abord votre adresse e-mail : cliquez sur le lien que nous vous avons envoyé. Vous pouvez en demander un nouveau.',
+        403,
+        { code: 'EMAIL_NOT_VERIFIED' }
+      );
+    }
+    throw new CustomError(
+      'Votre demande d’inscription est en cours d’examen. Vous recevrez un e-mail dès qu’elle aura été traitée.',
+      403,
+      { code: 'PENDING_REVIEW' }
+    );
+  }
+
+  if (user.approvalStatus === 'REJECTED') {
+    throw new CustomError(
+      user.approvalNote
+        ? `Votre demande d’inscription n’a pas été retenue. Motif : ${user.approvalNote}`
+        : 'Votre demande d’inscription n’a pas été retenue.',
+      403,
+      { code: 'REJECTED' }
+    );
+  }
+
+  if (!user.isActive) {
+    throw new CustomError(
+      user.approvalNote
+        ? `Ce compte a été suspendu. Motif : ${user.approvalNote}`
+        : 'Ce compte a été suspendu. Contactez l’administrateur du programme.',
+      403,
+      { code: 'SUSPENDED' }
+    );
+  }
+
+  const profile = await prisma.user.findUnique({ where: { id: user.id }, select: sessionUserSelect });
 
   res.json({
     success: true,
-    message: 'Toutes vos sessions ont été fermées. Reconnectez-vous.'
+    data: { user: profile, token: tokens.session.sign(user) },
   });
 }));
 
-// Confirm an email address from the link sent at registration.
+// ---------------------------------------------------------- session upkeep
+
+router.post('/refresh', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+  res.json({ success: true, data: { token: tokens.session.sign(req.user!) } });
+}));
+
+router.get('/me', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id }, select: sessionUserSelect });
+  if (!user) throw new CustomError('Compte introuvable.', 404);
+  res.json({ success: true, data: { user } });
+}));
+
+/** End every session for the current user, including this one. */
+router.post('/logout-all', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+  await prisma.user.update({ where: { id: req.user!.id }, data: { sessionsValidFrom: new Date() } });
+  res.json({ success: true, message: 'Toutes vos sessions ont été fermées. Reconnectez-vous.' });
+}));
+
+// ------------------------------------------------------- email confirmation
+
 router.post('/verify-email', asyncHandler(async (req, res) => {
-  const { token } = z.object({ token: z.string() }).parse(req.body);
+  const { token } = z.object({ token: z.string().min(1).max(2048) }).parse(req.body);
 
-  let payload: any;
+  let payload;
   try {
-    payload = jwt.verify(token, config.jwtSecret);
+    payload = tokens.emailVerification.verify(token);
   } catch {
-    throw new CustomError('Ce lien de confirmation est invalide ou a expiré.', 400);
-  }
-
-  // A signed token is not enough - it has to be a token minted for this
-  // purpose, or a session token would also pass verification here.
-  if (payload?.type !== 'email-verification' || !payload?.userId) {
-    throw new CustomError('Ce lien de confirmation est invalide.', 400);
-  }
-
-  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
-  if (!user) {
-    throw new CustomError('Ce lien de confirmation est invalide.', 400);
-  }
-
-  // Idempotent: following the link twice is a normal thing for a person to do.
-  if (!user.emailVerified) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { emailVerified: true, emailVerifiedAt: new Date() }
+    throw new CustomError('Ce lien de confirmation est invalide ou a expiré. Demandez-en un nouveau.', 400, {
+      code: 'LINK_INVALID',
     });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { id: true, email: true, emailVerified: true, approvalStatus: true },
+  });
+  // A link for an address the account no longer uses confirms nothing.
+  if (!user || user.email !== payload.email) {
+    throw new CustomError('Ce lien de confirmation est invalide.', 400, { code: 'LINK_INVALID' });
+  }
+
+  // Idempotent: following the link twice is a normal thing to do.
+  if (!user.emailVerified) {
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true, emailVerifiedAt: new Date() } });
   }
 
   res.json({
@@ -648,71 +446,94 @@ router.post('/verify-email', asyncHandler(async (req, res) => {
       message:
         user.approvalStatus === 'APPROVED'
           ? 'Adresse confirmée. Vous pouvez vous connecter.'
-          : 'Adresse confirmée. Votre demande est en cours d’examen par notre équipe.'
-    }
+          : 'Adresse confirmée. Votre demande est en cours d’examen par notre équipe.',
+    },
   });
 }));
 
-// Reset password with token
-/* Reset used to accept eight characters of anything, which made it the
-   cheapest way around every rule above. */
-const resetPasswordSchema = z.object({
-  token: z.string(),
-  password: passwordPolicy
-});
+/** Same answer whether or not the address exists or is already confirmed. */
+router.post('/resend-verification', asyncHandler(async (req, res) => {
+  const { email } = z.object({ email: loginEmailSchema }).parse(req.body);
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, email: true, name: true, emailVerified: true },
+  });
+  if (user && !user.emailVerified) {
+    void verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
+      console.error('verification email resend failed for user', user.id, err)
+    );
+  }
+  res.json({
+    success: true,
+    message: 'Si un compte non confirmé existe pour cette adresse, un nouveau lien vient de lui être envoyé.',
+  });
+}));
+
+// ---------------------------------------------------------- password reset
+
+router.post('/forgot-password', asyncHandler(async (req, res) => {
+  const { email } = z.object({ email: loginEmailSchema }).parse(req.body);
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, email: true, name: true, passwordHash: true },
+  });
+
+  if (user) {
+    const link = `${config.frontendUrl}/reset-password?token=${tokens.passwordReset.sign(user)}`;
+    if (process.env.NODE_ENV === 'development') {
+      // Development only, and only to this machine's console.
+      console.log(`[dev] password reset link for ${user.email}: ${link}`);
+    }
+    // Not awaited and never surfaced: the response is identical either way,
+    // so it cannot reveal whether the address exists.
+    void passwordResetEmail(user.email, user.name, link).catch((err) =>
+      console.error('password reset email failed for user', user.id, err)
+    );
+  }
+
+  res.json({
+    success: true,
+    message: 'Si un compte existe pour cette adresse, vous allez recevoir un lien de réinitialisation.',
+  });
+}));
 
 router.post('/reset-password', asyncHandler(async (req, res) => {
-  const { token, password } = resetPasswordSchema.parse(req.body);
+  const { token, password } = z.object({ token: z.string().min(1).max(2048), password: passwordSchema }).parse(req.body);
 
+  let payload;
   try {
-    // Verify token
-    const decoded = jwt.verify(token, config.jwtSecret) as any;
-    
-    if (decoded.type !== 'password-reset') {
-      throw new CustomError('Invalid token type.', 400);
-    }
-
-    await initializeDatabase();
-    
-    // Find user by ID using Prisma
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId }
-    });
-    
-    if (!user) {
-      throw new CustomError('User not found.', 404);
-    }
-
-    // Reject tokens that were already used (the password has changed since the
-    // token was issued) or that predate this check.
-    if (decoded.pwh !== passwordFingerprint(user.passwordHash)) {
-      throw new CustomError('Invalid or expired token.', 400);
-    }
-
-    // Hash new password
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    // Update password using Prisma
-    await prisma.user.update({
-      where: { id: user.id },
-      // Resetting a password ends every session opened with the old one. The
-      // reset token was already single-use (it is bound to a fingerprint of the
-      // old hash), but tokens handed out *before* the reset stayed valid until
-      // they expired - so an attacker who had signed in kept their session
-      // through the victim's password change. This closes that.
-      data: { passwordHash, sessionsValidFrom: new Date() }
-    });
-
-    res.json({
-      success: true,
-      message: 'Password reset successfully.'
-    });
+    payload = tokens.passwordReset.verify(token);
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new CustomError('Invalid or expired token.', 400);
+      throw new CustomError('Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.', 400, { code: 'LINK_INVALID' });
     }
     throw error;
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { id: true, passwordHash: true, emailVerified: true },
+  });
+  // Single use: once the password changes, the fingerprint no longer matches.
+  if (!user || payload.pwh !== passwordFingerprint(user.passwordHash)) {
+    throw new CustomError('Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.', 400, { code: 'LINK_INVALID' });
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash: await bcrypt.hash(password, 12),
+      // Every session opened with the old password ends here.
+      sessionsValidFrom: new Date(),
+      // Following a link sent to the inbox proves the inbox.
+      ...(user.emailVerified ? {} : { emailVerified: true, emailVerifiedAt: new Date() }),
+    },
+  });
+
+  res.json({ success: true, message: 'Mot de passe modifié. Vous pouvez vous connecter.' });
 }));
 
 export { router as authRoutes };
+
+// Exported for the admin route, which re-sends a confirmation link.
+export { verifyLinkFor };

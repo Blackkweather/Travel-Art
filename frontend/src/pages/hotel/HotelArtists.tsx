@@ -3,10 +3,12 @@ import { motion } from 'framer-motion'
 import { Search, MapPin, Calendar, Heart } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { formatNumber } from '@/utils/i18n'
-import { bookingsApi, hotelsApi, artistsApi } from '@/utils/api'
+import { hotelsApi, artistsApi } from '@/utils/api'
+import BookingRequestModal from '@/components/BookingRequestModal'
 import { VerifiedBadge } from '@/components/VerifiedBadge'
 import { extractArray, parseJsonField } from '@/utils/apiPayload'
 import { t } from '@/i18n'
+import { countryLabel } from '@/i18n/countries'
 import SEOHead from '@/components/SEOHead'
 
 const PLACEHOLDER_IMAGE = '/images/placeholder-experience.webp'
@@ -35,6 +37,7 @@ interface ArtistCardData {
   rank?: string
   isFavorite: boolean
   notes?: string
+  creditCost?: number
 }
 
 const HotelArtists: React.FC = () => {
@@ -53,9 +56,7 @@ const HotelArtists: React.FC = () => {
   const [appliedWeek, setAppliedWeek] = useState<{ from: string; to: string }>({ from: '', to: '' })
   const [page, setPage] = useState(1)
   const [hotelId, setHotelId] = useState<string>('')
-  const [bookingModal, setBookingModal] = useState<{ open: boolean; artistId?: string; start?: string; end?: string }>({ open: false })
-  const [bookingError, setBookingError] = useState<string | null>(null)
-  const [processing, setProcessing] = useState(false)
+  const [bookingFor, setBookingFor] = useState<ArtistCardData | null>(null)
   const [artists, setArtists] = useState<ArtistCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,10 +105,9 @@ const HotelArtists: React.FC = () => {
 
   const transformArtist = useCallback((artist: any): ArtistCardData => {
     const imageList = parseJsonArray<string>(artist.images, [])
-    const specialtyList = parseJsonArray<string>(artist.mediaUrls, [])
     const season = readSeason(artist)
 
-    const location = artist.user?.country || artist.location || 'Worldwide'
+    const location = countryLabel(artist.user?.country) || t('Pays non renseigné')
 
     /* `nextAvailable` was the membership *renewal* date, rendered to the house
        as "Prochaine date". A house could read the day the artist's card is
@@ -117,19 +117,19 @@ const HotelArtists: React.FC = () => {
     const rating = typeof artist.averageRating === 'number' ? artist.averageRating : artist.rating ?? 0
     const totalBookings = typeof artist.totalBookings === 'number' ? artist.totalBookings : artist.bookingCount ?? 0
 
-    const specialties = specialtyList.length
-      ? specialtyList.slice(0, 4)
-      : [artist.discipline, artist.rank].filter(Boolean)
+    const specialties = [artist.specificCategory, artist.tributeTo && `Tribute ${artist.tributeTo}`, ...(artist.languages ?? [])]
+      .filter(Boolean)
+      .slice(0, 4)
 
     return {
       id: artist.id,
-      name: artist.user?.name || artist.name || 'Unknown Artist',
+      name: artist.stageName || artist.user?.name || artist.name || t('Artiste'),
       discipline: artist.discipline || 'Performer',
       location,
       rating,
       hotelRating: artist.hotelRating ?? null,
       specialties,
-      image: imageList[0] || PLACEHOLDER_IMAGE,
+      image: artist.profilePicture || imageList[0] || PLACEHOLDER_IMAGE,
       availability: season.badge,
       nextAvailable,
       seasonFrom: season.from,
@@ -139,7 +139,8 @@ const HotelArtists: React.FC = () => {
       loyaltyPoints: artist.loyaltyPoints,
       rank: artist.rank,
       isFavorite: Boolean(artist.isFavorite),
-      notes: artist.bio
+      notes: artist.bio,
+      creditCost: artist.bookingCreditCost
     }
   }, [readSeason, parseJsonArray])
 
@@ -157,7 +158,7 @@ const HotelArtists: React.FC = () => {
     (async () => {
       if (!user?.id) return
       try {
-        const res = await hotelsApi.getByUser(user.id)
+        const res = await hotelsApi.getMyProfile()
         setHotelId((res.data as any)?.data?.id || '')
       } catch {
         // ignore
@@ -248,7 +249,7 @@ const HotelArtists: React.FC = () => {
   useEffect(() => {
     fetchArtists()
   }, [fetchArtists])
-  
+
   const disciplines = useMemo(() => {
     const unique = new Set<string>()
     artists.forEach((artist) => {
@@ -283,12 +284,12 @@ const HotelArtists: React.FC = () => {
       const matchesLocation = selectedLocation === 'all' || artist.location === selectedLocation
 
       // Advanced filters
-      const matchesLoyalty = loyaltyTierFilter === 'all' || 
+      const matchesLoyalty = loyaltyTierFilter === 'all' ||
         (loyaltyTierFilter === 'high' && (artist.loyaltyPoints ?? 0) >= 100) ||
         (loyaltyTierFilter === 'medium' && (artist.loyaltyPoints ?? 0) >= 50 && (artist.loyaltyPoints ?? 0) < 100) ||
         (loyaltyTierFilter === 'low' && (artist.loyaltyPoints ?? 0) < 50)
 
-      const matchesAvailability = !availabilityWindow || 
+      const matchesAvailability = !availabilityWindow ||
         (availabilityWindow === 'available' && artist.availability === 'Available') ||
         (availabilityWindow === 'pending' && artist.availability === 'Pending')
 
@@ -333,7 +334,7 @@ const HotelArtists: React.FC = () => {
     if (!hotelId) return
 
     const wasFavorite = favoriteIdsRef.current.includes(artistId)
-    
+
     // Optimistic update
     setArtists((prev) =>
       prev.map((artist) =>
@@ -391,32 +392,7 @@ const HotelArtists: React.FC = () => {
   }
 
   const openBooking = (artistId: string) => {
-    const start = new Date()
-    start.setDate(start.getDate() + 7)
-    const end = new Date(start)
-    end.setDate(start.getDate() + 1)
-    setBookingModal({ open: true, artistId, start: start.toISOString().slice(0,10), end: end.toISOString().slice(0,10) })
-    setBookingError(null)
-  }
-
-  const createBooking = async () => {
-    if (!hotelId || !bookingModal.artistId || !bookingModal.start || !bookingModal.end) return
-    try {
-      setProcessing(true)
-      setBookingError(null)
-      await bookingsApi.create({
-        hotelId,
-        artistId: bookingModal.artistId,
-        startDate: new Date(bookingModal.start).toISOString(),
-        endDate: new Date(bookingModal.end).toISOString(),
-      })
-      setBookingModal({ open: false })
-      // Booking created successfully - receipt will be available after payment
-    } catch (e: any) {
-      setBookingError(e?.response?.data?.message || t('Impossible de créer la réservation'))
-    } finally {
-      setProcessing(false)
-    }
+    setBookingFor(artists.find((a) => a.id === artistId) ?? null)
   }
 
   /* Availability arrives from the API in English. It is a status, so it uses
@@ -574,7 +550,7 @@ const HotelArtists: React.FC = () => {
               />
             </div>
           </div>
-          
+
           <div>
             <label className="form-label">{t('Discipline')}</label>
             <select
@@ -589,7 +565,7 @@ const HotelArtists: React.FC = () => {
               ))}
             </select>
           </div>
-          
+
           <div>
             <label className="form-label">{t('Lieu')}</label>
             <select
@@ -605,7 +581,7 @@ const HotelArtists: React.FC = () => {
             </select>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between mt-6">
           <div className="flex items-center space-x-4">
             <span className="text-sm text-content-secondary whitespace-nowrap">{t('Trier par')}</span>
@@ -625,7 +601,7 @@ const HotelArtists: React.FC = () => {
               {showAdvancedFilters ? t('Masquer les filtres avancés') : t('Filtres avancés')}
             </button>
           </div>
-          
+
           <div className="text-sm text-content-secondary">
             {sortedArtists.length > PAGE_SIZE
               ? t('{shown} sur {count} artistes', {
@@ -712,7 +688,7 @@ const HotelArtists: React.FC = () => {
                 <span>{artist.rating}</span>
               </div>
             </div>
-            
+
                    <div className="p-6">
                      <div className="flex items-center space-x-2 mb-2">
                        <h3 className="text-xl font-serif font-semibold text-content">
@@ -727,7 +703,7 @@ const HotelArtists: React.FC = () => {
                 <MapPin className="w-4 h-4 mr-2" />
                 {artist.location}
               </p>
-              
+
               {artist.notes ? (
                 <p className="text-content-secondary text-sm mb-4">
                   {artist.notes}
@@ -758,25 +734,28 @@ const HotelArtists: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="text-center p-3 bg-surface rounded-card">
-                  <div className="text-sm font-medium text-content mb-1">{artist.rank || 'Standard'}</div>
-                  <p className="text-xs text-content-secondary">{t('Rang')}</p>
+              {/* What a hotel weighs before asking: reputation, track record, cost.
+                  The rank and loyalty points shown here before were the
+                  artist's own business and read "Standard" / 0 for everyone. */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="min-w-0 text-center p-2 bg-surface rounded-card">
+                  <div className="text-sm font-medium text-content mb-1">{artist.rating ? artist.rating.toFixed(1) : '—'}</div>
+                  <p className="truncate text-xs text-content-secondary">{t('Note')}</p>
                 </div>
-                <div className="text-center p-3 bg-surface rounded-card">
+                <div className="min-w-0 text-center p-2 bg-surface rounded-card">
                   <div className="flex items-center justify-center mb-1">
                     <Calendar className="w-4 h-4 text-gold mr-1" />
                     <span className="text-sm font-medium text-content">{artist.totalBookings}</span>
                   </div>
-                  <p className="text-xs text-content-secondary">{t('Réservations')}</p>
+                  <p className="truncate text-xs text-content-secondary">{t('Séjours')}</p>
                 </div>
-                <div className="text-center p-3 bg-surface rounded-card">
-                  <div className="text-sm font-medium text-content mb-1">{artist.loyaltyPoints ?? 0}</div>
-                  <p className="text-xs text-content-secondary">{t('Points')}</p>
+                <div className="min-w-0 text-center p-2 bg-surface rounded-card">
+                  <div className="text-sm font-medium text-content mb-1">{artist.creditCost ?? '—'}</div>
+                  <p className="truncate text-xs text-content-secondary">{t('Crédits')}</p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                 <span className={availabilityClass(artist.availability)}>
                   {availabilityLabel(artist.availability)}
                 </span>
@@ -789,11 +768,12 @@ const HotelArtists: React.FC = () => {
                 </span>
               </div>
 
-              <div className="flex space-x-2">
-                <a className="flex-1 btn-primary" href={`/artist/${artist.id}`}>
+              <div className="flex flex-wrap gap-2">
+                {/* Each wants about 8rem; in a narrow card they stack rather than clip. */}
+                <a className="btn-primary flex-[1_1_8.5rem]" href={`/artist/${artist.id}`}>
                   {t('Voir le profil')}
                 </a>
-                <button className="btn-secondary" onClick={() => openBooking(artist.id)} data-testid="book-button">
+                <button className="btn-secondary flex-[1_1_8.5rem]" onClick={() => openBooking(artist.id)} data-testid="book-button">
                   {t('Réserver')}
                 </button>
               </div>
@@ -839,41 +819,15 @@ const HotelArtists: React.FC = () => {
         </div>
       )}
 
-      {/* Booking Modal */}
-      {bookingModal.open && (
-        <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-          onClick={() => setBookingModal({ open: false })}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="booking-modal-title"
-            className="bg-surface-raised rounded-card shadow-soft p-6 w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 id="booking-modal-title" className="text-xl font-serif font-semibold text-content mb-4">{t('Demander une date')}</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="form-label">{t('Date de début')}</label>
-                <input type="date" name="startDate" className="form-input w-full" value={bookingModal.start || ''} onChange={(e)=>setBookingModal(m=>({...m,start:e.target.value}))} />
-              </div>
-              <div>
-                <label className="form-label">{t('Date de fin')}</label>
-                <input type="date" name="endDate" className="form-input w-full" value={bookingModal.end || ''} onChange={(e)=>setBookingModal(m=>({...m,end:e.target.value}))} />
-              </div>
-              <div>
-                <label className="form-label">{t('Notes (facultatif)')}</label>
-                <input type="text" name="notes" className="form-input w-full" placeholder={t('Demandes particulières ou remarques')} onChange={(e)=>setBookingModal(m=>({...m,notes:e.target.value}))} />
-              </div>
-              {bookingError && <div className="text-sm text-[var(--state-critical)]">{bookingError}</div>}
-              <div className="flex justify-end space-x-2 pt-2">
-                <button className="btn-secondary" onClick={()=>setBookingModal({open:false})}>{t('Annuler')}</button>
-                <button className="btn-primary" disabled={processing} onClick={createBooking}>{processing ? t('Envoi…') : t('Envoyer la demande')}</button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {bookingFor && hotelId && (
+        <BookingRequestModal
+          hotelId={hotelId}
+          artistId={bookingFor.id}
+          artistName={bookingFor.name}
+          creditCost={bookingFor.creditCost}
+          seasonFrom={bookingFor.seasonFrom}
+          onClose={() => setBookingFor(null)}
+        />
       )}
 
       {/* No Results */}

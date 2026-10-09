@@ -17,7 +17,10 @@ module.exports = {
   },
   // Refuses to run if DATABASE_URL is not a disposable database. See the file
   // for why: these suites delete every row in the tables they touch.
+  setupFiles: ['<rootDir>/jest.env.cjs'],
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+  // The suites share one database and truncate it between tests.
+  maxWorkers: 1,
   // These are integration suites: every one of them opens a connection to the
   // hosted Postgres instance in beforeAll and seeds fixtures. Jest's default
   // 5s hook timeout is shorter than a cold Neon connection, so all nine suites

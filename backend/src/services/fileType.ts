@@ -69,6 +69,16 @@ const SIGNATURES: Array<{
  * is simply not accepted.
  */
 
+/**
+ * A receipt or a ticket: an image, or a PDF. Only for proofs attached to a
+ * transport claim, which are read by the two parties and an admin, never
+ * shown inline on a public page.
+ */
+export function detectProofType(buffer: Buffer): DetectedType | null {
+  if (buffer.length > 5 && buffer.subarray(0, 5).toString('ascii') === '%PDF-') return { mime: 'application/pdf', ext: '.pdf' };
+  return detectImageType(buffer);
+}
+
 export function detectImageType(buffer: Buffer): DetectedType | null {
   for (const sig of SIGNATURES) {
     if (sig.test(buffer)) return { mime: sig.mime, ext: sig.ext };

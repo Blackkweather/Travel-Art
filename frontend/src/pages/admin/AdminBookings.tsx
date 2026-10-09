@@ -15,6 +15,8 @@ import { formatNumber, LOCALE } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
 import { parseJsonField } from '@/utils/apiPayload'
 import ExportButtons from '@/components/ExportButtons'
+import ConventionPanel from '@/components/convention/ConventionPanel'
+import type { Booking } from '@/types'
 
 interface BookingData {
   id: string
@@ -260,6 +262,7 @@ const AdminBookings: React.FC = () => {
                 </div>
               </div>
             </div>
+            <ConventionPanel booking={booking as unknown as Booking} viewer="ADMIN" />
           </div>
         ))}
       </div>

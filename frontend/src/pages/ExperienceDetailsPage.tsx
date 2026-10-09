@@ -18,36 +18,36 @@ import { t } from '@/i18n'
  *
  * The complaint about this page was that it described a teak terrace over the
  * Andaman Sea and stated not one condition, while the benchmark competitor wins
- * on published specifics alone. These six are the same on every residency in
- * the network - they are the programme's terms, not the property's - so they
- * are written here rather than read off the row, and a hotel comparing two
- * residencies finds the identical contract in both.
+ * on published specifics alone. The figures themselves (nights, hours, board,
+ * who pays travel) are set per residency in the tripartite agreement, so these
+ * six state the frame every agreement follows rather than numbers that would
+ * be wrong for half the network.
  *
  * Built inside the render rather than at module scope: t() reads the active
  * locale when it is called, and a const evaluated at import time would freeze
  * these in whatever language the first page load happened to use.
  */
 const programmeTerms = () => [
-  { term: t('Durée'), detail: t('7 nuits, du jour d’arrivée au jour de départ.') },
+  { term: t('Durée'), detail: t('Fixée avec l’hôtel et écrite dans la convention, du jour d’arrivée au jour de départ.') },
   {
-    term: t('Temps de scène'),
-    detail: t('12 heures sur la semaine, 2 heures par jour au maximum.')
+    term: t('La prestation'),
+    detail: t('Nature, horaires et durée convenus avant le départ. Rien ne s’ajoute sur place sans accord écrit.')
   },
   {
-    term: t('Jours sans scène'),
-    detail: t('Rien le jour de l’arrivée, rien le jour du départ.')
+    term: t('Contrepartie'),
+    detail: t('Le séjour pour deux, et une scène dans un cadre d’exception.')
   },
   {
     term: t('Accueil'),
-    detail: t('Chambre double pour l’artiste et un accompagnant, en pension complète.')
+    detail: t('Séjour pour l’artiste et un accompagnant, dans la chambre et la formule convenues.')
   },
   {
     term: t('La scène'),
-    detail: t('Mise à disposition par l’hôtel, montée et réglée avant les balances.')
+    detail: t('Lieu et matériel décrits dans la convention : ce que l’hôtel fournit, ce que vous apportez.')
   },
   {
     term: t('Voyage'),
-    detail: t('Le trajet jusqu’au lieu reste à la charge de l’artiste.')
+    detail: t('À votre charge, pris en charge par l’hôtel ou partagé, selon la convention. Remboursé si l’hôtel annule après signature.')
   }
 ]
 
@@ -171,10 +171,9 @@ const ExperienceDetailsPage: React.FC = () => {
           rating: trip.averageRating || trip.rating || 4.5,
           description: trip.description || t('Le détail de cette résidence sera publié prochainement.'),
           fullDescription: trip.description || t('Le détail de cette résidence sera publié prochainement.'),
-          // The programme's own terms, used when a row predates the seed that
-          // wrote them. The fallbacks used to read "2 hours" and "50 guests" -
-          // English, and both contradicting the published conditions.
-          duration: trip.duration || t('7 nuits'),
+          // Used when a row predates the seed that wrote them. The length is
+          // set per agreement, so the fallback says so rather than guessing.
+          duration: trip.duration || t('Durée à confirmer avec l’hôtel'),
           capacity: trip.capacity || t('Capacité à confirmer avec l’hôtel'),
           // No invented inclusions: the terms block below states the contract,
           // and a residency whose row is empty says nothing rather than

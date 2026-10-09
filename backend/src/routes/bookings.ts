@@ -1,7 +1,6 @@
 import { Router } from 'express';
-import { z } from 'zod';
 import { prisma, prismaAdmin } from '../db';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { config } from '../config';
 import { notify, bookingPayload } from '../services/notifications';
@@ -11,824 +10,407 @@ import {
   bookingConfirmedEmail,
   bookingRejectedEmail,
   bookingCancelledEmail,
+  bookingCancelledByArtistEmail,
+  conventionToSignEmail,
+  cancellationFeeDueEmail,
+  transportClaimInviteEmail,
+  adminAlertEmail,
 } from '../services/email';
+import { openCancellationClaim } from './claims';
+import { formatDay, formatMoney } from '../services/convention';
+import { bookingSelect, toBookingDTO } from '../views/booking';
+import { listableArtistWhere } from '../views/artist';
+import { bookingCreateSchema, bookingStatusUpdateSchema, ratingCreateSchema } from '../shared/validation';
+import { ACTIVE_BOOKING_STATUSES, BOOKING_STATUSES, RELEASES_CREDITS, canTransition, type Actor, type BookingStatusValue } from '../shared/status';
 
 const router = Router();
 
-// Validation schemas
-const createBookingSchema = z.object({
-  hotelId: z.string(),
-  artistId: z.string(),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-  notes: z.string().optional()
-});
+/** The caller's own artist or hotel id, which scopes everything they may see. */
+async function partyScope(user: { id: string; role: string }) {
+  if (user.role === 'ARTIST') {
+    const artist = await prisma.artist.findUnique({ where: { userId: user.id }, select: { id: true } });
+    return artist ? { artistId: artist.id } : null;
+  }
+  if (user.role === 'HOTEL') {
+    const hotel = await prisma.hotel.findUnique({ where: { userId: user.id }, select: { id: true } });
+    return hotel ? { hotelId: hotel.id } : null;
+  }
+  return {};
+}
 
-// Helper function to calculate weeks between dates
-const calculateWeeks = (startDate: Date, endDate: Date): number => {
-  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return Math.max(1, Math.ceil(diffDays / 7)); // Minimum 1 week
-};
+// -------------------------------------------------------------------- list
 
-const updateStatusSchema = z.object({
-  status: z.enum(['PENDING', 'CONFIRMED', 'REJECTED', 'COMPLETED', 'CANCELLED'])
-});
-
-const ratingSchema = z.object({
-  bookingId: z.string(),
-  hotelId: z.string(),
-  artistId: z.string(),
-  stars: z.number().min(1).max(5),
-  textReview: z.string().min(10).max(500),
-  isVisibleToArtist: z.boolean().optional().default(false)
-});
-
-// Get bookings (for artists and hotels)
 router.get('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  try {
-    const { artistId, hotelId, status, page = '1', limit = '50' } = req.query;
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum;
+  const page = Math.max(parseInt(String(req.query.page ?? '1'), 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? '50'), 10) || 50, 1), 100);
+  const role = req.user!.role;
 
-    const where: any = {};
-
-    // Filter by role - artists can only see their bookings, hotels can only see their bookings
-    if (req.user!.role === 'ARTIST') {
-      // Get artist ID from user
-      const artist = await prisma.artist.findUnique({
-        where: { userId: req.user!.id }
-      });
-      if (artist) {
-        where.artistId = artist.id;
-      } else {
-        // No artist profile, return empty
-        return res.json({
-          success: true,
-          data: {
-            bookings: [],
-            pagination: {
-              page: pageNum,
-              limit: limitNum,
-              total: 0,
-              pages: 0
-            }
-          }
-        });
-      }
-    } else if (req.user!.role === 'HOTEL') {
-      // Get hotel ID from user
-      const hotel = await prisma.hotel.findUnique({
-        where: { userId: req.user!.id }
-      });
-      if (hotel) {
-        where.hotelId = hotel.id;
-      } else {
-        // No hotel profile, return empty
-        return res.json({
-          success: true,
-          data: {
-            bookings: [],
-            pagination: {
-              page: pageNum,
-              limit: limitNum,
-              total: 0,
-              pages: 0
-            }
-          }
-        });
-      }
-    } else if (req.user!.role === 'ADMIN') {
-      // Admin can filter by artistId or hotelId if provided
-      if (artistId) {
-        where.artistId = artistId as string;
-      }
-      if (hotelId) {
-        where.hotelId = hotelId as string;
-      }
-    } else {
-      throw new CustomError('Unauthorized', 403);
-    }
-
-    // Filter by status if provided
-    if (status) {
-      where.status = status;
-    }
-
-    const [bookings, total] = await Promise.all([
-      /* `include` on artist and hotel pulled every column of both for every
-         booking - bio, images, videos, mediaUrls, artisticProfile,
-         performanceSpots, rooms, the lot - which is why sixteen bookings came
-         back as 34KB and the request took over seven seconds against a
-         database in us-east-1. These are the only fields the three booking
-         screens actually read. Named fields also mean a column added to
-         Artist or Hotel later cannot quietly start appearing in this
-         response: the other side of a booking is a different person. */
-      prisma.booking.findMany({
-        where,
-        select: {
-          id: true,
-          artistId: true,
-          hotelId: true,
-          startDate: true,
-          endDate: true,
-          status: true,
-          numberOfWeeks: true,
-          creditCost: true,
-          totalPaymentAmount: true,
-          paymentStatus: true,
-          notes: true,
-          createdAt: true,
-          artist: {
-            select: {
-              id: true,
-              stageName: true,
-              discipline: true,
-              phone: true,
-              profilePicture: true,
-              user: { select: { id: true, name: true, email: true } },
-            },
-          },
-          hotel: {
-            select: {
-              id: true,
-              name: true,
-              location: true,
-              profilePicture: true,
-              user: { select: { id: true, name: true, email: true } },
-            },
-          },
-        },
-        skip,
-        take: limitNum,
-        orderBy: { createdAt: 'desc' }
-      }).catch(() => []),
-      prisma.booking.count({ where }).catch(() => 0)
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        bookings,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total,
-          pages: Math.ceil(total / limitNum)
-        }
-      }
-    });
-  } catch (error: any) {
-    console.error('Error fetching bookings:', error);
-    throw new CustomError('Failed to fetch bookings', 500);
-  }
-}));
-
-// Get booking by ID
-router.get('/:id', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    include: {
-      artist: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      },
-      hotel: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      }
-    }
-  });
-
-  if (!booking) {
-    throw new CustomError('Booking not found', 404);
+  const scope = await partyScope(req.user!);
+  if (scope === null) {
+    return res.json({ success: true, data: { bookings: [], pagination: { page, limit, total: 0, pages: 0 } } });
   }
 
-  // Check authorization - artist can only see their bookings, hotel can only see their bookings
-  if (req.user!.role === 'ARTIST') {
-    const artist = await prisma.artist.findUnique({
-      where: { userId: req.user!.id }
-    });
-    if (!artist || booking.artistId !== artist.id) {
-      throw new CustomError('Unauthorized', 403);
-    }
-  } else if (req.user!.role === 'HOTEL') {
-    const hotel = await prisma.hotel.findUnique({
-      where: { userId: req.user!.id }
-    });
-    if (!hotel || booking.hotelId !== hotel.id) {
-      throw new CustomError('Unauthorized', 403);
-    }
-  } else if (req.user!.role !== 'ADMIN') {
-    throw new CustomError('Unauthorized', 403);
+  const where: any = { ...scope };
+  if (role === 'ADMIN') {
+    if (typeof req.query.artistId === 'string') where.artistId = req.query.artistId;
+    if (typeof req.query.hotelId === 'string') where.hotelId = req.query.hotelId;
   }
+  const status = String(req.query.status ?? '').toUpperCase();
+  if (status) {
+    if (!BOOKING_STATUSES.includes(status as BookingStatusValue)) throw new CustomError('Statut inconnu.', 400);
+    where.status = status;
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.booking.findMany({ where, select: bookingSelect, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: 'desc' } }),
+    prisma.booking.count({ where }),
+  ]);
 
   res.json({
     success: true,
-    data: booking
+    data: {
+      bookings: rows.map((row) => toBookingDTO(row, role)),
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    },
   });
 }));
 
-// Create booking (hotels only)
-router.post('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  if (req.user!.role !== 'HOTEL') {
-    throw new CustomError('Only hotels can create bookings', 403);
-  }
+router.get('/:id', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+  const scope = await partyScope(req.user!);
+  // Not found and not yours answer the same, so ids cannot be probed.
+  const row = scope ? await prisma.booking.findFirst({ where: { id: req.params.id, ...scope }, select: bookingSelect }) : null;
+  if (!row) throw new CustomError('Réservation introuvable.', 404);
+  res.json({ success: true, data: toBookingDTO(row, req.user!.role) });
+}));
 
-  const bookingData = createBookingSchema.parse(req.body);
+// ------------------------------------------------------------------ create
 
-  const start = new Date(bookingData.startDate);
-  const end = new Date(bookingData.endDate);
-  const now = new Date();
+router.post('/', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const input = bookingCreateSchema.parse(req.body);
+  const start = new Date(input.startDate);
+  const end = new Date(input.endDate);
 
-  // Validate date format
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw new CustomError('Invalid date format. Please use ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)', 400);
-  }
+  const hotel = await prisma.hotel.findUnique({ where: { userId: req.user!.id }, select: { id: true, name: true } });
+  if (!hotel) throw new CustomError('Profil hôtel introuvable.', 404);
+  if (input.hotelId !== hotel.id) throw new CustomError('Hôtel introuvable.', 404);
 
-  // Validate dates
-  if (start < now) {
-    throw new CustomError('Start date must be in the future', 400);
-  }
-
-  if (end <= start) {
-    throw new CustomError('End date must be after start date', 400);
-  }
-
-  // Check if booking duration is reasonable (max 52 weeks = 1 year)
-  const maxWeeks = 52;
-  const weeks = calculateWeeks(start, end);
-  if (weeks > maxWeeks) {
-    throw new CustomError(`Booking duration cannot exceed ${maxWeeks} weeks (1 year)`, 400);
-  }
-
-  // Verify hotel belongs to user
-  const hotel = await prisma.hotel.findUnique({
-    where: { userId: req.user!.id }
+  // Only an admitted, active artist can be booked.
+  const artist = await prisma.artist.findFirst({
+    where: { id: input.artistId, ...listableArtistWhere },
+    select: { id: true, bookingCreditCost: true },
   });
+  if (!artist) throw new CustomError('Artiste introuvable.', 404);
 
-  if (!hotel) {
-    throw new CustomError('Hotel profile not found', 404);
-  }
-
-  if (bookingData.hotelId !== hotel.id) {
-    throw new CustomError('Hotel ID mismatch', 400);
-  }
-
-  // Verify artist exists and check availability
-  const artist = await prisma.artist.findUnique({
-    where: { id: bookingData.artistId },
-    include: {
-      availability: {
-        where: {
-          dateFrom: { lte: end },
-          dateTo: { gte: start }
-        }
-      }
-    }
+  // The whole stay must sit inside a period the artist declared free.
+  const window = await prisma.artistAvailability.findFirst({
+    where: { artistId: artist.id, dateFrom: { lte: start }, dateTo: { gte: end } },
+    select: { id: true },
   });
-
-  if (!artist) {
-    throw new CustomError('Artist not found', 404);
+  if (!window) {
+    throw new CustomError('L’artiste n’est pas disponible sur toutes ces dates.', 400, {
+      fields: { startDate: 'L’artiste n’est pas disponible sur toutes ces dates.' },
+    });
   }
 
-  // Check if artist is available for the requested dates
-  if (!artist.availability || artist.availability.length === 0) {
-    throw new CustomError('Artist is not available for the selected dates', 400);
+  // Nor may it overlap another residency the artist already has or is asked
+  // for. Read across hotels on purpose: the clash is with someone else's
+  // booking, which this hotel cannot see. Only yes/no leaves this check.
+  const clash = await prismaAdmin.booking.findFirst({
+    where: {
+      artistId: artist.id,
+      status: { in: [...ACTIVE_BOOKING_STATUSES] },
+      startDate: { lt: end },
+      endDate: { gt: start },
+    },
+    select: { id: true },
+  });
+  if (clash) {
+    throw new CustomError('L’artiste a déjà une résidence sur ces dates.', 409, {
+      fields: { startDate: 'L’artiste a déjà une résidence sur ces dates.' },
+    });
   }
 
-  // Calculate weekly payment
-  const numberOfWeeks = calculateWeeks(start, end);
-  const weeklyPaymentAmount = 200.0; // Fixed weekly rate
-  const totalPaymentAmount = numberOfWeeks * weeklyPaymentAmount;
-
-  // What this booking costs in credits, read from the artist now and frozen
-  // onto the booking. Repricing the artist later must not rewrite the cost of
-  // bookings already made.
+  /* Claim the credits first, by compare-and-swap: the update matches only if
+     usedCredits is still what was just read, so concurrent requests cannot
+     both spend the same balance. (Credit is RLS-protected; a raw conditional
+     UPDATE would arrive without the caller's identity and be refused.) */
   const creditCost = artist.bookingCreditCost;
-
-  /* The credits are claimed here, atomically, before anything else exists.
-
-     This used to read the balance, compare it in JavaScript, and write the
-     spend in a separate transaction further down. Nothing held a lock across
-     that gap and a round trip to the database is ~300ms, so two requests in
-     flight at once both read the same balance and both passed the check.
-     Demonstrated against the running app: a house holding 60 credits, with
-     residencies costing 5, had twenty accepted at once - 100 credits spent
-     against a budget of 60, leaving usedCredits 40 higher than totalCredits.
-     Every one of those is a real commitment to an artist that nobody paid for.
-
-     A single conditional UPDATE closes it. The row is matched only if it can
-     still afford the cost, and the database applies that test and the
-     increment as one indivisible operation, so concurrent callers queue behind
-     each other on the row rather than racing past it. No lock to hold, no
-     isolation level to configure, and it is the same statement whether one
-     request arrives or fifty. */
-  let creditsClaimed = false;
-
+  let claimed = false;
   if (creditCost > 0) {
-    /* Compare-and-swap, because the read and the write have to be one
-       decision.
-
-       This used to read the balance, compare it in JavaScript, and write the
-       spend in a separate transaction further down. Nothing held a lock across
-       that gap and a round trip to the database is ~300ms, so requests in
-       flight together all read the same balance and all passed the check.
-       Demonstrated against the running app: a house holding 60 credits, with
-       residencies costing 5, had twenty accepted at once - 100 credits spent
-       against a budget of 60, leaving usedCredits 40 higher than totalCredits.
-       Every one of those was a real commitment to an artist nobody paid for.
-
-       The update below matches the row only if `usedCredits` is still exactly
-       what was just read, and sets it to the value derived from that same
-       read. A concurrent claim moves it, our WHERE stops matching, the update
-       touches nothing and we go round again with fresh numbers. One of the two
-       wins and the other re-checks affordability honestly.
-
-       Deliberately not a raw conditional UPDATE, which would be one statement
-       instead of two: Credit is an RLS-protected model and the extension that
-       stamps the caller's identity only wraps model operations, so raw SQL
-       arrives without it and the policy refuses the write. Measured - every
-       request came back "you have 60 credits" while holding 60. */
-    for (let attempt = 0; attempt < 5 && !creditsClaimed; attempt += 1) {
-      const account = await prisma.credit.findUnique({
-        where: { hotelId: hotel.id }
-      });
-
-      const availableCredits =
-        (account?.totalCredits ?? 0) - (account?.usedCredits ?? 0);
-
-      if (!account || availableCredits < creditCost) {
-        throw new CustomError(
-          `This booking costs ${creditCost} credits and you have ${availableCredits}. Please top up before booking.`,
-          400
-        );
+    for (let attempt = 0; attempt < 5 && !claimed; attempt += 1) {
+      const account = await prisma.credit.findUnique({ where: { hotelId: hotel.id } });
+      const available = (account?.totalCredits ?? 0) - (account?.usedCredits ?? 0);
+      if (!account || available < creditCost) {
+        throw new CustomError(`Cette résidence coûte ${creditCost} crédits et il vous en reste ${available}. Rechargez avant de réserver.`, 400, {
+          code: 'INSUFFICIENT_CREDITS',
+        });
       }
-
       const claim = await prisma.credit.updateMany({
         where: { hotelId: hotel.id, usedCredits: account.usedCredits },
-        data: { usedCredits: account.usedCredits + creditCost }
+        data: { usedCredits: account.usedCredits + creditCost },
       });
-
-      if (claim.count === 1) {
-        creditsClaimed = true;
-      }
+      claimed = claim.count === 1;
     }
-
-    if (!creditsClaimed) {
-      // Five losses in a row means genuine contention on this hotel, not a
-      // shortfall. Saying "no credits" here would be a lie.
-      throw new CustomError(
-        'Trop de réservations simultanées sur ce compte. Réessayez dans un instant.',
-        409
-      );
-    }
+    if (!claimed) throw new CustomError('Trop de réservations simultanées sur ce compte. Réessayez dans un instant.', 409);
   }
 
-  /* From here on the credits are already spent, so any failure has to give
-     them back - otherwise a house is charged for a residency that does not
-     exist. */
-  const releaseClaim = async () => {
-    if (!creditsClaimed) return;
-    await prisma.credit.update({
-      where: { hotelId: hotel.id },
-      data: { usedCredits: { decrement: creditCost } },
-    }).catch((error) => console.error('Credit claim not released for hotel', hotel.id, error));
-  };
-
-  // Create booking with weekly payment
-  let booking;
+  let row;
   try {
-    booking = await prisma.booking.create({
-    data: {
-      hotelId: bookingData.hotelId,
-      artistId: bookingData.artistId,
-      startDate: start,
-      endDate: end,
-      status: 'PENDING',
-      creditsUsed: 0, // Deprecated - kept for backward compatibility
-      creditCost,
-      weeklyPaymentAmount,
-      numberOfWeeks,
-      totalPaymentAmount,
-      paymentStatus: 'PENDING',
-      notes: bookingData.notes
-    },
-    include: {
-      artist: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
+    row = await prisma.booking.create({
+      data: {
+        hotelId: hotel.id,
+        artistId: artist.id,
+        startDate: start,
+        endDate: end,
+        status: 'PENDING',
+        creditCost,
+        notes: input.notes,
+        companionName: input.companionName,
+        boardType: input.boardType,
+        transportTerms: input.transportTerms,
+        transportNotes: input.transportNotes,
+        performanceDescription: input.performanceDescription,
+        performanceSchedule: input.performanceSchedule,
+        stayValueCents: input.stayValue,
+        performanceValueCents: input.performanceValue,
+        roomType: input.roomType,
+        includedServices: input.includedServices,
+        performanceLocation: input.performanceLocation,
+        performanceDuration: input.performanceDuration,
+        technicalConditions: input.technicalConditions,
+        socialContent: input.socialContent,
       },
-      hotel: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      }
-    }
-  });
+      select: bookingSelect,
+    });
   } catch (error) {
-    // The residency could not be written, so the credits go back.
-    await releaseClaim();
+    if (claimed) {
+      await prisma.credit
+        .update({ where: { hotelId: hotel.id }, data: { usedCredits: { decrement: creditCost } } })
+        .catch((e) => console.error('credit claim not released for hotel', hotel.id, e));
+    }
     throw error;
   }
 
-  /* The ledger entry that explains the claim made above. The running total is
-     deliberately NOT touched here: it was already moved by the conditional
-     UPDATE, and incrementing it again would charge the house twice for one
-     residency. The ledger is what answers a dispute, so it still has to be
-     written - if this fails the balance is right and the trail is missing,
-     which is recoverable; the reverse would not be. */
   if (creditCost > 0) {
-    await prisma.creditLedger.create({
-      data: {
-        hotelId: hotel.id,
-        delta: -creditCost,
-        reason: 'BOOKING_SPEND',
-        bookingId: booking.id,
-        note: `Booking ${booking.id}`
-      }
-    }).catch((error) => console.error('Ledger entry missing for booking', booking.id, error));
+    await prisma.creditLedger
+      .create({ data: { hotelId: hotel.id, delta: -creditCost, reason: 'BOOKING_SPEND', bookingId: row.id, note: `Booking ${row.id}` } })
+      .catch((e) => console.error('ledger entry missing for booking', row.id, e));
   }
 
-  // Create pending transaction for the booking payment
-  await prisma.transaction.create({
-      data: {
-      hotelId: hotel.id,
-      artistId: bookingData.artistId,
-      type: 'BOOKING_FEE',
-      amount: totalPaymentAmount,
-      status: 'PENDING'
-      }
-    });
-
-  /* Tell the artist. This is the notification the whole marketplace turns on:
-     before it existed a house could ask for a week and the artist would only
-     learn of it by opening the dashboard unprompted. Not awaited - a booking
-     that was made stays made even if the mail provider is down, and the row
-     in notifications is written on the same best-effort basis. */
-  const stay = formatStay(booking.startDate, booking.endDate);
+  // Not awaited: a booking that was made stays made if the mail provider is down.
   void notify({
-    userId: booking.artist.user.id,
+    userId: row.artist.user.id,
     type: 'BOOKING_REQUESTED',
-    payload: bookingPayload(booking),
+    payload: bookingPayload(row),
     email: () =>
       bookingRequestedEmail(
-        booking.artist.user.email,
-        booking.artist.stageName || booking.artist.user.name || 'Bonjour',
-        booking.hotel.name,
-        stay,
+        row.artist.user.email,
+        row.artist.stageName || row.artist.user.name || 'Bonjour',
+        row.hotel.name,
+        formatStay(row.startDate, row.endDate),
         `${config.frontendUrl}/dashboard/bookings`
       ),
   });
 
-  res.status(201).json({
-    success: true,
-    data: {
-      ...booking,
-      weeklyPaymentAmount,
-      numberOfWeeks,
-      totalPaymentAmount
-    }
-  });
+  res.status(201).json({ success: true, data: toBookingDTO(row, 'HOTEL') });
 }));
 
-// Update booking status
+// ------------------------------------------------------------ status change
+
 router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { status } = updateStatusSchema.parse(req.body);
+  const { status: to, reason } = bookingStatusUpdateSchema.parse(req.body);
+  const actor = req.user!.role as Actor;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    include: {
-      hotel: true,
-      artist: true
-    }
-  });
+  const scope = await partyScope(req.user!);
+  const booking = scope
+    ? await prisma.booking.findFirst({
+        where: { id: req.params.id, ...scope },
+        select: { id: true, status: true, hotelId: true, creditCost: true, conventionFinalizedAt: true, transportTerms: true },
+      })
+    : null;
+  if (!booking) throw new CustomError('Réservation introuvable.', 404);
 
-  if (!booking) {
-    throw new CustomError('Booking not found', 404);
-  }
-
-  // Check authorization
-  if (req.user!.role === 'ARTIST') {
-    const artist = await prisma.artist.findUnique({
-      where: { userId: req.user!.id }
-    });
-    if (!artist || booking.artistId !== artist.id) {
-      throw new CustomError('Unauthorized', 403);
-    }
-    // Artists can only confirm or reject
-    if (status !== 'CONFIRMED' && status !== 'REJECTED') {
-      throw new CustomError('Artists can only confirm or reject bookings', 400);
-    }
-  } else if (req.user!.role === 'HOTEL') {
-    const hotel = await prisma.hotel.findUnique({
-      where: { userId: req.user!.id }
-    });
-    if (!hotel || booking.hotelId !== hotel.id) {
-      throw new CustomError('Unauthorized', 403);
-    }
-    // Hotels can cancel
-    if (status !== 'CANCELLED') {
-      throw new CustomError('Hotels can only cancel bookings', 400);
-    }
-  } else if (req.user!.role !== 'ADMIN') {
-    throw new CustomError('Unauthorized', 403);
-  }
-
-  /* Whether this change also releases the money, decided before the write so
-     it can travel with it. It used to be a second UPDATE on the same row a
-     few lines below - another full round trip to a database in us-east-1, on
-     a request that already makes several and took 7-9 seconds end to end
-     against a 10 second client timeout. */
-  const releasesPayment =
-    (status === 'REJECTED' || status === 'CANCELLED') && booking.status === 'PENDING';
-
-  // Update booking
-  const updatedBooking = await prisma.booking.update({
-    where: { id },
-    data: releasesPayment ? { status, paymentStatus: 'REFUNDED' } : { status },
-    include: {
-      artist: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      },
-      hotel: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      }
-    }
-  });
-
-  // If booking is rejected or cancelled, return the credits it reserved.
-  if (releasesPayment) {
-    /* The refund runs on prismaAdmin, not the request-scoped client, and this
-       is the whole reason the reject path was broken.
-
-       The credits, credit_ledger and transactions tables are owned by the
-       hotel: RLS lets a hotel write its own rows and nobody else. But a refund
-       is triggered by whoever ends the booking - and when that is the ARTIST
-       rejecting a request, the request-scoped client carries the artist's
-       identity, which the hotel's credit policy refuses. The UPDATE matched
-       zero rows, Prisma threw, and the artist could never decline: the booking
-       stuck at PENDING with the hotel's credits held for ever.
-
-       This is a legitimate cross-boundary write - one party's action must move
-       another party's balance - which is exactly what prismaAdmin exists for.
-       Authorisation was already enforced above (role and ownership are checked
-       before we get here), so the elevated write is not a hole; it is the
-       refund the checks decided should happen. The hotel-cancel path worked by
-       luck, because there the actor and the balance owner were the same. */
-    if (booking.creditCost > 0) {
-      const alreadyRefunded = await prismaAdmin.creditLedger.findFirst({
-        where: { bookingId: booking.id, reason: 'BOOKING_REFUND' }
-      });
-
-      if (!alreadyRefunded) {
-        await prismaAdmin.$transaction([
-          prismaAdmin.creditLedger.create({
-            data: {
-              hotelId: booking.hotelId,
-              delta: booking.creditCost,
-              reason: 'BOOKING_REFUND',
-              bookingId: booking.id,
-              note: `Booking ${booking.id} ${status.toLowerCase()}`
-            }
-          }),
-          prismaAdmin.credit.update({
-            where: { hotelId: booking.hotelId },
-            data: { usedCredits: { decrement: booking.creditCost } }
-          })
-        ]);
-      }
-    }
-
-    // Create refund transaction if payment was already made
-    if (booking.paymentStatus === 'PAID') {
-      await prismaAdmin.transaction.create({
-        data: {
-          hotelId: booking.hotelId,
-          artistId: booking.artistId,
-          type: 'REFUND',
-          amount: -booking.totalPaymentAmount,
-          status: 'COMPLETED'
-        }
-      });
-    }
-  }
-
-  /* Tell whoever did not perform the action. An accepted residency that the
-     house never hears about is the same as no residency; a cancelled one that
-     the artist never hears about is worse, because they may be about to buy a
-     flight. Each is best-effort and never awaited, for the same reason as the
-     request notification above. */
-  const stay = formatStay(updatedBooking.startDate, updatedBooking.endDate);
-  const artistLabel =
-    updatedBooking.artist.stageName || updatedBooking.artist.user.name || 'L’artiste';
-  const hotelLabel = updatedBooking.hotel.name;
-  const payload = bookingPayload(updatedBooking);
-
-  if (status === 'CONFIRMED') {
-    void notify({
-      userId: updatedBooking.hotel.user.id,
-      type: 'BOOKING_CONFIRMED',
-      payload,
-      email: () =>
-        bookingConfirmedEmail(
-          updatedBooking.hotel.user.email,
-          hotelLabel,
-          artistLabel,
-          stay,
-          `${config.frontendUrl}/dashboard/bookings`
-        ),
-    });
-  } else if (status === 'REJECTED') {
-    void notify({
-      userId: updatedBooking.hotel.user.id,
-      type: 'BOOKING_REJECTED',
-      payload,
-      email: () =>
-        bookingRejectedEmail(
-          updatedBooking.hotel.user.email,
-          hotelLabel,
-          artistLabel,
-          stay,
-          `${config.frontendUrl}/dashboard/artists`
-        ),
-    });
-  } else if (status === 'CANCELLED') {
-    void notify({
-      userId: updatedBooking.artist.user.id,
-      type: 'BOOKING_CANCELLED',
-      payload,
-      email: () =>
-        bookingCancelledEmail(
-          updatedBooking.artist.user.email,
-          artistLabel,
-          hotelLabel,
-          stay,
-          `${config.frontendUrl}/dashboard/bookings`
-        ),
+  const from = booking.status as BookingStatusValue;
+  // An artist withdrawing from a confirmed residency owes the hotel a reason.
+  if (actor === 'ARTIST' && from === 'CONFIRMED' && to === 'CANCELLED' && !reason) {
+    throw new CustomError('Indiquez le motif de votre empêchement : l’hôtel le recevra.', 400, {
+      fields: { reason: 'Indiquez le motif de votre empêchement.' },
     });
   }
-
-  res.json({
-    success: true,
-    data: updatedBooking
-  });
-}));
-
-// Create rating
-router.post('/ratings', authenticate, asyncHandler(async (req: AuthRequest, res) => {
-  const ratingData = ratingSchema.parse(req.body);
-
-  // Verify booking exists
-  const booking = await prisma.booking.findUnique({
-    where: { id: ratingData.bookingId }
-  });
-
-  if (!booking) {
-    throw new CustomError('Booking not found', 404);
-  }
-
-  // Check authorization - only hotels can rate artists
-  if (req.user!.role !== 'HOTEL') {
-    throw new CustomError('Only hotels can rate artists', 403);
-  }
-
-  const hotel = await prisma.hotel.findUnique({
-    where: { userId: req.user!.id }
-  });
-
-  if (!hotel || booking.hotelId !== hotel.id) {
-    throw new CustomError('Unauthorized', 403);
-  }
-
-  /* A rating is a record of a residency that happened. Nothing stopped a house
-     rating an artist whose booking was still PENDING - before a date had even
-     been agreed, let alone played - which would have put reviews of
-     performances that never occurred on the artist's public profile and in the
-     testimonials on the landing page. */
-  if (booking.status !== 'COMPLETED') {
+  if (!canTransition(from, to, actor)) {
     throw new CustomError(
-      'Une résidence ne peut être évaluée qu’une fois terminée',
-      400
+      from === to ? 'La réservation est déjà dans cet état.' : 'Cette action n’est pas possible sur cette réservation.',
+      409,
+      { code: 'INVALID_TRANSITION' }
     );
   }
 
-  // Check if rating already exists
-  const existingRating = await prisma.rating.findFirst({
-    where: {
-      bookingId: ratingData.bookingId,
-      hotelId: ratingData.hotelId,
-      artistId: ratingData.artistId
-    }
+  const now = new Date();
+  /* The status in the WHERE makes the change conditional on nobody having
+     moved it since we read it: if the hotel cancels while the artist is
+     accepting, exactly one of them wins and the other is told. */
+  const moved = await prisma.booking.updateMany({
+    where: { id: booking.id, status: from },
+    data: {
+      status: to,
+      ...(to === 'CONFIRMED' || to === 'REJECTED' ? { respondedAt: now } : {}),
+      ...(to === 'CANCELLED' ? { cancelledAt: now, cancelledByRole: actor === 'SYSTEM' ? 'ADMIN' : actor, cancellationReason: reason } : {}),
+      ...(to === 'REJECTED' && reason ? { cancellationReason: reason } : {}),
+    },
   });
-
-  if (existingRating) {
-    throw new CustomError('Rating already exists for this booking', 400);
+  if (moved.count === 0) {
+    throw new CustomError('La réservation vient d’être modifiée. Rechargez la page.', 409, { code: 'STALE' });
   }
 
-  // Create rating
-  const rating = await prisma.rating.create({
-    data: {
-      bookingId: ratingData.bookingId,
-      hotelId: ratingData.hotelId,
-      artistId: ratingData.artistId,
-      stars: ratingData.stars,
-      textReview: ratingData.textReview,
-      isVisibleToArtist: ratingData.isVisibleToArtist || false
-    },
-    include: {
-      artist: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      },
-      hotel: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      }
-    }
-  });
+  /* Credits go back when the hotel no longer has a residency: rejected or
+     cancelled before it was confirmed. A confirmed residency the hotel then
+     cancels is not refunded - the convention makes that the hotel's cost.
 
-  /* The last link in the chain. A rating is the only thing on this platform
-     that an artist earns rather than buys, and the Artiste confirmé tier sells
-     "distinctions et évaluations" outright - so the artist hears about it. */
+     On the privileged client because the actor may be the artist, whose
+     identity the hotel's credit policy refuses. Authorisation was decided
+     above; this is the write it decided on. */
+  const refundCredits =
+    RELEASES_CREDITS.includes(to) && (from === 'PENDING' || (from === 'CONFIRMED' && actor === 'ARTIST'));
+  if (refundCredits && booking.creditCost > 0) {
+    const alreadyRefunded = await prismaAdmin.creditLedger.findFirst({
+      where: { bookingId: booking.id, reason: 'BOOKING_REFUND' },
+      select: { id: true },
+    });
+    if (!alreadyRefunded) {
+      await prismaAdmin.$transaction([
+        prismaAdmin.creditLedger.create({
+          data: { hotelId: booking.hotelId, delta: booking.creditCost, reason: 'BOOKING_REFUND', bookingId: booking.id, note: `Booking ${booking.id} ${to.toLowerCase()}` },
+        }),
+        prismaAdmin.credit.update({ where: { hotelId: booking.hotelId }, data: { usedCredits: { decrement: booking.creditCost } } }),
+      ]);
+    }
+  }
+
+  const row = await prisma.booking.findUnique({ where: { id: booking.id }, select: bookingSelect });
+  const stay = formatStay(row!.startDate, row!.endDate);
+  const artistLabel = row!.artist.stageName || row!.artist.user.name || 'L’artiste';
+  const payload = bookingPayload(row!);
+  const link = `${config.frontendUrl}/dashboard/bookings`;
+
+  // Tell whoever did not act.
+  if (to === 'CONFIRMED') {
+    void notify({
+      userId: row!.hotel.user.id,
+      type: 'BOOKING_CONFIRMED',
+      payload: { ...payload, hotelName: null },
+      email: () => bookingConfirmedEmail(row!.hotel.user.email, row!.hotel.name, artistLabel, stay, link),
+    });
+    // The convention exists from now on; the artist signs it too.
+    void notify({
+      userId: row!.artist.user.id,
+      type: 'CONVENTION_TO_SIGN',
+      payload: { ...payload, artistName: null },
+      email: () => conventionToSignEmail(row!.artist.user.email, artistLabel, row!.hotel.name, stay, link),
+    });
+  } else if (to === 'CANCELLED' && actor === 'ARTIST') {
+    void notify({
+      userId: row!.hotel.user.id,
+      type: 'BOOKING_CANCELLED',
+      payload: { ...payload, hotelName: null },
+      email: () => bookingCancelledByArtistEmail(row!.hotel.user.email, row!.hotel.name, artistLabel, stay, reason ?? '', Boolean(booking.conventionFinalizedAt), link),
+    });
+  } else if (to === 'REJECTED') {
+    void notify({
+      userId: row!.hotel.user.id,
+      type: 'BOOKING_REJECTED',
+      payload,
+      email: () => bookingRejectedEmail(row!.hotel.user.email, row!.hotel.name, artistLabel, stay, `${config.frontendUrl}/dashboard/artists`),
+    });
+  } else if (to === 'CANCELLED') {
+    void notify({
+      userId: row!.artist.user.id,
+      type: 'BOOKING_CANCELLED',
+      payload: { ...payload, artistName: null },
+      email: () => bookingCancelledEmail(row!.artist.user.email, artistLabel, row!.hotel.name, stay, link),
+    });
+
+    /* Article 14: a hotel cancelling after the convention was signed owes the
+       coordinator's fee and, when the artist paid the journey, the artist's
+       justified tickets. Before signature there is nothing to owe. */
+    if (actor === 'HOTEL' && from === 'CONFIRMED' && booking.conventionFinalizedAt) {
+      const claim = await openCancellationClaim({ id: booking.id, transportTerms: booking.transportTerms });
+      const fee = formatMoney(claim.feeCents, 'EUR');
+      void notify({
+        userId: row!.hotel.user.id,
+        type: 'CANCELLATION_FEE_DUE',
+        payload: { ...payload, hotelName: null },
+        email: () => cancellationFeeDueEmail(row!.hotel.user.email, row!.hotel.name, artistLabel, stay, fee, formatDay(claim.feeDueAt), claim.transportEligible, link),
+      });
+      if (claim.transportEligible) {
+        void notify({
+          userId: row!.artist.user.id,
+          type: 'TRANSPORT_CLAIM_OPEN',
+          payload: { ...payload, artistName: null },
+          email: () => transportClaimInviteEmail(row!.artist.user.email, artistLabel, row!.hotel.name, stay, link),
+        });
+      }
+      void adminAlertEmail(`Annulation après signature : ${row!.hotel.name}`, [
+        `Résidence de ${artistLabel} ${stay}.`,
+        `Frais de dossier dus : ${fee}, avant le ${formatDay(claim.feeDueAt)}.`,
+        claim.transportEligible ? 'L’artiste peut demander le remboursement de son transport.' : 'Pas de remboursement de transport prévu.',
+      ], `${config.frontendUrl}/dashboard/claims`);
+    }
+  }
+
+  // Read again: a cancellation may have opened a claim the card should show.
+  const fresh = await prisma.booking.findUnique({ where: { id: booking.id }, select: bookingSelect });
+  res.json({ success: true, data: toBookingDTO(fresh ?? row!, req.user!.role) });
+}));
+
+// ----------------------------------------------------------------- ratings
+
+/**
+ * A hotel rates the artist of one of its own completed residencies, once.
+ * The hotel and the artist are read from the booking - never from the
+ * request, which used to let a hotel with one finished residency post
+ * ratings on any artist it liked by changing `artistId`.
+ */
+router.post('/ratings', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {
+  const input = ratingCreateSchema.parse(req.body);
+  const scope = await partyScope(req.user!);
+  const booking = scope
+    ? await prisma.booking.findFirst({
+        where: { id: input.bookingId, ...scope },
+        select: { id: true, status: true, hotelId: true, artistId: true, hotel: { select: { name: true } }, artist: { select: { userId: true } } },
+      })
+    : null;
+  if (!booking) throw new CustomError('Réservation introuvable.', 404);
+  if (booking.status !== 'COMPLETED') {
+    throw new CustomError('Une résidence ne peut être évaluée qu’une fois terminée.', 400);
+  }
+
+  let rating;
+  try {
+    rating = await prisma.rating.create({
+      data: {
+        bookingId: booking.id,
+        hotelId: booking.hotelId,
+        artistId: booking.artistId,
+        stars: input.stars,
+        textReview: input.textReview,
+        isVisibleToArtist: input.isVisibleToArtist,
+      },
+      select: { id: true, bookingId: true, hotelId: true, artistId: true, stars: true, textReview: true, isVisibleToArtist: true, createdAt: true },
+    });
+  } catch (error: any) {
+    if (error?.code === 'P2002') throw new CustomError('Cette résidence a déjà été évaluée.', 409);
+    throw error;
+  }
+
   if (rating.isVisibleToArtist) {
     void notify({
-      userId: rating.artist.user.id,
+      userId: booking.artist.userId,
       type: 'RATING_RECEIVED',
-      payload: {
-        bookingId: rating.bookingId,
-        hotelName: rating.hotel.name,
-        stars: rating.stars,
-      },
+      payload: { bookingId: booking.id, hotelName: booking.hotel.name, stars: rating.stars },
     });
   }
 
-  res.status(201).json({
-    success: true,
-    data: rating
-  });
+  res.status(201).json({ success: true, data: rating });
 }));
 
 export { router as bookingRoutes };
-

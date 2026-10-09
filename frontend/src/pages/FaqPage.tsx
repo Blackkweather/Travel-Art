@@ -5,23 +5,16 @@ import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { CONTACT_EMAIL } from '@/config/contact'
 
 /**
- * Six groups, in the order the worry actually arrives: what the programme is,
- * how you get in, the silence that follows, what it costs and what it does not
- * cover, the week itself, and the paperwork underneath it.
+ * Six groups, in the order the questions actually arrive: what the programme
+ * is, how you get in, the wait that follows, the stay itself, the week on
+ * site, and the paperwork underneath it.
  *
- * The terms are given as numbers - seven nights, twelve hours, 50 € or 100 € a
- * year, travel paid by the artist - because vagueness on any of those reads as
- * something being hidden. The membership fee especially: it used to be visible
- * only from inside the dashboard, after admission, and a price someone has to
- * go looking for is a price they assume is a trap. It now sits in group four
- * with what each tier contains, and group two says out loud that applying
- * costs nothing.
- *
- * The unflattering answers are the longest and the flattest on purpose - who
- * pays for the plane ticket, what a refusal means, whether being admitted
- * means you will play. That is where a FAQ is either believed or not.
+ * The owner's rule: nothing about money on the pages a visitor reads before
+ * signing up. Fees appear inside the account, and every term of a residency
+ * is fixed in the convention both parties sign.
  *
  * FAQ_STRUCTURED_DATA is derived from GROUPS rather than written out, so a
  * question added below reaches search engines without a second edit.
@@ -33,13 +26,13 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
       {
         q: t('Qu’est-ce que Travel Art ?'),
         a: t(
-          'Un programme de résidences qui installe des artistes dans des hôtels d’exception : une chambre, une scène et le temps de créer, en échange de représentations pendant le séjour. Une résidence dure sept nuits et demande douze heures de scène, deux heures par jour au maximum. Le déplacement y est tenu pour une matière de travail, pas pour un trajet — on ne vient pas jouer un soir avant de repartir, on s’installe. Ni une date isolée, ni un emploi : une résidence.'
+          'Un programme qui accueille des artistes et des créateurs dans des hôtels d’exception, sur le principe d’un échange : l’hôtel offre un séjour pour deux, l’artiste réalise une prestation convenue à l’avance — concert, DJ set, performance, atelier, photos ou vidéos. Les dates, la formule et ce qui est attendu de chacun sont écrits dans une convention signée avant le départ. Ni une date isolée, ni un emploi : un échange.'
         ),
       },
       {
         q: t('Quels artistes peuvent rejoindre le programme ?'),
         a: t(
-          'Le répertoire s’organise en quatre familles, telles que les artistes eux-mêmes les décrivent. Musique : piano, jazz, chant lyrique, fado, oud, guitare, violon, DJ et production. Danse : classique, flamenco, tango, hip-hop. Arts visuels : peinture, photographie, sculpture, calligraphie, street art, ateliers d’artisanat. Scène et bien-être : cirque, théâtre, magie, conte, humour, yoga et méditation. Aucune de ces cases ne vous correspond ? Écrivez quand même : le répertoire s’est élargi chaque fois qu’un travail n’entrait nulle part.'
+          'Le répertoire s’organise en cinq familles, telles que les artistes eux-mêmes les décrivent. Musique : piano, jazz, chant lyrique, fado, oud, guitare, violon, DJ et production. Danse : classique, flamenco, tango, hip-hop. Arts visuels : peinture, photographie, sculpture, calligraphie, street art, ateliers d’artisanat. Scène et bien-être : cirque, théâtre, magie, conte, humour, yoga et méditation. Image et contenu : vidéo, création de contenu pour les réseaux sociaux. Aucune de ces cases ne vous correspond ? Écrivez quand même : le répertoire s’est élargi chaque fois qu’un travail n’entrait nulle part.'
         ),
       },
       {
@@ -69,7 +62,7 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
       {
         q: t('Qu’est-ce qu’une résidence change pour un hôtel ?'),
         a: t(
-          'Elle remplace une soirée par une programmation. L’artiste vit sur place sept nuits : il croise vos clients au petit-déjeuner, répète l’après-midi dans un salon vide, joue douze heures dans la semaine. Ce que vos clients emportent n’est pas le souvenir d’un concert, c’est celui d’un séjour où il se passait quelque chose — et, très concrètement, des soirées où l’on reste au bar plutôt que de monter se coucher. Vous cédez une chambre et des repas ; vous ne payez ni cachet à la soirée ni commission sur ce que vous vendez ce soir-là.'
+          'Elle remplace une soirée par une programmation. L’artiste vit sur place le temps du séjour : il croise vos clients au petit-déjeuner, répète l’après-midi dans un salon vide, joue aux heures convenues. Ce que vos clients emportent n’est pas le souvenir d’un concert, c’est celui d’un séjour où il se passait quelque chose — et, très concrètement, des soirées où l’on reste au bar plutôt que de monter se coucher. Vous offrez un séjour pour deux ; vos clients repartent avec une histoire.'
         ),
       },
     ],
@@ -99,12 +92,6 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
         q: t('Sur quoi se joue la décision ?'),
         a: t(
           'Sur le travail et sur son accord avec un lieu de vie : c’est le critère décrit plus haut, et rien d’autre ne pèse autant. Deux considérations s’y ajoutent, qui ne jugent pas votre travail mais notre capacité à le placer. La forme d’abord : un duo tient dans plus de salons qu’un orchestre, et une discipline qui demande une installation lourde réduit le nombre de lieux possibles. La géographie ensuite : certaines destinations comptent déjà beaucoup de pianistes et peu de danseurs, et une candidature excellente peut attendre pour cette seule raison. Un refus ne dit donc pas toujours quelque chose de votre travail ; il dit parfois quelque chose de notre carte.'
-        ),
-      },
-      {
-        q: t('Faut-il payer quelque chose pour candidater ?'),
-        a: t(
-          'Non. Candidater ne coûte rien et rien ne vous est demandé tant qu’une décision n’est pas prise. L’adhésion annuelle — 50 € ou 100 € selon la formule — ne se règle qu’une fois la candidature retenue, et vous en connaissez le montant avant même de commencer : il est écrit plus bas, dans la partie consacrée à l’argent. Nous préférons que vous le lisiez ici plutôt que de le découvrir une fois admis.'
         ),
       },
       {
@@ -157,48 +144,30 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
     ],
   },
   {
-    label: t('L’argent : ce qui est inclus, ce qui ne l’est pas'),
+    label: t('Le séjour'),
     items: [
       {
-        q: t('Que reçoit l’artiste pendant la résidence ?'),
+        q: t('Qu’offre l’hôtel pendant la résidence ?'),
         a: t(
-          'Une chambre dans l’hôtel et la pension complète pour la durée du séjour — sept nuits —, et une scène. Vous venez accompagné si vous le souhaitez : l’artiste et un accompagnant, en chambre double, aux mêmes conditions de table. Ce n’est pas un hébergement échangé contre un service, c’est un séjour entier, pendant lequel on vous demande douze heures.'
+          'Un séjour pour deux : vous et la personne de votre choix, dans la chambre et la formule de la maison — petit-déjeuner, demi-pension, pension complète ou all inclusive —, et une scène à la hauteur de votre travail. Tout ce qui est inclus est écrit dans la convention avant le départ.'
         ),
       },
       {
-        q: t('Qui paie le voyage jusqu’à l’hôtel ?'),
+        q: t('Avec qui puis-je venir ?'),
         a: t(
-          'Vous. Le trajet aller et retour est à la charge de l’artiste, quelle que soit la destination — une résidence aux Maldives suppose un billet pour les Maldives. C’est la limite du programme, et nous l’écrivons ici plutôt que de vous la laisser découvrir au moment d’accepter une date. Tout le reste est pris en charge sur place : la chambre, les repas, la scène, pour vous et votre accompagnant, et rien ne vous est demandé une fois arrivé. Regardez donc le prix du billet froidement avant de dire oui : c’est la seule arithmétique qui compte. Rien n’interdit à un hôtel de participer au transport, cela se discute avant d’accepter la date, mais ce n’est ni une règle ni une condition du programme.'
+          'Avec la personne de votre choix. Elle profite de la maison avec vous et n’a rien à présenter : la prestation est la vôtre, le séjour est pour deux.'
         ),
       },
       {
-        q: t('L’artiste reçoit-il un cachet ?'),
+        q: t('Comment s’organise le voyage ?'),
         a: t(
-          'Ce que la résidence garantit, c’est le séjour : la chambre, la pension complète et la scène, pour deux personnes et sept nuits. Un cachet, lorsqu’il y en a un, se négocie directement entre l’artiste et l’hôtel — avant l’acceptation de la date, jamais après. Travel Art ne le fixe pas, ne s’y interpose pas et ne prélève aucune commission sur ce que vous convenez. Un artiste qui ne souhaite pas jouer sans cachet doit le dire au moment de la proposition : c’est le seul moment où cela se discute sereinement.'
+          'Il se décide avec l’hôtel avant d’accepter la date, et s’écrit dans la convention. Un conseil simple : ne réservez votre billet qu’une fois la convention signée par tous, depuis votre espace.'
         ),
       },
       {
-        q: t('Combien coûte l’adhésion, et que comprend-elle ?'),
+        q: t('Combien de temps dure une résidence ?'),
         a: t(
-          '50 € par an pour la formule Artiste, 100 € par an pour la formule Artiste confirmé. La formule Artiste ouvre un profil détaillé, un portfolio de vingt images, un calendrier de disponibilités, la réception des demandes de réservation et une assistance par e-mail. La formule Artiste confirmé comprend tout cela et y ajoute un portfolio illimité, la priorité dans les résultats de recherche, des statistiques détaillées, les distinctions et évaluations reçues après chaque date, une assistance prioritaire et le programme de parrainage. L’adhésion se règle après l’admission, jamais avant, et aucune commission n’est prélevée sur vos honoraires.'
-        ),
-      },
-      {
-        q: t('Pourquoi une adhésion plutôt qu’une commission ?'),
-        a: t(
-          'Parce qu’une commission nous donnerait intérêt au nombre de vos dates plutôt qu’à leur justesse. 50 € par an ne se rattrapent pas en vous poussant à accepter une semaine qui ne vous convient pas ; un pourcentage, si. C’est aussi la raison pour laquelle le montant figure sur cette page au lieu d’apparaître dans un tableau de bord une fois l’admission obtenue : un prix qu’il faut aller chercher est un prix dont on a honte.'
-        ),
-      },
-      {
-        q: t('Combien cela coûte-t-il à un hôtel ?'),
-        a: t(
-          'L’hôtel achète des crédits et en dépense pour chaque résidence. Trois formules : Découverte, 10 crédits pour 1 500 € ; Résidence, 25 crédits assortis de 4 crédits offerts pour 3 500 € ; Année, 50 crédits assortis de 10 crédits offerts pour 6 500 €. Le coût d’une résidence varie selon l’artiste. Pas d’abonnement, pas de frais d’entrée, aucune commission sur ce que vous vendez le soir de la représentation. S’y ajoutent la chambre et les repas de l’artiste et de son accompagnant, que vous fournissez et qui ne passent pas par nous.'
-        ),
-      },
-      {
-        q: t('Y a-t-il d’autres frais ?'),
-        a: t(
-          'Non, et voici la liste complète de ce qui reste à votre charge, pour que personne ne la découvre en chemin : le voyage aller et retour, le transport de vos instruments, vos assurances, les formalités de visa lorsqu’un pays en demande, et ce que vous consommez à l’hôtel en dehors de la pension — minibar, spa, extras portés sur la note. Aucun frais de dossier, aucun frais de mise en relation, aucun prélèvement sur vos honoraires. Si une somme vous est réclamée qui ne figure pas dans cette liste, écrivez-nous : c’est une erreur, ou ce n’est pas nous.'
+          'Quelques nuits, le plus souvent — le temps de comprendre un lieu, de croiser deux fois les mêmes visages et de laisser la maison entrer dans votre travail. Les dates exactes se fixent avec l’hôtel et figurent dans la convention.'
         ),
       },
     ],
@@ -209,13 +178,13 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
       {
         q: t('À quoi ressemble une résidence ?'),
         a: t(
-          'Sept nuits sur place, une chambre, la pension complète et une scène — toit-terrasse face à la ville, salon feutré, salle de bal, parfois une salle à manger que l’on réagence à vingt-deux heures. Douze heures de représentation dans la semaine, rien le jour de l’arrivée ni celui du départ. Entre deux, le temps de création vous appartient : ce que vous produisez sur place reste entièrement à vous.'
+          'Un séjour sur place, une chambre, la formule convenue et une scène — toit-terrasse face à la ville, salon feutré, salle de bal, parfois une salle à manger que l’on réagence à vingt-deux heures. La prestation se fait aux dates et aux horaires écrits dans la convention. Entre deux, le temps vous appartient : ce que vous créez sur place reste à vous.'
         ),
       },
       {
         q: t('Combien de temps joue-t-on, exactement ?'),
         a: t(
-          'Douze heures par semaine, deux heures par jour au maximum, et rien le jour de l’arrivée ni celui du départ. Ces douze heures se répartissent avec l’hôtel avant votre venue, selon le rythme de la maison : un hôtel de montagne veut de la musique en fin d’après-midi, un hôtel de bord de mer au coucher du soleil, certains préfèrent deux fois une heure à un long set. Les répétitions et le temps d’installation ne sont pas comptés dans les douze heures ; les ateliers et les rencontres avec les clients, si.'
+          'Ce qui est écrit dans la convention, et rien de plus. Nature de la prestation, dates, horaires, durée, nombre de représentations : tout se fixe avec l’hôtel avant votre venue, selon le rythme de la maison — un hôtel de montagne veut de la musique en fin d’après-midi, un hôtel de bord de mer au coucher du soleil, certains préfèrent deux fois une heure à un long set. Une prestation supplémentaire ne se demande pas sur place : elle se convient par écrit, ou elle ne se fait pas.'
         ),
       },
       {
@@ -233,7 +202,7 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
       {
         q: t('Et si je tombe malade ?'),
         a: t(
-          'Prévenez l’hôtel et prévenez-nous le jour même. Une représentation annulée pour maladie ne se paie pas : ni pénalité, ni retour négatif, ni conséquence sur votre profil. La chambre et la pension vous restent acquises pour les nuits réservées — on ne met pas dehors quelqu’un qui a de la fièvre à quatre mille kilomètres de chez lui. Si l’état se prolonge, les heures restantes sont réduites ou la résidence s’interrompt, d’un commun accord. Ce qui se passe mal, ce n’est pas d’être malade : c’est de le dire trop tard.'
+          'Prévenez l’hôtel et prévenez-nous le jour même. Une représentation annulée pour maladie n’entraîne rien : ni pénalité, ni retour négatif, ni conséquence sur votre profil. Le séjour vous reste acquis pour les nuits réservées — on ne met pas dehors quelqu’un qui a de la fièvre à quatre mille kilomètres de chez lui. Si l’état se prolonge, la prestation restante est réduite ou la résidence s’interrompt, d’un commun accord. Ce qui se passe mal, ce n’est pas d’être malade : c’est de le dire trop tard.'
         ),
       },
       {
@@ -268,7 +237,7 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
       {
         q: t('Y a-t-il un contrat ?'),
         a: t(
-          'Oui. Une date acceptée des deux côtés produit un document qui vaut engagement : les dates exactes du séjour, le nombre de nuits, la répartition des douze heures, le lieu de représentation, ce que l’hôtel fournit — chambre, pension, matériel —, le nom de votre contact sur place et les conditions d’annulation. L’artiste et l’hôtel en reçoivent le même exemplaire. Rien d’essentiel ne devrait rester à l’oral : si un point a été convenu par téléphone, faites-le écrire avant de partir.'
+          'Oui : une convention tripartite, signée avant le départ. Elle fixe les dates et le nombre de nuits, la chambre et la formule pour deux personnes, la prestation — nature, horaires, durée, lieu —, le matériel fourni par chacun, les contenus éventuels à publier, la prise en charge du transport, la valeur du séjour et celle de la prestation, et les conditions d’annulation. Chaque partie en garde le même exemplaire. Rien d’essentiel ne devrait rester à l’oral : si un point a été convenu par téléphone, faites-le écrire avant de partir.'
         ),
       },
       {
@@ -280,7 +249,7 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
       {
         q: t('Qui assure quoi ?'),
         a: t(
-          'L’hôtel assure ses locaux, sa scène et ses clients. Vous assurez ce qui est à vous : vos instruments et votre matériel, pendant le transport comme sur place, votre responsabilité civile professionnelle, et votre couverture santé et rapatriement à l’étranger. La carte européenne d’assurance maladie suffit en Europe ; elle ne sert à rien aux Maldives ni au Brésil. Ce sont vingt euros d’assurance voyage qui écartent la seule mauvaise surprise réellement grave de ce programme.'
+          'L’hôtel assure ses locaux, sa scène et ses clients. Vous assurez ce qui est à vous : vos instruments et votre matériel, pendant le transport comme sur place, votre responsabilité civile professionnelle, et votre couverture santé et rapatriement à l’étranger. La carte européenne d’assurance maladie suffit en Europe ; elle ne sert à rien aux Maldives ni au Brésil. Une assurance voyage écarte la seule mauvaise surprise réellement grave de ce programme.'
         ),
       },
       {
@@ -304,7 +273,7 @@ const GROUPS: { label: string; items: { q: string; a: string }[] }[] = [
       {
         q: t('Que se passe-t-il si l’une des deux parties annule ?'),
         a: t(
-          'Une annulation se dit tôt et par écrit. Si l’hôtel annule, ses crédits lui sont restitués et nous cherchons à vous replacer sur la même période, sans pouvoir le garantir ; un billet déjà acheté reste votre risque, ce qui est une raison de plus de ne rien réserver avant que la résidence soit confirmée des deux côtés. Si c’est vous qui annulez, prévenez-nous immédiatement : une annulation motivée n’a aucune conséquence, une annulation tardive et répétée met fin à votre présence sur la plateforme. La sélection se fait à la main des deux côtés ; l’exclusion aussi.'
+          'Une annulation se dit tôt et par écrit. Les conditions d’annulation, dans un sens comme dans l’autre, sont écrites dans la convention que chacun signe — raison de plus pour n’acheter aucun billet avant sa signature. Si vous ne pouvez plus venir, prévenez l’hôtel et prévenez-nous immédiatement : un report est souvent possible. Une annulation tardive et répétée met fin à votre présence sur la plateforme. La sélection se fait à la main des deux côtés ; l’exclusion aussi.'
         ),
       },
     ],
@@ -330,7 +299,7 @@ const FaqPage: React.FC = () => {
     <div className="min-h-screen bg-[var(--surface)]">
       <SEOHead
         title={t('Questions fréquentes — Travel Art')}
-        description={t('Le programme, la candidature, les délais de réponse, ce qui est inclus et ce qui ne l’est pas, la vie d’une résidence Travel Art.')}
+        description={t('Le programme, la candidature, les délais de réponse, le séjour et la vie d’une résidence Travel Art.')}
         structuredData={FAQ_STRUCTURED_DATA}
       />
       <SimpleNavbar overMedia={false} />
@@ -354,7 +323,7 @@ const FaqPage: React.FC = () => {
           {t('Ce qu’on nous demande.')}
         </motion.h1>
         <p className="mt-6 max-w-[52ch] text-content-secondary leading-relaxed">
-          {t('Le programme, la candidature, l’argent et la vie d’une résidence — dans l’ordre où les questions se posent vraiment.')}
+          {t('Le programme, la candidature, le séjour et la vie d’une résidence — dans l’ordre où les questions se posent vraiment.')}
         </p>
       </section>
 
@@ -404,8 +373,8 @@ const FaqPage: React.FC = () => {
             <Link to="/how-it-works" className="btn-gold">
               {t('Le principe en détail')}
             </Link>
-            <a href="mailto:hello@travelart.com" className="btn-outline">
-              hello@travelart.com
+            <a href={`mailto:${CONTACT_EMAIL}`} className="btn-outline">
+              {CONTACT_EMAIL}
             </a>
           </div>
         </div>

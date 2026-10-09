@@ -3,14 +3,20 @@ import { persist } from 'zustand/middleware'
 import { User, LoginCredentials, RegisterData } from '@/types'
 import { authApi } from '@/utils/api'
 
+/** Why the session ended, shown once on the sign-in page. */
+export type SessionEndReason = 'expired' | 'revoked' | 'inactive' | null
+
 interface AuthState {
   user: User | null
   token: string | null
   isLoading: boolean
   isAuthenticated: boolean
+  sessionEndReason: SessionEndReason
   login: (credentials: LoginCredentials) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => void
+  /** The server refused the session: clear it and remember why. */
+  endSession: (reason: SessionEndReason) => void
   checkAuth: () => Promise<void>
   updateUser: (user: User) => void
 }
@@ -22,19 +28,14 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isLoading: false,
       isAuthenticated: false,
+      sessionEndReason: null,
 
       login: async (credentials: LoginCredentials) => {
         set({ isLoading: true })
         try {
           const response = await authApi.login(credentials)
           const { user, token } = response.data.data
-          
-          set({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false
-          })
+          set({ user, token, isAuthenticated: true, isLoading: false, sessionEndReason: null })
         } catch (error) {
           set({ isLoading: false })
           throw error
@@ -44,89 +45,58 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: RegisterData) => {
         set({ isLoading: true })
         try {
+          // No token comes back: the account is pending until confirmed and admitted.
           await authApi.register(data)
-
-          /* Registration deliberately returns no token: the account is
-             PENDING until an administrator admits it, so there is no session
-             to establish. Setting isAuthenticated here would leave the app
-             believing it is signed in while every authenticated call is
-             refused - which is exactly what it used to do. */
+        } finally {
           set({ isLoading: false })
-        } catch (error: any) {
-          console.error('❌ Registration failed:', error.response?.data || error.message)
-          set({ isLoading: false })
-          throw error
         }
       },
 
       logout: () => {
-        // Only clear local state - never auto-logout
-        // Logout must be explicitly triggered by user action in components
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false
-        })
+        set({ user: null, token: null, isAuthenticated: false, sessionEndReason: null })
       },
 
-      checkAuth: async () => {
-        const { token, user } = get()
-        
-        // If we have a user in state, keep them logged in
-        // Session persists until explicit logout
-        if (user && token) {
-          set({ isLoading: false, isAuthenticated: true })
-          return
-        }
-        
-        if (!token) {
-          set({ isLoading: false, isAuthenticated: false })
-          return
-        }
+      endSession: (reason) => {
+        set({ user: null, token: null, isAuthenticated: false, sessionEndReason: reason })
+      },
 
-        // If we have a token but no user, try to fetch user
-        // But don't clear auth on errors - keep session active
-        // Use a timeout to prevent blocking for too long
+      /**
+       * Ask the server who we are, every time the app starts.
+       *
+       * This used to trust whatever was in storage and never let go: a token
+       * that had expired, been revoked or belonged to a suspended account kept
+       * the dashboard on screen while every request behind it failed. Now a
+       * refusal signs the user out (the API client does it on any 401), and
+       * only a network failure keeps the stored session, so being offline for
+       * a moment does not log anyone out.
+       */
+      checkAuth: async () => {
+        const { token } = get()
+        if (!token) {
+          set({ isLoading: false, isAuthenticated: false, user: null })
+          return
+        }
         set({ isLoading: true })
         try {
-          // Add timeout to prevent blocking
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Auth check timeout')), 3000)
-          )
-          
-          const response = await Promise.race([
-            authApi.getCurrentUser(),
-            timeoutPromise
-          ]) as any
-          
-          set({
-            user: response.data.data.user,
-            isAuthenticated: true,
-            isLoading: false
-          })
-        } catch (error: any) {
-          // Keep user logged in even on auth errors or timeout
-          // Session persists until explicit logout
-          // Only clear loading state, don't clear auth
-          if (!error.message?.includes('timeout')) {
-            console.warn('Auth check failed, but keeping session active:', error)
-          }
+          const response = await authApi.getCurrentUser()
+          set({ user: response.data.data.user, isAuthenticated: true, isLoading: false })
+        } catch {
+          // A 401 has already ended the session in the API client.
           set({ isLoading: false })
-          // Don't clear user/token - keep them logged in
         }
       },
 
       updateUser: (user: User) => {
         set({ user })
-      }
+      },
     }),
     {
       name: 'travel-art-auth',
       partialize: (state) => ({
         user: state.user,
         token: state.token,
-        isAuthenticated: state.isAuthenticated
-      })
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 )

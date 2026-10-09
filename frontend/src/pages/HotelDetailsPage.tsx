@@ -6,19 +6,22 @@ import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
 import HotelContactButtons from '../components/HotelContactButtons'
-import { hotelsApi, bookingsApi, artistsApi } from '@/utils/api'
+import { hotelsApi, bookingsApi } from '@/utils/api'
+import type { PartyContact } from '@/types'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
-import { parseJsonField } from '@/utils/apiPayload'
 
 const HotelDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(true)
   const [hotel, setHotel] = useState<any>(null)
-  const [hasConfirmedBooking, setHasConfirmedBooking] = useState(false)
+  // The hotel's contact block, as the API hands it over on a confirmed
+  // residency with this hotel. Null means no such residency: no contact shown.
+  const [contact, setContact] = useState<PartyContact | null>(null)
+  const hasConfirmedBooking = Boolean(contact)
 
   useEffect(() => {
     if (id) {
@@ -30,40 +33,21 @@ const HotelDetailsPage: React.FC = () => {
   useEffect(() => {
     const checkConfirmedBooking = async () => {
       if (!user || user.role !== 'ARTIST' || !hotel?.id) {
-        setHasConfirmedBooking(false)
+        setContact(null)
         return
       }
 
       try {
-        // Get artist profile to get artist ID
-        const artistRes = await artistsApi.getMyProfile()
-        const artist = artistRes.data?.data
-        if (!artist?.id) {
-          setHasConfirmedBooking(false)
-          return
-        }
-
-        // Check for confirmed bookings between this artist and hotel
-        const bookingsRes = await bookingsApi.list({ 
-          status: 'CONFIRMED'
-        })
-        
+        // An artist only ever sees their own bookings, so any confirmed one
+        // with this hotel is theirs.
+        const bookingsRes = await bookingsApi.list({ status: 'CONFIRMED' })
         const bookingsData = bookingsRes.data?.data
-        const bookings = Array.isArray(bookingsData) 
-          ? bookingsData 
-          : (bookingsData?.bookings || [])
-        
-        // Check if there's at least one confirmed booking between this artist and hotel
-        const hasConfirmed = bookings.some((booking: any) => 
-          booking.status === 'CONFIRMED' && 
-          booking.hotelId === hotel.id &&
-          booking.artistId === artist.id
-        )
-        
-        setHasConfirmedBooking(hasConfirmed)
+        const bookings = Array.isArray(bookingsData) ? bookingsData : (bookingsData?.bookings || [])
+        const confirmed = bookings.find((booking: any) => booking.hotelId === hotel.id && booking.hotel?.contact)
+        setContact(confirmed?.hotel?.contact ?? null)
       } catch (error) {
         console.error('Error checking confirmed booking:', error)
-        setHasConfirmedBooking(false)
+        setContact(null)
       }
     }
 
@@ -121,17 +105,16 @@ const HotelDetailsPage: React.FC = () => {
   }
 
   // Parse location, images, performance spots (handle both array/object and JSON string)
-  const location = parseJsonField<any>(hotel.location, {})
-  const images = Array.isArray(hotel.images) ? hotel.images : parseJsonField<string[]>(hotel.images, [])
-  const performanceSpots = Array.isArray(hotel.performanceSpots)
-    ? hotel.performanceSpots
-    : parseJsonField<any[]>(hotel.performanceSpots, [])
-  const locationString = location.city && location.country 
+  const location = hotel.location ?? { city: hotel.city, country: hotel.country }
+  const gallery: string[] = Array.isArray(hotel.images) ? hotel.images : []
+  const images: string[] = hotel.profilePicture ? [hotel.profilePicture, ...gallery] : gallery
+  const performanceSpots: any[] = Array.isArray(hotel.performanceSpots) ? hotel.performanceSpots : []
+  const locationString = location.city && location.country
     ? `${location.city}, ${location.country}`
     : location.country || hotel.user?.country || 'Location not specified'
 
   // Calculate rating (if available from bookings/ratings)
-  const rating = hotel.rating || 0
+  const rating = hotel.averageRating || 0
 
   return (
     <div className="min-h-screen bg-[var(--surface)]">
@@ -198,7 +181,7 @@ const HotelDetailsPage: React.FC = () => {
               <p className="text-content-secondary text-lg leading-relaxed mb-6">
                 {hotel.description || 'No description available.'}
               </p>
-              
+
               <div className="grid grid-cols-2 gap-6 mb-6">
                 {rating > 0 && (
                   <div className="flex items-center gap-3">
@@ -292,7 +275,7 @@ const HotelDetailsPage: React.FC = () => {
             <ScrollAnimationWrapper animation="slide-left" delay={0.2}>
               <div className="panel p-6 sticky top-6">
               <h3 className="text-2xl font-serif font-bold text-content mb-6">{t('Coordonnées')}</h3>
-              
+
               <div className="space-y-4 mb-6">
                 {locationString && (
                   <div className="flex items-start gap-3">
@@ -301,19 +284,19 @@ const HotelDetailsPage: React.FC = () => {
                   </div>
                 )}
                 {/* Only show phone/email if there's a confirmed booking */}
-                {hasConfirmedBooking && hotel.contactPhone && !hotel.responsiblePhone && (
+                {contact?.phone && (
                   <div className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-gold flex-shrink-0" />
-                    <a href={`tel:${hotel.contactPhone}`} className="text-content-secondary hover:text-gold">
-                      {hotel.contactPhone}
+                    <a href={`tel:${contact.phone}`} className="text-content-secondary hover:text-gold">
+                      {contact.phone}
                     </a>
                   </div>
                 )}
-                {hasConfirmedBooking && hotel.user?.email && !hotel.responsibleEmail && (
+                {contact?.email && (
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-gold flex-shrink-0" />
-                    <a href={`mailto:${hotel.user.email}`} className="text-content-secondary hover:text-gold">
-                      {hotel.user.email}
+                    <a href={`mailto:${contact.email}`} className="text-content-secondary hover:text-gold">
+                      {contact.email}
                     </a>
                   </div>
                 )}
@@ -328,9 +311,9 @@ const HotelDetailsPage: React.FC = () => {
               {hasConfirmedBooking && (
                 <div className="border-t border-line pt-6 mb-6">
                   <HotelContactButtons
-                    phoneNumber={hotel.responsiblePhone || hotel.contactPhone}
-                    email={hotel.responsibleEmail || hotel.user?.email}
-                    responsibleName={hotel.responsibleName || hotel.repName}
+                    phoneNumber={contact?.phone || undefined}
+                    email={contact?.email || undefined}
+                    responsibleName={contact?.name || undefined}
                     hotelName={hotel.name}
                   />
                 </div>
@@ -352,7 +335,7 @@ const HotelDetailsPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Action Buttons for Artists */}
               {user && user.role === 'ARTIST' && (
                 <div className="border-t border-line pt-6 mt-6 space-y-3">

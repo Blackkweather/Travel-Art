@@ -129,7 +129,7 @@ tabIndex={-1}
 
         <p className="intro__wordmark">TRAVEL ART</p>
         <span className="intro__rule" aria-hidden="true" />
-        <p className="intro__line">{t('Une semaine. Une maison. Un artiste.')}</p>
+        <p className="intro__line">{t('Une maison. Un artiste. Un échange.')}</p>
       </div>
 
       <button type="button" className="intro__skip" onClick={dismiss}>

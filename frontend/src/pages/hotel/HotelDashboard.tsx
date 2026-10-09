@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Users, CreditCard, MapPin, Music } from 'lucide-react'
-import { hotelsApi, bookingsApi, artistsApi, apiClient } from '@/utils/api'
+import { hotelsApi, bookingsApi, artistsApi } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ContactSupport from '@/components/ContactSupport'
 import StatusBadge from '@/components/StatusBadge'
-import toast from 'react-hot-toast'
-import { personName, parseJsonField } from '@/utils/apiPayload'
-import ConfirmDialog from '@/components/ConfirmDialog'
+import { personName } from '@/utils/apiPayload'
+import type { PerformanceSpot, Hotel } from '@/types'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
@@ -23,21 +22,6 @@ interface Booking {
   endDate: string
   status: string
   performanceSpot?: string
-  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
-  totalPaymentAmount?: number
-  weeklyPaymentAmount?: number
-  numberOfWeeks?: number
-}
-
-interface PerformanceSpot {
-  name: string
-  /** Written by the registration form. */
-  locationType?: string
-  /** Older rows used this name. */
-  type?: string
-  capacity: number
-  description: string
-  image?: string
 }
 
 interface UpcomingPerformance {
@@ -52,21 +36,18 @@ interface UpcomingPerformance {
 
 const HotelDashboard: React.FC = () => {
   const { user } = useAuthStore()
-  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+  // No money changes hands with the artist - the stay is the exchange - so
+  // the dashboard counts credits, not euros "spent" or "pending".
   const [stats, setStats] = useState({
     activeBookings: 0,
-    totalSpent: 0, // Total amount spent on bookings
+    availableCredits: 0,
     artistsBooked: 0,
-    performanceSpots: 0,
-    pendingPayments: 0 // Total pending payment amount
+    performanceSpots: 0
   })
   const [upcomingPerformances, setUpcomingPerformances] = useState<UpcomingPerformance[]>([])
   const [performanceSpots, setPerformanceSpots] = useState<PerformanceSpot[]>([])
   const [favoriteArtists, setFavoriteArtists] = useState<any[]>([])
-  const [hotelId, setHotelId] = useState<string>('')
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -80,11 +61,9 @@ const HotelDashboard: React.FC = () => {
         // allowance on AdminAnalytics's and AdminLogs's dashboard calls.
         const slow = { timeout: 45000 }
 
-        // Get hotel profile
-        const hotelRes = await hotelsApi.getByUser(user.id, slow)
-        const hotel = hotelRes.data?.data
+        const hotelRes = await hotelsApi.getMyProfile(slow)
+        const hotel = hotelRes.data?.data as Hotel | undefined
         if (!hotel) return
-        setHotelId(hotel.id)
 
         // Bookings and favorites both only need hotel.id, not each other's
         // result, so they run together instead of one after the other.
@@ -100,20 +79,11 @@ const HotelDashboard: React.FC = () => {
         const bookings = Array.isArray(bookingsData) 
           ? bookingsData 
           : (bookingsData?.bookings || [])
-        
+
         // Calculate stats
         const activeBookings = bookings.filter((b: Booking) => 
           ['PENDING', 'CONFIRMED'].includes(b.status)
         ).length
-
-        // Calculate payment stats
-        const totalSpent = bookings
-          .filter((b: Booking) => b.paymentStatus === 'PAID')
-          .reduce((sum: number, b: Booking) => sum + (b.totalPaymentAmount || 0), 0)
-        
-        const pendingPayments = bookings
-          .filter((b: Booking) => b.paymentStatus === 'PENDING' && b.status === 'CONFIRMED')
-          .reduce((sum: number, b: Booking) => sum + (b.totalPaymentAmount || 0), 0)
 
         // b.artist has no `name` - it lives on artist.user.name - so this Set
         // was built entirely from undefined and the dashboard reported zero
@@ -122,9 +92,7 @@ const HotelDashboard: React.FC = () => {
           bookings.map((b: Booking) => personName(b.artist, '')).filter(Boolean)
         )
 
-        // Parse performance spots from hotel profile
-        const spotsData = parseJsonField<PerformanceSpot[]>(hotel.performanceSpots, [])
-        const spots: PerformanceSpot[] = Array.isArray(spotsData) ? spotsData : []
+        const spots: PerformanceSpot[] = hotel.performanceSpots ?? []
 
         // Get upcoming performances (active bookings)
         const upcoming = bookings
@@ -145,10 +113,9 @@ const HotelDashboard: React.FC = () => {
 
         setStats({
           activeBookings,
-          totalSpent,
+          availableCredits: hotel.availableCredits ?? 0,
           artistsBooked: uniqueArtists.size,
-          performanceSpots: spots.length,
-          pendingPayments
+          performanceSpots: spots.length
         })
         setUpcomingPerformances(upcoming)
         setPerformanceSpots(spots)
@@ -181,23 +148,9 @@ const HotelDashboard: React.FC = () => {
     )
   }
 
-  const handleDeleteProfile = async () => {
-    if (!hotelId) return
-    setDeleting(true)
-    try {
-      await apiClient.delete(`/hotels/${hotelId}`)
-      toast.success(t('Profil hôtel supprimé'))
-      navigate('/')
-    } catch (error: any) {
-      toast.error(error?.response?.data?.error?.message || t('Échec de la suppression'))
-      setDeleting(false)
-      setConfirmingDelete(false)
-    }
-  }
-
   const statsData = [
     { label: t('Réservations en cours'), value: formatNumber(stats.activeBookings) },
-    { label: t('Total dépensé'), value: `€${formatNumber(Math.round(stats.totalSpent))}` },
+    { label: t('Crédits disponibles'), value: formatNumber(stats.availableCredits) },
     { label: t('Artistes réservés'), value: formatNumber(stats.artistsBooked) },
     { label: t('Espaces'), value: formatNumber(stats.performanceSpots) }
   ]
@@ -208,18 +161,11 @@ const HotelDashboard: React.FC = () => {
       <div className="shell py-12 md:py-16 space-y-12">
         <header className="page-head">
           <span className="eyebrow">{t('Espace hôtel')}</span>
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h1 className="page-head__title">
-              {/* A hotel is not a person: taking the first word of
-                  "Les Terrasses de Val d’Isère" greeted the user as "Les". */}
-              {t('Bon retour, {name}', { name: user?.name ?? '' })}
-            </h1>
-            {hotelId && (
-              <button className="btn-danger btn-sm" onClick={() => setConfirmingDelete(true)}>
-                {t('Supprimer le profil')}
-              </button>
-            )}
-          </div>
+          <h1 className="page-head__title">
+            {/* A hotel is not a person: taking the first word of
+                "Les Terrasses de Val d’Isère" greeted the user as "Les". */}
+            {t('Bon retour, {name}', { name: user?.name ?? '' })}
+          </h1>
           <p className="page-head__lede">
             {t('Gérez les résidences d’artistes et la programmation de votre établissement.')}
           </p>
@@ -289,12 +235,12 @@ const HotelDashboard: React.FC = () => {
             <div className="grid grid-cols-1 gap-px bg-line sm:grid-cols-2 lg:grid-cols-3">
               {performanceSpots.map((spot, index) => (
                 <article key={index} className="group flex flex-col bg-surface-raised">
-                  {spot.image && (
+                  {spot.media?.[0] && /\.(jpe?g|png|webp|gif)(\?|$)/i.test(spot.media[0]) && (
                     <div className="relative aspect-[4/3] overflow-hidden bg-surface-sunken">
                       <img
                         decoding="async"
                         loading="lazy"
-                        src={spot.image}
+                        src={spot.media[0]}
                         alt=""
                         className="h-full w-full object-cover transition-transform duration-700 ease-entrance group-hover:scale-[1.04]"
                       />
@@ -310,11 +256,11 @@ const HotelDashboard: React.FC = () => {
                         <dt className="stat__label">{t('Capacité')}</dt>
                         <dd className="mt-1 font-serif text-lg text-content">{spot.capacity || '—'}</dd>
                       </div>
-                      {(spot.locationType || spot.type) && (
+                      {spot.setting && (
                         <div>
                           <dt className="stat__label">{t('Type')}</dt>
                           <dd className="mt-1 font-serif text-lg text-content">
-                            {spot.locationType || spot.type}
+                            {spot.setting === 'OUTDOOR' ? t('Extérieur') : t('Intérieur')}
                           </dd>
                         </div>
                       )}
@@ -407,23 +353,6 @@ const HotelDashboard: React.FC = () => {
           userEmail={user?.email || ''}
         />
       </div>
-      <ConfirmDialog
-        open={confirmingDelete}
-        title={t('Supprimer le profil de l’hôtel ?')}
-        body={
-          <>
-            <p>
-              <strong>{user?.name}</strong> sera retiré du programme. Ses espaces, ses
-              photos et son historique de réservations seront supprimés.
-            </p>
-            <p>{t('Cette action est définitive.')}</p>
-          </>
-        }
-        confirmLabel={t('Supprimer définitivement')}
-        onConfirm={handleDeleteProfile}
-        onCancel={() => setConfirmingDelete(false)}
-        busy={deleting}
-      />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { prisma } from '../db';
+import { foldKey } from '../shared/validation';
 
 /**
  * Generate a referral code based on user's name
@@ -6,14 +7,10 @@ import { prisma } from '../db';
  * Examples: JOHNDOE-A32, SARAHALI-9B5, MARIALOPEZ-Z1A
  */
 export function generateReferralCode(username: string): string {
-  // Step 1: Take the account's full name
-  let code = username;
-  
-  // Step 2: Remove all spaces and symbols, keep only alphanumeric
-  code = code.replace(/[^a-zA-Z0-9]/g, '');
-  
-  // Step 3: Convert to UPPERCASE
-  code = code.toUpperCase();
+  // Letters and digits only, accents folded ("Élodie" -> "ELODIE"). A name
+  // with no Latin letters at all would leave nothing, so it falls back.
+  let code = foldKey(username).replace(/[^a-z0-9]/g, '').toUpperCase().slice(0, 16);
+  if (code.length < 2) code = 'ARTIST';
   
   // Step 4: Generate random alphanumeric suffix (2 or 3 characters)
   const suffixLength = Math.random() > 0.5 ? 2 : 3; // Randomly choose 2 or 3

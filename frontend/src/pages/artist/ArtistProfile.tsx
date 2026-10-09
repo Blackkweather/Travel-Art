@@ -1,920 +1,601 @@
-import React, { useState, useEffect } from 'react'
-import { Save, Edit3, MapPin, Music, Calendar, X, Upload, User, Plus, Trash2 } from 'lucide-react'
-import { useAuthStore } from '@/store/authStore'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Save, Edit3, MapPin, Calendar, X, Upload, User, Plus, Trash2 } from 'lucide-react'
 import { artistsApi, apiClient } from '@/utils/api'
 import { normalizeImageUrl } from '@/utils/imageUrl'
 import toast from 'react-hot-toast'
 import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 import DateRangePicker from '@/components/DateRangePicker'
-import ConfirmDialog from '@/components/ConfirmDialog'
+import FormField from '@/components/FormField'
+import VideoCard from '@/components/VideoCard'
+import CategoryFields, { CategoryValue } from '@/components/registration/CategoryFields'
+import CheckboxGroup from '@/components/registration/CheckboxGroup'
+import SelectWithSearch from '@/components/registration/SelectWithSearch'
 import { t } from '@/i18n'
 import { formatShortDate } from '@/utils/i18n'
+import { countryOptions } from '@/i18n/countries'
 import SEOHead from '@/components/SEOHead'
 import PrivacyControls from '@/components/PrivacyControls'
-import { parseJsonField } from '@/utils/apiPayload'
+import type { Artist, ArtistAvailability, MediaItem } from '@/types'
+import { AUDIENCE_TYPES, LANGUAGES, categoryErrors } from '@shared/categories'
+import { COUNTRY_NAMES } from '@shared/countries'
+import { artistProfileUpdateSchema, fieldErrors, normalizePhone } from '@shared/validation'
+import { parseVideoUrl } from '@shared/media'
+
+const MAX_VIDEOS = 10
+
+interface Form extends CategoryValue {
+  stageName: string
+  bio: string
+  country: string
+  phone: string
+  audienceTypes: string[]
+  languages: string[]
+  otherLanguages: string
+}
+
+const formFrom = (a: Artist): Form => ({
+  stageName: a.stageName || '',
+  bio: a.bio || '',
+  country: a.user?.country || '',
+  phone: a.phone || '',
+  mainCategory: a.mainCategory || '',
+  categoryType: a.categoryType || '',
+  specificCategory: a.specificCategory || '',
+  tributeTo: a.tributeTo || '',
+  audienceTypes: a.audienceTypes || [],
+  languages: a.languages || [],
+  otherLanguages: a.otherLanguages || '',
+})
+
+const apiError = (e: any, fallback: string) => e?.response?.data?.error?.message || fallback
 
 const ArtistProfile: React.FC = () => {
-  const [uploadingImages, setUploadingImages] = useState(false)
-  const { user } = useAuthStore()
-  const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<any>(null)
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [profileData, setProfileData] = useState({
-    name: '',
-    discipline: '',
-    bio: '',
-    location: '',
-    images: [] as string[],
-    videos: [] as string[],
-    specialties: [] as string[],
-    rating: 0,
-    totalBookings: 0,
-    memberSince: ''
-  })
+  const [artist, setArtist] = useState<Artist | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [form, setForm] = useState<Form | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
+
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const fileInput = useRef<HTMLInputElement>(null)
   const [newVideoUrl, setNewVideoUrl] = useState('')
-  const [availabilities, setAvailabilities] = useState<any[]>([])
-  const [newAvailability, setNewAvailability] = useState({ dateFrom: '', dateTo: '' })
-  const [loadingAvailability, setLoadingAvailability] = useState(false)
+  const [videoError, setVideoError] = useState<string | null>(null)
+  const [verificationCode, setVerificationCode] = useState<string | null>(null)
+  const [verifying, setVerifying] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchProfile()
-    fetchAvailability()
-  }, [user])
+    artistsApi
+      .getVerificationCode()
+      .then((res) => setVerificationCode(res.data.data.code))
+      .catch(() => undefined)
+  }, [])
 
-  const fetchProfile = async () => {
-    if (!user?.id) return
-
+  /* Look for the code in the video's description. A proof by code verifies
+     the artist's other videos from the same channel too, so the whole list is
+     re-read rather than patched. */
+  const verifyVideo = async (item: MediaItem) => {
+    setVerifying(item.id)
     try {
-      setLoading(true)
-      const response = await artistsApi.getMyProfile()
-      const artist = response.data?.data
-
-      if (artist) {
-        setProfile(artist)
-        
-        // Parse artisticProfile JSON
-        const artisticProfile = parseJsonField<any>(artist.artisticProfile, {})
-
-        // Include profilePicture in images array if it exists
-        const images = artist.images || [];
-        const profilePicture = artist.profilePicture;
-        const allImages = profilePicture && !images.includes(profilePicture) 
-          ? [profilePicture, ...images] 
-          : images;
-        
-        setProfileData({
-          name: artist.stageName || artist.user?.name || user.name || '',
-          discipline: artist.discipline || artisticProfile.mainCategory || '',
-          bio: artist.bio || '',
-          location: artist.user?.country || '',
-          images: allImages,
-          videos: artist.videos || [],
-          specialties: artist.discipline ? [artist.discipline] : [],
-          rating: artist.avgRating || 0,
-          totalBookings: artist.bookings?.length || 0,
-          memberSince: artist.user?.createdAt || artist.createdAt || new Date().toISOString()
-        })
-        
-        // Load availability
-        if (artist.availability) {
-          setAvailabilities(Array.isArray(artist.availability) ? artist.availability : [])
-        }
+      const res = await artistsApi.verifyVideo(item.id)
+      const { verified, message } = res.data.data
+      if (verified) {
+        toast.success(t(message))
+        const fresh = await artistsApi.getMyProfile()
+        const media = (fresh.data.data as any)?.media
+        if (media) setArtist((a) => (a ? { ...a, media } : a))
       } else {
-        // No profile yet - set defaults from user
-        setProfileData({
-          name: user.name || '',
-          discipline: '',
-          bio: '',
-          location: user.country || '',
-          images: [],
-          videos: [],
-          specialties: [],
-          rating: 0,
-          totalBookings: 0,
-          memberSince: user.createdAt || new Date().toISOString()
-        })
+        toast(t(message), { duration: 8000 })
       }
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        // No profile yet - set defaults from user
-        setProfileData({
-          name: user?.name || '',
-          discipline: '',
-          bio: '',
-          location: user?.country || '',
-          images: [],
-          videos: [],
-          specialties: [],
-          rating: 0,
-          totalBookings: 0,
-          memberSince: user?.createdAt || new Date().toISOString()
-        })
-      } else {
-        toast.error(t('Impossible de charger le profil'))
-        console.error('Error fetching profile:', error)
-      }
+    } catch (e) {
+      toast.error(apiError(e, t('La vérification a échoué. Réessayez.')))
+    } finally {
+      setVerifying(null)
+    }
+  }
+  const [addingVideo, setAddingVideo] = useState(false)
+
+  const [newAvailability, setNewAvailability] = useState({ dateFrom: '', dateTo: '' })
+  const [savingAvailability, setSavingAvailability] = useState(false)
+
+  const countries = useMemo(() => countryOptions(COUNTRY_NAMES as string[]), [])
+
+  const load = async () => {
+    try {
+      const res = await artistsApi.getMyProfile()
+      const data: Artist = res.data?.data
+      setArtist(data)
+      setForm(formFrom(data))
+    } catch {
+      toast.error(t('Impossible de charger le profil'))
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSave = async () => {
-    if (!profile?.id) {
-      toast.error(t('Créez d’abord votre profil'))
+  useEffect(() => {
+    load()
+  }, [])
+
+  const media = artist?.media ?? []
+  const photos = media.filter((m) => m.kind === 'IMAGE')
+  const videos = media.filter((m) => m.kind === 'VIDEO')
+  const availability = (artist?.availability ?? []) as ArtistAvailability[]
+
+  const setField = <K extends keyof Form>(key: K, value: Form[K]) => {
+    setForm((f) => (f ? { ...f, [key]: value } : f))
+    setErrors((e) => {
+      const next = { ...e }
+      delete next[key as string]
+      return next
+    })
+  }
+
+  // ------------------------------------------------------------ profile save
+
+  const save = async () => {
+    if (!form || !artist) return
+    const payload = {
+      stageName: form.stageName,
+      bio: form.bio,
+      country: form.country || undefined,
+      phone: form.phone || undefined,
+      mainCategory: form.mainCategory,
+      categoryType: form.categoryType,
+      specificCategory: form.specificCategory || null,
+      tributeTo: form.tributeTo || null,
+      audienceTypes: form.audienceTypes,
+      languages: form.languages,
+      otherLanguages: form.otherLanguages || null,
+    }
+
+    // The same checks the API makes, so problems show under their fields first.
+    const local: Record<string, string> = { ...categoryErrors(payload) }
+    const parsed = artistProfileUpdateSchema.safeParse(payload)
+    if (!parsed.success) Object.assign(local, fieldErrors(parsed.error))
+    if (form.phone && !normalizePhone(form.phone, form.country)) local.phone = 'Numéro de téléphone invalide pour ce pays'
+    if (form.languages.length === 0) local.languages = 'Sélectionnez au moins une langue'
+    if (Object.keys(local).length) {
+      setErrors(local)
+      toast.error(t('Vérifiez les champs signalés'))
       return
     }
 
+    setSaving(true)
     try {
-      // Update artist profile - only send fields that have values
-      const updateData: any = {
-        stageName: profileData.name,
-        phone: user?.phone || undefined,
-        videos: profileData.videos && profileData.videos.length > 0 ? JSON.stringify(profileData.videos) : undefined
-      };
-
-      // Only include bio if it has at least 10 characters
-      if (profileData.bio && profileData.bio.trim().length >= 10) {
-        updateData.bio = profileData.bio;
-      }
-
-      // Only include discipline if it has a value
-      if (profileData.discipline && profileData.discipline.trim().length >= 2) {
-        updateData.discipline = profileData.discipline;
-      }
-
-      // Only include priceRange if it has a value
-      if (profile.priceRange && profile.priceRange.trim().length > 0) {
-        updateData.priceRange = profile.priceRange;
-      }
-
-      // Only include profilePicture if it exists
-      if (profileData.images && profileData.images.length > 0 && profileData.images[0]) {
-        updateData.profilePicture = profileData.images[0];
-      }
-
-      // Include location (country) to update user's country
-      if (profileData.location && profileData.location.trim().length > 0) {
-        updateData.country = profileData.location.trim();
-      }
-
-      await apiClient.put('/artists/me', updateData);
-      
-      toast.success(t('Profil mis à jour'))
+      const res = await artistsApi.updateProfile(undefined, payload)
+      setArtist(res.data.data)
+      setForm(formFrom(res.data.data))
       setIsEditing(false)
-      await fetchProfile()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || t('Vos modifications n’ont pas été enregistrées. Veuillez réessayer.'))
-      console.error('Error updating profile:', error)
+      toast.success(t('Profil mis à jour'))
+    } catch (e: any) {
+      if (e?.response?.data?.error?.fields) setErrors(e.response.data.error.fields)
+      toast.error(apiError(e, t('Vos modifications n’ont pas été enregistrées. Veuillez réessayer.')))
+    } finally {
+      setSaving(false)
     }
   }
 
-  const handleAddVideo = () => {
-    if (!newVideoUrl.trim()) {
-      toast.error(t('Saisissez l’adresse d’une vidéo'))
-      return
-    }
-    
-    // Validate if it's a YouTube URL or other video URL
-    const isValidUrl = newVideoUrl.includes('youtube.com') || 
-                       newVideoUrl.includes('youtu.be') || 
-                       newVideoUrl.startsWith('http')
-    
-    if (!isValidUrl) {
-      toast.error(t('Saisissez une adresse YouTube ou vidéo valide'))
-      return
-    }
-    
-    setProfileData({
-      ...profileData,
-      videos: [...profileData.videos, newVideoUrl]
-    })
-    setNewVideoUrl('')
-    toast.success(t('Vidéo ajoutée. Utilisez « Enregistrer les modifications » pour mettre à jour votre profil'))
-  }
+  // ------------------------------------------------------------------ media
 
-  const handleRemoveVideo = (index: number) => {
-    setProfileData({
-      ...profileData,
-      videos: profileData.videos.filter((_, i) => i !== index)
-    })
-    toast.success(t('Vidéo retirée. Utilisez « Enregistrer les modifications » pour mettre à jour votre profil'))
-  }
-
-  const fetchAvailability = async () => {
-    if (!profile?.id) return
-    
+  const uploadPhotos = async (files: File[]) => {
+    if (!files.length) return
+    const body = new FormData()
+    files.slice(0, 10).forEach((f) => body.append('media', f))
+    setUploadingImages(true)
     try {
-      // Availability is already included in profile.availability from fetchProfile
-      // This function is kept for manual refresh if needed
-      const response = await artistsApi.getMyProfile()
-      const artist = response.data?.data
-      if (artist?.availability) {
-        setAvailabilities(Array.isArray(artist.availability) ? artist.availability : [])
-      }
-    } catch (error: any) {
-      console.error('Error fetching availability:', error)
+      const res = await apiClient.post('/upload/media', body)
+      const added: MediaItem[] = res.data?.data?.media ?? []
+      setArtist((a) => (a ? { ...a, media: [...(a.media ?? []), ...added] } : a))
+      toast.success(t('{n} photo(s) ajoutée(s)', { n: String(added.length) }))
+    } catch (e) {
+      toast.error(apiError(e, t('Échec du téléversement')))
+    } finally {
+      setUploadingImages(false)
+      if (fileInput.current) fileInput.current.value = ''
     }
   }
 
-  const handleAddAvailability = async () => {
-    if (!profile?.id) {
-      toast.error(t('Créez d’abord votre profil'))
-      return
-    }
-
-    if (!newAvailability.dateFrom || !newAvailability.dateTo) {
-      toast.error(t('Sélectionnez une date de début et une date de fin'))
-      return
-    }
-
-    if (new Date(newAvailability.dateFrom) >= new Date(newAvailability.dateTo)) {
-      toast.error(t('La date de fin doit suivre la date de début'))
-      return
-    }
-
+  const removeMedia = async (item: MediaItem) => {
     try {
-      setLoadingAvailability(true)
-      await artistsApi.setAvailability(profile.id, {
+      await artistsApi.removeMedia(item.id)
+      setArtist((a) => (a ? { ...a, media: (a.media ?? []).filter((m) => m.id !== item.id) } : a))
+      toast.success(item.kind === 'VIDEO' ? t('Vidéo retirée') : t('Photo retirée'))
+    } catch (e) {
+      toast.error(apiError(e, t('Impossible de retirer ce média')))
+    }
+  }
+
+  const addVideo = async () => {
+    const url = newVideoUrl.trim()
+    if (!parseVideoUrl(url)) {
+      setVideoError(t('Lien non reconnu : utilisez un lien YouTube, Vimeo ou Instagram'))
+      return
+    }
+    setAddingVideo(true)
+    try {
+      const res = await artistsApi.addVideo(url)
+      setArtist((a) => (a ? { ...a, media: [...(a.media ?? []), res.data.data] } : a))
+      setNewVideoUrl('')
+      setVideoError(null)
+      toast.success(t('Vidéo ajoutée'))
+    } catch (e: any) {
+      setVideoError(e?.response?.data?.error?.fields?.url || apiError(e, t('Impossible d’ajouter cette vidéo')))
+    } finally {
+      setAddingVideo(false)
+    }
+  }
+
+  // ----------------------------------------------------------- availability
+
+  const addAvailability = async () => {
+    if (!artist || !newAvailability.dateFrom || !newAvailability.dateTo) return
+    setSavingAvailability(true)
+    try {
+      const res = await artistsApi.setAvailability(artist.id, {
         dateFrom: new Date(newAvailability.dateFrom).toISOString(),
-        dateTo: new Date(newAvailability.dateTo).toISOString()
+        dateTo: new Date(`${newAvailability.dateTo}T23:59:59`).toISOString(),
       })
-      toast.success(t('Disponibilité ajoutée'))
+      setArtist((a) => (a ? { ...a, availability: [...(a.availability ?? []), res.data.data] } : a))
       setNewAvailability({ dateFrom: '', dateTo: '' })
-      await fetchAvailability()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || t('Impossible d’ajouter cette disponibilité'))
-      console.error('Error adding availability:', error)
+      toast.success(t('Disponibilité ajoutée'))
+    } catch (e) {
+      toast.error(apiError(e, t('Impossible d’ajouter cette disponibilité')))
     } finally {
-      setLoadingAvailability(false)
+      setSavingAvailability(false)
     }
   }
 
-  const handleRemoveAvailability = async (availabilityId: string) => {
-    if (!profile?.id) return
-    if (!confirm(t('Retirer cette période de disponibilité ?'))) return
-
+  const removeAvailability = async (id: string) => {
+    if (!artist) return
     try {
-      await artistsApi.removeAvailability(profile.id, availabilityId)
-      setAvailabilities(prev => prev.filter(a => a.id !== availabilityId))
+      await artistsApi.removeAvailability(artist.id, id)
+      setArtist((a) => (a ? { ...a, availability: (a.availability ?? []).filter((p) => p.id !== id) } : a))
       toast.success(t('Disponibilité retirée'))
-    } catch (error: any) {
-      toast.error(t('Impossible de retirer cette disponibilité'))
-      console.error('Error removing availability:', error)
+    } catch (e) {
+      toast.error(apiError(e, t('Impossible de retirer cette disponibilité')))
     }
   }
 
-  const handleProfilePictureUpload = async (imageUrl: string) => {
-    // The upload route already saved to database, just update local state
-    // Update profile data with new image - put it first in the images array
-    setProfileData(prev => {
-      const existingImages = prev.images || [];
-      // Remove the old profile picture if it exists, add new one at the start
-      const filteredImages = existingImages.filter(img => img !== prev.images[0]);
-      return {
-        ...prev,
-        images: [imageUrl, ...filteredImages]
-      };
-    });
-    
-    // Also update the profile state if it exists
-    if (profile) {
-      setProfile({
-        ...profile,
-        profilePicture: imageUrl
-      });
-    }
-    
-    toast.success(t('Photo de profil enregistrée'));
-  }
-
-  const handleDelete = async () => {
-    if (!profile?.id) return
-    setDeleting(true)
-    try {
-      await apiClient.delete(`/artists/${profile.id}`)
-      toast.success(t('Profil artiste supprimé'))
-      setProfile(null)
-      await fetchProfile()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.error?.message || t('Échec de la suppression'))
-    } finally {
-      setDeleting(false)
-      setConfirmingDelete(false)
-    }
-  }
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto mb-4"></div>
-          <p className="text-content-secondary">{t('Chargement du profil…')}</p>
-        </div>
+        <p className="text-content-secondary">{t('Chargement du profil…')}</p>
       </div>
     )
   }
 
+  if (!artist || !form) {
+    return <div className="notice-critical">{t('Impossible de charger le profil')}</div>
+  }
+
+  const err = (key: string) => (errors[key] ? t(errors[key]) : undefined)
+
   return (
     <div className="space-y-8">
       <SEOHead title={t('Mon profil') + ' — Travel Art'} />
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">
-            {t('Profil de l’artiste')}
-          </h1>
-          <p className="text-content-secondary">
-            {t('Gérez votre profil et présentez votre travail aux hôtels d’exception')}
-          </p>
+          <h1 className="text-3xl font-serif font-bold text-content mb-2 gold-underline">{t('Profil de l’artiste')}</h1>
+          <p className="text-content-secondary">{t('Gérez votre profil et présentez votre travail aux hôtels d’exception')}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="btn-secondary flex items-center space-x-2"
-          >
-            <Edit3 className="w-4 h-4" />
-            <span>{isEditing ? t('Annuler') : t('Modifier le profil')}</span>
-          </button>
-          {profile?.id && (
-            <button
-              onClick={() => setConfirmingDelete(true)}
-              className="btn-primary"
-            >
-              {t('Supprimer le profil')}
-            </button>
-          )}
-        </div>
+        <button
+          onClick={() => {
+            if (isEditing) {
+              setForm(formFrom(artist))
+              setErrors({})
+            }
+            setIsEditing(!isEditing)
+          }}
+          className="btn-secondary flex items-center gap-2"
+        >
+          <Edit3 className="w-4 h-4" />
+          <span>{isEditing ? t('Annuler') : t('Modifier le profil')}</span>
+        </button>
       </div>
 
-      {/* Profile Overview */}
+      {/* Identity */}
       <div className="panel p-6">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Profile Image */}
+        <div className="flex flex-col gap-8 md:flex-row">
           <div className="flex-shrink-0">
             {isEditing ? (
               <ProfilePictureUpload
-                currentImage={profileData.images[0]}
-                onUploadSuccess={handleProfilePictureUpload}
+                currentImage={artist.profilePicture || undefined}
+                onUploadSuccess={(url: string) => setArtist((a) => (a ? { ...a, profilePicture: url } : a))}
+              />
+            ) : artist.profilePicture ? (
+              <img
+                decoding="async"
+                src={normalizeImageUrl(artist.profilePicture)}
+                alt=""
+                className="h-48 w-48 rounded-card object-cover ring-2 ring-gold/20"
               />
             ) : (
-              <div className="relative w-48 h-48">
-                {profileData.images[0] ? (
-                  <img decoding="async" loading="lazy"
-                    src={normalizeImageUrl(profileData.images[0])}
-                    alt={profileData.name}
-                    className="w-full h-full rounded-card object-cover bg-surface-sunken ring-2 ring-gold/20"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      const placeholder = target.nextElementSibling as HTMLElement
-                      if (placeholder) placeholder.style.display = 'flex'
-                    }}
-                  />
-                ) : null}
-                <div 
-                  className={`absolute inset-0 w-full h-full rounded-card bg-gradient-to-br from-navy/10 to-gold/10 ring-2 ring-gold/20 flex items-center justify-center ${profileData.images[0] ? 'hidden' : 'flex'}`}
-                  style={{ display: profileData.images[0] ? 'none' : 'flex' }}
-                >
-                  <User className="w-24 h-24 text-content/30" />
-                </div>
+              <div className="flex h-48 w-48 items-center justify-center rounded-card bg-surface-sunken ring-2 ring-gold/20">
+                <User className="h-24 w-24 text-content/30" />
               </div>
             )}
           </div>
 
-          {/* Profile Info */}
-          <div className="flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="form-label">{t('Nom de l’artiste')}</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profileData.name}
-                    onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                    className="form-input"
+          <div className="flex-1 space-y-6">
+            {isEditing ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField label={t('Nom de scène')} value={form.stageName} onChange={(e) => setField('stageName', e.target.value)} error={err('stageName')} required maxLength={60} />
+                <SelectWithSearch label={t('Pays')} options={countries} value={form.country} onChange={(v) => setField('country', v)} error={err('country')} />
+                <FormField label={t('Téléphone')} type="tel" value={form.phone} onChange={(e) => setField('phone', e.target.value)} error={err('phone')} hint={t('Visible des hôtels uniquement une fois une résidence confirmée')} />
+                <div className="md:col-span-2">
+                  <label className="form-label" htmlFor="artist-bio">{t('Présentation')}</label>
+                  <textarea
+                    id="artist-bio"
+                    value={form.bio}
+                    maxLength={2000}
+                    onChange={(e) => setField('bio', e.target.value)}
+                    className="form-input h-32 resize-none"
+                    placeholder={t('Racontez aux hôtels votre parcours et vos spécialités…')}
                   />
-                ) : (
-                  <p className="text-xl font-serif font-semibold text-content">{profileData.name || 'Not set'}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="form-label">{t('Discipline')}</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profileData.discipline}
-                    onChange={(e) => setProfileData({...profileData, discipline: e.target.value})}
-                    className="form-input"
-                  />
-                ) : (
-                  <p className="text-lg text-gold font-medium">{profileData.discipline || 'Not set'}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="form-label">{t('Lieu')}</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profileData.location}
-                    onChange={(e) => setProfileData({...profileData, location: e.target.value})}
-                    className="form-input"
-                  />
-                ) : (
-                  <p className="text-content-secondary flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {profileData.location || 'Not set'}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="form-label">{t('Note moyenne')}</label>
-                <p className="text-lg font-semibold text-content">
-                  {profileData.rating > 0 ? profileData.rating.toFixed(1) : t('Pas encore d’avis')}
-                </p>
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div className="mt-6">
-              <label className="form-label">Bio</label>
-              {isEditing ? (
-                <textarea
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                  className="form-input h-32 resize-none"
-                  placeholder={t('Racontez aux hôtels votre parcours et vos spécialités…')}
-                />
-              ) : (
-                <p className="text-content-secondary leading-relaxed">
-                  {profileData.bio || t('Aucune biographie. Utilisez « Modifier le profil » pour en ajouter une.')}
-                </p>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div className="mt-6 grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-surface rounded-card">
-                <div className="flex items-center justify-center mb-2">
-                  <span className="text-gold font-bold mr-1">◆</span>
-                  <span className="text-lg font-bold text-content">{profileData.rating > 0 ? profileData.rating.toFixed(1) : '0'}</span>
+                  {err('bio') && <p className="mt-1 text-sm text-[var(--state-critical)]">{err('bio')}</p>}
                 </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <p className="text-2xl font-serif font-semibold text-content">{artist.stageName || artist.user?.name}</p>
+                  <p className="mt-1 text-lg text-gold font-medium">{t(artist.discipline || '') || t('Discipline à compléter')}</p>
+                  {artist.user?.country && (
+                    <p className="mt-2 flex items-center text-content-secondary">
+                      <MapPin className="mr-2 h-4 w-4" />
+                      {artist.user.country}
+                    </p>
+                  )}
+                </div>
+                <p className="text-content-secondary leading-relaxed">
+                  {artist.bio || t('Aucune biographie. Utilisez « Modifier le profil » pour en ajouter une.')}
+                </p>
+              </>
+            )}
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="rounded-card bg-surface p-4 text-center">
+                <p className="text-lg font-bold text-content">{artist.avgRating ? artist.avgRating.toFixed(1) : '—'}</p>
                 <p className="text-sm text-content-secondary">{t('Note moyenne')}</p>
               </div>
-              <div className="text-center p-4 bg-surface rounded-card">
-                <div className="flex items-center justify-center mb-2">
-                  <Calendar className="w-5 h-5 text-gold mr-1" />
-                  <span className="text-lg font-bold text-content">{profileData.totalBookings}</span>
-                </div>
-                <p className="text-sm text-content-secondary">{t('Réservations')}</p>
+              <div className="rounded-card bg-surface p-4 text-center">
+                <p className="text-lg font-bold text-content">{artist.totalRatings ?? 0}</p>
+                <p className="text-sm text-content-secondary">{t('Évaluations')}</p>
               </div>
-              <div className="text-center p-4 bg-surface rounded-card">
-                <div className="flex items-center justify-center mb-2">
-                  <Music className="w-5 h-5 text-gold mr-1" />
-                  <span className="text-lg font-bold text-content">{t('Membre')}</span>
-                </div>
-                <p className="text-sm text-content-secondary">
-                  {t('Depuis {date}', { date: profileData.memberSince ? formatShortDate(profileData.memberSince) : t('Récemment') })}
-                </p>
+              <div className="rounded-card bg-surface p-4 text-center">
+                <p className="text-lg font-bold text-content">{t('Membre')}</p>
+                <p className="text-sm text-content-secondary">{t('Depuis {date}', { date: formatShortDate((artist as any).createdAt || new Date().toISOString()) })}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Registration Details */}
-      {profile && (
-        <div className="panel p-6">
-          <h2 className="text-xl font-serif font-semibold text-content mb-6 gold-underline">
-            {t('Informations d’inscription')}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {profile.stageName && (
-              <div>
-                <label className="form-label">{t('Nom de scène')}</label>
-                <p className="text-content font-medium">{profile.stageName}</p>
-              </div>
-            )}
-            
-            {profile.birthDate && (
-              <div>
-                <label className="form-label">{t('Date de naissance')}</label>
-                <p className="text-content font-medium">{profile.birthDate}</p>
-              </div>
-            )}
-            
-            {profile.phone && (
-              <div>
-                <label className="form-label">{t('Téléphone')}</label>
-                <p className="text-content font-medium">{profile.phone}</p>
-              </div>
-            )}
-            
-            {profile.user?.email && (
-              <div>
-                <label className="form-label">E-mail</label>
-                <p className="text-content font-medium">{profile.user.email}</p>
-              </div>
-            )}
-            
-            {(() => {
-              const artisticProfile = parseJsonField<any>(profile.artisticProfile, {})
-
-              return (
-                <>
-                  {artisticProfile.mainCategory && (
-                    <div>
-                      <label className="form-label">{t('Catégorie principale')}</label>
-                      <p className="text-content font-medium">{artisticProfile.mainCategory}</p>
-                    </div>
-                  )}
-                  
-                  {artisticProfile.secondaryCategory && (
-                    <div>
-                      <label className="form-label">{t('Catégorie secondaire')}</label>
-                      <p className="text-content font-medium">{artisticProfile.secondaryCategory}</p>
-                    </div>
-                  )}
-                  
-                  {artisticProfile.specificCategory && (
-                    <div>
-                      <label className="form-label">{t('Spécialité')}</label>
-                      <p className="text-content font-medium">{artisticProfile.specificCategory}</p>
-                    </div>
-                  )}
-                  
-                  {artisticProfile.domain && (
-                    <div>
-                      <label className="form-label">{t('Domaine')}</label>
-                      <p className="text-content font-medium">{artisticProfile.domain}</p>
-                    </div>
-                  )}
-                  
-                  {artisticProfile.categoryType && (
-                    <div>
-                      <label className="form-label">{t('Type de catégorie')}</label>
-                      <p className="text-content font-medium">{artisticProfile.categoryType}</p>
-                    </div>
-                  )}
-                  
-                  {artisticProfile.languages && artisticProfile.languages.length > 0 && (
-                    <div>
-                      <label className="form-label">{t('Langues')}</label>
-                      <div className="flex flex-wrap gap-2">
-                        {artisticProfile.languages.map((lang: string, idx: number) => (
-                          <span key={idx} className="px-3 py-1 bg-gold/20 text-gold rounded-full text-sm font-medium">
-                            {lang}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {artisticProfile.audienceType && artisticProfile.audienceType.length > 0 && (
-                    <div>
-                      <label className="form-label">{t('Type de public')}</label>
-                      <div className="flex flex-wrap gap-2">
-                        {artisticProfile.audienceType.map((aud: string, idx: number) => (
-                          <span key={idx} className="px-3 py-1 bg-navy/10 text-content rounded-full text-sm font-medium">
-                            {aud}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )
-            })()}
-            
-            {profile.membershipStatus && (
-              <div>
-                <label className="form-label">{t('Statut de l’adhésion')}</label>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${profile.membershipStatus === 'ACTIVE' ? 'bg-[var(--state-positive)]' : 'bg-[var(--border-strong)]'}`}></div>
-                  <p className="text-content font-medium">
-                    {profile.membershipStatus === 'ACTIVE' ? t('Active') : profile.membershipStatus}
-                  </p>
-                </div>
-              </div>
+      {/* Discipline */}
+      <div className="panel p-6">
+        <h2 className="mb-6 text-xl font-serif font-semibold text-content gold-underline">{t('Discipline et public')}</h2>
+        {isEditing ? (
+          <div className="space-y-6">
+            <CategoryFields
+              value={form}
+              onChange={(v) => {
+                setForm((f) => (f ? { ...f, ...v } : f))
+                setErrors((e) => ({ ...e, mainCategory: '', categoryType: '', specificCategory: '', tributeTo: '' }))
+              }}
+              errors={errors}
+            />
+            <CheckboxGroup
+              name="audienceTypes"
+              label={t('Public')}
+              options={AUDIENCE_TYPES.map((v) => ({ value: v, label: t(v) }))}
+              values={form.audienceTypes}
+              onChange={(v) => setField('audienceTypes', v)}
+              error={err('audienceTypes')}
+              layout="grid"
+            />
+            <CheckboxGroup
+              name="languages"
+              label={t('Langues parlées')}
+              options={LANGUAGES.map((v) => ({ value: v, label: t(v) }))}
+              values={form.languages}
+              onChange={(v) => setField('languages', v)}
+              error={err('languages')}
+              layout="grid"
+            />
+            {form.languages.includes('Autre') && (
+              <FormField label={t('Autres langues')} value={form.otherLanguages} onChange={(e) => setField('otherLanguages', e.target.value)} error={err('otherLanguages')} maxLength={100} />
             )}
           </div>
+        ) : (
+          <dl className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+            <div><dt className="form-label">{t('Catégorie')}</dt><dd className="text-content">{t(artist.mainCategory || '—')}</dd></div>
+            <div><dt className="form-label">{t('Spécialité')}</dt><dd className="text-content">{t(artist.specificCategory || artist.categoryType || '—')}{artist.tributeTo ? ` — ${t('hommage à')} ${artist.tributeTo}` : ''}</dd></div>
+            <div><dt className="form-label">{t('Public')}</dt><dd className="text-content">{(artist.audienceTypes ?? []).map((a) => t(a)).join(', ') || '—'}</dd></div>
+            <div><dt className="form-label">{t('Langues')}</dt><dd className="text-content">{[...(artist.languages ?? []).filter((l) => l !== 'Autre').map((l) => t(l)), artist.otherLanguages].filter(Boolean).join(', ') || '—'}</dd></div>
+            <div><dt className="form-label">E-mail</dt><dd className="text-content">{artist.user?.email}</dd></div>
+            <div><dt className="form-label">{t('Date de naissance')}</dt><dd className="text-content">{artist.birthDate || '—'}</dd></div>
+          </dl>
+        )}
+      </div>
+
+      {isEditing && (
+        <div className="flex justify-end">
+          <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
+            <Save className="w-4 h-4" />
+            <span>{saving ? t('Enregistrement…') : t('Enregistrer les modifications')}</span>
+          </button>
         </div>
       )}
 
-      {/* Portfolio Images */}
+      {/* Photos: saved as soon as they are uploaded or removed. */}
       <div className="panel p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-            {t('Images du portfolio')}
-          </h2>
-          {isEditing && (
-            <>
-              {/* POST /upload/media takes up to ten files per request; the
-                  returned URLs are appended to the portfolio and persisted by
-                  the page's existing save action. */}
-              <input
-                id="portfolio-upload"
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={async (e) => {
-                  const files = Array.from(e.target.files || [])
-                  if (!files.length) return
-                  const form = new FormData()
-                  files.slice(0, 10).forEach((f) => form.append('media', f))
-                  try {
-                    setUploadingImages(true)
-                    const res = await apiClient.post('/upload/media', form)
-                    const payload = res.data?.data
-                    const urls: string[] = Array.isArray(payload)
-                      ? payload.map((m: any) => m.url ?? m).filter(Boolean)
-                      : (payload?.urls ?? []).filter(Boolean)
-                    if (!urls.length) throw new Error('empty response')
-                    setProfileData((prev: any) => ({
-                      ...prev,
-                      images: [...(prev.images || []), ...urls]
-                    }))
-                    toast.success(
-                      `${urls.length} image(s) ajoutée(s). Enregistrez pour confirmer.`
-                    )
-                  } catch (err: any) {
-                    toast.error(
-                      err?.response?.data?.error?.message || t('Échec du téléversement')
-                    )
-                  } finally {
-                    setUploadingImages(false)
-                    e.target.value = ''
-                  }
-                }}
-              />
-              <button
-                type="button"
-                disabled={uploadingImages}
-                onClick={() => document.getElementById('portfolio-upload')?.click()}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <Upload className="w-4 h-4" />
-                <span>{uploadingImages ? t('Téléversement…') : 'Ajouter des images'}</span>
-              </button>
-            </>
-          )}
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <h2 className="text-xl font-serif font-semibold text-content gold-underline">{t('Photos')}</h2>
+          <input
+            ref={fileInput}
+            id="portfolio-upload"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+            className="hidden"
+            onChange={(e) => uploadPhotos(Array.from(e.target.files || []))}
+          />
+          <button type="button" disabled={uploadingImages} onClick={() => fileInput.current?.click()} className="btn-secondary flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            <span>{uploadingImages ? t('Téléversement…') : t('Ajouter des photos')}</span>
+          </button>
         </div>
-        {profileData.images.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {profileData.images.map((image, index) => (
-              <div key={index} className="relative group">
-                <img decoding="async" loading="lazy"
-                  src={normalizeImageUrl(image)}
-                  alt={`Portfolio ${index + 1}`}
-                  className="w-full h-48 object-cover rounded-card"
-                />
-                {isEditing && (
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-card flex items-center justify-center">
-                    <button className="bg-[var(--state-critical)] text-white p-2 rounded-full hover:bg-[var(--state-critical)] transition-colors">
-                      ×
-                    </button>
-                  </div>
-                )}
+        {photos.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            {photos.map((photo) => (
+              <div key={photo.id} className="group relative">
+                <img decoding="async" loading="lazy" src={normalizeImageUrl(photo.url)} alt="" className="h-48 w-full rounded-card object-cover" />
+                <button
+                  onClick={() => removeMedia(photo)}
+                  aria-label={t('Retirer cette photo')}
+                  className="absolute right-2 top-2 rounded-full bg-black/60 p-2 text-white opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-content-secondary">{t('Aucune image dans le portfolio. Utilisez « Modifier le profil » pour en ajouter.')}</p>
+          <p className="text-content-secondary">{t('Aucune photo pour le moment. JPEG, PNG ou WebP, 5 Mo maximum chacune.')}</p>
         )}
       </div>
 
-      {/* Availability Management */}
+      {/* Videos: saved as soon as they are added or removed. */}
       <div className="panel p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-              {t('Calendrier de disponibilités')}
-            </h2>
-            <p className="text-sm text-content-secondary mt-2">{t('Indiquez vos dates disponibles pour les réservations')}</p>
-          </div>
-        </div>
+        <h2 className="text-xl font-serif font-semibold text-content gold-underline">{t('Vidéos de performances')}</h2>
+        <p className="mt-2 text-sm text-content-secondary">
+          {t('Ajoutez des liens YouTube, Vimeo ou Instagram de vos propres performances ({n} maximum).', { n: String(MAX_VIDEOS) })}
+        </p>
 
-        {/* Add Availability Form */}
-        <div className="mb-6 p-4 bg-[var(--state-info-wash)] border border-[var(--state-info-line)] rounded-card">
-          <h3 className="form-label mb-4">{t('Ajouter une période de disponibilité')}</h3>
-          <div className="space-y-4">
-            <DateRangePicker
-              startDate={newAvailability.dateFrom}
-              endDate={newAvailability.dateTo}
-              onStartDateChange={(date) => setNewAvailability({ ...newAvailability, dateFrom: date })}
-              onEndDateChange={(date) => setNewAvailability({ ...newAvailability, dateTo: date })}
-              minDate={new Date().toISOString().split('T')[0]}
-            />
-            <div className="flex justify-end">
-              <button
-                onClick={handleAddAvailability}
-                disabled={loadingAvailability || !newAvailability.dateFrom || !newAvailability.dateTo}
-                className="btn-primary flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                {loadingAvailability ? t('Ajout…') : t('Ajouter la disponibilité')}
-              </button>
+        {videos.length < MAX_VIDEOS && (
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <div className="flex-1">
+              <FormField
+                label={t('Lien de la vidéo')}
+                type="url"
+                inputMode="url"
+                value={newVideoUrl}
+                onChange={(e) => {
+                  setNewVideoUrl(e.target.value)
+                  setVideoError(null)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addVideo()
+                  }
+                }}
+                placeholder="https://www.youtube.com/watch?v=…"
+                error={videoError || undefined}
+              />
             </div>
+            <button onClick={addVideo} disabled={addingVideo || !newVideoUrl.trim()} className="btn-primary flex items-center gap-2 self-end">
+              <Plus className="w-4 h-4" />
+              {addingVideo ? t('Ajout…') : t('Ajouter')}
+            </button>
+          </div>
+        )}
+
+        {verificationCode && videos.some((v) => v.verification !== 'VERIFIED') && (
+          <div className="mt-4 rounded-card border border-[var(--state-info-line)] bg-[var(--state-info-wash)] p-4 text-sm text-content" data-testid="video-verification-help">
+            <p className="font-semibold">{t('Prouvez que ces vidéos sont les vôtres')}</p>
+            <p className="mt-1">
+              {t('Votre code personnel')} : <code className="rounded bg-surface px-1.5 py-0.5 font-mono text-base font-semibold" data-testid="verification-code">{verificationCode}</code>
+            </p>
+            <ol className="mt-2 list-decimal space-y-1 pl-5">
+              <li>{t('Ajoutez ce code dans la description d’une de vos vidéos YouTube ou Vimeo, depuis votre compte.')}</li>
+              <li>{t('Cliquez sur « Vérifier » sous cette vidéo. Toutes vos vidéos de la même chaîne sont alors vérifiées.')}</li>
+              <li>{t('Vous pouvez ensuite retirer le code de la description.')}</li>
+            </ol>
+            <p className="mt-2 text-content-secondary">{t('Les liens Instagram sont vérifiés par notre équipe lors de l’examen de votre profil.')}</p>
+          </div>
+        )}
+
+        <div className="mt-6 space-y-4">
+          {videos.length > 0 ? (
+            videos.map((video, index) => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                index={index}
+                showUnverified
+                action={
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {video.verification !== 'VERIFIED' && (video.provider === 'YOUTUBE' || video.provider === 'VIMEO') && (
+                      <button onClick={() => verifyVideo(video)} disabled={verifying === video.id} className="btn-outline btn-sm" data-testid="video-verify">
+                        {verifying === video.id ? t('Vérification…') : t('Vérifier')}
+                      </button>
+                    )}
+                    <button onClick={() => removeMedia(video)} className="flex items-center gap-2 rounded-card px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)]">
+                      <X className="w-4 h-4" />
+                      {t('Retirer')}
+                    </button>
+                  </div>
+                }
+              />
+            ))
+          ) : (
+            <p className="text-content-secondary">{t('Aucune vidéo pour le moment.')}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Availability */}
+      <div className="panel p-6">
+        <h2 className="text-xl font-serif font-semibold text-content gold-underline">{t('Calendrier de disponibilités')}</h2>
+        <p className="mt-2 text-sm text-content-secondary">{t('Indiquez vos dates disponibles pour les réservations')}</p>
+
+        <div className="my-6 space-y-4 rounded-card border border-[var(--state-info-line)] bg-[var(--state-info-wash)] p-4">
+          <DateRangePicker
+            startDate={newAvailability.dateFrom}
+            endDate={newAvailability.dateTo}
+            onStartDateChange={(date) => setNewAvailability((n) => ({ ...n, dateFrom: date }))}
+            onEndDateChange={(date) => setNewAvailability((n) => ({ ...n, dateTo: date }))}
+            minDate={new Date().toISOString().split('T')[0]}
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={addAvailability}
+              disabled={savingAvailability || !newAvailability.dateFrom || !newAvailability.dateTo}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              {savingAvailability ? t('Ajout…') : t('Ajouter la disponibilité')}
+            </button>
           </div>
         </div>
 
-        {/* Availability List */}
-        {availabilities.length > 0 ? (
+        {availability.length > 0 ? (
           <div className="space-y-3">
-            {availabilities
-              .filter((avail: any) => new Date(avail.dateTo) >= new Date())
-              .sort((a: any, b: any) => new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime())
-              .map((avail: any) => (
-                <div
-                  key={avail.id}
-                  className="flex items-center justify-between p-4 bg-surface rounded-card border border-line"
-                >
+            {[...availability]
+              .sort((a, b) => new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime())
+              .map((p) => (
+                <div key={p.id} className="flex items-center justify-between rounded-card border border-line bg-surface p-4">
                   <div className="flex items-center gap-4">
-                    <Calendar className="w-5 h-5 text-gold" />
-                    <div>
-                      <p className="font-medium text-content">
-                        {new Date(avail.dateFrom).toLocaleDateString('fr-FR')} - {new Date(avail.dateTo).toLocaleDateString('fr-FR')}
-                      </p>
-                      <p className="text-sm text-content-secondary">
-                        {Math.ceil((new Date(avail.dateTo).getTime() - new Date(avail.dateFrom).getTime()) / (1000 * 60 * 60 * 24))} days
-                      </p>
-                    </div>
+                    <Calendar className="h-5 w-5 text-gold" />
+                    <p className="font-medium text-content">
+                      {new Date(p.dateFrom).toLocaleDateString('fr-FR')} – {new Date(p.dateTo).toLocaleDateString('fr-FR')}
+                    </p>
                   </div>
-                  <button
-                    onClick={() => handleRemoveAvailability(avail.id)}
-                    className="px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)] rounded-card transition-colors flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
+                  <button onClick={() => removeAvailability(p.id)} className="flex items-center gap-2 rounded-card px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)]">
+                    <Trash2 className="h-4 w-4" />
                     {t('Retirer')}
                   </button>
                 </div>
               ))}
           </div>
         ) : (
-          <div className="text-center py-12 px-4 bg-surface rounded-card border-2 border-dashed border-line-strong">
-            <Calendar className="w-16 h-16 text-content-secondary mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-content mb-2">{t('Aucune disponibilité renseignée')}</h3>
-            <p className="text-content-secondary mb-4">
-              {t('Ajoutez vos dates ci-dessus pour que les hôtels puissent vous solliciter')}
-            </p>
-          </div>
+          <p className="text-content-secondary">{t('Ajoutez vos dates ci-dessus pour que les hôtels puissent vous solliciter')}</p>
         )}
       </div>
 
-      {/* Performance Videos */}
-      <div className="panel p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-serif font-semibold text-content gold-underline">
-              {t('Vidéos de performances')}
-            </h2>
-            <p className="text-sm text-content-secondary mt-2">{t('Ajoutez des liens YouTube ou vidéo pour présenter vos performances')}</p>
-          </div>
-        </div>
-        
-        {isEditing && (
-          <div className="mb-6 p-4 bg-[var(--state-info-wash)] border border-[var(--state-info-line)] rounded-card">
-            <label className="form-label">{t('Ajouter un lien YouTube ou vidéo')}</label>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={newVideoUrl}
-                onChange={(e) => setNewVideoUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="form-input flex-1"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddVideo()
-                  }
-                }}
-              />
-              <button 
-                onClick={handleAddVideo}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                {t('Ajouter une vidéo')}
-              </button>
-            </div>
-            <p className="text-xs text-content-secondary mt-2">
-              💡 Tip: Paste a YouTube URL (e.g., https://www.youtube.com/watch?v=...) or direct video link
-            </p>
-          </div>
-        )}
-        
-        {profileData.videos.length > 0 ? (
-          <div className="space-y-4">
-            {profileData.videos.map((video, index) => {
-              // Check if it's a YouTube URL
-              const isYouTube = video.includes('youtube.com') || video.includes('youtu.be')
-              let videoId = ''
-              
-              if (isYouTube) {
-                if (video.includes('youtube.com/watch?v=')) {
-                  videoId = video.split('v=')[1]?.split('&')[0] || ''
-                } else if (video.includes('youtu.be/')) {
-                  videoId = video.split('youtu.be/')[1]?.split('?')[0] || ''
-                } else if (video.includes('youtube.com/embed/')) {
-                  videoId = video.split('embed/')[1]?.split('?')[0] || ''
-                }
-              }
-              
-              return (
-                <div key={index} className="border border-line rounded-card overflow-hidden shadow-medium">
-                  {/* Video Preview */}
-                  {isYouTube && videoId ? (
-                    <div className="aspect-video bg-surface-inverse">
-                      <iframe
-                        src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-                        title={`${t('Vidéo de performance')} ${index + 1}`}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="w-full h-full"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-surface-sunken">
-                      <video
-                        src={video}
-                        controls
-                        preload="metadata"
-                        aria-label={`${t('Vidéo de performance')} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      >
-                        {t('Votre navigateur ne prend pas en charge la lecture vidéo.')}
-                      </video>
-                    </div>
-                  )}
-                  
-                  {/* Video Info */}
-                  <div className="p-4 bg-surface flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-content mb-1">{t('Vidéo de performance')} {index + 1}</p>
-                      <p className="text-sm text-content-secondary truncate">{video}</p>
-                    </div>
-                    {isEditing && (
-                      <button 
-                        onClick={() => handleRemoveVideo(index)}
-                        className="ml-4 px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)] rounded-card transition-colors flex items-center gap-2"
-                      >
-                        <X className="w-4 h-4" />
-                        {t('Retirer')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-12 px-4 bg-surface rounded-card border-2 border-dashed border-line-strong">
-            <div className="w-16 h-16 rounded-full bg-surface-sunken flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-content-secondary" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-content mb-2">{t('Aucune vidéo')}</h3>
-            <p className="text-content-secondary mb-4">
-              {isEditing 
-                ? t('Ajoutez votre première vidéo avec le formulaire ci-dessus') 
-                : t('Utilisez « Modifier le profil » pour ajouter des vidéos de vos performances')}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Save Button */}
-      {isEditing && (
-        <div className="flex justify-end">
-          <button onClick={handleSave} className="btn-primary flex items-center justify-center space-x-2">
-            <Save className="w-4 h-4 flex-shrink-0" />
-            <span className="leading-none">{t('Enregistrer les modifications')}</span>
-          </button>
-        </div>
-      )}
       <PrivacyControls />
-
-      <ConfirmDialog
-        open={confirmingDelete}
-        title={t('Supprimer votre profil d’artiste ?')}
-        body={
-          <>
-            <p>
-              {t('Votre page publique, vos médias, vos disponibilités et votre historique de résidences seront supprimés.')}
-            </p>
-            <p>{t('Cette action est définitive.')}</p>
-          </>
-        }
-        confirmLabel={t('Supprimer définitivement')}
-        onConfirm={handleDelete}
-        onCancel={() => setConfirmingDelete(false)}
-        busy={deleting}
-      />
     </div>
   )
 }

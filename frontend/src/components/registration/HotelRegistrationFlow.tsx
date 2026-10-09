@@ -1,767 +1,392 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import SimpleNavbar from '../SimpleNavbar';
-import Footer from '../Footer';
-import StepIndicator from './StepIndicator';
-import FormField from '../FormField';
-import SelectWithSearch from './SelectWithSearch';
-import CheckboxGroup from './CheckboxGroup';
-import RadioGroup from './RadioGroup';
-import { useAuthStore } from '@/store/authStore';
-import { COUNTRIES, VALIDATION } from '@/types/artistRegistration';
-import { countryOptions as buildCountryOptions } from '@/i18n/countries';
+import React, { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import SimpleNavbar from '../SimpleNavbar'
+import Footer from '../Footer'
+import StepIndicator from './StepIndicator'
+import FormField from '../FormField'
+import SelectWithSearch from './SelectWithSearch'
+import { useAuthStore } from '@/store/authStore'
+import { countryOptions } from '@/i18n/countries'
+import { COUNTRY_NAMES } from '@shared/countries'
+import { fieldErrors, hotelRegistrationSchema } from '@shared/validation'
+import {
+  AmbianceSection,
+  AudienceField,
+  CollaborationSection,
+  EquipmentSection,
+  FreedomSection,
+  HOTEL_TYPES,
+  LogisticsSection,
+  ProgrammeForm,
+  SpaceForm,
+  SpacesSection,
+  ValidationSection,
+  emptyProgramme,
+  programmePayload,
+  spacesPayload,
+} from '../hotel/HotelFormSections'
+import { Captcha, EmailSuggestion, apiFieldErrors, apiMessage, captchaEnabled, useAvailabilityCheck, useDraft } from './registrationKit'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 
-type PublicType = 'Familles' | 'Couples' | 'Adult only' | 'Corporate';
-type Ambiance = 'Chill / Lounge' | 'Festif' | 'Culturel' | 'Premium / luxe';
-type EventType = 'Live music' | 'DJ sets' | 'Shows' | 'Ateliers / performances artistiques';
+/**
+ * Hotel registration in seven steps. Step 1 is the account and the
+ * establishment; steps 2 to 7 are the programme questions, each saved as its
+ * own field (they used to be folded into one paragraph that then became the
+ * hotel's public description). Same shared rules as the API, field-level
+ * errors, live duplicate checks, and a draft that survives a refresh.
+ */
 
-interface Space {
-  name: string;
-  locationType: 'Intérieur' | 'Extérieur';
-  capacity: string;
-  hours: string;
-  noiseLevel: string;
-  media: string[];
+interface General {
+  name: string
+  country: string
+  city: string
+  address: string
+  hotelType: string
+  roomCount: string
+  description: string
+  website: string
+  instagramUrl: string
+  facebookUrl: string
+  youtubeUrl: string
+  contactName: string
+  email: string
+  phone: string
+  password: string
+  confirmPassword: string
 }
 
-interface Equipment {
-  stage: { has: boolean; dimensions?: string };
-  sound: { has: boolean; details?: string };
-  lighting: 'Basique' | 'Pro' | '';
-  screens: { has: boolean };
-  crew: { has: boolean };
+interface Draft {
+  step: number
+  general: General
+  spaces: SpaceForm[]
+  programme: ProgrammeForm
+  acceptTerms: boolean
 }
 
-interface Collaboration {
-  types: Array<'Hébergement + restauration' | 'Visibilité / promotion'>;
-  conditionsText?: string;
-  durationType: 'One shot' | 'Résidence' | '';
-  residenceDuration?: string;
-  openDates?: string;
-}
-
-interface Logistics {
-  lodging: boolean;
-  meals: boolean;
-  transport: boolean;
-  facilities?: string;
-}
-
-interface Freedom {
-  level: 'Totale' | 'Encadrée' | '';
-  expectations: Array<'Interaction avec les clients' | 'Image de marque à respecter'>;
-  possibilities: Array<'Concepts originaux' | 'Collaborations avec d’autres artistes' | 'Workshops / expériences uniques'>;
-  otherEnabled?: boolean;
-  otherDetails?: string;
-  artistTypesNeeded?: string;
-  frequency?: { perWeek?: string; perMonth?: string };
-  flowDescription?: string;
-}
-
-interface ValidationProcess {
-  delay?: string;
-  process: 'Validation simple' | 'Validation après échange' | '';
-  decisionMaker?: string;
-}
-
-interface HotelGeneral {
-  name: string;
-  country: string;
-  city: string;
-  location?: string;
-  hotelType: 'Resort / Club' | 'Hôtel urbain' | 'Hôtel de luxe' | 'Hôtel familial' | 'Business' | '';
-  roomCount: string;
-  publicPrimary: PublicType[];
-  website?: string;
-  socials?: { instagram?: string; facebook?: string; youtube?: string };
-  contactName?: string;
-  // The contact email is the account's login identity and the password is what
-  // secures it, so neither is optional - see the validation in canLeaveStep1.
-  contactEmail: string;
-  password: string;
-  confirmPassword: string;
-  contactPhone?: string;
-}
-
-interface HotelRegistrationData {
-  step: number;
-  general: HotelGeneral;
-  ambiance: { styles: Ambiance[]; eventTypes: EventType[]; appreciated?: string; disliked?: string };
-  spaces: Space[];
-  equipment: Equipment;
-  collaboration: Collaboration;
-  logistics: Logistics;
-  freedom: Freedom;
-  validation: ValidationProcess;
-}
-
-const INITIAL_STATE: HotelRegistrationData = {
+const INITIAL: Draft = {
   step: 1,
   general: {
-    name: '',
-    country: '',
-    city: '',
-    location: '',
-    hotelType: '',
-    roomCount: '',
-    publicPrimary: [],
-    website: '',
-    socials: { instagram: '', facebook: '', youtube: '' },
-    contactName: '',
-    contactEmail: '',
-    password: '',
-    confirmPassword: '',
-    contactPhone: ''
-  },
-  ambiance: {
-    styles: [],
-    eventTypes: [],
-    appreciated: '',
-    disliked: ''
+    name: '', country: '', city: '', address: '', hotelType: '', roomCount: '', description: '',
+    website: '', instagramUrl: '', facebookUrl: '', youtubeUrl: '',
+    contactName: '', email: '', phone: '', password: '', confirmPassword: '',
   },
   spaces: [],
-  equipment: {
-    stage: { has: false, dimensions: '' },
-    sound: { has: false, details: '' },
-    lighting: '',
-    screens: { has: false },
-    crew: { has: false }
-  },
-  collaboration: {
-    types: [],
-    durationType: '',
-    residenceDuration: '',
-    openDates: ''
-  },
-  logistics: {
-    lodging: false,
-    meals: false,
-    transport: false,
-    facilities: ''
-  },
-  freedom: {
-    level: '',
-    expectations: [],
-    possibilities: [],
-    otherEnabled: false,
-    otherDetails: '',
-    artistTypesNeeded: '',
-    frequency: { perWeek: '', perMonth: '' },
-    flowDescription: ''
-  },
-  validation: {
-    delay: '',
-    process: '',
-    decisionMaker: ''
-  }
-};
+  programme: emptyProgramme(),
+  acceptTerms: false,
+}
 
-const containerVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, staggerChildren: 0.08 } } };
-const itemVariants = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } };
+const GENERAL_FIELDS = ['name', 'country', 'city', 'address', 'hotelType', 'roomCount', 'description', 'website', 'instagramUrl', 'facebookUrl', 'youtubeUrl', 'contactName', 'email', 'phone', 'password', 'confirmPassword', 'programme.audiences']
+const PROGRAMME_STEP: Record<string, number> = {
+  styles: 2, eventTypes: 2, appreciated: 2, disliked: 2,
+  hasStage: 3, stageDimensions: 3, hasSound: 3, soundDetails: 3, lighting: 3, hasScreens: 3, hasCrew: 3,
+  collaborationTypes: 4, conditions: 4, durationType: 4, residenceDuration: 4, openDates: 4,
+  offersLodging: 5, offersMeals: 5, offersTransport: 5, facilities: 5,
+  freedomLevel: 6, expectations: 6, possibilities: 6, otherDetails: 6, artistTypesNeeded: 6, flowDescription: 6, perWeek: 6, perMonth: 6,
+  responseDelay: 7, validationProcess: 7, decisionMaker: 7,
+}
+
+const stepOf = (field: string): number => {
+  if (GENERAL_FIELDS.includes(field)) return 1
+  if (field.startsWith('spaces')) return 3
+  if (field.startsWith('programme.')) return PROGRAMME_STEP[field.split('.')[1]] ?? 1
+  return 7
+}
+
+const STEP_TITLES = ['Établissement', 'Ambiance', 'Espaces & équipement', 'Collaboration', 'Logistique', 'Liberté artistique', 'Validation']
 
 const HotelRegistrationFlow: React.FC = () => {
-  const [state, setState] = useState<HotelRegistrationData>(INITIAL_STATE);
-  const [isLoading, setIsLoading] = useState(false);
-  // Houses were never asked to accept anything at all.
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const navigate = useNavigate();
-  const { register: registerUser } = useAuthStore();
+  const navigate = useNavigate()
+  const { register } = useAuthStore()
+  const [draft, setDraft, clearDraft] = useDraft<Draft>('travel-art:register:hotel', INITIAL)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  // Bumped after a refused submit: the token it carried is spent.
+  const [captchaReset, setCaptchaReset] = useState(0)
+  // Passwords are kept out of the stored draft.
+  const [secrets, setSecrets] = useState({ password: '', confirmPassword: '' })
 
-  const stepTitles = [
-    t('Infos générales'),
-    t('Ambiance & identité'),
-    t('Espace d’expression & équipement technique'),
-    'Conditions de collaboration',
-    'Logistique',
-    t('Liberté artistique'),
-    'Validation & process'
-  ];
+  const g = draft.general
 
-  // Labels in the reader's language, ordered by what they actually see;
-  // the stored value stays the English name the API expects.
-  const countryOptions = useMemo(() => buildCountryOptions(COUNTRIES), []);
-
-  // Step 1 carries the credentials, so it gates on them. Everything the account
-  // needs to exist and be reachable by exactly one person is checked here rather
-  // than at submit, where the user would have to walk back six steps to fix it.
-  const step1Errors = useMemo(() => {
-    const g = state.general;
-    const errors: string[] = [];
-    if (!g.name) errors.push(t('le nom de l’hôtel'));
-    if (!g.country) errors.push('le pays');
-    if (!g.city) errors.push('la ville');
-    if (!g.hotelType) errors.push(t('le type d’établissement'));
-    if (!g.roomCount) errors.push(t('le nombre de chambres'));
-    if (!g.contactEmail) errors.push(t('l’email de contact'));
-    else if (!VALIDATION.email.test(g.contactEmail)) errors.push(t('un email de contact valide'));
-    if (!g.password) errors.push(t('un mot de passe'));
-    else if (!VALIDATION.password.test(g.password)) {
-      errors.push(t('un mot de passe d’au moins 8 caractères avec majuscule, minuscule, chiffre et caractère spécial'));
+  // Passwords are never kept in the saved draft (see the artist flow).
+  useEffect(() => {
+    if (draft.step > 1) {
+      setDraft((d) => ({ ...d, step: 1 }))
+      toast(t('Votre saisie a été conservée. Pour votre sécurité, ressaisissez votre mot de passe.'))
     }
-    if (g.password && g.password !== g.confirmPassword) errors.push('deux mots de passe identiques');
-    return errors;
-  }, [state.general]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const countries = useMemo(() => countryOptions(COUNTRY_NAMES as string[]), [])
+  const live = useAvailabilityCheck({ email: g.email, phone: g.phone, country: g.country, hotelName: g.name, city: g.city }, draft.step === 1)
 
-  const updateGeneral = useCallback((patch: Partial<HotelGeneral>) => {
-    setState(prev => ({ ...prev, general: { ...prev.general, ...patch } }));
-  }, []);
+  const payload = () => ({
+    role: 'HOTEL' as const,
+    name: g.name,
+    contactName: g.contactName,
+    city: g.city,
+    country: g.country,
+    address: g.address || null,
+    hotelType: g.hotelType || null,
+    roomCount: g.roomCount || null,
+    description: g.description || null,
+    website: g.website || null,
+    instagramUrl: g.instagramUrl || null,
+    facebookUrl: g.facebookUrl || null,
+    youtubeUrl: g.youtubeUrl || null,
+    email: g.email,
+    phone: g.phone,
+    password: secrets.password,
+    spaces: spacesPayload(draft.spaces),
+    programme: programmePayload(draft.programme),
+    acceptTerms: draft.acceptTerms,
+    locale: 'fr',
+    captchaToken,
+  })
 
-  const updateAmbiance = useCallback((patch: Partial<HotelRegistrationData['ambiance']>) => {
-    setState(prev => ({ ...prev, ambiance: { ...prev.ambiance, ...patch } }));
-  }, []);
+  const allErrors = () => {
+    const result = hotelRegistrationSchema.safeParse(payload())
+    const errs: Record<string, string> = result.success ? {} : fieldErrors(result.error)
+    if (secrets.password && secrets.password !== secrets.confirmPassword) errs.confirmPassword = 'Les deux mots de passe ne correspondent pas'
+    if (captchaEnabled && !captchaToken) errs.captchaToken = 'Cochez la vérification anti-robot'
+    return errs
+  }
 
-  const updateEquipment = useCallback((patch: Partial<Equipment>) => {
-    setState(prev => ({ ...prev, equipment: { ...prev.equipment, ...patch } }));
-  }, []);
+  const goTo = (step: number) => {
+    setDraft((d) => ({ ...d, step }))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
-  const updateCollab = useCallback((patch: Partial<Collaboration>) => {
-    setState(prev => ({ ...prev, collaboration: { ...prev.collaboration, ...patch } }));
-  }, []);
+  const setGeneral = (key: keyof General) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const value = e.target.value
+    setDraft((d) => ({ ...d, general: { ...d.general, [key]: value } }))
+    setErrors((errs) => {
+      const next = { ...errs }
+      delete next[key]
+      return next
+    })
+  }
 
-  const updateLogistics = useCallback((patch: Partial<Logistics>) => {
-    setState(prev => ({ ...prev, logistics: { ...prev.logistics, ...patch } }));
-  }, []);
+  const setProgramme = (patch: Partial<ProgrammeForm>) => setDraft((d) => ({ ...d, programme: { ...d.programme, ...patch } }))
 
-  const updateFreedom = useCallback((patch: Partial<Freedom>) => {
-    setState(prev => ({ ...prev, freedom: { ...prev.freedom, ...patch } }));
-  }, []);
-
-  const updateValidation = useCallback((patch: Partial<ValidationProcess>) => {
-    setState(prev => ({ ...prev, validation: { ...prev.validation, ...patch } }));
-  }, []);
-
-  const addSpace = () => {
-    setState(prev => ({
-      ...prev,
-      spaces: [...prev.spaces, { name: '', locationType: 'Intérieur', capacity: '', hours: '', noiseLevel: '', media: [] }]
-    }));
-  };
-
-  const updateSpace = (index: number, patch: Partial<Space>) => {
-    setState(prev => {
-      const spaces = [...prev.spaces];
-      spaces[index] = { ...spaces[index], ...patch };
-      return { ...prev, spaces };
-    });
-  };
-
-  const removeSpace = (index: number) => {
-    setState(prev => {
-      const spaces = prev.spaces.filter((_, i) => i !== index);
-      return { ...prev, spaces };
-    });
-  };
-
-  const nextStep = () => {
-    if (state.step < 7) {
-      setState(prev => ({ ...prev, step: prev.step + 1 }));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const next = () => {
+    const errs = { ...(draft.step === 1 ? live.fields : {}), ...allErrors() }
+    const stepErrors = Object.fromEntries(Object.entries(errs).filter(([field]) => stepOf(field) === draft.step && field !== 'acceptTerms'))
+    if (Object.keys(stepErrors).length) {
+      setErrors(stepErrors)
+      toast.error(t('Vérifiez les champs signalés'))
+      return
     }
-  };
+    setErrors({})
+    goTo(draft.step + 1)
+  }
 
-  const prevStep = () => {
-    if (state.step > 1) {
-      setState(prev => ({ ...prev, step: prev.step - 1 }));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const submit = async () => {
+    const errs = allErrors()
+    if (Object.keys(errs).length) {
+      setErrors(errs)
+      goTo(Math.min(...Object.keys(errs).map(stepOf)))
+      toast.error(t('Vérifiez les champs signalés'))
+      return
     }
-  };
-
-  const handleSubmit = async () => {
-    setIsLoading(true);
+    setSubmitting(true)
     try {
-      // Re-checked at submit as well as at step 1: the user can reach step 7 and
-      // then edit step 1 back into an invalid state.
-      if (step1Errors.length > 0) {
-        setState(prev => ({ ...prev, step: 1 }));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        toast.error(`Il manque encore ${step1Errors.join(', ')}.`);
-        setIsLoading(false);
-        return;
+      await register(payload() as any)
+      clearDraft()
+      navigate('/inscription-envoyee', { state: { role: 'HOTEL', email: g.email.trim().toLowerCase() } })
+    } catch (error: any) {
+      setCaptchaReset((n) => n + 1)
+      const fields = apiFieldErrors(error)
+      if (Object.keys(fields).length) {
+        setErrors(fields)
+        goTo(Math.min(...Object.keys(fields).map(stepOf)))
       }
-
-      if (!acceptTerms) {
-        toast.error(t('Vous devez accepter les conditions générales et la politique de confidentialité.'));
-        setIsLoading(false);
-        return;
-      }
-
-      const performanceSpotsPayload = JSON.stringify(
-        state.spaces.map(s => ({
-          name: s.name,
-          locationType: s.locationType,
-          capacity: s.capacity,
-          hours: s.hours,
-          noiseLevel: s.noiseLevel,
-          media: s.media
-        }))
-      );
-      const descriptionText =
-        `Type: ${state.general.hotelType}. ` +
-        `Ambiance: ${(state.ambiance.styles || []).join(', ') || '—'}. ` +
-        `Événements: ${(state.ambiance.eventTypes || []).join(', ') || '—'}. ` +
-        `Appréciés: ${state.ambiance.appreciated || '—'}. ` +
-        `Refusés: ${state.ambiance.disliked || '—'}. ` +
-        `Collab: ${(state.collaboration.types || []).join(', ') || '—'}; ` +
-        `Conditions: ${state.collaboration.conditionsText || '—'}; ` +
-        `Durée: ${state.collaboration.durationType || '—'} ${state.collaboration.residenceDuration || ''}; ` +
-        `Dates: ${state.collaboration.openDates || '—'}. ` +
-        `Logistique (hébergement:${state.logistics.lodging ? 'oui' : 'non'}, repas:${state.logistics.meals ? 'oui' : 'non'}, transport:${state.logistics.transport ? 'oui' : 'non'}). ` +
-        `Liberté: ${state.freedom.level || '—'}; Attentes: ${(state.freedom.expectations || []).join(', ') || '—'}; ` +
-        `Possibilités: ${(state.freedom.possibilities || []).join(', ') || '—'}; ` +
-        `Types recherchés: ${state.freedom.artistTypesNeeded || '—'}; ` +
-        `Fréquence: ${state.freedom.frequency?.perWeek || '—'}/semaine, ${state.freedom.frequency?.perMonth || '—'}/mois; ` +
-        `Autre: ${state.freedom.otherEnabled ? (state.freedom.otherDetails || '—') : '—'}. ` +
-        `Validation: délai ${state.validation.delay || '—'}, process ${state.validation.process || '—'}, décisionnaire ${state.validation.decisionMaker || '—'}.`;
-      const descriptionPayload = descriptionText.length < 10 ? `${descriptionText} Infos.` : descriptionText;
-
-      // Everything the seven steps collected goes with the registration. It
-      // used to be a second call to an authenticated endpoint, which had no
-      // session to authenticate with once registration stopped issuing one -
-      // so the account was created and every answer past step 1 was lost.
-      await registerUser({
-        role: 'HOTEL',
-        acceptTerms,
-        name: state.general.name,
-        email: state.general.contactEmail,
-        password: state.general.password,
-        phone: state.general.contactPhone || '',
-        country: state.general.country,
-        hotelProfile: {
-          description: descriptionPayload,
-          city: state.general.city,
-          performanceSpots: performanceSpotsPayload,
-          rooms: JSON.stringify([]),
-          repName: state.general.contactName || ''
-        }
-      });
-
-      toast.success(t('Demande enregistrée'));
-      // No session exists yet - the account is pending review.
-      navigate('/inscription-envoyee', { state: { role: 'HOTEL' } });
-    } catch (error: unknown) {
-      const apiError = error as { response?: { data?: { error?: { message?: string } } } };
-      toast.error(apiError.response?.data?.error?.message || t('Échec de l’inscription'));
+      toast.error(apiMessage(error, t('Échec de l’inscription')))
     } finally {
-      setIsLoading(false);
+      setSubmitting(false)
     }
-  };
+  }
+
+  const err = (field: string) => {
+    const message = errors[field] ?? (draft.step === 1 ? live.fields[field] : undefined)
+    return message ? t(message) : undefined
+  }
+
+  const nav = (
+    <div className="flex justify-between pt-4">
+      {draft.step > 1 ? <button type="button" onClick={() => goTo(draft.step - 1)} className="btn-secondary">{t('Retour')}</button> : <span />}
+      {draft.step < 7 && <button type="button" onClick={next} className="btn-primary">{t('Continuer')}</button>}
+    </div>
+  )
+
+  const heading = (title: string, lede: string) => (
+    <div>
+      <h2 className="mb-2 text-3xl font-bold text-content">{t(title)}</h2>
+      <p className="text-content-secondary">{t(lede)}</p>
+    </div>
+  )
 
   return (
-    <div className="flex flex-col min-h-screen bg-surface">
+    <div className="flex min-h-screen flex-col bg-surface">
       <SimpleNavbar />
       <SEOHead title={t('Inscription hôtel — Travel Art')} description={t('Présentez votre établissement et rejoignez le réseau d’hôtels partenaires Travel Art.')} />
-      <main className="flex-1 container mx-auto px-4 pt-28 pb-12 md:pb-16">
+      <main className="container mx-auto flex-1 px-4 pb-12 pt-28 md:pb-16">
         <h1 className="sr-only">{t('Inscription hôtel')}</h1>
+        <div className="mx-auto mb-12 max-w-3xl">
+          <StepIndicator currentStep={draft.step} totalSteps={7} steps={STEP_TITLES.map((s) => t(s))} />
+        </div>
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          key={draft.step}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto mb-12"
+          transition={{ duration: 0.3 }}
+          className="mx-auto max-w-3xl rounded-card border border-line bg-surface-raised p-6 shadow-2xl md:p-10"
         >
-          <StepIndicator currentStep={state.step} totalSteps={7} steps={stepTitles} />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto bg-surface-raised rounded-card shadow-2xl p-6 md:p-10 border border-line"
-        >
-          {/* No AnimatePresence here. Each step's exit animation never
-              finished - the blocks contain nested motion children with
-              staggered variants - so the exiting step was never unmounted.
-              With mode="wait" that meant the next step never mounted at all:
-              pressing "Continuer" moved the state and the progress bar while
-              the page kept showing step 1, and a hotel could never reach the
-              submit. Plain conditional rendering unmounts immediately; each
-              step keeps its own enter animation. */}
-            {state.step === 1 && (
-              <motion.div 
-                key="hotel-step1" 
-                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
-                animate={{ opacity: 1, x: 0, scale: 1 }} 
-                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Informations générales sur l’hôtel')}</h2>
-                    <p className="text-content-secondary">{t('Ces informations permettent à l’artiste de comprendre le standing et l’ambiance.')}</p>
-                  </div>
-                  <motion.div variants={itemVariants}>
-                    <FormField label={t('Nom de l’hôtel')} value={state.general.name} onChange={(e) => updateGeneral({ name: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  </motion.div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <motion.div variants={itemVariants}>
-                      <SelectWithSearch label={t('Pays')} options={countryOptions} value={state.general.country} onChange={(v) => updateGeneral({ country: v })} />
-                    </motion.div>
-                    <motion.div variants={itemVariants}>
-                      <FormField label={t('Ville')} value={state.general.city} onChange={(e) => updateGeneral({ city: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                    </motion.div>
-                  </div>
-                  <motion.div variants={itemVariants}>
-                    <FormField label={t('Localisation')} placeholder={t('Adresse ou description')} value={state.general.location || ''} onChange={(e) => updateGeneral({ location: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  </motion.div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <motion.div variants={itemVariants}>
-                      <SelectWithSearch
-                        label={t('Type d’hôtel')}
-                        options={[
-                          { value: 'Resort / Club', label: 'Resort / Club' },
-                          { value: 'Hôtel urbain', label: t('Hôtel urbain') },
-                          { value: 'Hôtel de luxe', label: t('Hôtel de luxe') },
-                          { value: 'Hôtel familial', label: t('Hôtel familial') },
-                          { value: 'Business', label: 'Affaires' }
-                        ]}
-                        value={state.general.hotelType}
-                        onChange={(v) => updateGeneral({ hotelType: v as HotelGeneral['hotelType'] })}
-                      />
-                    </motion.div>
-                    <motion.div variants={itemVariants}>
-                      <FormField inputMode="numeric" label={t('Nombre de chambres')} placeholder="Ex: 150" value={state.general.roomCount} onChange={(e) => updateGeneral({ roomCount: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                    </motion.div>
-                  </div>
-                  <motion.div variants={itemVariants}>
-                    <CheckboxGroup
-                      name="general-public-primary"
-                      label={t('Public principal')}
-                      options={[
-                        { value: 'Familles', label: 'Familles' },
-                        { value: 'Couples', label: 'Couples' },
-                        { value: 'Adult only', label: 'Adultes uniquement' },
-                        { value: 'Corporate', label: t('Corporate / événements') }
-                      ]}
-                      values={state.general.publicPrimary}
-                      onChange={(vals) => updateGeneral({ publicPrimary: vals as PublicType[] })}
-                    />
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
-                    <FormField inputMode="url" label={t('Site web')} placeholder="https://..." value={state.general.website || ''} onChange={(e) => updateGeneral({ website: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  </motion.div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField inputMode="url" label="Instagram" placeholder="https://instagram.com/..." value={state.general.socials?.instagram || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), instagram: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                    <FormField inputMode="url" label="Facebook" placeholder="https://facebook.com/..." value={state.general.socials?.facebook || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), facebook: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                    <FormField inputMode="url" label="YouTube" placeholder="https://youtube.com/..." value={state.general.socials?.youtube || ''} onChange={(e) => updateGeneral({ socials: { ...(state.general.socials || {}), youtube: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField label={t('Contact responsable')} placeholder={t('Nom')} value={state.general.contactName || ''} onChange={(e) => updateGeneral({ contactName: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                    <FormField type="email" label={t('E-mail de contact *')} placeholder={t('contact@votre-hotel.com')} value={state.general.contactEmail} onChange={(e) => updateGeneral({ contactEmail: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                    <FormField type="tel" label={t('Téléphone contact')} placeholder="+33 ..." value={state.general.contactPhone || ''} onChange={(e) => updateGeneral({ contactPhone: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  </div>
-                  <motion.div variants={itemVariants}>
-                    <p className="text-sm text-content-secondary mb-3">
-                      {t('Cet email et ce mot de passe vous serviront à vous connecter à votre espace hôtel.')}
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        label={t('Mot de passe *')}
-                        type="password"
-                        placeholder={t('8 caractères minimum')}
-                        value={state.general.password}
-                        onChange={(e) => updateGeneral({ password: (e.target as HTMLInputElement).value })}
-                        disabled={isLoading}
-                      />
-                      <FormField
-                        label={t('Confirmer le mot de passe *')}
-                        type="password"
-                        placeholder={t('Retapez le mot de passe')}
-                        value={state.general.confirmPassword}
-                        onChange={(e) => updateGeneral({ confirmPassword: (e.target as HTMLInputElement).value })}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </motion.div>
-                  {step1Errors.length > 0 && (
-                    <p className="text-sm text-[var(--state-critical)]">
-                      Il manque encore {step1Errors.join(', ')}.
-                    </p>
-                  )}
-                  <div className="flex justify-between pt-4">
-                    <button
-                      type="button"
-                      onClick={nextStep}
-                      disabled={step1Errors.length > 0}
-                      className="btn-primary w-full md:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {t('Continuer')}
-                    </button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-            {state.step === 2 && (
-              <motion.div 
-                key="hotel-step2" 
-                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
-                animate={{ opacity: 1, x: 0, scale: 1 }} 
-                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Ambiance & identité artistique')}</h2>
-                    <p className="text-content-secondary">{t('Aidez l’artiste à comprendre ce qui colle ou non.')}</p>
-                  </div>
-                  <motion.div variants={itemVariants}>
-                    <CheckboxGroup
-                      name="ambiance-styles"
-                      label={t('Style / ambiance recherchée')}
-                      options={[
-                        { value: 'Chill / Lounge', label: 'Chill / Lounge' },
-                        { value: 'Festif', label: 'Festif' },
-                        { value: 'Culturel', label: 'Culturel' },
-                        { value: 'Premium / luxe', label: 'Premium / luxe' }
-                      ]}
-                      values={state.ambiance.styles}
-                      onChange={(vals) => updateAmbiance({ styles: vals as Ambiance[] })}
-                    />
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
-                    <CheckboxGroup
-                      name="ambiance-event-types"
-                      label={t('Types d’événements habituels')}
-                      options={[
-                        { value: 'Live music', label: 'Musique live' },
-                        { value: 'DJ sets', label: 'DJ sets' },
-                        { value: 'Shows', label: 'Spectacles' },
-                        { value: 'Ateliers / performances artistiques', label: 'Ateliers / performances artistiques' }
-                      ]}
-                      values={state.ambiance.eventTypes}
-                      onChange={(vals) => updateAmbiance({ eventTypes: vals as EventType[] })}
-                    />
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
-                    <FormField label={t('Musiques / arts appréciés')} placeholder={t('Jazz, afro, pop, électro, classique, danse, théâtre, etc.')} value={state.ambiance.appreciated || ''} onChange={(e) => updateAmbiance({ appreciated: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
-                    <FormField label={t('Ce que l’hôtel ne veut pas')} placeholder={t('Précisez les styles ou formats non souhaités')} value={state.ambiance.disliked || ''} onChange={(e) => updateAmbiance({ disliked: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  </motion.div>
-                  <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-            {state.step === 3 && (
-              <motion.div 
-                key="hotel-step3" 
-                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
-                animate={{ opacity: 1, x: 0, scale: 1 }} 
-                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Espace d’expression & équipement technique')}</h2>
-                    <p className="text-content-secondary">{t('Décrivez les espaces d’expression et les équipements mis à disposition.')}</p>
-                  </div>
-                  <div className="space-y-6">
-                    {state.spaces.map((space, index) => (
-                      <div key={index} className="p-4 border rounded-card space-y-4">
-                        <FormField label={t('Nom de l’espace')} placeholder={t('Scène, plage, rooftop, salle, piscine…')} value={space.name} onChange={(e) => updateSpace(index, { name: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                        <RadioGroup
-                          name={`space-${index}-location-type`}
-                          label={t('Intérieur / extérieur')}
-                          options={[
-                            { value: 'Intérieur', label: t('Intérieur') },
-                            { value: 'Extérieur', label: t('Extérieur') }
-                          ]}
-                          value={space.locationType}
-                          onChange={(v) => updateSpace(index, { locationType: v as Space['locationType'] })}
-                        />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <FormField inputMode="numeric" label={t('Capacité')} placeholder={t('Nombre de personnes')} value={space.capacity} onChange={(e) => updateSpace(index, { capacity: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                          <FormField label={t('Horaires possibles')} placeholder="Ex: 18h-22h" value={space.hours} onChange={(e) => updateSpace(index, { hours: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                          <FormField label={t('Niveau sonore autorisé')} placeholder={t('Bas, moyen, élevé')} value={space.noiseLevel} onChange={(e) => updateSpace(index, { noiseLevel: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                        </div>
-                        <FormField inputMode="url" label={t('Photos ou vidéos (URLs, séparées par des virgules)')} placeholder="https://..., https://..." value={(space.media || []).join(', ')} onChange={(e) => updateSpace(index, { media: (e.target as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean) })} disabled={isLoading} />
-                        <div className="flex justify-between">
-                          <button type="button" onClick={() => removeSpace(index)} className="btn-secondary">{t('Supprimer')}</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button type="button" onClick={addSpace} className="btn-outline">{t('Ajouter un espace')}</button>
-                  </div>
-                  <div className="space-y-4 pt-2">
-                    <RadioGroup
-                      name="equipment-stage"
-                      label={t('Scène')}
-                      options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]}
-                      value={state.equipment.stage.has ? 'true' : 'false'}
-                      onChange={(v) => updateEquipment({ stage: { ...state.equipment.stage, has: v === 'true' } })}
-                    />
-                    <FormField label={t('Dimensions de la scène')} placeholder="Ex: 6m x 4m" value={state.equipment.stage.dimensions || ''} onChange={(e) => updateEquipment({ stage: { ...state.equipment.stage, dimensions: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                    <RadioGroup
-                      name="equipment-sound"
-                      label={t('Sonorisation')}
-                      options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]}
-                      value={state.equipment.sound.has ? 'true' : 'false'}
-                      onChange={(v) => updateEquipment({ sound: { ...state.equipment.sound, has: v === 'true' } })}
-                    />
-                    <FormField label={t('Détails sonorisation')} placeholder={t('Marque, puissance, console, micros…')} value={state.equipment.sound.details || ''} onChange={(e) => updateEquipment({ sound: { ...state.equipment.sound, details: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                    <SelectWithSearch label={t('Éclairage')} options={[{ value: 'Basique', label: 'Basique' }, { value: 'Pro', label: 'Pro' }]} value={state.equipment.lighting} onChange={(v) => updateEquipment({ lighting: v as Equipment['lighting'] })} />
-                    <RadioGroup name="equipment-screens" label={t('Écran / vidéo / LED')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.equipment.screens.has ? 'true' : 'false'} onChange={(v) => updateEquipment({ screens: { has: v === 'true' } })} />
-                    <RadioGroup name="equipment-crew" label={t('Régie technique sur place')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.equipment.crew.has ? 'true' : 'false'} onChange={(v) => updateEquipment({ crew: { has: v === 'true' } })} />
-                  </div>
-                  <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-            {state.step === 4 && (
-              <motion.div 
-                key="hotel-step4" 
-                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
-                animate={{ opacity: 1, x: 0, scale: 1 }} 
-                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Conditions de collaboration')}</h2>
-                    <p className="text-content-secondary">{t('Définissez le cadre et laissez l’artiste proposer librement.')}</p>
-                  </div>
-                  <CheckboxGroup
-                    name="collab-types"
-                    label={t('Type de collaboration acceptée')}
-                    options={[
-                      { value: 'Hébergement + restauration', label: t('Hébergement + restauration') },
-                      { value: 'Visibilité / promotion', label: t('Visibilité / promotion') }
-                    ]}
-                    values={state.collaboration.types}
-                    onChange={(vals) => updateCollab({ types: vals as Collaboration['types'] })}
+          {draft.step === 1 && (
+            <div className="space-y-6">
+              {heading('Informations générales sur l’hôtel', 'Ces informations permettent à l’artiste de comprendre le standing et l’ambiance.')}
+              <FormField label={t('Nom de l’hôtel')} value={g.name} onChange={setGeneral('name')} error={err('name')} required maxLength={120} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <SelectWithSearch label={t('Pays')} options={countries} value={g.country} onChange={(v) => setDraft((d) => ({ ...d, general: { ...d.general, country: v } }))} error={err('country')} required />
+                <FormField label={t('Ville')} value={g.city} onChange={setGeneral('city')} error={err('city')} required maxLength={80} />
+              </div>
+              <FormField label={t('Adresse')} value={g.address} onChange={setGeneral('address')} error={err('address')} maxLength={200} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <SelectWithSearch label={t('Type d’hôtel')} options={HOTEL_TYPES.map((v) => ({ value: v, label: t(v) }))} value={g.hotelType} onChange={(v) => setDraft((d) => ({ ...d, general: { ...d.general, hotelType: v } }))} />
+                <FormField inputMode="numeric" label={t('Nombre de chambres')} placeholder="Ex. : 40" value={g.roomCount} onChange={setGeneral('roomCount')} error={err('roomCount')} />
+              </div>
+              <AudienceField value={draft.programme} onChange={setProgramme} errors={errors} />
+              <div>
+                <label className="form-label" htmlFor="hotel-description">{t('Présentation de l’hôtel (visible des artistes)')}</label>
+                <textarea id="hotel-description" rows={4} maxLength={2000} className="form-input w-full" value={g.description} onChange={setGeneral('description')} />
+                {err('description') && <p className="mt-1 text-sm text-[var(--state-critical)]">{err('description')}</p>}
+              </div>
+              <FormField inputMode="url" label={t('Site web')} placeholder="https://" value={g.website} onChange={setGeneral('website')} error={err('website')} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <FormField inputMode="url" label="Instagram" placeholder="https://instagram.com/…" value={g.instagramUrl} onChange={setGeneral('instagramUrl')} error={err('instagramUrl')} />
+                <FormField inputMode="url" label="Facebook" placeholder="https://facebook.com/…" value={g.facebookUrl} onChange={setGeneral('facebookUrl')} error={err('facebookUrl')} />
+                <FormField inputMode="url" label="YouTube" placeholder="https://youtube.com/…" value={g.youtubeUrl} onChange={setGeneral('youtubeUrl')} error={err('youtubeUrl')} />
+              </div>
+
+              <div className="border-t border-line pt-6">
+                <h3 className="mb-4 text-lg font-semibold text-content">{t('Votre compte')}</h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField label={t('Nom et prénom du responsable')} autoComplete="name" value={g.contactName} onChange={setGeneral('contactName')} error={err('contactName')} required maxLength={100} />
+                  <FormField type="tel" autoComplete="tel" label={t('Téléphone')} placeholder="05 24 …" value={g.phone} onChange={setGeneral('phone')} error={err('phone')} required />
+                </div>
+                <div className="mt-4">
+                  <FormField type="email" autoComplete="email" label={t('E-mail de connexion')} placeholder="contact@votre-hotel.com" value={g.email} onChange={setGeneral('email')} error={err('email')} required />
+                  <EmailSuggestion suggestion={live.suggestion} onAccept={(email) => setDraft((d) => ({ ...d, general: { ...d.general, email } }))} />
+                </div>
+                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField
+                    type="password"
+                    autoComplete="new-password"
+                    showPasswordToggle
+                    label={t('Mot de passe')}
+                    value={secrets.password}
+                    onChange={(e) => { setSecrets((s) => ({ ...s, password: e.target.value })); setErrors((x) => ({ ...x, password: '' })) }}
+                    error={err('password') || undefined}
+                    hint={t('8 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial')}
+                    required
                   />
-                  <FormField label={t('Conditions pour l’artiste (à remplir)')} placeholder={t('Décrivez les conditions précises pour l’artiste venant')} value={state.collaboration.conditionsText || ''} onChange={(e) => updateCollab({ conditionsText: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <RadioGroup name="collab-duration" label={t('Durée des prestations')} options={[{ value: 'One shot', label: 'Ponctuel' }, { value: 'Résidence', label: t('Résidence') }]} value={state.collaboration.durationType} onChange={(v) => updateCollab({ durationType: v as Collaboration['durationType'] })} />
-                  <FormField label={t('Résidence (durée)')} placeholder={t('1 semaine, 1 mois…')} value={state.collaboration.residenceDuration || ''} onChange={(e) => updateCollab({ residenceDuration: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <FormField label={t('Dates ou périodes ouvertes')} placeholder={t('Périodes ouvertes')} value={state.collaboration.openDates || ''} onChange={(e) => updateCollab({ openDates: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-            {state.step === 5 && (
-              <motion.div 
-                key="hotel-step5" 
-                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
-                animate={{ opacity: 1, x: 0, scale: 1 }} 
-                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Logistique pour l’artiste')}</h2>
-                    <p className="text-content-secondary">{t('Précisez les éléments qui aident l’artiste à se projeter.')}</p>
-                  </div>
-                  <RadioGroup name="logistics-lodging" label={t('Hébergement fourni')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.lodging ? 'true' : 'false'} onChange={(v) => updateLogistics({ lodging: v === 'true' })} />
-                  <RadioGroup name="logistics-meals" label={t('Repas inclus')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.meals ? 'true' : 'false'} onChange={(v) => updateLogistics({ meals: v === 'true' })} />
-                  <RadioGroup name="logistics-transport" label={t('Transport pris en charge')} options={[{ value: 'true', label: 'Oui' }, { value: 'false', label: 'Non' }]} value={state.logistics.transport ? 'true' : 'false'} onChange={(v) => updateLogistics({ transport: v === 'true' })} />
-                  <FormField label={t('Accès aux installations de l’hôtel')} placeholder={t('Piscine, salle de sport, spa, etc.')} value={state.logistics.facilities || ''} onChange={(e) => updateLogistics({ facilities: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-            {state.step === 6 && (
-              <motion.div 
-                key="hotel-step6" 
-                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
-                animate={{ opacity: 1, x: 0, scale: 1 }} 
-                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Liberté artistique & attentes')}</h2>
-                    <p className="text-content-secondary">{t('Donnez le cadre pour que l’artiste se sente libre.')}</p>
-                  </div>
-                  <RadioGroup name="freedom-level" label={t('Niveau de liberté artistique')} options={[{ value: 'Totale', label: 'Totale' }, { value: 'Encadrée', label: t('Encadrée') }]} value={state.freedom.level} onChange={(v) => updateFreedom({ level: v as Freedom['level'] })} />
-                  <CheckboxGroup name="freedom-expectations" label={t('Attentes spécifiques de l’hôtel')} options={[{ value: 'Interaction avec les clients', label: t('Interaction avec les clients') }, { value: 'Image de marque à respecter', label: t('Image de marque à respecter') }]} values={state.freedom.expectations} onChange={(vals) => updateFreedom({ expectations: vals as Freedom['expectations'] })} />
-                  <CheckboxGroup name="freedom-possibilities" label={t('Possibilités de proposer')} options={[{ value: 'Concepts originaux', label: 'Concepts originaux' }, { value: 'Collaborations avec d’autres artistes', label: t('Collaborations avec d’autres artistes') }, { value: 'Workshops / expériences uniques', label: t('Workshops / expériences uniques') }]} values={state.freedom.possibilities} onChange={(vals) => updateFreedom({ possibilities: vals as Freedom['possibilities'] })} />
-                  <div className="flex items-center gap-3">
-                    <button type="button" className="btn-outline" onClick={() => updateFreedom({ otherEnabled: !state.freedom.otherEnabled })}>{t('Autre')}</button>
-                  </div>
-                  {state.freedom.otherEnabled && (
-                    <FormField label={t('Autre (précisez)')} placeholder={t('Ajoutez vos attentes ou possibilités spécifiques')} value={state.freedom.otherDetails || ''} onChange={(e) => updateFreedom({ otherDetails: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  )}
-                  <FormField label={t('Types d’artistes recherchés')} placeholder={t('Musiciens, DJs, danseurs…')} value={state.freedom.artistTypesNeeded || ''} onChange={(e) => updateFreedom({ artistTypesNeeded: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <FormField label={t('Comment ça va se passer pour eux')} placeholder={t('Décrivez l’organisation et le déroulé')} value={state.freedom.flowDescription || ''} onChange={(e) => updateFreedom({ flowDescription: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label={t('Combien par semaine')} placeholder="Ex: 2" value={state.freedom.frequency?.perWeek || ''} onChange={(e) => updateFreedom({ frequency: { ...(state.freedom.frequency || {}), perWeek: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                    <FormField label={t('Combien par mois')} placeholder="Ex: 8" value={state.freedom.frequency?.perMonth || ''} onChange={(e) => updateFreedom({ frequency: { ...(state.freedom.frequency || {}), perMonth: (e.target as HTMLInputElement).value } })} disabled={isLoading} />
-                  </div>
-                  <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
-                    <button type="button" onClick={nextStep} className="btn-primary">{t('Continuer')}</button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-            {state.step === 7 && (
-              <motion.div 
-                key="hotel-step7" 
-                initial={{ opacity: 0, x: -30, scale: 0.95 }} 
-                animate={{ opacity: 1, x: 0, scale: 1 }} 
-                exit={{ opacity: 0, x: 30, scale: 0.95 }} 
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-                  <div>
-                    <h2 className="text-3xl font-bold text-navy-900 mb-2">{t('Validation et processus')}</h2>
-                    <p className="text-content-secondary">{t('Fluidifiez la plateforme avec un process clair.')}</p>
-                  </div>
-                  <FormField label={t('Délai de réponse moyen')} placeholder="Ex: 48h" value={state.validation.delay || ''} onChange={(e) => updateValidation({ delay: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <RadioGroup name="validation-process" label={t('Process de validation')} options={[{ value: 'Validation simple', label: 'Validation simple' }, { value: 'Validation après échange', label: t('Validation après échange') }]} value={state.validation.process} onChange={(v) => updateValidation({ process: v as ValidationProcess['process'] })} />
-                  <FormField label={t('Personne décisionnaire')} placeholder={t('Nom et rôle')} value={state.validation.decisionMaker || ''} onChange={(e) => updateValidation({ decisionMaker: (e.target as HTMLInputElement).value })} disabled={isLoading} />
-                  <label className="flex items-start gap-3 pt-6 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={acceptTerms}
-                      onChange={(e) => setAcceptTerms(e.target.checked)}
-                      disabled={isLoading}
-                      className="mt-1 w-4 h-4 accent-gold shrink-0"
-                      data-testid="hotel-accept-terms"
-                    />
-                    <span className="text-sm text-content-secondary">
-                      {t('J’ai lu et j’accepte les')}{' '}
-                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-gold underline">
-                        {t('conditions générales')}
-                      </a>{' '}
-                      {t('et la')}{' '}
-                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-gold underline">
-                        {t('politique de confidentialité')}
-                      </a>.
-                    </span>
-                  </label>
-                  <div className="flex justify-between pt-4">
-                    <button type="button" onClick={prevStep} className="btn-secondary">{t('Retour')}</button>
-                    <button type="button" onClick={handleSubmit} className="btn-primary" disabled={isLoading || !acceptTerms}>{isLoading ? 'Envoi…' : 'Terminer'}</button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
+                  <FormField
+                    type="password"
+                    autoComplete="new-password"
+                    showPasswordToggle
+                    label={t('Confirmer le mot de passe')}
+                    value={secrets.confirmPassword}
+                    onChange={(e) => { setSecrets((s) => ({ ...s, confirmPassword: e.target.value })); setErrors((x) => ({ ...x, confirmPassword: '' })) }}
+                    error={err('confirmPassword') || undefined}
+                    required
+                  />
+                </div>
+              </div>
+              {nav}
+            </div>
+          )}
+
+          {draft.step === 2 && (
+            <div className="space-y-6">
+              {heading('Ambiance & identité artistique', 'Aidez l’artiste à comprendre ce qui colle ou non.')}
+              <AmbianceSection value={draft.programme} onChange={setProgramme} errors={errors} />
+              {nav}
+            </div>
+          )}
+
+          {draft.step === 3 && (
+            <div className="space-y-8">
+              {heading('Espaces & équipement technique', 'Décrivez les espaces où l’artiste se produira et ce qui est mis à disposition.')}
+              <SpacesSection spaces={draft.spaces} onChange={(spaces) => setDraft((d) => ({ ...d, spaces }))} errors={errors} />
+              <EquipmentSection value={draft.programme} onChange={setProgramme} errors={errors} />
+              {nav}
+            </div>
+          )}
+
+          {draft.step === 4 && (
+            <div className="space-y-6">
+              {heading('Conditions de collaboration', 'Le séjour pour deux est la contrepartie de la prestation ; précisez le cadre.')}
+              <CollaborationSection value={draft.programme} onChange={setProgramme} errors={errors} />
+              {nav}
+            </div>
+          )}
+
+          {draft.step === 5 && (
+            <div className="space-y-6">
+              {heading('Logistique pour l’artiste', 'Précisez les éléments qui aident l’artiste à se projeter.')}
+              <LogisticsSection value={draft.programme} onChange={setProgramme} errors={errors} />
+              {nav}
+            </div>
+          )}
+
+          {draft.step === 6 && (
+            <div className="space-y-6">
+              {heading('Liberté artistique & attentes', 'Donnez le cadre pour que l’artiste se sente libre.')}
+              <FreedomSection value={draft.programme} onChange={setProgramme} errors={errors} />
+              {nav}
+            </div>
+          )}
+
+          {draft.step === 7 && (
+            <div className="space-y-6">
+              {heading('Validation et processus', 'Fluidifiez la plateforme avec un process clair.')}
+              <ValidationSection value={draft.programme} onChange={setProgramme} errors={errors} />
+              <label className="flex cursor-pointer items-start gap-3 pt-4">
+                <input
+                  type="checkbox"
+                  checked={draft.acceptTerms}
+                  onChange={(e) => setDraft((d) => ({ ...d, acceptTerms: e.target.checked }))}
+                  className="mt-1 h-4 w-4 shrink-0 accent-gold"
+                  data-testid="hotel-accept-terms"
+                />
+                <span className="text-sm text-content-secondary">
+                  {t('J’ai lu et j’accepte les')}{' '}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-gold underline">{t('conditions générales')}</a>{' '}
+                  {t('et la')}{' '}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-gold underline">{t('politique de confidentialité')}</a>.
+                </span>
+              </label>
+              {err('acceptTerms') && <p className="text-sm text-[var(--state-critical)]">{err('acceptTerms')}</p>}
+              <Captcha onToken={setCaptchaToken} action="register" resetKey={captchaReset} />
+              {err('captchaToken') && <p className="text-sm text-[var(--state-critical)]">{err('captchaToken')}</p>}
+              <div className="flex justify-between pt-4">
+                <button type="button" onClick={() => goTo(6)} className="btn-secondary">{t('Retour')}</button>
+                <button type="button" onClick={submit} className="btn-primary" disabled={submitting || !draft.acceptTerms}>
+                  {submitting ? t('Envoi…') : t('Envoyer ma candidature')}
+                </button>
+              </div>
+            </div>
+          )}
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="max-w-3xl mx-auto mt-8 text-center">
-          <p className="text-sm text-content-secondary">
-            {t('Vos informations sont sécurisées et ne seront jamais partagées.')}
-          </p>
-        </motion.div>
+        <p className="mx-auto mt-8 max-w-3xl text-center text-sm text-content-secondary">
+          {t('Vos coordonnées ne sont communiquées à un artiste qu’une fois une résidence confirmée.')}
+        </p>
       </main>
       <Footer />
     </div>
-  );
-};
+  )
+}
 
-export default HotelRegistrationFlow;
+export default HotelRegistrationFlow

@@ -19,11 +19,10 @@ const HotelCredits: React.FC = () => {
   const [checkoutNotice, setCheckoutNotice] = useState<{ kind: 'success' | 'cancelled'; message: string } | null>(null)
 
   const totalSpent = useMemo(() => {
-    const purchases = transactions.filter((t) => t.type === 'CREDIT_PURCHASE')
+    // What the hotel actually paid Stripe for credits.
+    const purchases = transactions.filter((t) => t.type === 'CREDIT_PURCHASE' && t.status === 'COMPLETED')
     return purchases.reduce((sum, t) => sum + (t.amount || 0), 0)
   }, [transactions])
-
-  const totalBookings = useMemo(() => transactions.filter((t) => t.type === 'BOOKING_FEE').length, [transactions])
 
   async function loadAll() {
     if (!user) return
@@ -31,7 +30,7 @@ const HotelCredits: React.FC = () => {
     setError(null)
     try {
       const [hotelRes, pkgRes] = await Promise.all([
-        hotelsApi.getByUser(user.id),
+        hotelsApi.getMyProfile(),
         paymentsApi.getPackages(),
       ])
       const hotel = hotelRes.data.data
@@ -42,7 +41,7 @@ const HotelCredits: React.FC = () => {
       const txRes = await paymentsApi.transactions({ limit: 20 })
       setTransactions(txRes.data.data.transactions || [])
     } catch (e: any) {
-      setError(e?.response?.data?.message || t('Impossible de charger vos crédits'))
+      setError(e?.response?.data?.error?.message || t('Impossible de charger vos crédits'))
     } finally {
       setLoading(false)
     }
@@ -191,8 +190,8 @@ const HotelCredits: React.FC = () => {
           <span className="stat__value">€{formatNumber(totalSpent)}</span>
         </div>
         <div className="stat rounded-none border-0">
-          <span className="stat__label">{t('Réservations')}</span>
-          <span className="stat__value">{formatNumber(totalBookings)}</span>
+          <span className="stat__label">{t('Crédits utilisés')}</span>
+          <span className="stat__value">{credits ? formatNumber(credits.usedCredits) : (loading ? '—' : 0)}</span>
         </div>
       </div>
 
@@ -220,7 +219,7 @@ const HotelCredits: React.FC = () => {
                   </span>
                 </div>
               )}
-              
+
               <div className="text-center mb-6">
                 <h3 className="text-xl font-serif font-semibold text-content mb-2">
                   {pkg.name}
@@ -292,11 +291,11 @@ const HotelCredits: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-content text-lg mb-1">{transaction.type.replace('_', ' ')}</h3>
-                  <p className="text-sm text-content-secondary font-medium mb-1">{transaction.paymentMethod || '—'}</p>
+                  <p className="text-sm text-content-secondary font-medium mb-1">{transaction.description || '—'}</p>
                   <p className="text-xs text-content-secondary">{new Date(transaction.createdAt).toLocaleDateString('fr-FR')}</p>
                 </div>
               </div>
-              
+
               <div className="text-right">
                 <div className={`px-3 py-1 rounded-full text-sm font-medium ${getTransactionColor(transaction.type === 'CREDIT_PURCHASE' ? 'purchase' : transaction.type === 'REFUND' ? 'refund' : 'booking')}`}>
                   {transactionTypeLabel(transaction.type)}
@@ -345,7 +344,7 @@ const HotelCredits: React.FC = () => {
               </li>
             </ul>
           </div>
-          
+
           <div>
             <h3 className="text-lg font-serif font-semibold text-content mb-4">
               {t('Bonnes pratiques')}

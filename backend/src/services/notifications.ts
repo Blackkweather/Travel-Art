@@ -20,6 +20,7 @@
  * confirmed residency because a mail provider had a bad afternoon, is far
  * worse than a missed notification. Same posture as services/email.ts.
  */
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db';
 import type { SendResult } from './email';
 
@@ -28,6 +29,13 @@ export type NotificationType =
   | 'BOOKING_CONFIRMED'
   | 'BOOKING_REJECTED'
   | 'BOOKING_CANCELLED'
+  | 'CONVENTION_TO_SIGN'
+  | 'CONVENTION_SIGNED'
+  | 'CANCELLATION_FEE_DUE'
+  | 'TRANSPORT_CLAIM_OPEN'
+  | 'TRANSPORT_CLAIM_SUBMITTED'
+  | 'TRANSPORT_CLAIM_SETTLED'
+  | 'VIDEO_VERIFIED'
   | 'RATING_REQUESTED'
   | 'RATING_RECEIVED'
   | 'MEMBERSHIP_EXPIRING'
@@ -62,7 +70,7 @@ export async function notify({
 
   try {
     await prisma.notification.create({
-      data: { userId, type, payload: JSON.stringify(payload) },
+      data: { userId, type, payload: payload as Prisma.InputJsonObject },
     });
     stored = true;
   } catch (err: any) {

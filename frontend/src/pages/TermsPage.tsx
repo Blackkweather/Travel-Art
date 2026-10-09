@@ -2,6 +2,7 @@ import React from 'react'
 import LegalLayout from '@/components/LegalLayout'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { CONTACT_EMAIL } from '@/config/contact'
 
 const TermsPage: React.FC = () => {
   return (
@@ -50,7 +51,7 @@ const TermsPage: React.FC = () => {
 
         <h2>7. Contact</h2>
         <p>
-          Une question sur ces conditions ? Écrivez à <a className="text-gold" href="mailto:hello@travelart.com">hello@travelart.com</a>.
+          Une question sur ces conditions ? Écrivez à <a className="text-gold" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
         </p>
     </LegalLayout>
   )

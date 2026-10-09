@@ -46,6 +46,5 @@ export const RLS_MODELS = new Set([
   'Booking',
   'Credit',
   'CreditLedger',
-  'Transaction',
   'Payment',
 ]);

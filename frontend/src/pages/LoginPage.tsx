@@ -9,11 +9,25 @@ import toast from 'react-hot-toast'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import BrandWordmark from '@/components/BrandWordmark'
+import ResendVerification from '@/components/ResendVerification'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 
+/** Why the last session ended, said once when the sign-in page opens. */
+const SESSION_END_MESSAGE: Record<string, string> = {
+  expired: 'Votre session a expiré. Reconnectez-vous.',
+  revoked: 'Vous avez été déconnecté de tous vos appareils. Reconnectez-vous.',
+  inactive: 'Ce compte n’est plus actif. Contactez-nous si vous pensez qu’il s’agit d’une erreur.',
+}
+
 const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
+  // Set when sign-in is refused because the address is not confirmed yet.
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
+  const [notice] = useState(() => {
+    const reason = useAuthStore.getState().sessionEndReason
+    return reason ? SESSION_END_MESSAGE[reason] : null
+  })
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
 
@@ -35,6 +49,7 @@ const LoginPage: React.FC = () => {
 
   const onSubmit = async (data: LoginCredentials) => {
     setIsLoading(true)
+    setUnverifiedEmail(null)
     try {
       // Use local database authentication
       const { login } = useAuthStore.getState()
@@ -45,9 +60,8 @@ const LoginPage: React.FC = () => {
       // land on it again after a successful sign-in
       navigate('/dashboard', { replace: true })
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || 
-                          error.errors?.[0]?.message || 
-                          error.message || 
+      if (error.response?.data?.error?.code === 'EMAIL_NOT_VERIFIED') setUnverifiedEmail(data.email)
+      const errorMessage = error.response?.data?.error?.message ||
                           t('Connexion impossible. Vérifiez vos identifiants.')
       toast.error(errorMessage)
     } finally {
@@ -63,7 +77,7 @@ const LoginPage: React.FC = () => {
       />
       <SimpleNavbar />
       <main id="contenu">
-      
+
       <div className="flex items-center justify-center py-20 pt-32 px-4 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -82,6 +96,19 @@ const LoginPage: React.FC = () => {
             {t('Connectez-vous à votre compte Travel Art')}
           </p>
         </div>
+
+        {notice && (
+          <div role="status" className="rounded-card border border-line bg-surface-sunken px-4 py-3 text-sm text-content">
+            {t(notice)}
+          </div>
+        )}
+
+        {unverifiedEmail && (
+          <div role="alert" className="space-y-3 rounded-card border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-content">
+            <p>{t('Confirmez d’abord votre adresse e-mail : cliquez sur le lien que nous vous avons envoyé.')}</p>
+            <ResendVerification email={unverifiedEmail} className="btn-secondary btn-sm" />
+          </div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
@@ -185,7 +212,7 @@ const LoginPage: React.FC = () => {
         )}
       </motion.div>
       </div>
-      
+
       </main>
       <Footer />
     </div>

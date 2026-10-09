@@ -1,11 +1,19 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { Dataset, ExportFormat, sendExport } from '../utils/exporter';
-import { approvedEmail, rejectedEmail } from '../services/email';
+import { approvedEmail, rejectedEmail, verificationEmail } from '../services/email';
 import { config } from '../config';
+import { adminUserSelect } from '../views/user';
+import { bookingSelect, toBookingDTO } from '../views/booking';
+import { mediaOrder, mediaSelect, splitMedia, toMediaDTO } from '../views/media';
+import { fetchVideoFacts, verifyOtherVideosFromChannel } from '../services/videoVerification';
+import { notify } from '../services/notifications';
+import { verifyLinkFor } from './auth';
+import { BOARD_LABELS, TRANSPORT_LABELS } from '../shared/validation';
+import { BOOKING_STATUSES } from '../shared/status';
 
 const router = Router();
 
@@ -15,64 +23,36 @@ const suspendUserSchema = z.object({
 });
 
 // Get admin dashboard data
-router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  // Wrap each query in try-catch to handle SQLite-specific issues
-  const [
-    totalUsers,
-    totalArtists,
-    totalHotels,
-    activeBookings,
-    totalRevenue,
-    recentBookings,
-    topArtists,
-    topHotels
-  ] = await Promise.all([
-    prisma.user.count().catch(() => 0),
-    prisma.artist.count().catch(() => 0),
-    prisma.hotel.count().catch(() => 0),
-    prisma.booking.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } }).catch(() => 0),
-    prisma.transaction.aggregate({
-      _sum: { amount: true }
-    }).catch(() => ({ _sum: { amount: null } })),
-    prisma.booking.findMany({
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        artist: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
+router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (_req: AuthRequest, res) => {
+  const [totalUsers, totalArtists, totalHotels, activeBookings, pendingAdmissions, revenue, recent, topArtists, topHotels] =
+    await Promise.all([
+      prisma.user.count(),
+      prisma.artist.count(),
+      prisma.hotel.count(),
+      prisma.booking.count({ where: { status: { in: ['PENDING', 'CONFIRMED'] } } }),
+      prisma.user.count({ where: { approvalStatus: 'PENDING', role: { in: ['ARTIST', 'HOTEL'] } } }),
+      // Real money only: what Stripe confirmed.
+      prisma.payment.aggregate({ where: { status: 'SUCCEEDED' }, _sum: { amountCents: true } }),
+      prisma.booking.findMany({ take: 10, orderBy: { createdAt: 'desc' }, select: bookingSelect }),
+      prisma.artist.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true, stageName: true, discipline: true, profilePicture: true, createdAt: true,
+          user: { select: { name: true, email: true } },
+          media: { select: mediaSelect, orderBy: mediaOrder },
         },
-        hotel: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
-      }
-    }).catch(() => []),
-    prisma.artist.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { name: true, email: true }
-        }
-      }
-    }).catch(() => []),
-    prisma.hotel.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { name: true, email: true }
-        }
-      }
-    }).catch(() => [])
-  ]);
+      }),
+      prisma.hotel.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true, name: true, city: true, country: true, profilePicture: true, createdAt: true,
+          user: { select: { name: true, email: true } },
+          _count: { select: { spaces: true } },
+        },
+      }),
+    ]);
 
   res.json({
     success: true,
@@ -82,12 +62,13 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), asyncHandler(async (r
         totalArtists,
         totalHotels,
         activeBookings,
-        totalRevenue: totalRevenue._sum.amount || 0
+        pendingAdmissions,
+        totalRevenue: (revenue._sum.amountCents ?? 0) / 100,
       },
-      recentBookings,
-      topArtists,
-      topHotels
-    }
+      recentBookings: recent.map((b) => toBookingDTO(b, 'ADMIN')),
+      topArtists: topArtists.map(({ media, ...a }) => ({ ...a, ...splitMedia(media) })),
+      topHotels: topHotels.map(({ _count, ...h }) => ({ ...h, location: { city: h.city, country: h.country }, spaceCount: _count.spaces })),
+    },
   });
 }));
 
@@ -115,7 +96,8 @@ router.post('/users/:id/suspend', authenticate, authorize('ADMIN'), asyncHandler
   // `reason` was required on the request and never written anywhere.
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: { isActive: false, sessionsValidFrom: new Date(), approvalNote: reason }
+    data: { isActive: false, sessionsValidFrom: new Date(), approvalNote: reason },
+    select: adminUserSelect,
   });
 
   // Log admin action
@@ -150,7 +132,8 @@ router.post('/users/:id/activate', authenticate, authorize('ADMIN'), asyncHandle
   // it's ever suspended again without one.
   const updatedUser = await prisma.user.update({
     where: { id },
-    data: { isActive: true, approvalNote: null }
+    data: { isActive: true, approvalNote: null },
+    select: adminUserSelect,
   });
 
   // Log admin action
@@ -181,25 +164,37 @@ router.get('/admissions', authenticate, authorize('ADMIN'), asyncHandler(async (
     throw new CustomError('Statut invalide.', 400);
   }
 
-  const applications = await prisma.user.findMany({
-    where: { approvalStatus: status, role: { in: ['ARTIST', 'HOTEL'] } },
+  const rows = await prisma.user.findMany({
+    where: { approvalStatus: status as 'PENDING' | 'APPROVED' | 'REJECTED', role: { in: ['ARTIST', 'HOTEL'] } },
     orderBy: { createdAt: 'asc' },
     select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      country: true,
-      phone: true,
-      createdAt: true,
-      emailVerified: true,
-      approvalStatus: true,
-      approvalNote: true,
-      reviewedAt: true,
-      artist: { select: { discipline: true, bio: true, priceRange: true } },
-      hotel: { select: { name: true, location: true, description: true } }
-    }
+      id: true, name: true, email: true, role: true, country: true, phone: true, createdAt: true,
+      emailVerified: true, approvalStatus: true, approvalNote: true, reviewedAt: true,
+      artist: {
+        select: {
+          stageName: true, discipline: true, bio: true, birthDate: true, mainCategory: true, categoryType: true,
+          specificCategory: true, tributeTo: true, languages: true, audienceTypes: true, profilePicture: true,
+          media: { select: mediaSelect, orderBy: mediaOrder },
+        },
+      },
+      hotel: {
+        select: {
+          name: true, city: true, country: true, address: true, description: true, hotelType: true, roomCount: true,
+          website: true, instagramUrl: true, profilePicture: true,
+          spaces: { select: { name: true, capacity: true, setting: true }, orderBy: { position: 'asc' } },
+        },
+      },
+      referralsReceived: { select: { inviter: { select: { name: true } } }, take: 1 },
+    },
   });
+
+  // Everything an admin needs to decide: who, what they do, and their work.
+  const applications = rows.map(({ artist, hotel, referralsReceived, ...user }) => ({
+    ...user,
+    referredBy: referralsReceived[0]?.inviter.name ?? null,
+    artist: artist ? { ...artist, ...splitMedia(artist.media) } : null,
+    hotel: hotel ? { ...hotel, location: { city: hotel.city, country: hotel.country } } : null,
+  }));
 
   const pendingCount = await prisma.user.count({
     where: { approvalStatus: 'PENDING', role: { in: ['ARTIST', 'HOTEL'] } }
@@ -208,34 +203,110 @@ router.get('/admissions', authenticate, authorize('ADMIN'), asyncHandler(async (
   res.json({ success: true, data: { applications, pendingCount } });
 }));
 
-/** Admit an application. Idempotent, and re-approving a rejected account clears the note. */
+/**
+ * Admit an application. Idempotent. Refused until the applicant has confirmed
+ * their e-mail: an account admitted on an address nobody controls is how
+ * test@test.com became a member.
+ *
+ * Referral points are credited here, on admission, not at sign-up - so a
+ * referral code cannot be farmed with accounts that are never admitted.
+ */
 router.post('/admissions/:id/approve', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.id },
+    select: { id: true, role: true, email: true, name: true, emailVerified: true },
+  });
   if (!user) throw new CustomError('Utilisateur introuvable.', 404);
   if (user.role === 'ADMIN') throw new CustomError('Un administrateur n’a pas à être admis.', 400);
+  if (!user.emailVerified) {
+    throw new CustomError(
+      'Ce candidat n’a pas encore confirmé son adresse e-mail. Renvoyez-lui le lien de confirmation, puis admettez-le une fois l’adresse confirmée.',
+      409,
+      { code: 'EMAIL_NOT_VERIFIED' }
+    );
+  }
 
-  const updated = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      approvalStatus: 'APPROVED',
-      approvalNote: null,
-      reviewedAt: new Date(),
-      reviewedById: req.user!.id,
-      isActive: true
+  await prismaAdmin.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: user.id },
+      data: { approvalStatus: 'APPROVED', approvalNote: null, reviewedAt: new Date(), reviewedById: req.user!.id, isActive: true },
+    });
+
+    const referral = await tx.referral.findFirst({
+      where: { inviteeUserId: user.id, rewardedAt: null },
+      select: { id: true, inviterUserId: true, rewardPoints: true },
+    });
+    if (referral) {
+      await tx.referral.update({ where: { id: referral.id }, data: { rewardedAt: new Date() } });
+      await tx.artist.updateMany({ where: { userId: referral.inviterUserId }, data: { loyaltyPoints: { increment: referral.rewardPoints } } });
+      await tx.artist.updateMany({ where: { userId: user.id }, data: { loyaltyPoints: { increment: referral.rewardPoints } } });
     }
+
+    await tx.adminLog.create({ data: { actorUserId: req.user!.id, action: 'USER_APPROVED', targetId: user.id } });
   });
 
-  await approvedEmail(updated.email, updated.name, `${config.frontendUrl}/login`);
+  void approvedEmail(user.email, user.name, `${config.frontendUrl}/login`).catch((err) =>
+    console.error('approval email failed for user', user.id, err)
+  );
 
-  await prisma.adminLog.create({
-    data: {
-      actorUserId: req.user!.id,
-      action: 'USER_APPROVED',
-      targetId: user.id
+  res.json({ success: true, data: { id: user.id, approvalStatus: 'APPROVED' } });
+}));
+
+/** Send the applicant a fresh confirmation link. */
+router.post('/admissions/:id/resend-verification', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.id },
+    select: { id: true, email: true, name: true, emailVerified: true },
+  });
+  if (!user) throw new CustomError('Utilisateur introuvable.', 404);
+  if (user.emailVerified) throw new CustomError('Cette adresse est déjà confirmée.', 409);
+  const result = await verificationEmail(user.email, user.name, verifyLinkFor(user));
+  res.json({ success: true, data: { sent: result.sent } });
+}));
+
+/**
+ * Rule on a video's ownership by hand: Instagram links and uploaded files
+ * cannot be checked automatically, and a reviewer may know better than the
+ * check. A video verified here also proves its channel for the artist's
+ * other videos (see services/videoVerification.ts).
+ */
+router.post('/media/:id/verification', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const { status, note } = z
+    .object({ status: z.enum(['VERIFIED', 'REJECTED', 'UNVERIFIED']), note: z.string().trim().max(300).optional() })
+    .parse(req.body);
+  const media = await prisma.media.findFirst({
+    where: { id: req.params.id, kind: 'VIDEO', artistId: { not: null } },
+    select: { id: true, artistId: true, provider: true, externalId: true, url: true, authorUrl: true, artist: { select: { userId: true } } },
+  });
+  if (!media) throw new CustomError('Vidéo introuvable.', 404);
+
+  // Record the channel too, so a manual ruling extends to its other videos.
+  let authorUrl = media.authorUrl;
+  if (status === 'VERIFIED' && !authorUrl) {
+    const facts = await fetchVideoFacts(media.provider, media.externalId, media.url);
+    if (facts?.exists) {
+      authorUrl = facts.authorUrl;
+      await prisma.media.update({ where: { id: media.id }, data: { authorName: facts.authorName, authorUrl } });
     }
-  }).catch(() => undefined);
+  }
 
-  res.json({ success: true, data: { id: updated.id, approvalStatus: updated.approvalStatus } });
+  const row = await prisma.media.update({
+    where: { id: media.id },
+    data: {
+      verification: status,
+      verificationMethod: status === 'UNVERIFIED' ? null : 'ADMIN',
+      verificationNote: note || null,
+      verifiedAt: status === 'VERIFIED' ? new Date() : null,
+    },
+    select: mediaSelect,
+  });
+  await prisma.adminLog.create({ data: { action: `VIDEO_${status}`, actorUserId: req.user!.id, targetId: media.id } }).catch(() => undefined);
+
+  if (status === 'VERIFIED' && media.artistId) await verifyOtherVideosFromChannel(media.artistId, authorUrl);
+  if (status === 'VERIFIED' && media.artist) {
+    void notify({ userId: media.artist.userId, type: 'VIDEO_VERIFIED', payload: { mediaId: media.id } });
+  }
+  res.json({ success: true, data: toMediaDTO(row) });
 }));
 
 /** Decline an application, with a reason the applicant is actually told. */
@@ -288,10 +359,9 @@ async function buildExportDataset(type: ExportType): Promise<Dataset> {
         startDate: true,
         endDate: true,
         status: true,
-        numberOfWeeks: true,
         creditCost: true,
-        totalPaymentAmount: true,
-        paymentStatus: true,
+        boardType: true,
+        transportTerms: true,
         createdAt: true,
         artist: { select: { stageName: true, discipline: true, user: { select: { name: true, email: true } } } },
         hotel: { select: { name: true, user: { select: { name: true, email: true } } } },
@@ -310,11 +380,10 @@ async function buildExportDataset(type: ExportType): Promise<Dataset> {
         { header: 'Contact artiste', key: 'artistEmail', width: 28 },
         { header: 'Arrivée', key: 'startDate' },
         { header: 'Départ', key: 'endDate' },
-        { header: 'Semaines', key: 'weeks' },
         { header: 'Statut', key: 'status' },
         { header: 'Crédits', key: 'credits' },
-        { header: 'Montant (€)', key: 'amount' },
-        { header: 'Paiement', key: 'paymentStatus' },
+        { header: 'Formule', key: 'board' },
+        { header: 'Transport', key: 'transport' },
         { header: 'Créée le', key: 'createdAt' },
       ],
       rows: bookings.map((b) => ({
@@ -326,11 +395,10 @@ async function buildExportDataset(type: ExportType): Promise<Dataset> {
         artistEmail: b.artist?.user?.email || '',
         startDate: b.startDate.toISOString().slice(0, 10),
         endDate: b.endDate.toISOString().slice(0, 10),
-        weeks: b.numberOfWeeks ?? '',
         status: b.status,
         credits: b.creditCost ?? 0,
-        amount: b.totalPaymentAmount ?? 0,
-        paymentStatus: b.paymentStatus || 'PENDING',
+        board: b.boardType ? BOARD_LABELS[b.boardType] : '',
+        transport: b.transportTerms ? TRANSPORT_LABELS[b.transportTerms] : '',
         createdAt: b.createdAt.toISOString().slice(0, 16).replace('T', ' '),
       })),
     };
@@ -463,7 +531,9 @@ router.get('/users', authenticate, authorize('ADMIN'), asyncHandler(async (req: 
   const where: any = {};
 
   if (role) {
-    where.role = role;
+    const wanted = String(role).toUpperCase();
+    if (!['ARTIST', 'HOTEL', 'ADMIN'].includes(wanted)) throw new CustomError('Rôle inconnu.', 400);
+    where.role = wanted;
   }
 
   if (search) {
@@ -476,23 +546,7 @@ router.get('/users', authenticate, authorize('ADMIN'), asyncHandler(async (req: 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
       where,
-      select: {
-        id: true,
-        role: true,
-        email: true,
-        name: true,
-        phone: true,
-        country: true,
-        language: true,
-        isActive: true,
-        createdAt: true,
-        approvalStatus: true,
-        approvalNote: true,
-        reviewedAt: true,
-        emailVerified: true,
-        artist: true,
-        hotel: true,
-      },
+      select: adminUserSelect,
       skip,
       take: limitNum,
       orderBy: { createdAt: 'desc' }
@@ -516,74 +570,26 @@ router.get('/users', authenticate, authorize('ADMIN'), asyncHandler(async (req: 
 
 // Get all bookings with pagination
 router.get('/bookings', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  const { page = '1', limit = '20', status } = req.query;
-
-  const pageNum = parseInt(page as string);
-  const limitNum = parseInt(limit as string);
-  const skip = (pageNum - 1) * limitNum;
-
+  const page = Math.max(parseInt(String(req.query.page ?? '1'), 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? '20'), 10) || 20, 1), 100);
   const where: any = {};
-
-  if (status) {
+  if (req.query.status) {
+    const status = String(req.query.status).toUpperCase();
+    if (!BOOKING_STATUSES.includes(status as any)) throw new CustomError('Statut inconnu.', 400);
     where.status = status;
   }
 
-  const [bookings, total] = await Promise.all([
-    /* The same shape that made the hotel-facing list 34KB and seven seconds:
-       `include` on artist and hotel pulls every column of both - bio, images,
-       videos, mediaUrls, artisticProfile, performanceSpots, rooms - to render
-       a name, a discipline and a city. These are the fields AdminBookings
-       reads, and nothing added to either model later can widen this. */
-    prisma.booking.findMany({
-      where,
-      select: {
-        id: true,
-        artistId: true,
-        hotelId: true,
-        startDate: true,
-        endDate: true,
-        status: true,
-        numberOfWeeks: true,
-        creditCost: true,
-        totalPaymentAmount: true,
-        paymentStatus: true,
-        notes: true,
-        createdAt: true,
-        artist: {
-          select: {
-            id: true,
-            stageName: true,
-            discipline: true,
-            user: { select: { name: true, email: true } },
-          },
-        },
-        hotel: {
-          select: {
-            id: true,
-            name: true,
-            location: true,
-            user: { select: { name: true, email: true } },
-          },
-        },
-      },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.booking.count({ where })
+  const [rows, total] = await Promise.all([
+    prisma.booking.findMany({ where, select: bookingSelect, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: 'desc' } }),
+    prisma.booking.count({ where }),
   ]);
 
   res.json({
     success: true,
     data: {
-      bookings,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum)
-      }
-    }
+      bookings: rows.map((b) => toBookingDTO(b, 'ADMIN')),
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    },
   });
 }));
 
@@ -637,259 +643,67 @@ router.get('/logs', authenticate, authorize('ADMIN'), asyncHandler(async (req: A
   });
 }));
 
-// Get hotel activity logs (bookings, transactions, etc.)
-router.get('/hotels/:id/logs', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { page = '1', limit = '50' } = req.query;
-
-  const pageNum = parseInt(page as string);
-  const limitNum = parseInt(limit as string);
-  const skip = (pageNum - 1) * limitNum;
-
-  // Get hotel
-  const hotel = await prisma.hotel.findUnique({
-    where: { id },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      }
-    }
-  });
-
-  if (!hotel) {
-    throw new CustomError('Hotel not found.', 404);
-  }
-
-  // Get bookings
-  const [bookings, bookingsTotal] = await Promise.all([
-    prisma.booking.findMany({
-      where: { hotelId: id },
-      include: {
-        artist: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
-      },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.booking.count({ where: { hotelId: id } })
-  ]);
-
-  // Get transactions
-  const [transactions, transactionsTotal] = await Promise.all([
-    prisma.transaction.findMany({
-      where: { hotelId: id },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.transaction.count({ where: { hotelId: id } })
-  ]);
-
-  // Get ratings received
-  const [ratings, ratingsTotal] = await Promise.all([
+// Activity for one hotel or one artist: their bookings and ratings, newest first.
+async function partyActivity(kind: 'hotel' | 'artist', id: string, limit: number) {
+  const where = kind === 'hotel' ? { hotelId: id } : { artistId: id };
+  const [bookings, bookingsTotal, ratings, ratingsTotal] = await Promise.all([
+    prisma.booking.findMany({ where, select: bookingSelect, take: limit, orderBy: { createdAt: 'desc' } }),
+    prisma.booking.count({ where }),
     prisma.rating.findMany({
-      where: { hotelId: id },
-      include: {
-        artist: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
+      where,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, stars: true, textReview: true, isVisibleToArtist: true, createdAt: true,
+        hotel: { select: { name: true } },
+        artist: { select: { stageName: true, user: { select: { name: true } } } },
       },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' }
     }),
-    prisma.rating.count({ where: { hotelId: id } })
+    prisma.rating.count({ where }),
   ]);
 
-  // Combine all activities
   const activities = [
-    ...bookings.map(b => ({
+    ...bookings.map((b) => ({
       type: 'BOOKING',
       id: b.id,
-      description: `Booking ${b.status.toLowerCase()}: ${b.artist.user.name}`,
+      description: `Résidence ${b.status.toLowerCase()} : ${kind === 'hotel' ? b.artist.stageName || b.artist.user.name : b.hotel.name}`,
       date: b.createdAt,
-      data: b
+      data: toBookingDTO(b, 'ADMIN'),
     })),
-    ...transactions.map(t => ({
-      type: 'TRANSACTION',
-      id: t.id,
-      description: `${t.type}: €${t.amount}`,
-      date: t.createdAt,
-      data: t
-    })),
-    ...ratings.map(r => ({
+    ...ratings.map((r) => ({
       type: 'RATING',
       id: r.id,
-      description: `Rating received: ${r.stars} stars from ${r.artist.user.name}`,
+      description: `Évaluation ${r.stars}/5 : ${r.hotel.name} → ${r.artist.stageName || r.artist.user.name}`,
       date: r.createdAt,
-      data: r
-    }))
-  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, limitNum);
+      data: r,
+    })),
+  ]
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .slice(0, limit);
 
-  res.json({
-    success: true,
-    data: {
-      hotel: {
-        id: hotel.id,
-        name: hotel.name,
-        user: hotel.user
-      },
-      activities,
-      summary: {
-        totalBookings: bookingsTotal,
-        totalTransactions: transactionsTotal,
-        totalRatings: ratingsTotal
-      },
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total: bookingsTotal + transactionsTotal + ratingsTotal,
-        pages: Math.ceil((bookingsTotal + transactionsTotal + ratingsTotal) / limitNum)
-      }
-    }
+  return { activities, summary: { totalBookings: bookingsTotal, totalTransactions: 0, totalRatings: ratingsTotal } };
+}
+
+router.get('/hotels/:id/logs', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? '50'), 10) || 50, 1), 200);
+  const hotel = await prisma.hotel.findUnique({
+    where: { id: req.params.id },
+    select: { id: true, name: true, user: { select: { id: true, name: true, email: true } } },
   });
+  if (!hotel) throw new CustomError('Hôtel introuvable.', 404);
+  const { activities, summary } = await partyActivity('hotel', hotel.id, limit);
+  res.json({ success: true, data: { hotel, activities, summary } });
 }));
 
-// Get artist activity logs (bookings, ratings, transactions, etc.)
 router.get('/artists/:id/logs', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  const { page = '1', limit = '50' } = req.query;
-
-  const pageNum = parseInt(page as string);
-  const limitNum = parseInt(limit as string);
-  const skip = (pageNum - 1) * limitNum;
-
-  // Get artist
+  const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? '50'), 10) || 50, 1), 200);
   const artist = await prisma.artist.findUnique({
-    where: { id },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true
-        }
-      }
-    }
+    where: { id: req.params.id },
+    select: { id: true, discipline: true, stageName: true, user: { select: { id: true, name: true, email: true } } },
   });
-
-  if (!artist) {
-    throw new CustomError('Artist not found.', 404);
-  }
-
-  // Get bookings
-  const [bookings, bookingsTotal] = await Promise.all([
-    prisma.booking.findMany({
-      where: { artistId: id },
-      include: {
-        hotel: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
-      },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.booking.count({ where: { artistId: id } })
-  ]);
-
-  // Get transactions
-  const [transactions, transactionsTotal] = await Promise.all([
-    prisma.transaction.findMany({
-      where: { artistId: id },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.transaction.count({ where: { artistId: id } })
-  ]);
-
-  // Get ratings received
-  const [ratings, ratingsTotal] = await Promise.all([
-    prisma.rating.findMany({
-      where: { artistId: id },
-      include: {
-        hotel: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
-      },
-      skip,
-      take: limitNum,
-      orderBy: { createdAt: 'desc' }
-    }),
-    prisma.rating.count({ where: { artistId: id } })
-  ]);
-
-  // Combine all activities
-  const activities = [
-    ...bookings.map(b => ({
-      type: 'BOOKING',
-      id: b.id,
-      description: `Booking ${b.status.toLowerCase()}: ${b.hotel.user.name}`,
-      date: b.createdAt,
-      data: b
-    })),
-    ...transactions.map(t => ({
-      type: 'TRANSACTION',
-      id: t.id,
-      description: `${t.type}: €${t.amount}`,
-      date: t.createdAt,
-      data: t
-    })),
-    ...ratings.map(r => ({
-      type: 'RATING',
-      id: r.id,
-      description: `Rating received: ${r.stars} stars from ${r.hotel.user.name}`,
-      date: r.createdAt,
-      data: r
-    }))
-  ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, limitNum);
-
-  res.json({
-    success: true,
-    data: {
-      artist: {
-        id: artist.id,
-        name: artist.user.name,
-        discipline: artist.discipline,
-        user: artist.user
-      },
-      activities,
-      summary: {
-        totalBookings: bookingsTotal,
-        totalTransactions: transactionsTotal,
-        totalRatings: ratingsTotal
-      },
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total: bookingsTotal + transactionsTotal + ratingsTotal,
-        pages: Math.ceil((bookingsTotal + transactionsTotal + ratingsTotal) / limitNum)
-      }
-    }
-  });
+  if (!artist) throw new CustomError('Artiste introuvable.', 404);
+  const { activities, summary } = await partyActivity('artist', artist.id, limit);
+  res.json({ success: true, data: { artist: { ...artist, name: artist.user.name }, activities, summary } });
 }));
 
 // Get all platform activities (comprehensive activity log)
@@ -916,11 +730,15 @@ router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (
     // together instead.
     const dateWhere = Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {};
 
-    const [users, bookings, transactions, ratings, adminLogs] = await Promise.all([
+    const [users, bookings, ratings, adminLogs] = await Promise.all([
       (!type || type === 'USER_REGISTRATION')
         ? prisma.user.findMany({
             where: dateWhere,
-            include: { artist: true, hotel: true },
+            select: {
+              id: true, name: true, email: true, role: true, country: true, createdAt: true,
+              artist: { select: { id: true } },
+              hotel: { select: { id: true } },
+            },
             orderBy: { createdAt: 'desc' },
             take: 50
           })
@@ -928,20 +746,10 @@ router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (
       (!type || type === 'BOOKING')
         ? prisma.booking.findMany({
             where: dateWhere,
-            include: {
-              artist: { include: { user: { select: { id: true, name: true, email: true } } } },
-              hotel: { include: { user: { select: { id: true, name: true, email: true } } } }
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 100
-          })
-        : Promise.resolve([]),
-      (!type || type === 'TRANSACTION')
-        ? prisma.transaction.findMany({
-            where: dateWhere,
-            include: {
-              hotel: { include: { user: { select: { id: true, name: true, email: true } } } },
-              artist: { include: { user: { select: { id: true, name: true, email: true } } } }
+            select: {
+              id: true, status: true, startDate: true, endDate: true, createdAt: true,
+              artist: { select: { user: { select: { id: true, name: true, email: true } } } },
+              hotel: { select: { name: true, user: { select: { id: true, name: true, email: true } } } }
             },
             orderBy: { createdAt: 'desc' },
             take: 100
@@ -950,9 +758,10 @@ router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (
       (!type || type === 'RATING')
         ? prisma.rating.findMany({
             where: dateWhere,
-            include: {
-              hotel: { include: { user: { select: { id: true, name: true, email: true } } } },
-              artist: { include: { user: { select: { id: true, name: true, email: true } } } }
+            select: {
+              id: true, stars: true, textReview: true, isVisibleToArtist: true, createdAt: true,
+              hotel: { select: { user: { select: { id: true, name: true, email: true } } } },
+              artist: { select: { user: { select: { id: true, name: true, email: true } } } }
             },
             orderBy: { createdAt: 'desc' },
             take: 50
@@ -1014,32 +823,10 @@ router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (
           status: booking.status,
           startDate: booking.startDate,
           endDate: booking.endDate,
-          totalPaymentAmount: booking.totalPaymentAmount || 0,
-          weeklyPaymentAmount: booking.weeklyPaymentAmount || 200,
-          numberOfWeeks: booking.numberOfWeeks || 0,
-          paymentStatus: booking.paymentStatus || 'PENDING',
           hotelName: booking.hotel?.name,
           artistName: booking.artist?.user?.name
         },
         timestamp: booking.createdAt
-      });
-    });
-
-    transactions.forEach(txn => {
-      activities.push({
-        id: `txn-${txn.id}`,
-        type: 'TRANSACTION',
-        action: txn.type,
-        actor: txn.hotel?.user || txn.artist?.user || null,
-        target: null,
-        details: {
-          transactionId: txn.id,
-          type: txn.type,
-          amount: txn.amount,
-          hotelId: txn.hotelId,
-          artistId: txn.artistId
-        },
-        timestamp: txn.createdAt
       });
     });
 
@@ -1094,7 +881,6 @@ router.get('/activities', authenticate, authorize('ADMIN'), asyncHandler(async (
           byType: {
             USER_REGISTRATION: activities.filter(a => a.type === 'USER_REGISTRATION').length,
             BOOKING: activities.filter(a => a.type === 'BOOKING').length,
-            TRANSACTION: activities.filter(a => a.type === 'TRANSACTION').length,
             RATING: activities.filter(a => a.type === 'RATING').length,
             ADMIN_ACTION: activities.filter(a => a.type === 'ADMIN_ACTION').length
           }

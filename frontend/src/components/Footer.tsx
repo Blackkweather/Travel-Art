@@ -4,6 +4,7 @@ import { Instagram, Linkedin, Facebook } from 'lucide-react'
 import BrandWordmark from '@/components/BrandWordmark'
 import NewsletterSignup from './NewsletterSignup'
 import { t } from '@/i18n'
+import { CONTACT_EMAIL } from '@/config/contact'
 
 const DISCOVER_LINKS = [
   { to: '/experiences', label: t('Expériences') },
@@ -81,8 +82,8 @@ const Footer: React.FC = () => {
             <ul className="space-y-3 text-sm text-content-inverse/60">
               <li>Paris, France</li>
               <li>
-                <a href="mailto:hello@travelart.com" className="inline-flex items-center min-h-[44px] hover:text-gold-500 transition-colors">
-                  hello@travelart.com
+                <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex items-center min-h-[44px] hover:text-gold-500 transition-colors">
+                  {CONTACT_EMAIL}
                 </a>
               </li>
             </ul>

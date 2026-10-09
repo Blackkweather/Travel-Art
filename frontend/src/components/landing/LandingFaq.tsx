@@ -4,11 +4,10 @@ import { t } from '@/i18n'
 /**
  * The questions people actually arrive with.
  *
- * Everything stated here is taken from what the product does, not written to
- * fill the section: the membership tiers are the ones /api/payments/membership
- * charges, the credit packs are the ones /api/payments/packages returns, and
- * the country spread is the catalogue's ("more than twenty" rather than a
- * count, so it does not go stale the week a hotel is added).
+ * The owner's rule: nothing about money before sign-up. The front page sells
+ * the experience; fees and terms are shown inside the account and written in
+ * the convention. The country spread is the catalogue's ("more than twenty"
+ * rather than a count, so it does not go stale the week a hotel is added).
  *
  * Built on <details>, so it opens without JavaScript, is keyboard-operable and
  * is announced correctly, and so a reader searching the page with ctrl-F finds
@@ -17,21 +16,21 @@ import { t } from '@/i18n'
 
 const QUESTIONS = [
   {
-    q: t('Combien cela coûte-t-il à un hôtel ?'),
+    q: t('À quoi ressemble une résidence ?'),
     a: t(
-      'L’hôtel achète des crédits et dépense des crédits pour chaque résidence. Les formules vont de 10 crédits (Découverte) à 50 crédits (Année), et le coût d’une résidence dépend de l’artiste. Pas d’abonnement, pas de commission sur ce que vous vendez ce soir-là.'
+      'Quelques nuits dans une maison d’exception, pour vous et la personne de votre choix, et une scène : un toit-terrasse au coucher du soleil, un salon feutré, une salle de bal, un jardin au petit matin. Vous partagez votre art aux moments convenus avec l’hôtel ; le reste du temps vous appartient.'
     ),
   },
   {
-    q: t('Un artiste paie-t-il pour être sur Travel Art ?'),
+    q: t('Quels artistes peuvent rejoindre Travel Art ?'),
     a: t(
-      'Une adhésion annuelle : 50 € pour la formule Artiste, 100 € pour la formule Artiste confirmé. Aucune commission n’est prélevée sur vos honoraires, et vos œuvres restent les vôtres.'
+      'Musiciens, DJ, chanteurs, danseurs, peintres et plasticiens, photographes, professeurs de yoga, artistes de cirque, conteurs, créateurs de contenu, tributes… Tout travail qui voyage et qui trouve sa place dans un lieu de vie.'
     ),
   },
   {
-    q: t('Qui règle le voyage, l’hébergement et les repas ?'),
+    q: t('Avec qui puis-je venir ?'),
     a: t(
-      'L’hôtel, et avant votre arrivée. Un artiste n’avance rien : c’est la condition qui rend une résidence loin de chez soi possible.'
+      'Avec la personne de votre choix : chaque séjour est prévu pour deux. Elle profite de la maison avec vous, sans rien avoir à présenter.'
     ),
   },
   {
@@ -49,7 +48,7 @@ const QUESTIONS = [
   {
     q: t('Qui décide de la date ?'),
     a: t(
-      'Les deux. L’hôtel propose une date à un artiste ; l’artiste accepte, propose autre chose ou décline. Rien n’est réservé tant que les deux ne sont pas d’accord.'
+      'Les deux. L’hôtel propose une date à un artiste ; l’artiste accepte, propose autre chose ou décline. Rien n’est réservé tant que les deux ne sont pas d’accord, et tout est écrit noir sur blanc avant le départ.'
     ),
   },
 ]

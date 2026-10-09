@@ -149,6 +149,14 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session): Promis
     return;
   }
 
+  // The third thing: the coordinator's fee after a hotel cancelled a signed
+  // convention.
+  const claimId = session.metadata?.claimId;
+  if (claimId) {
+    await settleCancellationFee(session, claimId, paymentId);
+    return;
+  }
+
   if (!hotelId || !packageId) {
     throw new Error(`Checkout session ${session.id} is missing hotelId or packageId metadata`);
   }
@@ -251,6 +259,35 @@ async function grantMembership(
   console.log(
     `Activated ${membership.tier} membership ${membershipId} for artist ${membership.artistId} until ${endsAt.toISOString()}`
   );
+}
+
+/**
+ * Mark the cancellation fee paid. The amount is the claim's, set when it was
+ * opened; a retry finds it already PAID and does nothing.
+ */
+async function settleCancellationFee(session: Stripe.Checkout.Session, claimId: string, paymentId?: string): Promise<void> {
+  const claim = await prisma.cancellationClaim.findUnique({ where: { id: claimId }, select: { id: true, feeStatus: true } });
+  if (!claim) throw new Error(`Checkout session ${session.id} references unknown claim ${claimId}`);
+
+  await prisma.$transaction(async (tx) => {
+    if (paymentId) {
+      await tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          status: 'SUCCEEDED',
+          stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
+        },
+      });
+    }
+    if (claim.feeStatus === 'DUE') {
+      await tx.cancellationClaim.update({
+        where: { id: claimId },
+        data: { feeStatus: 'PAID', feeSettledAt: new Date(), feeNote: `Stripe ${session.id}` },
+      });
+    }
+  });
+
+  console.log(`Cancellation fee paid for claim ${claimId} via session ${session.id}`);
 }
 
 export { router as webhookRoutes };

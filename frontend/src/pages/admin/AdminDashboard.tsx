@@ -4,7 +4,7 @@ import { Users, Building, Calendar, TrendingUp, AlertCircle, Activity, Gift } fr
 import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import { adminApi, commonApi, paymentsApi } from '@/utils/api'
-import { extractArray, parseJsonField } from '@/utils/apiPayload'
+import { extractArray } from '@/utils/apiPayload'
 import { t } from '@/i18n'
 import { formatNumber, formatRelative } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
@@ -89,7 +89,7 @@ const AdminDashboard: React.FC = () => {
           totalArtists: Number(dashboardData?.stats?.totalArtists ?? dashboardData?.totalArtists ?? 0),
           totalHotels: Number(dashboardData?.stats?.totalHotels ?? dashboardData?.totalHotels ?? 0),
           totalBookings: Number(dashboardData?.stats?.activeBookings ?? dashboardData?.totalBookings ?? 0),
-          totalRevenue: Number(dashboardData?.stats?.totalRevenue?._sum?.amount ?? dashboardData?.totalRevenue ?? 0)
+          totalRevenue: Number(dashboardData?.stats?.totalRevenue ?? 0)
         })
 
         const recentBookings = extractArray(bookingsRes.data?.data, 'bookings')
@@ -126,9 +126,9 @@ const AdminDashboard: React.FC = () => {
 
         const paymentActivity: ActivityItem[] = recentTransactions.slice(0, 4).map((txn: any) => {
           const amount = Number(txn?.amount ?? 0)
-          const hotel = txn?.hotel?.name || 'Hôtel'
-          const label = amount >= 0 ? t('Paiement encaissé') : t('Remboursement émis')
-          const message = `${label}: ${hotel} (${amount >= 0 ? '+' : '-'}€${Math.abs(amount).toLocaleString('fr-FR')})`
+          const refund = txn?.type === 'REFUND'
+          const label = refund ? t('Remboursement émis') : t('Paiement encaissé')
+          const message = `${label} : ${txn?.description || t('paiement')} (${refund ? '-' : '+'}€${Math.abs(amount).toLocaleString('fr-FR')})`
           const createdAt = txn?.createdAt
           const time = createdAt ? formatDateTimeRelative(createdAt) : t('Récemment')
           const timestamp = createdAt ? new Date(createdAt).getTime() : 0
@@ -136,7 +136,7 @@ const AdminDashboard: React.FC = () => {
             id: `txn-${txn?.id ?? Math.random()}`,
             message,
             time,
-            status: amount >= 0 ? 'success' : 'warning',
+            status: refund ? 'warning' : 'success',
             timestamp
           }
         })
@@ -154,29 +154,28 @@ const AdminDashboard: React.FC = () => {
         setTopArtists(
           topArtistEntries.slice(0, 4).map((artist: any) => ({
             id: artist?.id ?? artist?.artistId ?? Math.random().toString(36),
-            name: artist?.user?.name || artist?.name || 'Unknown Artist',
+            name: artist?.stageName || artist?.user?.name || t('Artiste'),
             bookings: Number(artist?.bookingCount ?? artist?.totalBookings ?? 0),
             rating: Number(artist?.averageRating ?? artist?.rating ?? 0) || undefined,
-            specialty: Array.isArray(artist?.mediaUrls) ? artist.mediaUrls[0] : artist?.discipline
+            specialty: artist?.discipline
           }))
         )
 
         const topHotelEntries = extractArray(topHotelsRes.data?.data, 'hotels')
         setTopHotels(
           topHotelEntries.slice(0, 4).map((hotel: any) => {
-            const location = parseJsonField<any>(hotel?.location, {})
             return {
               id: hotel?.id ?? Math.random().toString(36),
-              name: hotel?.name || 'Hotel',
-              bookings: Number(hotel?.bookingCount ?? hotel?.totalBookings ?? 0),
-              location: location?.city ? `${location.city}, ${location.country ?? ''}`.trim() : hotel?.location || undefined,
+              name: hotel?.name || t('Hôtel'),
+              bookings: Number(hotel?.bookingCount ?? 0),
+              location: [hotel?.city, hotel?.country].filter(Boolean).join(', ') || undefined,
               highlight: Array.isArray(hotel?.performanceSpots) ? hotel.performanceSpots[0]?.name : undefined
             }
           })
         )
       } catch (err: any) {
         console.error(err)
-        setError(err?.response?.data?.message || 'Unable to load dashboard data')
+        setError(err?.response?.data?.error?.message || t('Impossible de charger le tableau de bord'))
       } finally {
         setLoading(false)
       }

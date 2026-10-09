@@ -6,6 +6,7 @@ import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
 import ProofBand from '@/components/landing/ProofBand'
 import HowWeWork from '@/components/sections/HowWeWork'
+import { CONTACT_EMAIL } from '@/config/contact'
 
 /* The page was a single column of seven identical h2-plus-list blocks. The copy
    was fine; the presentation gave a reader no way to tell the mission from the
@@ -34,7 +35,7 @@ const AUDIENCES = [
     lines: [
       t('Une sélection d’artistes vérifiés, un par un.'),
       t('Un filtre par discipline, par ville et par disponibilité.'),
-      t('Une réservation réglée sur un simple solde de crédits.'),
+      t('Une réservation en quelques clics, suivie de bout en bout.'),
       t('Une expérience culturelle que vos clients ne trouveront pas ailleurs.'),
     ],
     to: '/register',
@@ -57,7 +58,7 @@ const CRITERIA = [
     eyebrow: t('Chez un artiste'),
     items: [
       [t('Un travail qui voyage'), t('Il tient dans un salon, sur un toit, dans une salle à manger, devant des gens qui ne s’y attendaient pas.')],
-      [t('Une présence, pas une prestation'), t('Rester une semaine suppose d’accepter d’être là, et pas seulement d’être sur scène.')],
+      [t('Une présence, pas seulement une scène'), t('Séjourner dans une maison suppose d’accepter d’y être, et pas seulement d’y jouer.')],
       [t('La tenue'), t('Les dates annoncées sont tenues, les heures aussi. C’est très exactement ce que la maison réserve.')],
       [t('La curiosité du lieu'), t('Les artistes pour qui le pays où ils ont atterri devient une matière de travail plutôt qu’un décor.')],
     ],
@@ -67,23 +68,20 @@ const CRITERIA = [
     items: [
       [t('Un vrai lieu de représentation'), t('Un toit, un salon, une salle de bal. Et, pour la musique, un instrument correct.')],
       [t('Une intention dans la durée'), t('Programmer la culture sur une saison, plutôt qu’organiser un événement isolé.')],
-      [t('L’accueil, réellement'), t('Une chambre, la pension complète, et un référent nommé, présent toute la semaine.')],
+      [t('L’accueil, réellement'), t('Une chambre pour deux, la formule convenue, et un référent nommé, présent pendant tout le séjour.')],
       [t('Le respect du travail'), t('Un artiste n’est pas une ambiance. La différence se voit en une soirée.')],
     ],
   },
 ] as const
 
-/* The terms, including the ones that do not flatter us. An unnumbered
-   obligation reads as an unlimited one, and a fee discovered after admission
-   reads as a trap - so the hours and the membership are both here, on the page
-   a visitor reads before applying. */
+/* The terms of a residency, as a visitor reads them before applying. The
+   owner's rule: nothing about money before sign-up - fees are shown inside
+   the account and every term is fixed in the convention. */
 const TERMS = [
-  [t('Sept nuits'), t('La durée d’une résidence.')],
-  [t('Douze heures de représentation sur la semaine'), t('Deux heures par jour au maximum, et rien le jour de l’arrivée ni celui du départ.')],
-  [t('Chambre et pension complète'), t('Pour l’artiste et un accompagnant, du dîner d’arrivée au petit-déjeuner du départ.')],
-  [t('Le voyage est à la charge de l’artiste'), t('Nous préférons l’écrire ici plutôt que vous le laisser découvrir.')],
-  [t('Adhésion artiste : 50 € par an, 100 € en formule confirmée'), t('Annoncée avant de candidater, pas après la sélection.')],
-  [t('Côté maison : des crédits, à partir de 1 500 €'), t('Trois formules, selon le nombre de résidences envisagées dans l’année.')],
+  [t('Une durée convenue'), t('Les dates et le nombre de nuits sont fixés avec l’hôtel et écrits dans la convention.')],
+  [t('Une prestation définie à l’avance'), t('Nature, horaires, durée : tout est écrit avant le départ, et rien ne s’ajoute sur place sans accord écrit.')],
+  [t('Un séjour pour deux'), t('Pour l’artiste et un accompagnant, dans la chambre et la formule indiquées dans la convention.')],
+  [t('Un cadre écrit'), t('Tout ce qui est convenu figure dans une convention signée en ligne par chacun.')],
   [t('Réponse sous trois semaines'), t('Chaque dossier est lu par une personne, ce qui prend le temps que cela prend.')],
 ] as const
 
@@ -128,8 +126,8 @@ const AboutPage: React.FC = () => {
               </h2>
               <div className="mt-8 space-y-6 text-lg leading-relaxed text-content-secondary">
                 <p>{t('La musique entre dans les hôtels depuis toujours, et presque toujours de la même façon : l’artiste arrive en fin d’après-midi, joue deux heures, repart avant le petit-déjeuner. La maison a eu sa soirée, l’artiste a eu son cachet, et personne n’a eu de rencontre.')}</p>
-                <p>{t('Nous avons voulu l’inverse. Que l’artiste reste. Qu’il ait une chambre, une scène, et surtout le temps : celui de comprendre où il a atterri, de croiser deux fois les mêmes visages, de laisser le lieu entrer dans son travail. Une semaine ne fait pas d’un musicien un habitant — elle suffit à ce qu’il s’y passe quelque chose qu’un soir ne permet pas.')}</p>
-                <p className="text-content">{t('C’est la seule idée du programme. La sélection à la main, les crédits, le calendrier : tout le reste n’existe que pour la rendre possible.')}</p>
+                <p>{t('Nous avons voulu l’inverse. Que l’artiste reste. Qu’il ait une chambre, une scène, et surtout le temps : celui de comprendre où il a atterri, de croiser deux fois les mêmes visages, de laisser le lieu entrer dans son travail. Quelques nuits ne font pas d’un artiste un habitant — elles suffisent à ce qu’il s’y passe quelque chose qu’un soir ne permet pas.')}</p>
+                <p className="text-content">{t('C’est la seule idée du programme. La sélection à la main, l’accompagnement, le calendrier : tout le reste n’existe que pour la rendre possible.')}</p>
               </div>
             </div>
             <div className="md:col-span-6">
@@ -273,8 +271,8 @@ const AboutPage: React.FC = () => {
             <p className="mx-auto mt-4 max-w-[46ch] text-content-inverse/75">
               {t('Écrivez-nous. Un interlocuteur vous répond, des deux côtés du programme.')}
             </p>
-            <a href="mailto:hello@travelart.com" className="btn-gold mt-10 inline-flex">
-              hello@travelart.com
+            <a href={`mailto:${CONTACT_EMAIL}`} className="btn-gold mt-10 inline-flex">
+              {CONTACT_EMAIL}
             </a>
           </div>
         </section>

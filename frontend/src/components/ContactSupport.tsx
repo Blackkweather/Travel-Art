@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Mail, MessageCircle, Send, HelpCircle, CheckCircle2, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { t } from '@/i18n'
+import { CONTACT_EMAIL } from '@/config/contact'
 
 interface ContactSupportProps {
   userRole?: string
@@ -53,7 +54,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
 
     try {
       // Create mailto link with pre-filled email
-      const supportEmail = 'hello@travelart.com'
+      const supportEmail = CONTACT_EMAIL
       const emailSubject = encodeURIComponent(`[${userRole}] ${selectedCategory ? `[${selectedCategory.toUpperCase()}] ` : ''}${subject}`)
       const emailBody = encodeURIComponent(
         `Hello Travel Art Support Team,\n\n` +
@@ -85,7 +86,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
       }, 3000)
     } catch (error) {
       console.error('Error sending message:', error)
-      toast.error(t('Impossible d’ouvrir votre messagerie. Écrivez-nous directement à hello@travelart.com'))
+      toast.error(t('Impossible d’ouvrir votre messagerie. Écrivez-nous directement à {email}', { email: CONTACT_EMAIL }))
       setIsSubmitting(false)
     }
   }
@@ -102,8 +103,8 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           </h3>
           <p className="text-content-secondary mb-6">
             {t('Votre messagerie devrait s’ouvrir dans un instant. Si ce n’est pas le cas,')} écrivez-nous directement à{' '}
-            <a href="mailto:hello@travelart.com" className="text-gold hover:underline font-semibold">
-              hello@travelart.com
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-gold hover:underline font-semibold">
+              {CONTACT_EMAIL}
             </a>
           </p>
           <div className="flex items-center justify-center gap-2 text-sm text-content-secondary">
@@ -144,7 +145,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
-              href="mailto:hello@travelart.com"
+              href={`mailto:${CONTACT_EMAIL}`}
               className="flex items-center gap-3 p-4 bg-surface-raised rounded-card border border-line hover:border-gold hover:shadow-md transition-all group"
             >
               <div className="w-10 h-10 bg-navy/10 rounded-card flex items-center justify-center group-hover:bg-navy group-hover:text-white transition-colors">
@@ -152,7 +153,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
               </div>
               <div>
                 <p className="font-semibold text-content text-sm">E-mail</p>
-                <p className="text-xs text-content-secondary">hello@travelart.com</p>
+                <p className="text-xs text-content-secondary">{CONTACT_EMAIL}</p>
               </div>
             </a>
             <a
@@ -260,7 +261,7 @@ const ContactSupport: React.FC<ContactSupportProps> = ({
             </button>
             
             <a
-              href="mailto:hello@travelart.com"
+              href={`mailto:${CONTACT_EMAIL}`}
               className="btn-secondary flex items-center justify-center gap-2 min-h-[48px]"
             >
               <Mail className="w-5 h-5" />

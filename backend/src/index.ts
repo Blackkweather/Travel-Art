@@ -15,12 +15,15 @@ import { commonRoutes } from './routes/common';
 import { tripRoutes } from './routes/trips';
 import { paymentRoutes } from './routes/payments';
 import { bookingRoutes } from './routes/bookings';
+import { conventionRoutes } from './routes/conventions';
+import { claimRoutes } from './routes/claims';
 import { notificationRoutes } from './routes/notifications';
 import { maintenanceRoutes } from './routes/maintenance';
 import { privacyRoutes } from './routes/privacy';
 import { uploadRoutes } from './routes/upload';
 import { webhookRoutes } from './routes/webhooks';
-import { initializeDatabase, prisma } from './db';
+import { pingDatabase } from './db';
+import { PostgresRateLimitStore } from './services/rateLimitStore';
 
 const app = express();
 
@@ -31,18 +34,6 @@ if (config.nodeEnv === 'production') {
 } else {
   app.set('trust proxy', false);
 }
-
-// Initialize database connection (Prisma or fallback to pg) - non-blocking
-initializeDatabase()
-  .then(() => {
-    console.log('✅ Database initialized successfully');
-  })
-  .catch((error) => {
-    console.error('❌ Database initialization failed:', error);
-    console.error('Please check your DATABASE_URL environment variable');
-    console.error('Server will start anyway - database will be initialized on first request');
-    // Don't exit - let the server start and errors will be caught by error handler
-  });
 
 // Security middleware
 // Gzip every response above the default 1KB threshold. Without this the API
@@ -72,7 +63,8 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      scriptSrc: ["'self'"],
+      // Cloudflare Turnstile, the registration captcha (off unless configured).
+      scriptSrc: ["'self'", "https://challenges.cloudflare.com"],
       // This policy now applies to the app's own HTML, which it did not when a
       // CDN served the SPA and Express only answered /api. Uploaded images come
       // back from routes/upload.ts as absolute Blob URLs, so that host has to be
@@ -125,6 +117,7 @@ app.use(helmet({
          the embed outside the consent banner's remit. */
       frameSrc: [
         "'self'",
+        "https://challenges.cloudflare.com",
         "https://www.youtube-nocookie.com",
         "https://www.youtube.com",
         "https://player.vimeo.com",
@@ -188,39 +181,79 @@ const tooMany = (message: string) => ({
   error: { message },
 });
 
-const limiter = rateLimit({
+/* Every limiter counts in Postgres (services/rateLimitStore.ts), so the
+   count is shared by every server instance instead of restarting on each. */
+const limit = (name: string, options: Parameters<typeof rateLimit>[0]) =>
+  rateLimit({
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: new PostgresRateLimitStore(name),
+    ...options,
+  });
+
+const envInt = (name: string, fallback: number) => {
+  const value = parseInt(process.env[name] || '', 10);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+};
+
+// The auth limiters below key on the submitted e-mail, so these bodies must be
+// parsed before them. (The general JSON parser sits further down, after the
+// Stripe webhook that needs the raw bytes; express.json skips a body that is
+// already parsed.)
+app.use('/api/auth', express.json({ limit: '1mb' }));
+
+// Capacity, not credentials: generous enough that normal use never meets it.
+app.use('/api/', limit('global', {
   windowMs: config.rateLimitWindowMs,
   max: config.rateLimitMaxRequests,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: tooMany(
-    'Trop de requêtes depuis cette adresse. Patientez quelques minutes avant de réessayer.'
-  ),
-});
-app.use('/api/', limiter);
+  message: tooMany('Trop de requêtes depuis cette adresse. Patientez quelques minutes avant de réessayer.'),
+}));
 
-// The global limiter above is a capacity control, not a credential control: it
-// allows 100 requests per window across every endpoint, so an attacker can
-// spend the whole budget guessing one account's password and stay inside it.
-//
-// These three routes are the ones where a wrong answer is worth retrying, so
-// they get their own, much smaller budget. skipSuccessfulRequests means a
-// legitimate user who signs in normally never consumes it — only failures
-// count, which keeps a shared office IP from locking itself out.
-const credentialLimiter = rateLimit({
+// Wrong answers worth retrying. Only failures count, so a shared office IP
+// signing in normally never consumes it.
+const credentialLimiter = limit('credentials', {
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: envInt('AUTH_FAILURE_LIMIT', 10),
   skipSuccessfulRequests: true,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: tooMany(
-    'Trop de tentatives échouées depuis cette adresse. Réessayez dans 15 minutes.'
-  ),
+  message: tooMany('Trop de tentatives échouées depuis cette adresse. Réessayez dans 15 minutes.'),
 });
 app.use('/api/auth/login', credentialLimiter);
-app.use('/api/auth/register', credentialLimiter);
-app.use('/api/auth/forgot-password', credentialLimiter);
 app.use('/api/auth/reset-password', credentialLimiter);
+
+// The same, per account: guessing one person's password from many addresses
+// meets this one even when no single address meets the one above.
+app.use('/api/auth/login', limit('login-account', {
+  windowMs: 15 * 60 * 1000,
+  max: envInt('AUTH_FAILURE_LIMIT', 10),
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `email:${String(req.body?.email ?? '').trim().toLowerCase().slice(0, 254)}`,
+  skip: (req) => typeof req.body?.email !== 'string' || req.body.email.trim() === '',
+  message: tooMany('Trop de tentatives sur ce compte. Réessayez dans 15 minutes ou réinitialisez votre mot de passe.'),
+}));
+
+// Account creation is counted whether it succeeds or not: a script creating
+// accounts succeeds every time, which is exactly what this must stop.
+app.use('/api/auth/register', limit('register', {
+  windowMs: 60 * 60 * 1000,
+  max: envInt('REGISTER_LIMIT', 5),
+  message: tooMany('Trop d’inscriptions depuis cette adresse. Réessayez dans une heure.'),
+}));
+
+// Anything that sends an e-mail to an address the caller typed.
+const mailLimiter = limit('mail', {
+  windowMs: 60 * 60 * 1000,
+  max: envInt('MAIL_LIMIT', 5),
+  message: tooMany('Trop de demandes d’e-mail. Réessayez dans une heure.'),
+});
+app.use('/api/auth/forgot-password', mailLimiter);
+app.use('/api/auth/resend-verification', mailLimiter);
+app.use('/api/referrals/invite', mailLimiter);
+
+app.use('/api/auth/check-availability', limit('availability', {
+  windowMs: 15 * 60 * 1000,
+  max: envInt('AVAILABILITY_LIMIT', 60),
+  message: tooMany('Trop de vérifications. Patientez quelques minutes.'),
+}));
 
 // The Stripe webhook must see the exact bytes Stripe signed, so it is mounted
 // with the raw parser ahead of express.json(). Parsing first would re-serialise
@@ -228,8 +261,8 @@ app.use('/api/auth/reset-password', credentialLimiter);
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Fast health check endpoint (no DB check - for keep-alive pings)
 app.get('/health', (req, res) => {
@@ -243,12 +276,7 @@ app.get('/health', (req, res) => {
 // Detailed health check with database
 app.get('/health/detailed', async (req, res) => {
   try {
-    // prisma is imported statically at the top of this file. This used to be a
-    // dynamic await import('./db'), which a bundler cannot always trace into a
-    // serverless function: on Vercel the import itself threw, the catch below
-    // turned that into "database: disconnected", and the endpoint reported an
-    // outage while every real query in the app was succeeding.
-    await prisma.$queryRaw`SELECT 1 as test`;
+    await pingDatabase();
     res.json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),
@@ -268,8 +296,7 @@ app.get('/health/detailed', async (req, res) => {
 
 app.get('/api/health', async (req, res) => {
   try {
-    // Statically imported for the same reason as /health/detailed above.
-    await prisma.$queryRaw`SELECT 1 as test`;
+    await pingDatabase();
     res.json({ 
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -307,7 +334,9 @@ app.use('/api/artists', artistRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/bookings', conventionRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/claims', claimRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/trips', tripRoutes);
@@ -384,21 +413,11 @@ app.use(errorHandler);
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down gracefully...');
-  try {
-    await prisma.$disconnect();
-  } catch {
-    // Ignore disconnect errors
-  }
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('Shutting down gracefully...');
-  try {
-    await prisma.$disconnect();
-  } catch {
-    // Ignore disconnect errors
-  }
   process.exit(0);
 });
 

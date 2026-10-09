@@ -61,8 +61,8 @@ const PILLARS = [
     height: 2432,
   },
   {
-    title: t('Tout compris'),
-    body: t('Voyage, hébergement et repas réglés avant votre arrivée. Aucune commission prélevée côté artiste.'),
+    title: t('Un séjour pour deux'),
+    body: t('Une chambre et la formule de la maison, pour vous et la personne de votre choix.'),
     image: '/images/pillars/tout-compris.webp',
     width: 2048,
     height: 2048,
@@ -833,7 +833,7 @@ const SIGNED_OUT_GALLERY = [
         <section className="band">
           <div className="shell">
             <p className="eyebrow">{t('Le programme')}</p>
-            <h2 className="mt-5 max-w-[18ch]">{t('Une résidence, pas une prestation.')}</h2>
+            <h2 className="mt-5 max-w-[18ch]">{t('Un séjour, en échange de votre art.')}</h2>
 
             {/* Three equal columns at identical heights is the single most
                 recognisable generated-layout shape, and it also flattens the
@@ -889,13 +889,13 @@ const SIGNED_OUT_GALLERY = [
               <div className="lg:pr-16 lg:border-r border-line-strong">
                 <h3 className="text-gold">{t('Pour les artistes')}</h3>
                 <p className="mt-6 text-content-secondary leading-relaxed max-w-[42ch]">
-                  {t('Une chambre, une scène et le temps de créer. Vous gardez vos honoraires et vos œuvres.')}
+                  {t('Une chambre pour deux, une scène et le temps de créer. Vous gardez vos droits sur vos œuvres.')}
                 </p>
                 <ul className="mt-10 space-y-5">
                   {[
                     t('Des résidences dans des hôtels qui programment sérieusement la culture'),
-                    t('Aucune commission prélevée côté artiste'),
-                    t('Voyage et hébergement réglés avant votre arrivée'),
+                    t('Une maison qui vous accueille, vous et la personne de votre choix'),
+                    t('Un séjour, une prestation et un transport écrits avant le départ'),
                   ].map((line) => (
                     <li key={line} className="flex gap-4 text-content">
                       <span aria-hidden="true" className="spark mt-2" />
@@ -916,7 +916,7 @@ const SIGNED_OUT_GALLERY = [
                 <ul className="mt-10 space-y-5">
                   {[
                     t('Des artistes sélectionnés en musique, arts visuels et scène'),
-                    t('Un seul solde de crédits pour toutes vos réservations'),
+                    t('Des réservations simples, suivies de bout en bout'),
                     t('Des dates que vous maîtrisez, confirmées ou annulées en un clic'),
                   ].map((line) => (
                     <li key={line} className="flex gap-4 text-content">

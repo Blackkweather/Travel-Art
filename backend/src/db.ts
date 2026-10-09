@@ -1,67 +1,31 @@
-// CRITICAL: Load environment variables BEFORE importing PrismaClient
-// Prisma validates the schema on import and requires DATABASE_URL to be set
+// Environment variables must be loaded before PrismaClient is constructed:
+// it reads DATABASE_URL at that moment.
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env files first (before any Prisma imports)
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
-// Now import PrismaClient - it will use the DATABASE_URL from environment
-import { PrismaClient } from '@prisma/client';
-import { config } from './config';
-
-// Create Prisma client for PostgreSQL
-// Use the DATABASE_URL directly from environment or config
-const getDatabaseUrl = () => {
-  // Check environment variable first (required for production)
-  let envUrl = process.env.DATABASE_URL;
-  if (envUrl) {
-    // Increase connection limit if it's too low (remove or increase connection_limit=1)
-    // Supabase pooler supports up to 15 connections by default
-    if (envUrl.includes('connection_limit=1')) {
-      envUrl = envUrl.replace('connection_limit=1', 'connection_limit=10');
-    } else if (envUrl.includes('pooler.supabase.com') && !envUrl.includes('connection_limit=')) {
-      // Add connection_limit if not present (for pooler connections)
-      const separator = envUrl.includes('?') ? '&' : '?';
-      envUrl = `${envUrl}${separator}connection_limit=10`;
-    }
-    
-    return envUrl;
-  }
-  // Fallback to config (for local development)
-  return config.databaseUrl;
-};
-
-// Validate DATABASE_URL is set
-const dbUrl = getDatabaseUrl();
-if (!dbUrl) {
-  console.error('❌ DATABASE_URL environment variable is not set!');
-  console.error('For SQLite (dev): file:./prisma/dev.db');
-  console.error('For PostgreSQL (prod): postgresql://user:password@localhost:5432/dbname');
-} else if (dbUrl.startsWith('file:')) {
-  console.log('📦 Using SQLite database for development');
-} else if (dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://')) {
-  console.log('🐘 Using PostgreSQL database');
-} else {
-  console.error('⚠️  Invalid DATABASE_URL format. Must start with file: (SQLite) or postgresql:// (PostgreSQL)');
+// SKIP_DOTENV=1 runs on the process environment alone: a throwaway test
+// server must not pick up the developer's real mail, payment or database keys.
+if (process.env.SKIP_DOTENV !== '1') {
+  dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
 }
 
+import { PrismaClient } from '@prisma/client';
 import { requestContext, RLS_MODELS } from './rlsContext';
+
+const log: ('error' | 'warn')[] = process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'];
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not set. It must point at a PostgreSQL database.');
+}
 
 /**
  * The privileged connection. Owns the schema, bypasses row-level security.
- * Reserved for migrations, the seed, maintenance scripts and Stripe webhooks -
- * anything that has no authenticated user to attribute a row to.
+ * Reserved for migrations, the seed, maintenance jobs, Stripe webhooks, and
+ * the few cross-tenant reads/writes a route has already authorised (a refund
+ * triggered by the artist moves the hotel's balance).
  */
-const prismaAdmin = new PrismaClient({
-  datasources: {
-    db: {
-      url: getDatabaseUrl(),
-    },
-  },
-  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-});
+const prismaAdmin = new PrismaClient({ log });
 
 /**
  * The connection the request path uses.
@@ -72,35 +36,22 @@ const prismaAdmin = new PrismaClient({
  * that statement and cannot leak to the next request sharing the connection.
  *
  * Without APP_DATABASE_URL this is the owner connection and the extension is a
- * no-op - which is the deliberate off switch for this whole mechanism.
+ * no-op - the deliberate off switch for the whole mechanism.
  */
 const appDbUrl = process.env.APP_DATABASE_URL;
 
 /**
  * Refuse to serve production traffic with row-level security switched off.
- *
- * Leaving APP_DATABASE_URL out of a deploy environment is not a visible
- * failure: every query still works, every page still renders, and the only
- * difference is that tenant isolation is gone - one hotel can read another's
- * bookings and credits. A deployment that is silently insecure is worse than
- * one that will not start, so this stops rather than warns.
- *
- * RLS_OPT_OUT=1 is the escape hatch for running production on the owner
- * connection knowingly.
+ * A deployment that is silently insecure is worse than one that will not
+ * start. RLS_OPT_OUT=1 is the escape hatch for doing it knowingly.
  */
-if (
-  process.env.NODE_ENV === 'production' &&
-  !appDbUrl &&
-  process.env.RLS_OPT_OUT !== '1'
-) {
+if (process.env.NODE_ENV === 'production' && !appDbUrl && process.env.RLS_OPT_OUT !== '1') {
   console.error(
     [
       '',
       'FATAL: APP_DATABASE_URL is not set.',
       'Row-level security is enforced by connecting as the travelart_app role.',
-      'Without it this process uses the owner connection, every policy is',
-      'bypassed, and hotels can read one another. Refusing to start.',
-      '',
+      'Without it every policy is bypassed and hotels can read one another.',
       'Set APP_DATABASE_URL, or RLS_OPT_OUT=1 if that is genuinely intended.',
       '',
     ].join('\n')
@@ -108,38 +59,19 @@ if (
   process.exit(1);
 }
 
-if (!appDbUrl && process.env.NODE_ENV !== 'production') {
-  console.warn(
-    'APP_DATABASE_URL is not set: row-level security is INACTIVE in this process.'
-  );
+if (!appDbUrl && process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
+  console.warn('APP_DATABASE_URL is not set: row-level security is INACTIVE in this process.');
 }
 
-const baseClient = appDbUrl
-  ? new PrismaClient({
-      datasources: { db: { url: appDbUrl } },
-      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    })
-  : prismaAdmin;
+const baseClient = appDbUrl ? new PrismaClient({ datasources: { db: { url: appDbUrl } }, log }) : prismaAdmin;
 
 /**
- * Relation field names, on models that are themselves unprotected, whose
- * target model is one of RLS_MODELS. `include: { bookings: {...} }` on an
- * Artist query never has `model === 'Booking'` - the extension below only
- * ever sees 'Artist' - but the join still reads the bookings table, so
- * without this the policy silently filtered it to zero rows regardless of
- * who was asking.
- *
- * Keep in step with prisma/schema.prisma.
+ * Relation field names, on unprotected models, whose target is one of
+ * RLS_MODELS. `include: { bookings: ... }` on an Artist query never has
+ * `model === 'Booking'`, but the join still reads the bookings table, so the
+ * identity has to be stamped for it too. Keep in step with schema.prisma.
  */
-const RLS_RELATION_FIELDS = new Set([
-  'bookings',
-  'transactions',
-  'credits',
-  'creditLedger',
-  'payments',
-  'payment',
-  'ledgerEntries',
-]);
+const RLS_RELATION_FIELDS = new Set(['bookings', 'credits', 'creditLedger', 'payments', 'payment', 'ledgerEntries']);
 
 function touchesProtectedRelation(value: unknown, depth = 0): boolean {
   if (!value || typeof value !== 'object' || depth > 6) return false;
@@ -154,22 +86,13 @@ const prisma = appDbUrl
   ? baseClient.$extends({
       query: {
         async $allOperations({ model, args, query }: any) {
-          // Unprotected queries skip the round trip entirely. Setting a
-          // variable no policy reads would add a transaction to the great
-          // majority of traffic - catalogue reads - for nothing.
           const touchesRls = (!!model && RLS_MODELS.has(model)) || touchesProtectedRelation(args);
-          if (!touchesRls) {
-            return query(args);
-          }
+          if (!touchesRls) return query(args);
 
+          // No identity: the policies already resolve that to zero rows, which
+          // is the safe answer for anonymous paths.
           const identity = requestContext.getStore();
-
-          // No identity on a protected table is not an error to throw: the
-          // policies already resolve it to zero rows. Throwing here would turn
-          // a safe empty result into a 500 on legitimate anonymous paths.
-          if (!identity) {
-            return query(args);
-          }
+          if (!identity) return query(args);
 
           const [, result] = await baseClient.$transaction([
             baseClient.$executeRaw`SELECT set_config('app.user_id', ${identity.userId}, true), set_config('app.user_role', ${identity.role}, true)`,
@@ -181,146 +104,17 @@ const prisma = appDbUrl
     })
   : prismaAdmin;
 
-let dbInitialized = false;
-
-async function initializeDatabase() {
-  if (dbInitialized) return;
-  
-  try {
-    // Test connection
-    await prisma.$connect();
-    const dbUrl = getDatabaseUrl();
-    
-    // For SQLite, use a simple query. For PostgreSQL, use raw query
-    if (dbUrl?.startsWith('file:')) {
-      // SQLite - simple query
-      await prisma.$queryRaw`SELECT 1 as test`;
-      console.log(`✅ SQLite database connected via Prisma`);
-    } else {
-      // PostgreSQL - raw query
-      await prisma.$queryRaw`SELECT 1 as test`;
-      console.log(`✅ PostgreSQL database connected via Prisma`);
-    }
-    dbInitialized = true;
-  } catch (error: any) {
-    console.error('❌ Database connection failed:', error.message);
-    const dbUrl = getDatabaseUrl();
-    
-    // Check if it's a pooler authentication error
-    if (error.message.includes('Tenant or user not found') || error.message.includes('FATAL')) {
-      if (dbUrl?.includes('pooler.supabase.com')) {
-        console.error('\n⚠️  Pooler connection failed. Check that DATABASE_URL points at the');
-        console.error('   connection string shown in your database provider dashboard.');
-        console.error('\nCurrent connection string:', dbUrl.replace(/:[^:@]+@/, ':****@'));
-      }
-    }
-    
-    if (error.message.includes('protocol') || error.message.includes('file:')) {
-      if (dbUrl?.startsWith('file:')) {
-        console.error('⚠️  For SQLite, DATABASE_URL must start with file:');
-        console.error('Example: file:./prisma/dev.db');
-      } else {
-        console.error('⚠️  For PostgreSQL, DATABASE_URL must start with postgresql:// or postgres://');
-        console.error('Example: postgresql://user:password@localhost:5432/dbname');
-      }
-      console.error('Current DATABASE_URL:', dbUrl || 'Not set');
-    }
-    throw error;
-  }
-}
-
-// Database query wrapper for PostgreSQL (using Prisma raw queries)
-export async function dbQuery<T = any>(query: string, params?: any[]): Promise<T[]> {
-  if (!dbInitialized) {
-    await initializeDatabase();
-  }
-
-  try {
-    // Use Prisma raw query for PostgreSQL (supports $1, $2, etc. placeholders)
-    const result = await prisma.$queryRawUnsafe(query, ...(params || [])) as T[];
-    return result;
-  } catch (error: any) {
-    console.error('Database query error:', error.message);
-    console.error('Query:', query.substring(0, 100));
-    throw error;
-  }
-}
-
-// Export usePrisma flag (always true for PostgreSQL)
-export function isUsingPrisma(): boolean {
-  return true;
-}
-
-// Get user by email using Prisma
-// Registration stores emails lowercased, so lookups must be case-insensitive -
-// otherwise anyone who signed up with capitals can never log back in.
-export async function getUserByEmail(email: string) {
-  await initializeDatabase();
-  const user = await prisma.user.findFirst({
-    where: { email: { equals: email.toLowerCase().trim(), mode: 'insensitive' } },
-    include: {
-      artist: true,
-      hotel: true,
-    },
-  });
-  return user;
-}
-
-// Create user using Prisma
-export async function createUser(data: {
-  email: string;
-  name: string;
-  passwordHash: string;
-  role: string;
-  language?: string;
-  phone?: string | null;
-  country?: string | null;
-  clerkId?: string | null;
-}) {
-  await initializeDatabase();
-  
-  const user = await prisma.user.create({
-    data: {
-      email: data.email,
-      name: data.name,
-      passwordHash: data.passwordHash,
-      role: data.role,
-      language: data.language || 'fr',
-      phone: data.phone || null,
-      country: data.country || null,
-      clerkId: data.clerkId || null,
-      isActive: true,
-    },
-    include: {
-      artist: true,
-      hotel: true,
-    },
-  });
-  
-  console.log(`✅ User created: ${user.email}`);
-  
-  return {
-    id: user.id,
-    role: user.role,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    createdAt: user.createdAt,
-    artist: user.artist,
-    hotel: user.hotel,
-  };
+/** A cheap round trip, for health checks. */
+export async function pingDatabase(): Promise<void> {
+  await prismaAdmin.$queryRaw`SELECT 1`;
 }
 
 // The request-scoped client. Use this everywhere in the request path.
 export { prisma };
 
 /**
- * The privileged client. Bypasses row-level security.
- *
- * Only three callers should ever want this: Stripe webhooks, the seed, and
- * maintenance scripts. If you are reaching for it inside a route handler, the
- * question to answer first is whose data you are about to read.
+ * The privileged client. Bypasses row-level security. If you are reaching for
+ * it inside a route handler, the question to answer first is whose data you
+ * are about to read or move, and whether the route has already authorised it.
  */
 export { prismaAdmin };
-export { initializeDatabase };
-

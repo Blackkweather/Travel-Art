@@ -2,6 +2,7 @@ import React from 'react'
 import LegalLayout from '@/components/LegalLayout'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { CONTACT_EMAIL } from '@/config/contact'
 
 const PrivacyPolicyPage: React.FC = () => {
   return (
@@ -47,7 +48,7 @@ const PrivacyPolicyPage: React.FC = () => {
 
         <h2>Contact</h2>
         <p>
-          Pour toute question ou demande relative à vos données, écrivez-nous à <a className="text-gold" href="mailto:hello@travelart.com">hello@travelart.com</a>.
+          Pour toute question ou demande relative à vos données, écrivez-nous à <a className="text-gold" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
         </p>
     </LegalLayout>
   )

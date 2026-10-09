@@ -2,6 +2,7 @@ import React from 'react'
 import LegalLayout from '@/components/LegalLayout'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
+import { CONTACT_EMAIL } from '@/config/contact'
 
 const CookiePolicyPage: React.FC = () => {
   return (
@@ -33,7 +34,7 @@ const CookiePolicyPage: React.FC = () => {
 
         <h2>Contact</h2>
         <p>
-          Pour toute question sur cette politique, écrivez à <a className="text-gold" href="mailto:hello@travelart.com">hello@travelart.com</a>.
+          Pour toute question sur cette politique, écrivez à <a className="text-gold" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
         </p>
     </LegalLayout>
   )

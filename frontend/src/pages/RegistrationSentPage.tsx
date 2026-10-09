@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
+import ResendVerification from '@/components/ResendVerification'
 import { t } from '@/i18n'
 
 /**
@@ -23,7 +24,7 @@ const RegistrationSentPage: React.FC = () => {
     {
       title: t('Confirmez votre adresse'),
       body: state.email
-        ? `Nous avons envoyé un lien de confirmation à ${state.email}. Ouvrez-le pour valider votre adresse.`
+        ? t('Nous avons envoyé un lien de confirmation à {email}. Ouvrez-le pour valider votre adresse : votre candidature n’est examinée qu’une fois l’adresse confirmée.', { email: state.email })
         : t('Nous vous avons envoyé un lien de confirmation par e-mail. Ouvrez-le pour valider votre adresse.'),
     },
     {
@@ -35,7 +36,10 @@ const RegistrationSentPage: React.FC = () => {
     },
     {
       title: t('Vous recevez notre réponse'),
-      body: t('Dès qu’une décision est prise, vous recevez un e-mail. Votre compte est alors utilisable.'),
+      body:
+        state.role === 'ARTIST'
+          ? t('Dès qu’une décision est prise, vous recevez un e-mail. Préparez vos photos et vos vidéos : vous les ajouterez depuis votre espace.')
+          : t('Dès qu’une décision est prise, vous recevez un e-mail. Votre compte est alors utilisable.'),
     },
   ]
 
@@ -74,10 +78,11 @@ const RegistrationSentPage: React.FC = () => {
           <Link to="/login" className="btn-ghost">
             {t('Se connecter')}
           </Link>
+          {state.email && <ResendVerification email={state.email} />}
         </div>
 
         <p className="mt-10 max-w-prose text-[0.8125rem] leading-relaxed text-content-secondary">
-          {t('Vous n’avez rien reçu ? Vérifiez vos indésirables. Le lien de confirmation expire après 24 heures — vous pourrez en demander un nouveau depuis la page de connexion.')}
+          {t('Vous n’avez rien reçu ? Vérifiez vos indésirables. Le lien de confirmation expire après 48 heures ; vous pouvez en demander un nouveau ici ou depuis la page de connexion.')}
         </p>
       </main>
 

@@ -152,18 +152,6 @@ CREATE POLICY credit_ledger_access ON credit_ledger
   USING (app_is_admin() OR "hotelId" IN (SELECT app_hotel_ids()))
   WITH CHECK (app_is_admin() OR "hotelId" IN (SELECT app_hotel_ids()));
 
--- ---------------------------------------------------------- 5. transactions
-ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE transactions FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS transactions_access ON transactions;
-CREATE POLICY transactions_access ON transactions
-  USING (
-    app_is_admin()
-    OR "hotelId" IN (SELECT app_hotel_ids())
-    OR "artistId" IN (SELECT app_artist_ids())
-  )
-  WITH CHECK (app_is_admin() OR "hotelId" IN (SELECT app_hotel_ids()));
-
 -- -------------------------------------------------------------- 6. payments
 -- Payments are keyed to the acting user directly rather than through a profile.
 -- The column is actorUserId, not userId: Stripe payments are attributed to the

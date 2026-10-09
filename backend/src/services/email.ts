@@ -46,6 +46,7 @@ interface Template {
   action?: { label: string; url: string };
   /** Small print under the rule. */
   footnote?: string;
+  attachments?: { filename: string; content: Buffer }[];
 }
 
 const NAVY = '#0B1F3F';
@@ -141,6 +142,7 @@ async function send(to: string, template: Template): Promise<SendResult> {
       subject: template.subject,
       html: render(template),
       text: renderText(template),
+      ...(template.attachments?.length ? { attachments: template.attachments } : {}),
     });
 
     if (error) {
@@ -159,17 +161,25 @@ async function send(to: string, template: Template): Promise<SendResult> {
 
 // ---------------------------------------------------------------- templates
 
+/**
+ * Names, reasons and hotel names are typed by users and rendered into HTML.
+ * Escaped at every interpolation into a body line, so "<a href=...>" in a
+ * hotel name arrives in the inbox as text, not as a link.
+ */
+const esc = (value: string | null | undefined): string =>
+  String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
 export function verificationEmail(to: string, name: string, url: string) {
   return send(to, {
     subject: 'Confirmez votre adresse e-mail',
     heading: 'Confirmez votre adresse',
     body: [
-      `Bonjour ${name},`,
+      `Bonjour ${esc(name)},`,
       'Votre demande d’inscription au programme Travel Art a bien été reçue. Confirmez votre adresse e-mail pour que nous puissions l’examiner.',
     ],
     action: { label: 'Confirmer mon adresse', url },
     footnote:
-      'Ce lien expire dans 24 heures. Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.',
+      'Ce lien expire dans 48 heures. Si vous n’êtes pas à l’origine de cette demande, ignorez ce message.',
   });
 }
 
@@ -178,7 +188,7 @@ export function passwordResetEmail(to: string, name: string, url: string) {
     subject: 'Réinitialiser votre mot de passe',
     heading: 'Réinitialiser votre mot de passe',
     body: [
-      `Bonjour ${name},`,
+      `Bonjour ${esc(name)},`,
       'Vous avez demandé à réinitialiser votre mot de passe. Choisissez-en un nouveau en suivant le lien ci-dessous.',
     ],
     action: { label: 'Choisir un nouveau mot de passe', url },
@@ -192,7 +202,7 @@ export function approvedEmail(to: string, name: string, url: string) {
     subject: 'Votre compte Travel Art est ouvert',
     heading: 'Bienvenue dans le programme',
     body: [
-      `Bonjour ${name},`,
+      `Bonjour ${esc(name)},`,
       'Votre candidature a été acceptée. Votre compte est désormais actif et vous pouvez vous connecter.',
     ],
     action: { label: 'Accéder à mon espace', url },
@@ -204,9 +214,9 @@ export function rejectedEmail(to: string, name: string, reason?: string) {
     subject: 'Votre candidature Travel Art',
     heading: 'Votre candidature n’a pas été retenue',
     body: [
-      `Bonjour ${name},`,
+      `Bonjour ${esc(name)},`,
       'Après examen, nous ne donnons pas suite à votre demande d’inscription pour le moment.',
-      ...(reason ? [`<strong>Motif :</strong> ${reason}`] : []),
+      ...(reason ? [`<strong>Motif :</strong> ${esc(reason)}`] : []),
     ],
     footnote:
       'Vous pouvez répondre à ce message si vous souhaitez des précisions ou soumettre une nouvelle demande plus tard.',
@@ -230,8 +240,8 @@ export function newRegistrationAdminAlert(applicant: {
     subject: `Nouvelle candidature ${roleLabel} : ${applicant.name}`,
     heading: 'Nouvelle candidature à examiner',
     body: [
-      `${applicant.name} (${applicant.email}) vient de s’inscrire en tant que ${roleLabel}${
-        applicant.country ? ` — ${applicant.country}` : ''
+      `${esc(applicant.name)} (${esc(applicant.email)}) vient de s’inscrire en tant que ${roleLabel}${
+        applicant.country ? ` — ${esc(applicant.country)}` : ''
       }.`,
       'Le compte reste en attente tant qu’il n’a pas été admis depuis la console d’administration.',
     ],
@@ -279,9 +289,9 @@ export function bookingRequestedEmail(
     subject: `${hotelName} vous propose une résidence ${stay}`,
     heading: 'Une maison vous propose une résidence',
     body: [
-      `Bonjour ${artistName},`,
-      `<strong>${hotelName}</strong> souhaite vous accueillir en résidence ${stay}.`,
-      'Les termes sont ceux du programme : sept nuits, douze heures de représentation sur la semaine, deux heures par jour au maximum, chambre et pension complète pour vous et un accompagnant. Le voyage reste à votre charge.',
+      `Bonjour ${esc(artistName)},`,
+      `<strong>${esc(hotelName)}</strong> souhaite vous accueillir en résidence ${stay}.`,
+      'Le principe est celui du programme : un séjour pour vous et un accompagnant, en échange d’une prestation convenue à l’avance. Les dates, la chambre, la formule, la prestation et la prise en charge du transport sont écrits dans une convention signée avant votre départ.',
       'Rien n’est réservé tant que vous n’avez pas répondu. Regardez les dates, le lieu et ce que la maison fournit avant d’accepter.',
     ],
     action: { label: 'Voir la proposition', url },
@@ -302,12 +312,136 @@ export function bookingConfirmedEmail(
     subject: `${artistName} accepte la résidence ${stay}`,
     heading: 'La résidence est confirmée',
     body: [
-      `Bonjour ${hotelName},`,
-      `<strong>${artistName}</strong> a accepté votre proposition ${stay}. La résidence est confirmée des deux côtés.`,
-      'Il reste à convenir de deux choses avant l’arrivée : la répartition des douze heures sur la semaine, et le nom de la personne qui accueillera l’artiste sur place.',
+      `Bonjour ${esc(hotelName)},`,
+      `<strong>${esc(artistName)}</strong> a accepté votre proposition ${stay}.`,
+      'Il reste à signer la convention tripartite : elle reprend les conditions de votre demande — séjour pour deux, formule, prestation, transport, valeurs échangées — et les identités des parties. Relisez-la et signez-la depuis votre espace ; l’artiste fait de même de son côté.',
+      'Tant que les deux signatures ne sont pas réunies, la convention n’est pas validée.',
+    ],
+    action: { label: 'Lire et signer la convention', url },
+  });
+}
+
+/** To the hotel: the artist withdrew from a confirmed residency (article 13). */
+export function bookingCancelledByArtistEmail(to: string, hotelName: string, artistName: string, stay: string, reason: string, signed: boolean, url: string) {
+  return send(to, {
+    subject: `${artistName} se désiste de la résidence ${stay}`,
+    heading: 'L’artiste se désiste',
+    body: [
+      `Bonjour ${esc(hotelName)},`,
+      `<strong>${esc(artistName)}</strong> ne pourra pas assurer la résidence prévue ${stay}. Vos crédits vous ont été restitués.`,
+      `Motif indiqué : ${esc(reason)}`,
+      signed
+        ? 'La convention étant signée, son article 13 s’applique : si l’empêchement est injustifié, vous pouvez demander le remboursement des dépenses directement engagées et non récupérables, sur justificatifs. Répondez à ce message, nous faisons le lien.'
+        : 'La convention n’était pas encore signée : aucun frais n’est en jeu.',
+    ],
+    action: { label: 'Trouver un autre artiste', url },
+  });
+}
+
+/** To the participant, right after accepting: the convention is waiting for them too. */
+export function conventionToSignEmail(to: string, artistName: string, hotelName: string, stay: string, url: string) {
+  return send(to, {
+    subject: `Convention à signer : ${hotelName}, ${stay}`,
+    heading: 'Votre convention est prête',
+    body: [
+      `Bonjour ${esc(artistName)},`,
+      `Vous avez accepté la résidence proposée par <strong>${esc(hotelName)}</strong> ${stay}. La convention tripartite qui l’encadre est prête : relisez-la et signez-la depuis votre espace.`,
+      'Vous y indiquerez votre adresse et le numéro de votre pièce d’identité, qui n’apparaissent que dans la convention.',
+    ],
+    action: { label: 'Lire et signer la convention', url },
+    footnote: 'N’achetez aucun billet avant que la convention soit signée par les deux parties.',
+  });
+}
+
+/** To each party and the coordinator: both have signed; the PDF is attached. */
+export function conventionSignedEmail(to: string, name: string, hotelName: string, artistName: string, stay: string, url: string, pdf: Buffer, reference: string) {
+  return send(to, {
+    subject: `Convention signée : ${hotelName} × ${artistName}, ${stay}`,
+    heading: 'La convention est signée',
+    body: [
+      `Bonjour ${esc(name)},`,
+      `La convention entre <strong>${esc(hotelName)}</strong> et <strong>${esc(artistName)}</strong> pour la résidence ${stay} est signée par toutes les parties. Elle est validée définitivement.`,
+      'Vous la trouverez en pièce jointe, et à tout moment dans votre espace.',
     ],
     action: { label: 'Ouvrir la réservation', url },
+    footnote: 'Conservez ce document : c’est lui qui fait foi entre les parties.',
+    attachments: [{ filename: `convention-${reference}.pdf`, content: pdf }],
   });
+}
+
+/** To the hotel: it cancelled a signed convention; article 14 applies. */
+export function cancellationFeeDueEmail(to: string, hotelName: string, artistName: string, stay: string, fee: string, dueDate: string, transportEligible: boolean, url: string) {
+  return send(to, {
+    subject: `Annulation de la résidence ${stay} : frais de dossier de ${fee}`,
+    heading: 'Annulation après signature',
+    body: [
+      `Bonjour ${esc(hotelName)},`,
+      `Vous avez annulé la résidence de <strong>${esc(artistName)}</strong> ${stay}, alors que la convention était signée.`,
+      `Conformément à son article 14, des frais fixes de traitement de dossier de <strong>${fee}</strong> sont dus au Coordinateur, au plus tard le ${dueDate}.`,
+      transportEligible
+        ? 'L’artiste peut également vous demander le remboursement de ses frais de transport effectivement engagés et non remboursables, sur justificatifs. Vous serez prévenu s’il le fait ; le remboursement est dû sous 15 jours après sa demande complète.'
+        : 'Le transport n’étant pas à la charge de l’artiste, aucun remboursement de transport n’est prévu.',
+    ],
+    action: { label: 'Régler les frais', url },
+    footnote: 'Si l’annulation résulte d’un cas de force majeure, répondez à ce message avec les éléments qui l’établissent.',
+  });
+}
+
+/** To the participant: the hotel cancelled after signature; they may claim their tickets. */
+export function transportClaimInviteEmail(to: string, artistName: string, hotelName: string, stay: string, url: string) {
+  return send(to, {
+    subject: `Annulation de ${hotelName} : remboursement de votre transport`,
+    heading: 'Vos frais de transport vous sont remboursés',
+    body: [
+      `Bonjour ${esc(artistName)},`,
+      `<strong>${esc(hotelName)}</strong> a annulé la résidence ${stay} après la signature de la convention.`,
+      'Si vous aviez engagé des frais de transport non remboursables, déposez votre demande avec vos justificatifs (billets, factures, preuve que le billet n’est pas remboursable). L’hôtel dispose de 15 jours pour vous rembourser à compter de votre demande complète.',
+    ],
+    action: { label: 'Demander le remboursement', url },
+  });
+}
+
+/** To the hotel: the participant filed a transport claim. */
+export function transportClaimSubmittedEmail(to: string, hotelName: string, artistName: string, amount: string, dueDate: string, url: string) {
+  return send(to, {
+    subject: `Demande de remboursement de transport : ${amount}`,
+    heading: 'Une demande de remboursement vous attend',
+    body: [
+      `Bonjour ${esc(hotelName)},`,
+      `<strong>${esc(artistName)}</strong> demande le remboursement de ses frais de transport non remboursables, pour <strong>${amount}</strong>, justificatifs à l’appui.`,
+      `Le remboursement est dû au plus tard le ${dueDate}. Marquez-le comme effectué dans votre espace une fois le virement fait.`,
+    ],
+    action: { label: 'Voir la demande', url },
+  });
+}
+
+/** To the participant: the hotel settled, or the coordinator ruled on, their claim. */
+export function transportClaimSettledEmail(to: string, artistName: string, hotelName: string, paid: boolean, note: string | null, url: string) {
+  return send(to, {
+    subject: paid ? `${hotelName} a remboursé votre transport` : 'Votre demande de remboursement n’est pas retenue',
+    heading: paid ? 'Remboursement effectué' : 'Demande non retenue',
+    body: [
+      `Bonjour ${esc(artistName)},`,
+      paid
+        ? `<strong>${esc(hotelName)}</strong> indique avoir remboursé vos frais de transport.`
+        : 'Après examen, votre demande de remboursement de transport n’est pas retenue.',
+      ...(note ? [`Précision : ${esc(note)}`] : []),
+    ],
+    action: { label: 'Voir le dossier', url },
+    footnote: paid ? 'Si vous n’avez rien reçu d’ici quelques jours, répondez à ce message.' : 'Vous pouvez répondre à ce message pour en discuter avec nous.',
+  });
+}
+
+/** To the coordinator's inbox: something needs a look. */
+export function adminAlertEmail(subject: string, lines: string[], url: string) {
+  if (!ADMIN_NOTIFY_EMAIL) return Promise.resolve<SendResult>({ sent: false });
+  return send(ADMIN_NOTIFY_EMAIL, { subject, heading: subject, body: lines.map(esc), action: { label: 'Ouvrir', url } });
+}
+
+/** The coordinator's copy of a signed convention. */
+export function conventionSignedAdminEmail(hotelName: string, artistName: string, stay: string, url: string, pdf: Buffer, reference: string) {
+  if (!ADMIN_NOTIFY_EMAIL) return Promise.resolve<SendResult>({ sent: false });
+  return conventionSignedEmail(ADMIN_NOTIFY_EMAIL, 'Coordinateur', hotelName, artistName, stay, url, pdf, reference);
 }
 
 /** To the hotel: the artist said no. Written so it does not read as a snub. */
@@ -322,8 +456,8 @@ export function bookingRejectedEmail(
     subject: `${artistName} ne retient pas les dates ${stay}`,
     heading: 'La proposition n’a pas été retenue',
     body: [
-      `Bonjour ${hotelName},`,
-      `<strong>${artistName}</strong> ne donne pas suite pour la période ${stay}. Vos crédits vous ont été restitués.`,
+      `Bonjour ${esc(hotelName)},`,
+      `<strong>${esc(artistName)}</strong> ne donne pas suite pour la période ${stay}. Vos crédits vous ont été restitués.`,
       'Un refus tient presque toujours au calendrier et non au lieu. D’autres artistes de la même discipline sont disponibles sur cette période.',
     ],
     action: { label: 'Voir d’autres artistes', url },
@@ -342,13 +476,28 @@ export function bookingCancelledEmail(
     subject: `Résidence annulée : ${hotelName}, ${stay}`,
     heading: 'La résidence est annulée',
     body: [
-      `Bonjour ${artistName},`,
-      `<strong>${hotelName}</strong> annule la résidence prévue ${stay}.`,
-      'Nous cherchons à vous replacer sur la même période, sans pouvoir le garantir. Si vous aviez déjà engagé des frais de voyage, écrivez-nous en réponse à ce message : nous en parlons à la maison.',
+      `Bonjour ${esc(artistName)},`,
+      `<strong>${esc(hotelName)}</strong> annule la résidence prévue ${stay}.`,
+      'Nous cherchons à vous replacer sur la même période, sans pouvoir le garantir. Si la convention était signée et que vous aviez engagé des frais de transport non remboursables, l’hôtel vous les rembourse sur justificatifs : déposez votre demande depuis votre espace, au même endroit que la réservation.',
     ],
     action: { label: 'Voir mes dates', url },
     footnote:
-      'C’est la raison pour laquelle nous recommandons de ne rien réserver avant qu’une résidence soit confirmée des deux côtés.',
+      'C’est la raison pour laquelle nous recommandons de n’acheter aucun billet avant la signature de la convention.',
+  });
+}
+
+/** An artist invites someone to apply, with their referral link. */
+export function referralInviteEmail(to: string, inviteeName: string, inviterName: string, url: string) {
+  return send(to, {
+    subject: `${inviterName} vous invite à rejoindre Travel Art`,
+    heading: 'Une invitation à rejoindre Travel Art',
+    body: [
+      `Bonjour ${esc(inviteeName)},`,
+      `<strong>${esc(inviterName)}</strong> vous invite à rejoindre Travel Art, le programme qui échange un séjour à l’hôtel pour deux contre votre prestation artistique.`,
+      'Chaque candidature est examinée par notre équipe avant l’ouverture du compte.',
+    ],
+    action: { label: 'Découvrir et candidater', url },
+    footnote: 'Vous recevez ce message parce qu’un artiste du programme a saisi votre adresse. Nous ne la conservons pas.',
   });
 }
 

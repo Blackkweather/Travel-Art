@@ -51,6 +51,7 @@ const AdminUsers = lazyRoute(() => import('@/pages/admin/AdminUsers'))
 const AdminAnalytics = lazyRoute(() => import('@/pages/admin/AdminAnalytics'))
 const AdminModeration = lazyRoute(() => import('@/pages/admin/AdminModeration'))
 const AdminAdmissions = lazyRoute(() => import('@/pages/admin/AdminAdmissions'))
+const AdminClaims = lazyRoute(() => import('@/pages/admin/AdminClaims'))
 const AdminReferrals = lazyRoute(() => import('@/pages/admin/AdminReferrals'))
 const AdminLogs = lazyRoute(() => import('@/pages/admin/AdminLogs'))
 const TravelerExperiencesPage = lazyRoute(() => import('@/pages/TravelerExperiencesPage'))
@@ -240,6 +241,14 @@ function App() {
           element={
             <RoleRoute allowedRoles={['ADMIN']}>
               <AdminAdmissions />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="claims"
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminClaims />
             </RoleRoute>
           }
         />

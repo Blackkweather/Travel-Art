@@ -136,3 +136,6 @@ frontend/cypress/downloads/
 .agents/
 .claude/skills/
 skills-lock.json
+
+# Local development uploads (production stores files in Vercel Blob)
+backend/uploads/

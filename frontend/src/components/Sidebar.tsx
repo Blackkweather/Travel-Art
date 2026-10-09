@@ -9,7 +9,8 @@ import {
   Users, 
   Gift,
   TrendingUp,
-  Activity
+  Activity,
+  Receipt
 } from 'lucide-react'
 import { t } from '@/i18n'
 
@@ -46,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
           { path: '/dashboard/bookings', label: t('Réservations'), icon: Calendar },
           { path: '/dashboard/analytics', label: t('Statistiques'), icon: TrendingUp },
           { path: '/dashboard/admissions', label: t('Admissions'), icon: UserIcon },
+          { path: '/dashboard/claims', label: t('Annulations'), icon: Receipt },
           { path: '/dashboard/moderation', label: t('Modération'), icon: UserIcon },
           { path: '/dashboard/logs', label: t('Journal d’activité'), icon: Activity },
           { path: '/dashboard/referrals', label: t('Parrainage'), icon: Gift },

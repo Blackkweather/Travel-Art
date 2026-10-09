@@ -2,8 +2,12 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Load .env file from root first, then backend (backend overrides root)
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// SKIP_DOTENV=1 runs on the process environment alone: a throwaway test
+// server must not pick up the developer's real mail, payment or database keys.
+if (process.env.SKIP_DOTENV !== '1') {
+  dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
+}
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 
@@ -32,11 +36,6 @@ export const config = {
   nodeEnv,
   jwtSecret: resolveJwtSecret(),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
-  // For SQLite (dev), use file: protocol. For PostgreSQL (prod), use postgresql://
-  databaseUrl: process.env.DATABASE_URL || (process.env.NODE_ENV === 'production' 
-    ? 'postgresql://user:password@localhost:5432/travelart'
-    : 'file:./prisma/dev.db'),
   corsOrigin: process.env.CORS_ORIGIN || vercelUrl || 'http://localhost:3000',
   // Preview deployments get a generated hostname per commit, so FRONTEND_URL
   // cannot be set to a fixed value for them the way it is for production. With
@@ -56,8 +55,6 @@ export const config = {
      credential control - that is the 10-failed-attempts limiter on login,
      registration and password reset, which is untouched. */
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000', 10),
-  maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10),
-  uploadPath: process.env.UPLOAD_PATH || './uploads',
   // Email is sent over Resend (see services/email.ts), which reads
   // RESEND_API_KEY, RESEND_FROM and ADMIN_NOTIFY_EMAIL directly from
   // process.env - there used to be an SMTP config here from before that
@@ -69,6 +66,33 @@ export const config = {
   // Regex matching additional allowed CORS origins, e.g. Vercel preview URLs:
   // ^https://travel-art-[a-z0-9-]+\.vercel\.app$
   previewOriginPattern: process.env.PREVIEW_ORIGIN_PATTERN,
+  // Cloudflare Turnstile. With the secret unset the captcha is not required,
+  // so development and tests run without it; set both keys in production.
+  turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY,
+  // The site hostnames a captcha token may come from, comma-separated
+  // (e.g. "travel-art.vercel.app,www.travelart.com"). Required whenever the
+  // secret is set; production must not list localhost.
+  turnstileHostnames: (process.env.TURNSTILE_HOSTNAMES || '')
+    .split(',')
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean)
+    // A local hostname in production would accept tokens solved on any
+    // developer's machine; it is dropped there whatever the variable says.
+    .filter((h) => nodeEnv !== 'production' || !['localhost', '127.0.0.1', '[::1]'].includes(h)),
+  // Off only for the test suite, which has no network to resolve MX records.
+  verifyEmailDomains: process.env.VERIFY_EMAIL_DOMAINS !== '0',
+  // The third party of every convention ("le Coordinateur"). Written into the
+  // document as configured; blank lines print as lines to fill by hand.
+  coordinator: {
+    name: process.env.COORDINATOR_NAME || 'Travel Art',
+    address: process.env.COORDINATOR_ADDRESS || '',
+    registration: process.env.COORDINATOR_REGISTRATION || '',
+    representative: process.env.COORDINATOR_REPRESENTATIVE || '',
+  },
+  /** Where conventions are signed, for "Fait à". */
+  conventionPlace: process.env.CONVENTION_PLACE || '',
+  /** The coordinator's fee when a hotel cancels a signed convention (article 14). */
+  hotelCancellationFeeCents: 8900,
 };
 
 /**

@@ -10,7 +10,8 @@ import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
-import { parseJsonField } from '@/utils/apiPayload'
+import VideoCard from '@/components/VideoCard'
+import type { MediaItem } from '@/types'
 
 const PublicArtistProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -115,12 +116,20 @@ const PublicArtistProfile: React.FC = () => {
     )
   }
 
-  // Parse images and videos (handle both array and JSON string)
-  const images = Array.isArray(artist.images) ? artist.images : parseJsonField<string[]>(artist.images, [])
-  const videos = Array.isArray(artist.videos) ? artist.videos : parseJsonField<string[]>(artist.videos, [])
+  // The picture first, then the gallery; videos are media rows with their embed address.
+  const gallery: string[] = Array.isArray(artist.images) ? artist.images : []
+  const images: string[] = artist.profilePicture ? [artist.profilePicture, ...gallery.filter((i: string) => i !== artist.profilePicture)] : gallery
+  const videos: MediaItem[] = (artist.media ?? []).filter((m: MediaItem) => m.kind === 'VIDEO')
 
-  // Parse artisticProfile JSON
-  const artisticProfile = parseJsonField<any>(artist.artisticProfile, {})
+  // The category columns, under the names this page already renders.
+  const artisticProfile = {
+    mainCategory: artist.mainCategory ? t(artist.mainCategory) : null,
+    secondaryCategory: artist.secondaryCategory ? t(artist.secondaryCategory) : null,
+    specificCategory: artist.specificCategory ? t(artist.specificCategory) : artist.categoryType ? t(artist.categoryType) : null,
+    domain: artist.tributeTo ? t('Hommage à {name}', { name: artist.tributeTo }) : null,
+    languages: (artist.languages ?? []).filter((l: string) => l !== 'Autre').map((l: string) => t(l)).concat(artist.otherLanguages ? [artist.otherLanguages] : []),
+    audienceType: (artist.audienceTypes ?? []).map((a: string) => t(a)),
+  }
 
   return (
     <div className="min-h-screen bg-[var(--surface)]" data-testid="artist-profile">
@@ -137,11 +146,11 @@ const PublicArtistProfile: React.FC = () => {
         }
       />
       <SimpleNavbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
         {/* Back Button */}
-        <Link 
-          to="/top-artists" 
+        <Link
+          to="/top-artists"
           className="inline-flex items-center text-content hover:text-gold mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -171,7 +180,7 @@ const PublicArtistProfile: React.FC = () => {
                     }}
                   />
                 ) : null}
-                <div 
+                <div
                   className={`w-full h-full rounded-control bg-gradient-to-br from-navy/10 to-gold/10 ring-2 ring-gold/20 flex items-center justify-center ${images[0] ? 'hidden' : 'flex'}`}
                   style={{ display: images[0] ? 'none' : 'flex' }}
                 >
@@ -189,7 +198,7 @@ const PublicArtistProfile: React.FC = () => {
                 <p className="text-sm text-content-secondary mb-2">({artist.user.name})</p>
               )}
               <p className="text-lg text-gold font-medium mb-3">{artist.discipline || 'Artist'}</p>
-              
+
               {artist.user?.country && (
                 <div className="flex items-center text-content-secondary mb-4">
                   <MapPin className="w-4 h-4 mr-2 text-content-secondary" />
@@ -223,7 +232,7 @@ const PublicArtistProfile: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Action Buttons for Hotels */}
           {user && user.role === 'HOTEL' && (
             <div className="mt-8 pt-6 border-t border-line flex gap-3">
@@ -295,7 +304,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Secondary Category */}
               {artisticProfile.secondaryCategory && (
                 <div className="flex items-start gap-4">
@@ -308,7 +317,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Specific Category/Type */}
               {artisticProfile.specificCategory && (
                 <div className="flex items-start gap-4">
@@ -323,7 +332,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Domain */}
               {artisticProfile.domain && (
                 <div className="flex items-start gap-4">
@@ -338,7 +347,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Location */}
               {artist.user?.country && (
                 <div className="flex items-start gap-4">
@@ -351,7 +360,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Stage Name */}
               {artist.stageName && (
                 <div className="flex items-start gap-4">
@@ -366,35 +375,10 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
-              {/* Phone */}
-              {artist.phone && (
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-card bg-gold/10 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm text-content-secondary mb-1">{t('Téléphone')}</p>
-                    <p className="text-base font-medium text-content">{artist.phone}</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Birth Date */}
-              {artist.birthDate && (
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-card bg-gold/10 flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-5 h-5 text-gold" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-content-secondary mb-1">{t('Date de naissance')}</p>
-                    <p className="text-base font-medium text-content">{artist.birthDate}</p>
-                  </div>
-                </div>
-              )}
-              
+
+              {/* No phone and no birth date here: contact details reach a hotel
+                  through a confirmed residency, never from a public profile. */}
+
               {/* Languages */}
               {(artisticProfile.languages && artisticProfile.languages.length > 0) && (
                 <div className="flex items-start gap-4">
@@ -409,7 +393,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Audience Type */}
               {(artisticProfile.audienceType && artisticProfile.audienceType.length > 0) && (
                 <div className="flex items-start gap-4">
@@ -424,9 +408,9 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Rating */}
-              {artist.avgRating && artist.avgRating >= 3.0 && artist.bookings && artist.bookings.length > 0 && (
+              {artist.avgRating && artist.avgRating >= 3.0 && (artist.bookingCount ?? 0) > 0 && (
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-card bg-gold/10 flex items-center justify-center flex-shrink-0">
                     <Star className="w-5 h-5 text-gold fill-current" />
@@ -447,49 +431,12 @@ const PublicArtistProfile: React.FC = () => {
             <div className="mb-12">
               <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Vidéos de performances')}</h2>
               <p className="text-content-secondary mb-6">{t('Découvrez le travail de l’artiste à travers ses performances')}</p>
-              
+
               {videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {videos.map((video: string, index: number) => {
-                    // Check if it's a YouTube URL
-                    const isYouTube = video.includes('youtube.com') || video.includes('youtu.be')
-                    let videoId = ''
-                    
-                    if (isYouTube) {
-                      // Extract YouTube video ID
-                      if (video.includes('youtube.com/watch?v=')) {
-                        videoId = video.split('v=')[1]?.split('&')[0] || ''
-                      } else if (video.includes('youtu.be/')) {
-                        videoId = video.split('youtu.be/')[1]?.split('?')[0] || ''
-                      } else if (video.includes('youtube.com/embed/')) {
-                        videoId = video.split('embed/')[1]?.split('?')[0] || ''
-                      }
-                    }
-                    
-                    return (
-                      <div key={index} className="relative aspect-video rounded-card overflow-hidden bg-surface-inverse border border-line shadow-medium">
-                        {isYouTube && videoId ? (
-                          <iframe
-                            src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-                            title={`${t('Vidéo de performance')} ${index + 1}`}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="w-full h-full"
-                          />
-                        ) : (
-                          <video
-                            src={video}
-                            controls
-                            preload="metadata"
-                            aria-label={`${t('Vidéo de performance')} ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          >
-                            {t('Votre navigateur ne prend pas en charge la lecture vidéo.')}
-                          </video>
-                        )}
-                      </div>
-                    )
-                  })}
+                  {videos.map((video, index) => (
+                    <VideoCard key={video.id} video={video} index={index} />
+                  ))}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -521,7 +468,7 @@ const PublicArtistProfile: React.FC = () => {
           <div className="mb-12">
             <h2 className="text-2xl font-serif font-bold text-content mb-4">Portfolio</h2>
             <p className="text-content-secondary mb-6">{t('Un aperçu des performances passées et des moments de scène')}</p>
-            
+
             {images.length > 1 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {images.slice(1).map((image: string, index: number) => (
@@ -579,7 +526,7 @@ const PublicArtistProfile: React.FC = () => {
                     </p>
                   </div>
                 )}
-                
+
                 {/* Languages */}
                 {artisticProfile.languages && artisticProfile.languages.length > 0 && (
                   <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line hover:border-gold/50 transition-colors">
@@ -594,7 +541,7 @@ const PublicArtistProfile: React.FC = () => {
                     </p>
                   </div>
                 )}
-                
+
                 {/* Target Audience */}
                 {artisticProfile.audienceType && artisticProfile.audienceType.length > 0 && (
                   <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line hover:border-gold/50 transition-colors">
@@ -609,7 +556,7 @@ const PublicArtistProfile: React.FC = () => {
                     </p>
                   </div>
                 )}
-                
+
                 {/* Professional Commitment */}
                 <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line hover:border-gold/50 transition-colors">
                   <div className="w-12 h-12 rounded-card bg-gold/10 flex items-center justify-center mb-4">
@@ -660,7 +607,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="p-6 bg-gradient-to-r from-navy/5 to-transparent rounded-card border-l-4 border-navy">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-control bg-navy/10 flex items-center justify-center flex-shrink-0">
@@ -684,7 +631,7 @@ const PublicArtistProfile: React.FC = () => {
           <div className="mb-12">
             <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Disponibilités')}</h2>
             <p className="text-content-secondary mb-6">{t('Disponibilités pour les prochaines dates')}</p>
-            
+
             {artist.availability && artist.availability.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {artist.availability.map((avail: any, index: number) => (
@@ -737,7 +684,7 @@ const PublicArtistProfile: React.FC = () => {
             <div className="mb-12">
               <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Témoignages')}</h2>
               <p className="text-content-secondary mb-6">Ce que les lieux disent de leur collaboration avec {artist.stageName || artist.user?.name}</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Placeholder testimonials */}
                 <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line shadow-sm">
@@ -759,7 +706,7 @@ const PublicArtistProfile: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6 bg-[var(--surface-raised)] rounded-card border border-line shadow-sm">
                   <div className="flex items-center gap-1 mb-4">
                     {[1,2,3,4,5].map((star) => (
@@ -784,7 +731,7 @@ const PublicArtistProfile: React.FC = () => {
           </ScrollAnimationWrapper>
         )}
       </div>
-      
+
       <Footer />
     </div>
   )

@@ -1,648 +1,97 @@
-import request from 'supertest';
-import bcrypt from 'bcryptjs';
-import { app } from '../index';
-import { prisma, initializeDatabase } from '../db';
+import { api, auth, bookingBody, makeArtist, makeHotel, prismaAdmin, resetDb } from './helpers';
 
-async function createUserWithRole(role: 'HOTEL' | 'ARTIST' | 'ADMIN', email: string, password: string) {
-  // Use same salt rounds as auth route (12) for consistency
-  const passwordHash = await bcrypt.hash(password, 12);
-  const user = await prisma.user.create({
-    data: {
-      email,
-      name: `${role} User`,
-      passwordHash,
-      role,
-      isActive: true,
-    },
-  });
-  
-  // Verify user was created and can be retrieved
-  const verifyUser = await prisma.user.findUnique({ where: { email } });
-  if (!verifyUser) {
-    throw new Error(`Failed to create user: ${email}`);
-  }
-  
-  return user;
-}
+beforeEach(resetDb);
+afterAll(() => prismaAdmin.$disconnect());
 
-describe('Bookings API', () => {
-  const hotelEmail = `hotel-${Date.now()}@suite.test`;
-  const artistEmail = `artist-${Date.now()}@suite.test`;
-  const adminEmail = `admin-${Date.now()}@suite.test`;
-  const password = 'SecureP@ss123';
+describe('booking with the convention terms', () => {
+  it('records the terms, spends the credits and shows the artist exactly what is offered', async () => {
+    const artist = await makeArtist();
+    const hotel = await makeHotel({ credits: 20 });
 
-  beforeAll(async () => {
-    process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./prisma/dev.db';
-    await initializeDatabase();
-
-    // Clean any leftover test data
-    await prisma.user.deleteMany({
-      where: { email: { endsWith: '@suite.test' } },
-    }).catch(() => undefined);
-
-    // Create hotel, artist, admin users and profiles
-    const hotelUser = await createUserWithRole('HOTEL', hotelEmail, password);
-    const artistUser = await createUserWithRole('ARTIST', artistEmail, password);
-    await createUserWithRole('ADMIN', adminEmail, password);
-
-    // Verify users were created
-    expect(hotelUser).toBeDefined();
-    expect(artistUser).toBeDefined();
-    expect(hotelUser.email).toBe(hotelEmail);
-    expect(artistUser.email).toBe(artistEmail);
-
-    const hotel = await prisma.hotel.create({
-      data: {
-        userId: hotelUser.id,
-        name: 'Test Hotel',
-        description: 'A test hotel',
-        location: JSON.stringify({ city: 'Paris', country: 'France' }),
-      },
-    });
-
-    // Create credits for the hotel (required for booking creation)
-    await prisma.credit.create({
-      data: {
-        hotelId: hotel.id,
-        totalCredits: 10,
-        usedCredits: 0,
-      },
-    });
-
-    const artist = await prisma.artist.create({
-      data: {
-        userId: artistUser.id,
-        bio: 'Test Artist',
-        discipline: 'Music',
-        priceRange: '$$',
-        membershipStatus: 'ACTIVE',
-      },
-    });
-
-    // POST /bookings refuses an artist with no availability covering the
-    // requested dates. Without this window every booking-creation test got a
-    // 400 from that check rather than exercising the path under test.
-    await prisma.artistAvailability.create({
-      data: {
-        artistId: artist.id,
-        dateFrom: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        dateTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-      },
-    });
-
-    // Verify profiles were created
-    expect(hotel).toBeDefined();
-    expect(artist).toBeDefined();
-
-    // Verify users can be retrieved (ensures database is ready)
-    const verifyHotelUser = await prisma.user.findUnique({ where: { email: hotelEmail } });
-    const verifyArtistUser = await prisma.user.findUnique({ where: { email: artistEmail } });
-    expect(verifyHotelUser).toBeDefined();
-    expect(verifyArtistUser).toBeDefined();
-    expect(verifyHotelUser?.isActive).toBe(true);
-    expect(verifyArtistUser?.isActive).toBe(true);
-  });
-
-  afterAll(async () => {
-    await prisma.user.deleteMany({
-      where: { email: { endsWith: '@suite.test' } },
-    }).catch(() => undefined);
-    await prisma.$disconnect().catch(() => undefined);
-  });
-
-  it('TC-BOOK-001: should create booking with valid data (HOTEL role only)', async () => {
-    // Verify user exists before attempting login
-    const hotelUser = await prisma.user.findUnique({
-      where: { email: hotelEmail }
-    });
-    expect(hotelUser).toBeDefined();
-    if (!hotelUser) {
-      throw new Error('Test setup failed: hotel user not found');
-    }
-    expect(hotelUser.isActive).toBe(true);
-
-    // Find hotel and artist - they should exist from beforeAll
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
-    
-    expect(hotel).toBeDefined();
-    expect(artist).toBeDefined();
-    if (!hotel || !artist) {
-      throw new Error('Test setup failed: hotel or artist not found');
-    }
-
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: hotelEmail, password });
-    
-    expect(loginRes.status).toBe(200);
-    expect(loginRes.body.success).toBe(true);
-    expect(loginRes.body.data).toBeDefined();
-    const token = loginRes.body.data.token;
-    expect(token).toBeDefined();
-
-    const now = new Date();
-    const start = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const end = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-
-    const res = await request(app)
-      .post('/api/bookings')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: start.toISOString(),
-        endDate: end.toISOString(),
-        creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      });
-
+    const res = await api().post('/api/bookings').set(auth(hotel.token)).send(bookingBody(hotel.hotelId, artist.artistId));
     expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toMatchObject({
-      hotelId: hotel.id,
-      artistId: artist.id,
-      status: 'PENDING',
+    expect(res.body.data.convention).toMatchObject({
+      boardType: 'FULL_BOARD',
+      transportTerms: 'HOTEL_PAYS',
+      companionName: 'Sam Dupont',
+      stayValue: 1200,
+      performanceValue: 900,
     });
+    // No money for the artist anywhere in the booking.
+    expect(JSON.stringify(res.body)).not.toMatch(/weeklyPayment|totalPaymentAmount|paymentStatus/);
+
+    const credits = await prismaAdmin.credit.findUnique({ where: { hotelId: hotel.hotelId } });
+    expect(credits!.usedCredits).toBe(5);
+
+    const mine = await api().get('/api/bookings').set(auth(artist.token));
+    expect(mine.body.data.bookings[0].convention.performanceDescription).toMatch(/yoga/);
   });
 
-  it('TC-BOOK-004: should reject past start dates and invalid ranges', async () => {
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
-    
-    expect(hotel).toBeDefined();
-    expect(artist).toBeDefined();
-    if (!hotel || !artist) {
-      throw new Error('Test setup failed: hotel or artist not found');
-    }
+  it('refuses dates outside the artist’s availability and double bookings', async () => {
+    const artist = await makeArtist({ availableDays: 20 });
+    const hotelA = await makeHotel();
+    const hotelB = await makeHotel();
 
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: hotelEmail, password });
-    
-    expect(loginRes.status).toBe(200);
-    expect(loginRes.body.success).toBe(true);
-    const token = loginRes.body.data.token;
-    expect(token).toBeDefined();
+    const outside = await api().post('/api/bookings').set(auth(hotelA.token)).send(bookingBody(hotelA.hotelId, artist.artistId, 15, 30));
+    expect(outside.status).toBe(400);
+    expect(outside.body.error.fields.startDate).toBeDefined();
 
-    const past = new Date('2020-01-01');
-    const future = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-
-    const resPast = await request(app)
-      .post('/api/bookings')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: past.toISOString(),
-        endDate: future.toISOString(),
-        creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      });
-    expect(resPast.status).toBe(400);
-
-    const start = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
-    const end = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-
-    const resRange = await request(app)
-      .post('/api/bookings')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: start.toISOString(),
-        endDate: end.toISOString(),
-        creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      });
-    expect(resRange.status).toBe(400);
+    expect((await api().post('/api/bookings').set(auth(hotelA.token)).send(bookingBody(hotelA.hotelId, artist.artistId, 5, 10))).status).toBe(201);
+    const clash = await api().post('/api/bookings').set(auth(hotelB.token)).send(bookingBody(hotelB.hotelId, artist.artistId, 8, 12));
+    expect(clash.status).toBe(409);
   });
 
-  it('TC-BOOK-005: should only return bookings for current hotel', async () => {
-    // Create second hotel + user
-    const secondHotelUser = await createUserWithRole('HOTEL', `hotel2-${Date.now()}@suite.test`, password);
-    const secondHotel = await prisma.hotel.create({
-      data: {
-        userId: secondHotelUser.id,
-        name: 'Second Hotel',
-        description: 'Another hotel',
-        location: JSON.stringify({ city: 'Rome', country: 'Italy' }),
-      },
-    });
-
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    expect(hotel).toBeDefined();
-    if (!hotel) {
-      throw new Error('Test setup failed: hotel not found');
-    }
-
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
-    expect(artist).toBeDefined();
-    if (!artist) {
-      throw new Error('Test setup failed: artist not found');
-    }
-
-    // Seed bookings for both hotels
-    await prisma.booking.createMany({
-      data: [
-        {
-          hotelId: hotel.id,
-          artistId: artist.id,
-          startDate: new Date(),
-          endDate: new Date(),
-          status: 'PENDING',
-          creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-        },
-        {
-          hotelId: hotel.id,
-          artistId: artist.id,
-          startDate: new Date(),
-          endDate: new Date(),
-          status: 'PENDING',
-          creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-        },
-        {
-          hotelId: secondHotel.id,
-          artistId: artist.id,
-          startDate: new Date(),
-          endDate: new Date(),
-          status: 'PENDING',
-          creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-        },
-      ],
-    });
-
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: hotelEmail, password });
-    
-    expect(loginRes.status).toBe(200);
-    expect(loginRes.body.success).toBe(true);
-    const token = loginRes.body.data.token;
-    expect(token).toBeDefined();
-
-    const res = await request(app)
-      .get('/api/bookings')
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    const bookings = res.body.data.bookings;
-    expect(bookings.length).toBeGreaterThanOrEqual(2);
-    expect(bookings.every((b: any) => b.hotelId === hotel.id)).toBe(true);
-  });
-
-  it('TC-BOOK-006: should allow artist to confirm booking', async () => {
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
-    
-    expect(hotel).toBeDefined();
-    expect(artist).toBeDefined();
-    if (!hotel || !artist) {
-      throw new Error('Test setup failed: hotel or artist not found');
-    }
-
-    // Create a pending booking
-    const booking = await prisma.booking.create({
-      data: {
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        status: 'PENDING',
-        creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      },
-    });
-
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: artistEmail, password });
-    
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.data.token;
-
-    const res = await request(app)
-      .patch(`/api/bookings/${booking.id}/status`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ status: 'CONFIRMED' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.status).toBe('CONFIRMED');
-  });
-
-  it('TC-BOOK-007: should allow artist to reject booking', async () => {
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
-    
-    expect(hotel).toBeDefined();
-    expect(artist).toBeDefined();
-    if (!hotel || !artist) {
-      throw new Error('Test setup failed: hotel or artist not found');
-    }
-
-    // Ensure hotel has credits
-    await prisma.credit.upsert({
-      where: { hotelId: hotel.id },
-      update: { totalCredits: 10, usedCredits: 0 },
-      create: { hotelId: hotel.id, totalCredits: 10, usedCredits: 0 },
-    });
-
-    // Create a pending booking
-    const booking = await prisma.booking.create({
-      data: {
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        status: 'PENDING',
-        creditsUsed: 1,
-        creditCost: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      },
-    });
-
-    // Mark credits as used (simulating booking creation)
-    await prisma.credit.update({
-      where: { hotelId: hotel.id },
-      data: { usedCredits: { increment: 1 } },
-    });
-
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: artistEmail, password });
-    
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.data.token;
-
-    const res = await request(app)
-      .patch(`/api/bookings/${booking.id}/status`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ status: 'REJECTED' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.status).toBe('REJECTED');
-
-    // Verify credits were refunded
-    const credits = await prisma.credit.findUnique({
-      where: { hotelId: hotel.id }
-    });
-    expect(credits?.usedCredits).toBe(0);
-  });
-
-  it('TC-BOOK-008: should allow hotel to cancel booking', async () => {
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
-    
-    expect(hotel).toBeDefined();
-    expect(artist).toBeDefined();
-    if (!hotel || !artist) {
-      throw new Error('Test setup failed: hotel or artist not found');
-    }
-
-    // Ensure hotel has credits
-    await prisma.credit.upsert({
-      where: { hotelId: hotel.id },
-      update: { totalCredits: 10, usedCredits: 0 },
-      create: { hotelId: hotel.id, totalCredits: 10, usedCredits: 0 },
-    });
-
-    // Create a pending booking
-    const booking = await prisma.booking.create({
-      data: {
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        status: 'PENDING',
-        creditsUsed: 1,
-        creditCost: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      },
-    });
-
-    // Mark credits as used
-    await prisma.credit.update({
-      where: { hotelId: hotel.id },
-      data: { usedCredits: { increment: 1 } },
-    });
-
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: hotelEmail, password });
-    
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.data.token;
-
-    const res = await request(app)
-      .patch(`/api/bookings/${booking.id}/status`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ status: 'CANCELLED' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data.status).toBe('CANCELLED');
-
-    // Verify credits were refunded
-    const credits = await prisma.credit.findUnique({
-      where: { hotelId: hotel.id }
-    });
-    expect(credits?.usedCredits).toBe(0);
-  });
-
-  it('TC-BOOK-009: should reject invalid status updates', async () => {
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
-    
-    expect(hotel).toBeDefined();
-    expect(artist).toBeDefined();
-    if (!hotel || !artist) {
-      throw new Error('Test setup failed: hotel or artist not found');
-    }
-
-    // Create a pending booking
-    const booking = await prisma.booking.create({
-      data: {
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        status: 'PENDING',
-        creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      },
-    });
-
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: artistEmail, password });
-    
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.data.token;
-
-    // Artist cannot cancel (only hotel can)
-    const res = await request(app)
-      .patch(`/api/bookings/${booking.id}/status`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ status: 'CANCELLED' });
-
+  it('refuses a booking the hotel cannot afford, without spending anything', async () => {
+    const artist = await makeArtist();
+    const hotel = await makeHotel({ credits: 3 });
+    const res = await api().post('/api/bookings').set(auth(hotel.token)).send(bookingBody(hotel.hotelId, artist.artistId));
     expect(res.status).toBe(400);
-    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('INSUFFICIENT_CREDITS');
+    expect((await prismaAdmin.credit.findUnique({ where: { hotelId: hotel.hotelId } }))!.usedCredits).toBe(0);
   });
 
-  it('TC-BOOK-010: should create rating for completed booking', async () => {
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
-    
-    expect(hotel).toBeDefined();
-    expect(artist).toBeDefined();
-    if (!hotel || !artist) {
-      throw new Error('Test setup failed: hotel or artist not found');
-    }
-
-    // Create a completed booking
-    const booking = await prisma.booking.create({
-      data: {
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        status: 'COMPLETED',
-        creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      },
-    });
-
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: hotelEmail, password });
-    
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.data.token;
-
-    const res = await request(app)
-      .post('/api/bookings/ratings')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        bookingId: booking.id,
-        hotelId: hotel.id,
-        artistId: artist.id,
-        stars: 5,
-        textReview: 'Excellent performance, highly recommended!',
-        isVisibleToArtist: true,
-      });
-
-    expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toHaveProperty('stars', 5);
-    expect(res.body.data).toHaveProperty('textReview');
+  it('cannot spend the same credits twice under concurrency', async () => {
+    const hotel = await makeHotel({ credits: 10 });
+    const artists = await Promise.all([1, 2, 3, 4].map(() => makeArtist()));
+    const results = await Promise.all(
+      artists.map((a) => api().post('/api/bookings').set(auth(hotel.token)).send(bookingBody(hotel.hotelId, a.artistId)))
+    );
+    expect(results.filter((r) => r.status === 201)).toHaveLength(2);
+    const credits = await prismaAdmin.credit.findUnique({ where: { hotelId: hotel.hotelId } });
+    expect(credits!.usedCredits).toBe(10);
   });
 
-  it('TC-BOOK-011: should refuse a rating for a residency that has not finished', async () => {
-    // TC-BOOK-010 above has always created its booking as COMPLETED, because
-    // that is obviously what a rating is for - but the route never checked,
-    // so a house could review an artist on a booking still marked PENDING:
-    // before a date had been agreed, let alone played. Those reviews would
-    // have reached the artist's public profile and the landing page.
-    const hotel = await prisma.hotel.findFirst({
-      where: { user: { email: hotelEmail } }
-    });
-    const artist = await prisma.artist.findFirst({
-      where: { user: { email: artistEmail } }
-    });
+  it('refunds a rejected request, keeps the credits of a confirmed one the hotel cancels', async () => {
+    const artist = await makeArtist();
+    const hotel = await makeHotel({ credits: 20 });
 
-    if (!hotel || !artist) {
-      throw new Error('Test setup failed: hotel or artist not found');
-    }
+    const first = await api().post('/api/bookings').set(auth(hotel.token)).send(bookingBody(hotel.hotelId, artist.artistId, 5, 8));
+    const rejected = await api().patch(`/api/bookings/${first.body.data.id}/status`).set(auth(artist.token)).send({ status: 'REJECTED', reason: 'Déjà engagé.' });
+    expect(rejected.status).toBe(200);
+    expect(rejected.body.data.respondedAt).toBeTruthy();
+    expect((await prismaAdmin.credit.findUnique({ where: { hotelId: hotel.hotelId } }))!.usedCredits).toBe(0);
 
-    const booking = await prisma.booking.create({
-      data: {
-        hotelId: hotel.id,
-        artistId: artist.id,
-        startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
-        status: 'PENDING',
-        creditsUsed: 1,
-        numberOfWeeks: 1,
-        totalPaymentAmount: 200.0,
-      },
-    });
+    const second = await api().post('/api/bookings').set(auth(hotel.token)).send(bookingBody(hotel.hotelId, artist.artistId, 20, 25));
+    await api().patch(`/api/bookings/${second.body.data.id}/status`).set(auth(artist.token)).send({ status: 'CONFIRMED' });
+    const cancelled = await api().patch(`/api/bookings/${second.body.data.id}/status`).set(auth(hotel.token)).send({ status: 'CANCELLED', reason: 'Travaux' });
+    expect(cancelled.body.data).toMatchObject({ status: 'CANCELLED', cancelledByRole: 'HOTEL', cancellationReason: 'Travaux' });
+    expect((await prismaAdmin.credit.findUnique({ where: { hotelId: hotel.hotelId } }))!.usedCredits).toBe(5);
+  });
 
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: hotelEmail, password });
-
-    expect(loginRes.status).toBe(200);
-    const token = loginRes.body.data.token;
-
-    const res = await request(app)
-      .post('/api/bookings/ratings')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        bookingId: booking.id,
-        hotelId: hotel.id,
-        artistId: artist.id,
-        stars: 5,
-        textReview: 'Une semaine qui n’a pas encore eu lieu.',
-        isVisibleToArtist: true,
-      });
-
-    expect(res.status).toBe(400);
-    expect(res.body.success).toBe(false);
-
-    const stored = await prisma.rating.count({ where: { bookingId: booking.id } });
-    expect(stored).toBe(0);
+  it('lets only one of two simultaneous answers win', async () => {
+    const artist = await makeArtist();
+    const hotel = await makeHotel();
+    const { body } = await api().post('/api/bookings').set(auth(hotel.token)).send(bookingBody(hotel.hotelId, artist.artistId));
+    const id = body.data.id;
+    const [confirm, cancel] = await Promise.all([
+      api().patch(`/api/bookings/${id}/status`).set(auth(artist.token)).send({ status: 'CONFIRMED' }),
+      api().patch(`/api/bookings/${id}/status`).set(auth(hotel.token)).send({ status: 'CANCELLED' }),
+    ]);
+    expect([confirm.status, cancel.status].filter((s) => s === 200).length).toBeGreaterThanOrEqual(1);
+    const final = await prismaAdmin.booking.findUnique({ where: { id } });
+    // Either outcome is legitimate; a refunded-but-confirmed booking is not.
+    const credits = await prismaAdmin.credit.findUnique({ where: { hotelId: hotel.hotelId } });
+    if (final!.status === 'CONFIRMED') expect(credits!.usedCredits).toBe(5);
+    else expect(credits!.usedCredits).toBe(0);
   });
 });
-
-
-
-

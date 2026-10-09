@@ -99,8 +99,14 @@ const Header: React.FC = () => {
             </nav>
           </div>
 
-          <div className="flex items-center gap-5">
-            <LanguageSwitcher />
+          {/* On a phone, signed in, the bar held the logo, language, bell,
+              "Déconnexion" and the menu button: wider than the screen, so the
+              menu button sat off its right edge and could not be reached.
+              Below `sm` the language switch and sign-out live in the menu. */}
+          <div className="flex items-center gap-3 sm:gap-5">
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
             {user ? (
               <>
                 {/* Sits before the dashboard link because it is the thing most
@@ -110,7 +116,7 @@ const Header: React.FC = () => {
                   {t('Tableau de bord')}
                   <span className={underline(pathname === '/dashboard')} />
                 </Link>
-                <button onClick={handleLogout} className="btn-gold btn-sm" data-testid="user-menu">
+                <button onClick={handleLogout} className="btn-gold btn-sm hidden sm:inline-flex" data-testid="user-menu">
                   {t('Déconnexion')}
                 </button>
               </>
@@ -170,9 +176,14 @@ const Header: React.FC = () => {
             </li>
             <li className="pt-5 sm:hidden">
               {user ? (
-                <Link to="/dashboard" className="text-sm font-medium text-content-secondary hover:text-content">
-                  {t('Tableau de bord')}
-                </Link>
+                <div className="flex items-center justify-between gap-4">
+                  <Link to="/dashboard" className="text-sm font-medium text-content-secondary hover:text-content">
+                    {t('Tableau de bord')}
+                  </Link>
+                  <button onClick={handleLogout} className="btn-gold btn-sm" data-testid="mobile-logout">
+                    {t('Déconnexion')}
+                  </button>
+                </div>
               ) : (
                 <Link to="/login" className="text-sm font-medium text-content-secondary hover:text-content">
                   {t('Connexion')}

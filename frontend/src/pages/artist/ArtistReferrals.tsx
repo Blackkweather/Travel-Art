@@ -6,6 +6,7 @@ import { commonApi, artistsApi } from '@/utils/api'
 import { createReferralLink } from '@/utils/referralCode'
 import toast from 'react-hot-toast'
 import StatusBadge from '@/components/StatusBadge'
+import ReferralInviteForm from '@/components/ReferralInviteForm'
 import { t } from '@/i18n'
 import { formatNumber } from '@/utils/i18n'
 import SEOHead from '@/components/SEOHead'
@@ -36,7 +37,7 @@ const ArtistReferrals: React.FC = () => {
 
     try {
       setLoading(true)
-      
+
       // Get artist profile for referral code
       try {
         const artistRes = await artistsApi.getMyProfile()
@@ -52,7 +53,7 @@ const ArtistReferrals: React.FC = () => {
       // Get referrals
       const response = await commonApi.getReferrals()
       const data = response.data?.data
-      
+
       if (data) {
         setReferrals(data.referrals || [])
         setStats({
@@ -61,7 +62,7 @@ const ArtistReferrals: React.FC = () => {
           totalCreditsEarned: data.stats?.totalCreditsEarned || 0,
           pendingReferrals: data.stats?.pendingReferrals || 0
         })
-        
+
         // If referral code not set from artist profile, try from referrals response
         if (!referralCode && data.referralCode) {
           setReferralCode(data.referralCode)
@@ -157,7 +158,7 @@ const ArtistReferrals: React.FC = () => {
             <p className="text-content-secondary mb-6">
               {t('Partagez votre code avec d’autres artistes. Lorsqu’ils nous rejoignent et deviennent actifs, vous gagnez des crédits tous les deux.')}
             </p>
-            
+
             {referralCode ? (
               <div className="space-y-4">
                 <div>
@@ -178,7 +179,7 @@ const ArtistReferrals: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 {referralLink && (
                   <div>
                     <label className="form-label">{t('Votre lien de parrainage')}</label>
@@ -204,7 +205,7 @@ const ArtistReferrals: React.FC = () => {
               <p className="text-content-secondary">{t('Créez d’abord votre profil d’artiste pour obtenir un code de parrainage.')}</p>
             )}
           </div>
-          
+
           <div>
             <h3 className="text-lg font-serif font-semibold text-content mb-4">
               {t('Comment ça marche')}
@@ -219,7 +220,7 @@ const ArtistReferrals: React.FC = () => {
                   <p className="text-sm text-content-secondary">{t('Envoyez votre code à d’autres artistes')}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-content font-bold text-sm">2</span>
@@ -229,20 +230,28 @@ const ArtistReferrals: React.FC = () => {
                   <p className="text-sm text-content-secondary">{t('Ils s’inscrivent avec votre code')}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-content font-bold text-sm">3</span>
                 </div>
                 <div>
                   <p className="font-medium text-content">{t('Gagnez des crédits')}</p>
-                  <p className="text-sm text-content-secondary">{t('Vous recevez tous les deux des crédits dès qu’ils deviennent actifs')}</p>
+                  <p className="text-sm text-content-secondary">{t('Vous recevez tous les deux des points dès que leur candidature est acceptée')}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {referralCode && (
+        <div className="panel p-6">
+          <h2 className="mb-2 text-xl font-serif font-semibold text-content gold-underline">{t('Inviter par e-mail')}</h2>
+          <p className="mb-6 text-sm text-content-secondary">{t('Nous envoyons votre lien de parrainage à la personne de votre choix.')}</p>
+          <ReferralInviteForm />
+        </div>
+      )}
 
       {/* Referred Artists */}
       <div className="panel p-6">
@@ -283,7 +292,7 @@ const ArtistReferrals: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <p className="text-sm font-medium text-gold">
@@ -323,7 +332,7 @@ const ArtistReferrals: React.FC = () => {
               {t('Des crédits pour chaque parrainage qui devient un membre actif')}
             </p>
           </div>
-          
+
           <div className="text-center">
             <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-gold" />
@@ -335,7 +344,7 @@ const ArtistReferrals: React.FC = () => {
               {t('Construisez un réseau d’artistes et élargissez vos contacts professionnels')}
             </p>
           </div>
-          
+
           <div className="text-center">
             <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Star className="w-8 h-8 text-gold" />

@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import { nameKey } from './shared/validation';
+import { parseVideoUrl } from './shared/media';
+import { hotelKey } from './services/identity';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -59,6 +62,48 @@ import { RESORTS, ENVIRONMENT_IMAGES, type SeedResort, type ResortEnvironment } 
 // this reason; APP_DATABASE_URL is what the running server uses.
 const prisma = new PrismaClient();
 
+/**
+ * Replace an owner's linked media (photos by path, videos by link) with the
+ * given lists. Uploaded files are left alone - the seed never owns those.
+ */
+async function syncLinkedMedia(
+  owner: { artistId?: string; hotelId?: string; tripId?: string },
+  images: string[],
+  videos: string[] = []
+) {
+  await prisma.media.deleteMany({ where: { ...owner, provider: { not: 'UPLOAD' } } });
+  const rows = [
+    ...images.map((url, position) => ({ ...owner, kind: 'IMAGE' as const, provider: 'LINK' as const, url, position })),
+    ...videos.flatMap((url, position) => {
+      const video = parseVideoUrl(url);
+      return video
+        ? [{ ...owner, kind: 'VIDEO' as const, provider: video.provider, url: video.url, externalId: video.externalId, position }]
+        : [];
+    }),
+  ];
+  if (rows.length) await prisma.media.createMany({ data: rows });
+}
+
+/**
+ * The duplicate-detection key for a seeded stage name, or null when another
+ * account already holds it (two demo artists share "Sophie Laurent").
+ */
+async function freeStageNameKey(name: string, userId: string): Promise<string | null> {
+  const key = nameKey(name);
+  if (!key) return null;
+  const holder = await prisma.artist.findFirst({ where: { stageNameKey: key }, select: { userId: true } });
+  return !holder || holder.userId === userId ? key : null;
+}
+
+const parseList = (json: string | undefined): string[] => {
+  try {
+    const value = JSON.parse(json ?? '[]');
+    return Array.isArray(value) ? value.filter((v) => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+
 /* ---------------------------------------------------------------------------
  * THE PUBLISHED TERMS OF A RESIDENCY
  *
@@ -67,17 +112,11 @@ const prisma = new PrismaClient();
  * not one thing a hotel could put its name to. The competitor we are measured
  * against wins on published specifics alone, so the specifics are written here.
  *
- * The programme's terms are fixed and identical everywhere: seven nights,
- * twelve hours of performance across the week, two hours a day at most, nothing
- * on the day of arrival nor on the day of departure, a double room and full
- * board for the artist and one companion, a stage, and travel to the property
- * at the artist's own expense.
- *
- * The arithmetic closes, and it closes on purpose: seven nights is eight days,
- * the first and the last carry no performance, and the six days between them at
- * two hours each are exactly the twelve hours the programme publishes. A hotel
- * that counts the days in the planning below arrives at the number on the
- * contract.
+ * The programme's terms are the tripartite exchange agreement: a stay for two
+ * (the artist and one companion) in exchange for a performance agreed in
+ * advance, no fee to the artist, and the dates, board, hours and travel written
+ * into the agreement for each residency. The week below is one example of such
+ * an agreement, not a fixed format.
  *
  * What varies is the craft and the place. A rooftop DJ set needs a booth and a
  * curfew; a piano salon needs a tuner and a room that can be taken to black; a
@@ -153,27 +192,26 @@ const SECOND_ROOM_LINE: Record<ResidencyType, (room: string) => string> = {
   workshop: (room) => `Travail en journée dans le second lieu de la maison : ${room}`,
 };
 
-/** What the hotel receives. The first four lines are the contract itself. */
+/** What the stay includes. The first four lines restate the agreement. */
 export function residencyIncludes(resort: SeedResort, type: ResidencyType): string[] {
   const [stage, second] = resort.spots;
   return [
-    '12 heures de représentation sur la semaine, 2 heures par jour au maximum',
-    'Rien le jour de l’arrivée ni le jour du départ',
-    'Chambre double pour l’artiste et un accompagnant',
-    'Pension complète pour les deux personnes, du dîner d’arrivée au petit-déjeuner du départ',
+    'Séjour pour deux personnes : l’artiste et un accompagnant',
+    'Chambre et formule convenues dans la convention',
+    'Prestation, dates et horaires fixés dans la convention avant le départ',
+    'Aucun cachet : le séjour est la contrepartie de la prestation',
     STAGE_LINE[type](stage.name, stage.capacity),
     SECOND_ROOM_LINE[type](second.name),
     'Accès aux espaces de l’hôtel en dehors des heures de scène',
-    'Un référent culturel de la maison présent toute la semaine',
+    'Un référent culturel de la maison présent pendant tout le séjour',
     ...DISCIPLINE_KIT[type],
     VENUE_NOTE[resort.environment],
-    'Le voyage jusqu’au lieu reste à la charge de l’artiste',
+    'Transport selon la convention, remboursé si l’hôtel annule après signature',
   ];
 }
 
 /**
- * The week, day by day. Eight days for seven nights; the six in the middle
- * carry two hours each, which is where the twelve hours come from.
+ * An example week, day by day, as an agreement might set it out.
  */
 const WEEK_TEMPLATES: Record<ResidencyType, (stage: string, second: string) => string[]> = {
   residency: (stage, second) => [
@@ -183,7 +221,7 @@ const WEEK_TEMPLATES: Record<ResidencyType, (stage: string, second: string) => s
     'Répétition ouverte en fin d’après-midi : les clients entrent pendant que la formation travaille. Deux heures de scène ensuite.',
     `Deux heures de représentation dans le second lieu de la maison : ${second}.`,
     'Rencontre avec les clients autour du répertoire avant le service, puis deux heures de scène.',
-    'Dernière soirée, deux heures. Les douze heures de la semaine sont faites.',
+    'Dernière soirée, deux heures de représentation.',
     'Petit-déjeuner et départ dans la matinée. Pas de scène ce jour.',
   ],
   intimate: (stage, second) => [
@@ -193,7 +231,7 @@ const WEEK_TEMPLATES: Record<ResidencyType, (stage: string, second: string) => s
     'Écoute commentée pour une trentaine de clients en fin d’après-midi, puis deux heures de représentation.',
     `Deux heures dans le second lieu de la maison : ${second}, devant un public plus restreint.`,
     'Journée de travail sur le programme de la dernière soirée, puis deux heures de représentation.',
-    'Dernière soirée, deux heures, programme choisi par l’artiste. Les douze heures sont faites.',
+    'Dernière soirée, deux heures, programme choisi par l’artiste.',
     'Petit-déjeuner et départ dans la matinée. Pas de scène ce jour.',
   ],
   rooftop: (stage, second) => [
@@ -203,7 +241,7 @@ const WEEK_TEMPLATES: Record<ResidencyType, (stage: string, second: string) => s
     'Une heure d’écoute ouverte en cabine pour les clients curieux, puis deux heures de set.',
     `Deux heures dans le second lieu de la maison : ${second}.`,
     'Set en deux parties, deux heures au total, fin à une heure du matin.',
-    'Dernier set de deux heures. Les douze heures de la semaine sont faites.',
+    'Dernier set de deux heures.',
     'Départ dans la matinée. Pas de set ce jour.',
   ],
   workshop: (stage, second) => [
@@ -213,7 +251,7 @@ const WEEK_TEMPLATES: Record<ResidencyType, (stage: string, second: string) => s
     'Deux heures de séance, douze participants au maximum, matériel fourni.',
     `Séance de deux heures ailleurs dans la maison : ${second}.`,
     'Deux heures de séance, puis accrochage des pièces réalisées depuis le début de la semaine.',
-    'Dernière séance de deux heures et présentation du travail aux clients. Les douze heures sont faites.',
+    'Dernière séance de deux heures et présentation du travail aux clients.',
     'Décrochage et départ dans la matinée. Pas de séance ce jour.',
   ],
 };
@@ -381,23 +419,6 @@ async function main() {
   for (const hotelData of hotels) {
     const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
 
-    // Real coordinates. These used to be hardcoded to 0,0 for every property,
-    // which put all of them on Null Island and made the map look broken.
-    const location = JSON.stringify({
-      city: hotelData.city,
-      country: hotelData.country,
-      coords: { lat: hotelData.lat, lng: hotelData.lng },
-      lat: hotelData.lat,
-      lng: hotelData.lng
-    });
-
-    const images = JSON.stringify(ENVIRONMENT_IMAGES[hotelData.environment]);
-    const performanceSpots = JSON.stringify(hotelData.spots);
-    const rooms = JSON.stringify([
-      { id: 'room1', name: 'Chambre double', capacity: 2 },
-      { id: 'room2', name: 'Suite', capacity: 4 }
-    ]);
-
     const user = await prisma.user.upsert({
       where: { email: hotelData.email },
       update: {
@@ -422,38 +443,35 @@ async function main() {
       }
     });
 
-    // `update` carries the real fields rather than `{}`. With an empty update
-    // a re-seed silently kept whatever was already stored, so the coordinate
-    // fix would never have reached a database that had been seeded before.
+    const hotelFields = {
+      name: hotelData.name,
+      nameKey: hotelKey(hotelData.name, hotelData.city),
+      description: hotelData.description,
+      city: hotelData.city,
+      country: hotelData.country,
+      latitude: hotelData.lat,
+      longitude: hotelData.lng,
+      contactPhone: hotelData.contactPhone,
+      repName: hotelData.repName,
+    };
     const hotel = await prisma.hotel.upsert({
       where: { userId: user.id },
-      update: {
-        name: hotelData.name,
-        description: hotelData.description,
-        location,
-        // Mirrored from the same source as `location`, in the same write, so
-        // the JSON and the queryable columns cannot disagree.
-        latitude: hotelData.lat,
-        longitude: hotelData.lng,
-        contactPhone: hotelData.contactPhone,
-        images,
-        performanceSpots,
-        rooms,
-        repName: hotelData.repName
-      },
-      create: {
-        userId: user.id,
-        name: hotelData.name,
-        description: hotelData.description,
-        location,
-        latitude: hotelData.lat,
-        longitude: hotelData.lng,
-        contactPhone: hotelData.contactPhone,
-        images,
-        performanceSpots,
-        rooms,
-        repName: hotelData.repName
-      }
+      update: hotelFields,
+      create: { userId: user.id, ...hotelFields },
+    });
+
+    await syncLinkedMedia({ hotelId: hotel.id }, ENVIRONMENT_IMAGES[hotelData.environment]);
+    await prisma.hotelSpace.deleteMany({ where: { hotelId: hotel.id } });
+    await prisma.hotelSpace.createMany({
+      data: hotelData.spots.map((spot, position) => ({
+        hotelId: hotel.id,
+        name: spot.name,
+        type: spot.type,
+        setting: ['pool', 'beach', 'garden'].includes(spot.type) ? ('OUTDOOR' as const) : ('INDOOR' as const),
+        capacity: spot.capacity,
+        description: spot.description,
+        position,
+      })),
     });
 
     /* Credits and the entry that explains where they came from, together.
@@ -688,20 +706,20 @@ async function main() {
       update: {
         bio: artistData.bio,
         discipline: artistData.discipline,
+        stageNameKey: await freeStageNameKey(artistData.name, user.id),
       },
       create: {
         userId: user.id,
         bio: artistData.bio,
         discipline: artistData.discipline,
+        stageNameKey: await freeStageNameKey(artistData.name, user.id),
         priceRange: artistData.priceRange,
         membershipStatus: 'ACTIVE',
         membershipRenewal: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
-        images: artistData.images,
-        videos: artistData.videos,
-        mediaUrls: JSON.stringify([]),
         loyaltyPoints: Math.floor(Math.random() * 500) + 100
       }
     });
+    await syncLinkedMedia({ artistId: artist.id }, parseList(artistData.images), parseList(artistData.videos));
 
     // Create availability for next 6 months
     const startDate = new Date();
@@ -733,36 +751,33 @@ async function main() {
       artistId: createdArtists[0].id,
       startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
       endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
-      status: 'CONFIRMED',
-      creditsUsed: 0, // Deprecated
-      weeklyPaymentAmount: 200.0,
-      numberOfWeeks: 1,
-      totalPaymentAmount: 200.0,
-      paymentStatus: 'PAID'
+      status: 'CONFIRMED' as const,
+      boardType: 'FULL_BOARD' as const,
+      transportTerms: 'HOTEL_PAYS' as const,
+      performanceDescription: 'Trois soirées de concert au salon, une heure trente chacune.',
+      companionName: 'Accompagnant à confirmer'
     },
     {
       hotelId: createdHotels[1].id,
       artistId: createdArtists[1].id,
       startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks from now
       endDate: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000), // 17 days from now
-      status: 'COMPLETED',
-      creditsUsed: 0, // Deprecated
-      weeklyPaymentAmount: 200.0,
-      numberOfWeeks: 1,
-      totalPaymentAmount: 200.0,
-      paymentStatus: 'PAID'
+      status: 'COMPLETED' as const,
+      boardType: 'FULL_BOARD' as const,
+      transportTerms: 'HOTEL_PAYS' as const,
+      performanceDescription: 'Trois soirées de concert au salon, une heure trente chacune.',
+      companionName: 'Accompagnant à confirmer'
     },
     {
       hotelId: createdHotels[2].id,
       artistId: createdArtists[2].id,
       startDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 3 weeks from now
       endDate: new Date(Date.now() + 24 * 24 * 60 * 60 * 1000), // 24 days from now
-      status: 'PENDING',
-      creditsUsed: 0, // Deprecated
-      weeklyPaymentAmount: 200.0,
-      numberOfWeeks: 1,
-      totalPaymentAmount: 200.0,
-      paymentStatus: 'PENDING'
+      status: 'PENDING' as const,
+      boardType: 'HALF_BOARD' as const,
+      transportTerms: 'SHARED' as const,
+      performanceDescription: 'Deux ateliers ouverts aux clients et une soirée de restitution.',
+      companionName: null
     }
   ];
 
@@ -787,12 +802,14 @@ async function main() {
       artistId: createdBookings[1].artistId,
       stars: 5,
       textReview: 'Prestation remarquable. Le set a tenu la salle du début à la fin, nos clients en parlent encore.',
-      isVisibleToArtist: false
+      isVisibleToArtist: true
     }
   ];
 
   for (const [index, ratingData] of ratings.entries()) {
     const id = `seed-rating-${index}`;
+    // One rating per booking: a re-seed updates the existing one whatever its id.
+    await prisma.rating.deleteMany({ where: { bookingId: ratingData.bookingId, id: { not: id } } });
     await prisma.rating.upsert({
       where: { id },
       update: ratingData,
@@ -801,36 +818,6 @@ async function main() {
   }
 
   console.log('✅ Ratings created');
-
-  // Create sample transactions
-  const transactions = [
-    {
-      hotelId: createdHotels[0].id,
-      type: 'CREDIT_PURCHASE',
-      amount: 500.00
-    },
-    {
-      hotelId: createdHotels[1].id,
-      type: 'CREDIT_PURCHASE',
-      amount: 300.00
-    },
-    {
-      artistId: createdArtists[0].id,
-      type: 'MEMBERSHIP',
-      amount: 200.00
-    }
-  ];
-
-  for (const [index, transactionData] of transactions.entries()) {
-    const id = `seed-transaction-${index}`;
-    await prisma.transaction.upsert({
-      where: { id },
-      update: transactionData,
-      create: { id, ...transactionData }
-    });
-  }
-
-  console.log('✅ Transactions created');
 
   // Add featured artists from static data
   const featuredArtists = [
@@ -947,6 +934,7 @@ async function main() {
       // disciplines all along; they simply never reached an existing row.
       update: {
         stageName: artistData.stageName,
+        stageNameKey: await freeStageNameKey(artistData.stageName, user.id),
         bio: artistData.bio,
         discipline: artistData.discipline,
         priceRange: artistData.priceRange,
@@ -954,22 +942,20 @@ async function main() {
       create: {
         userId: user.id,
         stageName: artistData.stageName,
+        stageNameKey: await freeStageNameKey(artistData.stageName, user.id),
         bio: artistData.bio,
         discipline: artistData.discipline,
         priceRange: artistData.priceRange,
         membershipStatus: 'ACTIVE',
         membershipRenewal: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        images: JSON.stringify([
-        '/images/headers/experiences.webp',
-        '/images/pillars/residence.webp',
-        '/images/pillars/tout-compris.webp'
-      ]),
-        videos: JSON.stringify([]),
-        mediaUrls: JSON.stringify([]),
-        artisticProfile: artistData.artisticProfile,
         loyaltyPoints: Math.floor(Math.random() * 500) + 100
       }
     });
+    await syncLinkedMedia({ artistId: artist.id }, [
+      '/images/headers/experiences.webp',
+      '/images/pillars/residence.webp',
+      '/images/pillars/tout-compris.webp'
+    ]);
 
     // Create availability if it doesn't exist
     const existingAvailability = await prisma.artistAvailability.findFirst({
@@ -1044,16 +1030,12 @@ async function main() {
         `${resort.description} La résidence occupe ${headline.name} : ${headline.description.toLowerCase()}`,
       priceFrom: 0,
       priceTo: 0,
-      location: JSON.stringify({
-        city: resort.city,
-        country: resort.country,
-        lat: resort.lat,
-        lng: resort.lng
-      }),
+      city: resort.city,
+      country: resort.country,
       latitude: resort.lat,
       longitude: resort.lng,
-      images: JSON.stringify(ENVIRONMENT_IMAGES[resort.environment]),
-      status: 'PUBLISHED',
+      images: ENVIRONMENT_IMAGES[resort.environment],
+      status: 'PUBLISHED' as const,
       type,
       rating: Number((4.3 + ((index * 7) % 7) / 10).toFixed(1)),
       date: start,
@@ -1061,8 +1043,8 @@ async function main() {
       // programme's terms rather than this property's.
       duration: '7 nuits',
       capacity: `${VENUE_KIND[headline.type]} — ${headline.capacity} personnes`,
-      includes: JSON.stringify(residencyIncludes(resort, type)),
-      schedule: JSON.stringify(residencySchedule(resort, type)),
+      includes: residencyIncludes(resort, type),
+      schedule: residencySchedule(resort, type),
       artistId: artist ? artist.id : null,
       hotelId: hotel ? hotel.id : null
     };
@@ -1076,10 +1058,10 @@ async function main() {
       description: experienceData.description,
       priceFrom: experienceData.priceFrom,
       priceTo: experienceData.priceTo,
-      location: experienceData.location,
+      city: experienceData.city,
+      country: experienceData.country,
       latitude: experienceData.latitude,
       longitude: experienceData.longitude,
-      images: experienceData.images,
       status: experienceData.status,
       type: experienceData.type,
       rating: experienceData.rating,
@@ -1092,11 +1074,12 @@ async function main() {
       hotelId: experienceData.hotelId
     };
 
-    await prisma.trip.upsert({
+    const trip = await prisma.trip.upsert({
       where: { slug: experienceData.slug },
       update: payload,
       create: { slug: experienceData.slug, ...payload }
     });
+    await syncLinkedMedia({ tripId: trip.id }, experienceData.images);
   }
 
   console.log(`✅ ${experiences.length} residencies created`);
