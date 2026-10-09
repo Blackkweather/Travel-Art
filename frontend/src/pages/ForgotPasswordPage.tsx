@@ -47,10 +47,16 @@ const ForgotPasswordPage: React.FC = () => {
       } else {
         toast.success(t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.'))
       }
-    } catch {
-      // Don't reveal if email exists - always show success for security
-      setEmailSent(true)
-      toast.success(t('Si un compte existe pour cette adresse, vous recevrez les instructions de réinitialisation.'))
+    } catch (error: any) {
+      // The server already answers the same whether or not the address has an
+      // account, so an error here reveals nothing - it means no e-mail left:
+      // too many requests, or the server could not be reached. Saying "you
+      // will receive it" anyway sent people to wait for a message that was
+      // never going to come.
+      toast.error(
+        error?.response?.data?.error?.message ||
+          t('La demande n’a pas pu être envoyée. Vérifiez votre connexion et réessayez.')
+      )
     } finally {
       setIsLoading(false)
     }

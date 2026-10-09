@@ -22,6 +22,16 @@ describe('rate limits live in the database', () => {
     expect(bucket!.hits).toBe(3);
   });
 
+  it('caps reset e-mails per address, not per connection', async () => {
+    const reset = (email: string) => api().post('/api/auth/forgot-password').send({ email });
+    for (let i = 0; i < 3; i++) expect((await reset('someone@gmail.com')).status).toBe(200);
+    const fourth = await reset('someone@gmail.com');
+    expect(fourth.status).toBe(429);
+    expect(fourth.body.error.message).toMatch(/courriers indésirables/);
+    // Another person on the same connection is not blocked by it.
+    expect((await reset('colleague@gmail.com')).status).toBe(200);
+  });
+
   it('locks one account after repeated wrong passwords', async () => {
     const attempt = () => api().post('/api/auth/login').send({ email: 'target@gmail.com', password: 'Wrong-pass1!' });
     for (let i = 0; i < 3; i++) expect((await attempt()).status).toBe(401);

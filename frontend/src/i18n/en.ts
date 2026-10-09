@@ -1968,6 +1968,7 @@ export const en: Record<string, string> = {
   "Cette période est déjà passée.": "This period is already over.",
   "Une période ne peut pas dépasser deux ans.": "A period cannot be longer than two years.",
 
+  "La demande n’a pas pu être envoyée. Vérifiez votre connexion et réessayez.": "The request could not be sent. Check your connection and try again.",
   "Mon espace": "My account",
   "Mon espace · {name}": "My account · {name}",
 

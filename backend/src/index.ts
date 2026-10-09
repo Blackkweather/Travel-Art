@@ -239,15 +239,25 @@ app.use('/api/auth/register', limit('register', {
   message: tooMany('Trop d’inscriptions depuis cette adresse. Réessayez dans une heure.'),
 }));
 
-// Anything that sends an e-mail to an address the caller typed.
-const mailLimiter = limit('mail', {
+// Anything that sends an e-mail to an address the caller typed. Two counts:
+// per address, so nobody's inbox can be flooded, and per connection, wide
+// enough for an office or a family testing several accounts. A single count
+// of 5 per connection was used up by two people resetting two passwords.
+const mailPerAddress = limit('mail-address', {
   windowMs: 60 * 60 * 1000,
-  max: envInt('MAIL_LIMIT', 5),
-  message: tooMany('Trop de demandes d’e-mail. Réessayez dans une heure.'),
+  max: envInt('MAIL_PER_ADDRESS_LIMIT', 3),
+  keyGenerator: (req) => `email:${String(req.body?.email ?? req.body?.inviteeEmail ?? '').trim().toLowerCase().slice(0, 254)}`,
+  skip: (req) => !String(req.body?.email ?? req.body?.inviteeEmail ?? '').trim(),
+  message: tooMany('Trois e-mails ont déjà été envoyés à cette adresse dans l’heure. Vérifiez vos courriers indésirables, ou réessayez plus tard.'),
 });
-app.use('/api/auth/forgot-password', mailLimiter);
-app.use('/api/auth/resend-verification', mailLimiter);
-app.use('/api/referrals/invite', mailLimiter);
+const mailPerConnection = limit('mail', {
+  windowMs: 60 * 60 * 1000,
+  max: envInt('MAIL_LIMIT', 20),
+  message: tooMany('Trop de demandes d’e-mail depuis cette connexion. Réessayez dans une heure.'),
+});
+for (const path of ['/api/auth/forgot-password', '/api/auth/resend-verification', '/api/referrals/invite']) {
+  app.use(path, mailPerAddress, mailPerConnection);
+}
 
 app.use('/api/auth/check-availability', limit('availability', {
   windowMs: 15 * 60 * 1000,
