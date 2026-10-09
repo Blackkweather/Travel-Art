@@ -12,6 +12,7 @@ import { notify } from '../services/notifications';
 import { formatMoney, formatDay } from '../services/convention';
 import { adminAlertEmail, transportClaimSettledEmail, transportClaimSubmittedEmail } from '../services/email';
 import { feeSettleSchema, transportClaimSchema, transportSettleSchema } from '../shared/validation';
+import { background } from '../services/background';
 
 /**
  * What follows a hotel cancelling a signed convention (article 14).
@@ -277,13 +278,13 @@ router.post(
 
     const amount = formatMoney(input.amount!, 'EUR');
     const artistName = claim.booking.artist.stageName || claim.booking.artist.user.name;
-    void notify({
+    background(notify({
       userId: claim.booking.hotel.user.id,
       type: 'TRANSPORT_CLAIM_SUBMITTED',
       payload: { bookingId: claim.bookingId, startDate: claim.booking.startDate.toISOString(), endDate: claim.booking.endDate.toISOString(), hotelName: null, artistName },
       email: () => transportClaimSubmittedEmail(claim.booking.hotel.user.email, claim.booking.hotel.name, artistName, amount, formatDay(due), `${config.frontendUrl}/dashboard/bookings`),
-    });
-    void adminAlertEmail(`Demande de transport : ${artistName} → ${claim.booking.hotel.name}`, [`Montant : ${amount}`, `À rembourser avant le ${formatDay(due)}.`], `${config.frontendUrl}/dashboard/claims`);
+    }), 'notify');
+    background(adminAlertEmail(`Demande de transport : ${artistName} → ${claim.booking.hotel.name}`, [`Montant : ${amount}`, `À rembourser avant le ${formatDay(due)}.`], `${config.frontendUrl}/dashboard/claims`), 'adminAlertEmail');
 
     const row = await prismaAdmin.cancellationClaim.findUnique({ where: { id: claim.id }, select: claimSelect });
     res.status(201).json({ success: true, data: toClaimDTO(row!) });
@@ -307,12 +308,12 @@ router.post('/:id/transport/settle', authenticate, authorize('HOTEL', 'ADMIN'), 
   }
 
   const artistName = claim.booking.artist.stageName || claim.booking.artist.user.name;
-  void notify({
+  background(notify({
     userId: claim.booking.artist.user.id,
     type: 'TRANSPORT_CLAIM_SETTLED',
     payload: { bookingId: claim.bookingId, hotelName: claim.booking.hotel.name, artistName: null },
     email: () => transportClaimSettledEmail(claim.booking.artist.user.email, artistName, claim.booking.hotel.name, input.status === 'PAID', input.note, `${config.frontendUrl}/dashboard/bookings`),
-  });
+  }), 'notify');
 
   const row = await prismaAdmin.cancellationClaim.findUnique({ where: { id: claim.id }, select: claimSelect });
   res.json({ success: true, data: toClaimDTO(row!) });

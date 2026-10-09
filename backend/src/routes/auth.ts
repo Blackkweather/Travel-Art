@@ -28,6 +28,7 @@ import {
 import { disciplineLabel } from '../shared/categories';
 import { parseVideoUrl } from '../shared/media';
 import { missingVideos, newVerificationCode } from '../services/videoVerification';
+import { background } from '../services/background';
 
 const router = Router();
 
@@ -242,15 +243,15 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
   // After the commit, and not awaited: an account with an unsent e-mail is
   // recoverable (resend-verification), a registration reported as failed
   // when it succeeded is not.
-  void verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
+  background(verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
     console.error('verification email failed for user', user.id, err)
-  );
-  void newRegistrationAdminAlert({
+  ), 'verificationEmail');
+  background(newRegistrationAdminAlert({
     name: user.name,
     email: user.email,
     role: user.role as 'ARTIST' | 'HOTEL',
     country: data.country,
-  }).catch((err) => console.error('admin registration alert failed for user', user.id, err));
+  }).catch((err) => console.error('admin registration alert failed for user', user.id, err)), 'newRegistrationAdminAlert');
 
   // No session: the account cannot act until it is confirmed and admitted.
   res.status(201).json({
@@ -459,9 +460,9 @@ router.post('/resend-verification', asyncHandler(async (req, res) => {
     select: { id: true, email: true, name: true, emailVerified: true },
   });
   if (user && !user.emailVerified) {
-    void verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
+    background(verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
       console.error('verification email resend failed for user', user.id, err)
-    );
+    ), 'verificationEmail');
   }
   res.json({
     success: true,
@@ -486,9 +487,9 @@ router.post('/forgot-password', asyncHandler(async (req, res) => {
     }
     // Not awaited and never surfaced: the response is identical either way,
     // so it cannot reveal whether the address exists.
-    void passwordResetEmail(user.email, user.name, link).catch((err) =>
+    background(passwordResetEmail(user.email, user.name, link).catch((err) =>
       console.error('password reset email failed for user', user.id, err)
-    );
+    ), 'passwordResetEmail');
   }
 
   res.json({

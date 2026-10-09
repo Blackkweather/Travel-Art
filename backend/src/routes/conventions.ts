@@ -20,6 +20,7 @@ import { renderConventionPdf } from '../services/conventionPdf';
 import { notify } from '../services/notifications';
 import { conventionSignedAdminEmail, conventionSignedEmail, formatStay } from '../services/email';
 import { hotelSignatureSchema, participantSignatureSchema } from '../shared/validation';
+import { background } from '../services/background';
 
 /**
  * The convention of a booking: read it, sign it, download it.
@@ -200,7 +201,7 @@ router.post('/:id/convention/sign', authenticate, asyncHandler(async (req: AuthR
   if (!finalized) {
     // Tell the other party it is their turn.
     const other = party === 'HOTEL' ? row.artist.user : row.hotel.user;
-    void notify({
+    background(notify({
       userId: other.id,
       type: 'CONVENTION_TO_SIGN',
       payload: {
@@ -210,7 +211,7 @@ router.post('/:id/convention/sign', authenticate, asyncHandler(async (req: AuthR
         hotelName: party === 'HOTEL' ? row.hotel.name : null,
         artistName: party === 'PARTICIPANT' ? row.artist.stageName || row.artist.user.name : null,
       },
-    });
+    }), 'notify');
   }
 
   res.json({ success: true, data: { finalized } });

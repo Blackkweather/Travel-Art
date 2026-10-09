@@ -14,6 +14,7 @@ import { notify } from '../services/notifications';
 import { verifyLinkFor } from './auth';
 import { BOARD_LABELS, TRANSPORT_LABELS } from '../shared/validation';
 import { BOOKING_STATUSES } from '../shared/status';
+import { background } from '../services/background';
 
 const router = Router();
 
@@ -245,9 +246,7 @@ router.post('/admissions/:id/approve', authenticate, authorize('ADMIN'), asyncHa
     await tx.adminLog.create({ data: { actorUserId: req.user!.id, action: 'USER_APPROVED', targetId: user.id } });
   });
 
-  void approvedEmail(user.email, user.name, `${config.frontendUrl}/login`).catch((err) =>
-    console.error('approval email failed for user', user.id, err)
-  );
+  background(approvedEmail(user.email, user.name, `${config.frontendUrl}/login`), 'approvedEmail');
 
   res.json({ success: true, data: { id: user.id, approvalStatus: 'APPROVED' } });
 }));
@@ -304,7 +303,7 @@ router.post('/media/:id/verification', authenticate, authorize('ADMIN'), asyncHa
 
   if (status === 'VERIFIED' && media.artistId) await verifyOtherVideosFromChannel(media.artistId, authorUrl);
   if (status === 'VERIFIED' && media.artist) {
-    void notify({ userId: media.artist.userId, type: 'VIDEO_VERIFIED', payload: { mediaId: media.id } });
+    background(notify({ userId: media.artist.userId, type: 'VIDEO_VERIFIED', payload: { mediaId: media.id } }), 'notify');
   }
   res.json({ success: true, data: toMediaDTO(row) });
 }));

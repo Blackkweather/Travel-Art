@@ -22,6 +22,7 @@ import { bookingSelect, toBookingDTO } from '../views/booking';
 import { listableArtistWhere } from '../views/artist';
 import { bookingCreateSchema, bookingStatusUpdateSchema, ratingCreateSchema } from '../shared/validation';
 import { ACTIVE_BOOKING_STATUSES, BOOKING_STATUSES, RELEASES_CREDITS, canTransition, type Actor, type BookingStatusValue } from '../shared/status';
+import { background } from '../services/background';
 
 const router = Router();
 
@@ -198,7 +199,7 @@ router.post('/', authenticate, authorize('HOTEL'), asyncHandler(async (req: Auth
   }
 
   // Not awaited: a booking that was made stays made if the mail provider is down.
-  void notify({
+  background(notify({
     userId: row.artist.user.id,
     type: 'BOOKING_REQUESTED',
     payload: bookingPayload(row),
@@ -210,7 +211,7 @@ router.post('/', authenticate, authorize('HOTEL'), asyncHandler(async (req: Auth
         formatStay(row.startDate, row.endDate),
         `${config.frontendUrl}/dashboard/bookings`
       ),
-  });
+  }), 'notify');
 
   res.status(201).json({ success: true, data: toBookingDTO(row, 'HOTEL') });
 }));
@@ -294,40 +295,40 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
 
   // Tell whoever did not act.
   if (to === 'CONFIRMED') {
-    void notify({
+    background(notify({
       userId: row!.hotel.user.id,
       type: 'BOOKING_CONFIRMED',
       payload: { ...payload, hotelName: null },
       email: () => bookingConfirmedEmail(row!.hotel.user.email, row!.hotel.name, artistLabel, stay, link),
-    });
+    }), 'notify');
     // The convention exists from now on; the artist signs it too.
-    void notify({
+    background(notify({
       userId: row!.artist.user.id,
       type: 'CONVENTION_TO_SIGN',
       payload: { ...payload, artistName: null },
       email: () => conventionToSignEmail(row!.artist.user.email, artistLabel, row!.hotel.name, stay, link),
-    });
+    }), 'notify');
   } else if (to === 'CANCELLED' && actor === 'ARTIST') {
-    void notify({
+    background(notify({
       userId: row!.hotel.user.id,
       type: 'BOOKING_CANCELLED',
       payload: { ...payload, hotelName: null },
       email: () => bookingCancelledByArtistEmail(row!.hotel.user.email, row!.hotel.name, artistLabel, stay, reason ?? '', Boolean(booking.conventionFinalizedAt), link),
-    });
+    }), 'notify');
   } else if (to === 'REJECTED') {
-    void notify({
+    background(notify({
       userId: row!.hotel.user.id,
       type: 'BOOKING_REJECTED',
       payload,
       email: () => bookingRejectedEmail(row!.hotel.user.email, row!.hotel.name, artistLabel, stay, `${config.frontendUrl}/dashboard/artists`),
-    });
+    }), 'notify');
   } else if (to === 'CANCELLED') {
-    void notify({
+    background(notify({
       userId: row!.artist.user.id,
       type: 'BOOKING_CANCELLED',
       payload: { ...payload, artistName: null },
       email: () => bookingCancelledEmail(row!.artist.user.email, artistLabel, row!.hotel.name, stay, link),
-    });
+    }), 'notify');
 
     /* Article 14: a hotel cancelling after the convention was signed owes the
        coordinator's fee and, when the artist paid the journey, the artist's
@@ -335,25 +336,25 @@ router.patch('/:id/status', authenticate, asyncHandler(async (req: AuthRequest, 
     if (actor === 'HOTEL' && from === 'CONFIRMED' && booking.conventionFinalizedAt) {
       const claim = await openCancellationClaim({ id: booking.id, transportTerms: booking.transportTerms });
       const fee = formatMoney(claim.feeCents, 'EUR');
-      void notify({
+      background(notify({
         userId: row!.hotel.user.id,
         type: 'CANCELLATION_FEE_DUE',
         payload: { ...payload, hotelName: null },
         email: () => cancellationFeeDueEmail(row!.hotel.user.email, row!.hotel.name, artistLabel, stay, fee, formatDay(claim.feeDueAt), claim.transportEligible, link),
-      });
+      }), 'notify');
       if (claim.transportEligible) {
-        void notify({
+        background(notify({
           userId: row!.artist.user.id,
           type: 'TRANSPORT_CLAIM_OPEN',
           payload: { ...payload, artistName: null },
           email: () => transportClaimInviteEmail(row!.artist.user.email, artistLabel, row!.hotel.name, stay, link),
-        });
+        }), 'notify');
       }
-      void adminAlertEmail(`Annulation après signature : ${row!.hotel.name}`, [
+      background(adminAlertEmail(`Annulation après signature : ${row!.hotel.name}`, [
         `Résidence de ${artistLabel} ${stay}.`,
         `Frais de dossier dus : ${fee}, avant le ${formatDay(claim.feeDueAt)}.`,
         claim.transportEligible ? 'L’artiste peut demander le remboursement de son transport.' : 'Pas de remboursement de transport prévu.',
-      ], `${config.frontendUrl}/dashboard/claims`);
+      ], `${config.frontendUrl}/dashboard/claims`), 'adminAlertEmail');
     }
   }
 
@@ -403,11 +404,11 @@ router.post('/ratings', authenticate, authorize('HOTEL'), asyncHandler(async (re
   }
 
   if (rating.isVisibleToArtist) {
-    void notify({
+    background(notify({
       userId: booking.artist.userId,
       type: 'RATING_RECEIVED',
       payload: { bookingId: booking.id, hotelName: booking.hotel.name, stars: rating.stars },
-    });
+    }), 'notify');
   }
 
   res.status(201).json({ success: true, data: rating });
