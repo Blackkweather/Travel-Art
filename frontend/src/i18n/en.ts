@@ -1968,6 +1968,9 @@ export const en: Record<string, string> = {
   "Cette période est déjà passée.": "This period is already over.",
   "Une période ne peut pas dépasser deux ans.": "A period cannot be longer than two years.",
 
+  "Mon espace": "My account",
+  "Mon espace · {name}": "My account · {name}",
+
   // --- Public pages without money talk (2026-10-09, owner's request)
   "Une réservation en quelques clics, suivie de bout en bout.": "A booking in a few clicks, followed from start to finish.",
   "Un cadre écrit": "Everything in writing",

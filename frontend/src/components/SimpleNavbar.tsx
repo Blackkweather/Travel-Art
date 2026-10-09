@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import BrandWordmark from '@/components/BrandWordmark'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { useAuthStore } from '@/store/authStore'
 import { t } from '@/i18n'
 
 const NAV_ITEMS = [
@@ -39,6 +40,16 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
+  // Signed in, the bar offers the way back to the account instead of asking
+  // to sign in or join - it used to say "Connexion" to people already in.
+  const { user, isAuthenticated, logout } = useAuthStore()
+  const signedIn = Boolean(isAuthenticated && user)
+  const firstName = user?.name?.split(' ')[0] ?? ''
+
+  const signOut = () => {
+    logout()
+    window.location.href = '/'
+  }
 
   // Transparent-over-photography applies only at the very top of a media hero.
   // Once the page scrolls - or the mobile panel opens over the page - the bar
@@ -127,17 +138,37 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
 
         <div className="flex items-center gap-5">
           <LanguageSwitcher onMedia={onMedia} />
-          <Link
-            to="/login"
-            className={`hidden sm:block text-sm font-medium whitespace-nowrap transition-colors duration-300 ${
-              onMedia ? 'text-white/85 hover:text-white' : 'text-content hover:text-gold'
-            }`}
-          >
-            {t('Connexion')}
-          </Link>
-          <Link to="/register" className="hidden sm:inline-flex btn-gold btn-sm">
-            {t('Nous rejoindre')}
-          </Link>
+          {signedIn ? (
+            <>
+              <button
+                type="button"
+                onClick={signOut}
+                className={`hidden sm:block text-sm font-medium whitespace-nowrap transition-colors duration-300 ${
+                  onMedia ? 'text-white/85 hover:text-white' : 'text-content hover:text-gold'
+                }`}
+                data-testid="nav-logout"
+              >
+                {t('Déconnexion')}
+              </button>
+              <Link to="/dashboard" className="hidden sm:inline-flex btn-gold btn-sm" data-testid="nav-account">
+                {firstName ? t('Mon espace · {name}', { name: firstName }) : t('Mon espace')}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className={`hidden sm:block text-sm font-medium whitespace-nowrap transition-colors duration-300 ${
+                  onMedia ? 'text-white/85 hover:text-white' : 'text-content hover:text-gold'
+                }`}
+              >
+                {t('Connexion')}
+              </Link>
+              <Link to="/register" className="hidden sm:inline-flex btn-gold btn-sm">
+                {t('Nous rejoindre')}
+              </Link>
+            </>
+          )}
 
           <button
             type="button"
@@ -177,12 +208,25 @@ export default function SimpleNavbar({ overMedia = false }: SimpleNavbarProps) {
               <LanguageSwitcher compact />
             </li>
             <li className="pt-6 sm:hidden flex flex-col gap-3">
-              <Link to="/register" className="btn-gold w-full">
-                {t('Nous rejoindre')}
-              </Link>
-              <Link to="/login" className="btn-outline w-full">
-                {t('Connexion')}
-              </Link>
+              {signedIn ? (
+                <>
+                  <Link to="/dashboard" className="btn-gold w-full">
+                    {t('Mon espace')}
+                  </Link>
+                  <button type="button" onClick={signOut} className="btn-outline w-full">
+                    {t('Déconnexion')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to="/register" className="btn-gold w-full">
+                    {t('Nous rejoindre')}
+                  </Link>
+                  <Link to="/login" className="btn-outline w-full">
+                    {t('Connexion')}
+                  </Link>
+                </>
+              )}
             </li>
           </ul>
         </nav>

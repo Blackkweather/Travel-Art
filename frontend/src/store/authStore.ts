@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { User, LoginCredentials, RegisterData } from '@/types'
 import { authApi } from '@/utils/api'
 
@@ -19,6 +19,44 @@ interface AuthState {
   endSession: (reason: SessionEndReason) => void
   checkAuth: () => Promise<void>
   updateUser: (user: User) => void
+}
+
+/**
+ * One session per tab.
+ *
+ * The session used to live in localStorage alone, which every tab of the
+ * browser shares: sign in as the hotel in one tab and as an artist in
+ * another, and the first tab silently became the artist on its next refresh
+ * - two people's accounts taking turns in the same window.
+ *
+ * Each tab now keeps its own copy in sessionStorage and reads it first. The
+ * latest sign-in is also written to localStorage, so a tab opened afterwards
+ * (a link opened in a new tab, the site typed again) starts signed in as it.
+ */
+const tabStorage: StateStorage = {
+  getItem: (name) => {
+    try {
+      return sessionStorage.getItem(name) ?? localStorage.getItem(name)
+    } catch {
+      return null
+    }
+  },
+  setItem: (name, value) => {
+    try {
+      sessionStorage.setItem(name, value)
+      localStorage.setItem(name, value)
+    } catch {
+      // Storage refused (private mode, quota): the session lasts for the page.
+    }
+  },
+  removeItem: (name) => {
+    try {
+      sessionStorage.removeItem(name)
+      localStorage.removeItem(name)
+    } catch {
+      /* ignore */
+    }
+  },
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -92,6 +130,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'travel-art-auth',
+      storage: createJSONStorage(() => tabStorage),
       partialize: (state) => ({
         user: state.user,
         token: state.token,

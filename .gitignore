@@ -139,3 +139,7 @@ skills-lock.json
 
 # Local development uploads (production stores files in Vercel Blob)
 backend/uploads/
+
+# Demo / test account credentials - never commit
+*credentials*.json
+*demo-accounts*.json
