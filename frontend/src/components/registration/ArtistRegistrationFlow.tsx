@@ -51,6 +51,8 @@ interface Draft {
   otherLanguages: string
   /** Links to the artist's own performances; one to three. */
   videoUrls: string[]
+  instagramUrl: string
+  tiktokUrl: string
   acceptTerms: boolean
 }
 
@@ -74,12 +76,14 @@ const INITIAL: Draft = {
   languages: [],
   otherLanguages: '',
   videoUrls: [''],
+  instagramUrl: '',
+  tiktokUrl: '',
   acceptTerms: false,
 }
 
 const STEP_FIELDS: Record<number, string[]> = {
   1: ['firstName', 'lastName', 'stageName', 'birthDate', 'country', 'phone', 'email', 'password', 'confirmPassword'],
-  2: ['mainCategory', 'categoryType', 'specificCategory', 'tributeTo', 'secondaryCategory', 'audienceTypes', 'languages', 'otherLanguages', 'videoUrls'],
+  2: ['mainCategory', 'categoryType', 'specificCategory', 'tributeTo', 'secondaryCategory', 'audienceTypes', 'languages', 'otherLanguages', 'videoUrls', 'instagramUrl', 'tiktokUrl'],
   3: ['acceptTerms', 'captchaToken'],
 }
 
@@ -132,6 +136,8 @@ const ArtistRegistrationFlow: React.FC = () => {
     languages: draft.languages,
     otherLanguages: draft.otherLanguages || null,
     videoUrls: (draft.videoUrls ?? []).map((v) => v.trim()).filter(Boolean),
+    instagramUrl: (draft.instagramUrl ?? '').trim() || null,
+    tiktokUrl: (draft.tiktokUrl ?? '').trim() || null,
     acceptTerms: draft.acceptTerms,
     locale: 'fr',
     referralCode: readReferralCode(),
@@ -379,6 +385,10 @@ const ArtistRegistrationFlow: React.FC = () => {
                 <p className="text-[0.8125rem] text-content-secondary">
                   {t('Après l’inscription, vous pourrez prouver que ces vidéos sont les vôtres avec un code personnel à placer dans leur description.')}
                 </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2" data-testid="signup-social">
+                <FormField type="url" inputMode="url" label={t('Profil Instagram (facultatif)')} placeholder="https://instagram.com/…" value={draft.instagramUrl ?? ''} onChange={(e) => set('instagramUrl', e.target.value)} error={err('instagramUrl')} />
+                <FormField type="url" inputMode="url" label={t('Profil TikTok (facultatif)')} placeholder="https://tiktok.com/@…" value={draft.tiktokUrl ?? ''} onChange={(e) => set('tiktokUrl', e.target.value)} error={err('tiktokUrl')} />
               </div>
               <div className="flex justify-between pt-4">
                 <button type="button" onClick={() => goTo(1)} className="btn-secondary">{t('Retour')}</button>

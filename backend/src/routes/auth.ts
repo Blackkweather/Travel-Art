@@ -176,6 +176,8 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
             audienceTypes: artist.audienceTypes,
             languages: artist.languages,
             otherLanguages: artist.otherLanguages,
+            instagramUrl: artist.instagramUrl,
+            tiktokUrl: artist.tiktokUrl,
             verificationCode: newVerificationCode(),
             media: {
               create: signupVideos.map((video, position) => ({
@@ -202,6 +204,7 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
             roomCount: hotel.roomCount,
             website: hotel.website,
             instagramUrl: hotel.instagramUrl,
+            tiktokUrl: hotel.tiktokUrl,
             facebookUrl: hotel.facebookUrl,
             youtubeUrl: hotel.youtubeUrl,
             contactPhone: data.phone.trim(),

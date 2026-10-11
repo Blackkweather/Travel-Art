@@ -4,7 +4,7 @@ import { prisma, prismaAdmin } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { listableHotelWhere, ownHotelSelect, publicHotelSelect, toOwnHotel, toPublicHotel } from '../views/hotel';
-import { listableArtistWhere } from '../views/artist';
+import { artistHeadline, listableArtistWhere } from '../views/artist';
 import { hotelProfileUpdateSchema, normalizePhone } from '../shared/validation';
 import { parseVideoUrl } from '../shared/media';
 import { conflictFromUniqueError, findIdentityConflicts, hotelKey } from '../services/identity';
@@ -28,10 +28,10 @@ async function assertOwnHotel(req: AuthRequest, hotelId: string) {
 const programmeSelect = {
   audiences: true, styles: true, eventTypes: true, appreciated: true, disliked: true,
   hasStage: true, stageDimensions: true, hasSound: true, soundDetails: true, lighting: true,
-  hasScreens: true, hasCrew: true, collaborationTypes: true, conditions: true, durationType: true,
-  residenceDuration: true, openDates: true, offersLodging: true, offersMeals: true, offersTransport: true,
+  hasScreens: true, hasCrew: true, collaborationTypes: true, conditions: true,
+  openDates: true, offersLodging: true, offersMeals: true, offersTransport: true,
   facilities: true, freedomLevel: true, expectations: true, possibilities: true, otherDetails: true,
-  artistTypesNeeded: true, flowDescription: true, perWeek: true, perMonth: true, responseDelay: true,
+  artistTypesNeeded: true, flowDescription: true, perWeek: true, desiredStayDays: true, responseDelay: true,
   validationProcess: true, decisionMaker: true,
 } as const;
 
@@ -175,10 +175,14 @@ router.get('/:id/favorites', authenticate, authorize('HOTEL'), asyncHandler(asyn
       hotelId: true,
       artistId: true,
       createdAt: true,
-      artist: { select: { id: true, stageName: true, discipline: true, profilePicture: true, user: { select: { name: true } } } },
+      // No names: hotels discover artists by their category (see artistHeadline).
+      artist: { select: { id: true, discipline: true, specificCategory: true, mainCategory: true, profilePicture: true } },
     },
   });
-  res.json({ success: true, data: favorites });
+  res.json({
+    success: true,
+    data: favorites.map((f) => ({ ...f, artist: { ...f.artist, headline: artistHeadline(f.artist) } })),
+  });
 }));
 
 router.post('/:id/favorites', authenticate, authorize('HOTEL'), asyncHandler(async (req: AuthRequest, res) => {

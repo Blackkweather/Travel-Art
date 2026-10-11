@@ -279,6 +279,10 @@ model Artist {
   /// artist's own (see services/videoVerification.ts). Issued on first use.
   verificationCode String? @unique
 
+  // --- Social profiles, shown on the public profile ----------------------
+  instagramUrl String?
+  tiktokUrl    String?
+
   createdAt DateTime @default(now())
 
   user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -334,6 +338,7 @@ model Hotel {
   // --- Online -------------------------------------------------------------
   website      String?
   instagramUrl String?
+  tiktokUrl    String?
   facebookUrl  String?
   youtubeUrl   String?
 
@@ -400,9 +405,13 @@ model HotelProgramme {
   // Collaboration
   collaborationTypes String[] @default([])
   conditions         String?
+  /// No longer asked (2026-10): kept so earlier answers are not lost.
   durationType       String?
+  /// No longer asked (2026-10): kept so earlier answers are not lost.
   residenceDuration  String?
   openDates          String?
+  /// How long the hotel would like a collaboration to last, 7 to 28 days.
+  desiredStayDays    Int?
 
   // Logistics
   offersLodging   Boolean @default(false)
@@ -417,7 +426,9 @@ model HotelProgramme {
   otherDetails      String?
   artistTypesNeeded String?
   flowDescription   String?
+  /// At most 6: one day of rest a week is required.
   perWeek           Int?
+  /// No longer asked (2026-10): kept so earlier answers are not lost.
   perMonth          Int?
 
   // Decision process

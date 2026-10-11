@@ -7,6 +7,7 @@ import ProfilePictureUpload from '@/components/ProfilePictureUpload'
 import DateRangePicker from '@/components/DateRangePicker'
 import FormField from '@/components/FormField'
 import VideoCard from '@/components/VideoCard'
+import SocialLinks from '@/components/SocialLinks'
 import CategoryFields, { CategoryValue } from '@/components/registration/CategoryFields'
 import CheckboxGroup from '@/components/registration/CheckboxGroup'
 import SelectWithSearch from '@/components/registration/SelectWithSearch'
@@ -31,6 +32,8 @@ interface Form extends CategoryValue {
   audienceTypes: string[]
   languages: string[]
   otherLanguages: string
+  instagramUrl: string
+  tiktokUrl: string
 }
 
 const formFrom = (a: Artist): Form => ({
@@ -45,6 +48,8 @@ const formFrom = (a: Artist): Form => ({
   audienceTypes: a.audienceTypes || [],
   languages: a.languages || [],
   otherLanguages: a.otherLanguages || '',
+  instagramUrl: a.instagramUrl || '',
+  tiktokUrl: a.tiktokUrl || '',
 })
 
 const apiError = (e: any, fallback: string) => e?.response?.data?.error?.message || fallback
@@ -147,6 +152,8 @@ const ArtistProfile: React.FC = () => {
       audienceTypes: form.audienceTypes,
       languages: form.languages,
       otherLanguages: form.otherLanguages || null,
+      instagramUrl: form.instagramUrl.trim() || null,
+      tiktokUrl: form.tiktokUrl.trim() || null,
     }
 
     // The same checks the API makes, so problems show under their fields first.
@@ -406,6 +413,10 @@ const ArtistProfile: React.FC = () => {
             {form.languages.includes('Autre') && (
               <FormField label={t('Autres langues')} value={form.otherLanguages} onChange={(e) => setField('otherLanguages', e.target.value)} error={err('otherLanguages')} maxLength={100} />
             )}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2" data-testid="artist-social-fields">
+              <FormField type="url" inputMode="url" label={t('Profil Instagram (lien)')} placeholder="https://instagram.com/…" value={form.instagramUrl} onChange={(e) => setField('instagramUrl', e.target.value)} error={err('instagramUrl')} />
+              <FormField type="url" inputMode="url" label={t('Profil TikTok (lien)')} placeholder="https://tiktok.com/@…" value={form.tiktokUrl} onChange={(e) => setField('tiktokUrl', e.target.value)} error={err('tiktokUrl')} />
+            </div>
           </div>
         ) : (
           <dl className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
@@ -415,6 +426,12 @@ const ArtistProfile: React.FC = () => {
             <div><dt className="form-label">{t('Langues')}</dt><dd className="text-content">{[...(artist.languages ?? []).filter((l) => l !== 'Autre').map((l) => t(l)), artist.otherLanguages].filter(Boolean).join(', ') || '—'}</dd></div>
             <div><dt className="form-label">E-mail</dt><dd className="text-content">{artist.user?.email}</dd></div>
             <div><dt className="form-label">{t('Date de naissance')}</dt><dd className="text-content">{artist.birthDate || '—'}</dd></div>
+            <div className="md:col-span-2">
+              <dt className="form-label">{t('Réseaux sociaux')}</dt>
+              <dd className="mt-1">
+                {artist.instagramUrl || artist.tiktokUrl ? <SocialLinks instagramUrl={artist.instagramUrl} tiktokUrl={artist.tiktokUrl} /> : <span className="text-content">—</span>}
+              </dd>
+            </div>
           </dl>
         )}
       </div>

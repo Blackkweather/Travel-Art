@@ -48,24 +48,25 @@ const SLIDE_DURATION = 1.5
 const PILLARS = [
   {
     title: t('Résidence'),
-    body: t('Une chambre et une scène dans un hôtel qui programme la culture toute l’année, pas un soir de gala.'),
+    body: t('En échange d’une prestation de 90 minutes par jour, la maison vous offre vos vacances en all inclusive pour vous et la personne de votre choix.'),
     image: '/images/pillars/residence.webp',
     width: 1792,
     height: 2304,
   },
   {
     title: t('Création'),
-    body: t('Du temps entre deux représentations. Ce que vous produisez sur place vous appartient entièrement.'),
+    body: t('Une résidence, une scène, un rendez-vous quotidien pour partager votre art aux clients de la maison.'),
     image: '/images/pillars/creation.webp',
     width: 1792,
     height: 2432,
   },
   {
-    title: t('Un séjour pour deux'),
-    body: t('Une chambre et la formule de la maison, pour vous et la personne de votre choix.'),
-    image: '/images/pillars/tout-compris.webp',
-    width: 2048,
-    height: 2048,
+    title: t('Voyage'),
+    body: t('Partagez votre art autour de la planète et boostez votre notoriété.'),
+    // Instrument cases and luggage in a sunlit lobby: the departure.
+    image: '/images/hero/voyage.webp',
+    width: 1920,
+    height: 1096,
   },
 ] as const
 
@@ -121,8 +122,8 @@ export default function LandingPage() {
     {
       id: 'fallback-1',
       image: '/images/hero/ombre.webp',
-      title: t('Entre l’ombre'),
-      subtitle: t('et la lumière'),
+      title: t('Exprimez votre art'),
+      subtitle: t('à travers nos résidences'),
       category: t('Expérience')
     },
     {
@@ -268,8 +269,8 @@ const SIGNED_OUT_GALLERY = [
             return {
               id: exp.id,
               image: exp.image,
-              title: lead || t('Entre l’ombre'),
-              subtitle: under || t('et la lumière'),
+              title: lead || t('Exprimez votre art'),
+              subtitle: under || t('à travers nos résidences'),
               category: exp.category
             }
           })

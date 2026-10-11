@@ -6,6 +6,7 @@ import RadioGroup from '../registration/RadioGroup'
 import SelectWithSearch from '../registration/SelectWithSearch'
 import type { HotelProgramme, PerformanceSpot } from '@/types'
 import { t } from '@/i18n'
+import { COLLABORATION_TYPES, MAX_COLLAB_DAYS, MAX_PERFORMANCES_PER_WEEK, MIN_STAY_DAYS } from '@shared/validation'
 
 /**
  * The questions a hotel answers about its spaces and its programme, in one
@@ -16,7 +17,7 @@ import { t } from '@/i18n'
 
 // ------------------------------------------------------------------ options
 
-const opts = (values: string[]) => values.map((v) => ({ value: v, label: t(v) }))
+const opts = (values: readonly string[]) => values.map((v) => ({ value: v, label: t(v) }))
 const YES_NO = [
   { value: 'true', label: t('Oui') },
   { value: 'false', label: t('Non') },
@@ -26,22 +27,21 @@ export const HOTEL_TYPES = ['Resort / Club', 'Hôtel urbain', 'Hôtel de luxe', 
 export const AUDIENCES = ['Familles', 'Couples', 'Adultes uniquement', 'Corporate / événements']
 const STYLES = ['Chill / Lounge', 'Festif', 'Culturel', 'Premium / luxe', 'Bien-être']
 const EVENT_TYPES = ['Musique live', 'DJ sets', 'Spectacles', 'Ateliers / performances artistiques', 'Séances bien-être']
-const COLLABORATION_TYPES = ['Hébergement + restauration', 'Visibilité / promotion']
 const EXPECTATIONS = ['Interaction avec les clients', 'Image de marque à respecter']
 const POSSIBILITIES = ['Concepts originaux', 'Collaborations avec d’autres artistes', 'Workshops / expériences uniques']
 
 // -------------------------------------------------------------------- types
 
 /** The programme as the form edits it: numbers are typed as text. */
-export type ProgrammeForm = Omit<HotelProgramme, 'perWeek' | 'perMonth'> & { perWeek: string; perMonth: string }
+export type ProgrammeForm = Omit<HotelProgramme, 'perWeek' | 'desiredStayDays'> & { perWeek: string; desiredStayDays: string }
 
 export const emptyProgramme = (): ProgrammeForm => ({
   audiences: [], styles: [], eventTypes: [], appreciated: '', disliked: '',
   hasStage: false, stageDimensions: '', hasSound: false, soundDetails: '', lighting: '', hasScreens: false, hasCrew: false,
-  collaborationTypes: [], conditions: '', durationType: '', residenceDuration: '', openDates: '',
+  collaborationTypes: [], conditions: '', openDates: '',
   offersLodging: true, offersMeals: false, offersTransport: false, facilities: '',
   freedomLevel: '', expectations: [], possibilities: [], otherDetails: '', artistTypesNeeded: '', flowDescription: '',
-  perWeek: '', perMonth: '', responseDelay: '', validationProcess: '', decisionMaker: '',
+  perWeek: '', desiredStayDays: '', responseDelay: '', validationProcess: '', decisionMaker: '',
 })
 
 export const programmeFromApi = (p?: HotelProgramme | null): ProgrammeForm => {
@@ -55,10 +55,19 @@ export const programmeFromApi = (p?: HotelProgramme | null): ProgrammeForm => {
   return out
 }
 
-/** Text fields sent empty become null; the counts go as text and the API reads them. */
+/**
+ * Text fields sent empty become null; the counts go as text and the API reads
+ * them. Only the fields the form still asks are sent: a draft saved before a
+ * question was removed would otherwise carry it, and the API refuses unknown
+ * fields.
+ */
 export const programmePayload = (p: ProgrammeForm) => {
   const out: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(p)) out[k] = typeof v === 'string' ? (v.trim() ? v.trim() : null) : v
+  const known = new Set(Object.keys(emptyProgramme()))
+  for (const [k, v] of Object.entries(p)) {
+    if (!known.has(k)) continue
+    out[k] = typeof v === 'string' ? (v.trim() ? v.trim() : null) : v
+  }
   return out
 }
 
@@ -134,7 +143,7 @@ const yesNo = (props: SectionProps, key: keyof ProgrammeForm, label: string) => 
   />
 )
 
-const many = (props: SectionProps, key: keyof ProgrammeForm, label: string, values: string[]) => (
+const many = (props: SectionProps, key: keyof ProgrammeForm, label: string, values: readonly string[]) => (
   <CheckboxGroup
     name={`programme-${String(key)}`}
     label={t(label)}
@@ -178,16 +187,7 @@ export const EquipmentSection: React.FC<SectionProps> = (props) => (
 export const CollaborationSection: React.FC<SectionProps> = (props) => (
   <div className="space-y-6">
     {many(props, 'collaborationTypes', 'Type de collaboration acceptée', COLLABORATION_TYPES)}
-    {text(props, 'conditions', 'Conditions pour l’artiste', 'Ce que vous offrez et ce que vous attendez', 1000)}
-    <RadioGroup
-      name="programme-durationType"
-      label={t('Durée des prestations')}
-      options={opts(['Ponctuel', 'Résidence'])}
-      value={props.value.durationType ?? ''}
-      onChange={(v) => props.onChange({ durationType: v })}
-      disabled={props.disabled}
-    />
-    {props.value.durationType === 'Résidence' && text(props, 'residenceDuration', 'Durée de résidence', '1 semaine, 10 jours…', 80)}
+    {text(props, 'conditions', 'Conditions pour l’artiste', 'Ce que vous offrez et ce que vous attendez en contrepartie', 1000)}
     {text(props, 'openDates', 'Dates ou périodes ouvertes', 'Ex. : avril à juin, vacances scolaires', 300)}
   </div>
 )
@@ -217,8 +217,32 @@ export const FreedomSection: React.FC<SectionProps> = (props) => (
     {text(props, 'artistTypesNeeded', 'Types d’artistes recherchés', 'Musiciens, DJ, danseurs, professeurs de yoga…', 300)}
     {text(props, 'flowDescription', 'Comment ça se passe pour l’artiste', 'Décrivez l’organisation et le déroulé', 1000)}
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {text(props, 'perWeek', 'Prestations par semaine', 'Ex. : 2', 3)}
-      {text(props, 'perMonth', 'Prestations par mois', 'Ex. : 8', 3)}
+      <FormField
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={MAX_PERFORMANCES_PER_WEEK}
+        label={t('Prestations par semaine')}
+        placeholder={t('De 1 à {max}', { max: String(MAX_PERFORMANCES_PER_WEEK) })}
+        hint={t('{max} au maximum : un jour de repos par semaine est obligatoire.', { max: String(MAX_PERFORMANCES_PER_WEEK) })}
+        value={props.value.perWeek ?? ''}
+        onChange={(e) => props.onChange({ perWeek: (e.target as HTMLInputElement).value })}
+        error={err(props.errors, 'perWeek')}
+        disabled={props.disabled}
+      />
+      <FormField
+        type="number"
+        inputMode="numeric"
+        min={MIN_STAY_DAYS}
+        max={MAX_COLLAB_DAYS}
+        label={t('Durée de la prestation souhaitée (jours)')}
+        placeholder={t('De {min} à {max} jours', { min: String(MIN_STAY_DAYS), max: String(MAX_COLLAB_DAYS) })}
+        hint={t('Entre {min} et {max} jours.', { min: String(MIN_STAY_DAYS), max: String(MAX_COLLAB_DAYS) })}
+        value={props.value.desiredStayDays ?? ''}
+        onChange={(e) => props.onChange({ desiredStayDays: (e.target as HTMLInputElement).value })}
+        error={err(props.errors, 'desiredStayDays')}
+        disabled={props.disabled}
+      />
     </div>
   </div>
 )

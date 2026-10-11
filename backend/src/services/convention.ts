@@ -183,7 +183,7 @@ export function nightsBetween(start: Date, end: Date): number {
 
 const TRANSPORT_OPTIONS: Record<(typeof TRANSPORT_TERMS)[number], string> = {
   ARTIST_PAYS: 'À la charge du Participant',
-  HOTEL_PAYS: 'Pris en charge par l’Hôtel',
+  HOTEL_PAYS: 'Pris en charge intégralement par l’Hôtel',
   SHARED: 'Pris en charge partiellement par l’Hôtel',
   NOT_NEEDED: 'Autre : aucun transport nécessaire',
 };
@@ -436,10 +436,12 @@ export function buildConvention(input: ConventionInput, signatures: SignatureInp
 
   h('ARTICLE 12 — FRAIS DE TRANSPORT');
   p('Les frais de transport du Participant et de son accompagnant sont :');
+  // Transport is paid in full by the hotel or not at all (client, 2026-10):
+  // the partial option appears only on an older booking that chose it.
   list(
-    (Object.keys(TRANSPORT_OPTIONS) as (keyof typeof TRANSPORT_OPTIONS)[]).map(
-      (k) => `[${input.transportTerms === k ? 'X' : ' '}] ${TRANSPORT_OPTIONS[k]}`
-    )
+    (Object.keys(TRANSPORT_OPTIONS) as (keyof typeof TRANSPORT_OPTIONS)[])
+      .filter((k) => k !== 'SHARED' || input.transportTerms === 'SHARED')
+      .map((k) => `[${input.transportTerms === k ? 'X' : ' '}] ${TRANSPORT_OPTIONS[k]}`)
   );
   if (input.transportNotes) f('Modalités', input.transportNotes);
   p('Lorsque les frais sont pris en charge par l’Hôtel, les modalités doivent être précisées dans l’annexe.');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Star, MapPin, Calendar, Music, ArrowLeft, MessageCircle, Heart, User } from 'lucide-react'
+import { Star, MapPin, Calendar, Music, ArrowLeft, CalendarPlus, Heart, User } from 'lucide-react'
 import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
@@ -11,6 +11,8 @@ import toast from 'react-hot-toast'
 import SEOHead from '@/components/SEOHead'
 import { t } from '@/i18n'
 import VideoCard from '@/components/VideoCard'
+import SocialLinks from '@/components/SocialLinks'
+import BookingRequestModal from '@/components/BookingRequestModal'
 import type { MediaItem } from '@/types'
 
 const PublicArtistProfile: React.FC = () => {
@@ -20,6 +22,7 @@ const PublicArtistProfile: React.FC = () => {
   const [artist, setArtist] = useState<any>(null)
   const [isFavorite, setIsFavorite] = useState(false)
   const [savingFavorite, setSavingFavorite] = useState(false)
+  const [booking, setBooking] = useState(false)
   const hotelId = user?.role === 'HOTEL' ? user.hotel?.id : undefined
 
   // Reflect what the shortlist actually holds, rather than starting at "not
@@ -116,6 +119,13 @@ const PublicArtistProfile: React.FC = () => {
     )
   }
 
+  const displayName: string = artist.namesHidden
+    ? artist.headline || artist.discipline || t('Artiste')
+    : artist.stageName || artist.user?.name || artist.headline || t('Artiste')
+  const seasonFrom: string | null = artist.availability?.[0]?.dateFrom ?? null
+  const canBook = user?.role === 'HOTEL' && Boolean(hotelId)
+  const openBooking = () => setBooking(true)
+
   // The picture first, then the gallery; videos are media rows with their embed address.
   const gallery: string[] = Array.isArray(artist.images) ? artist.images : []
   const images: string[] = artist.profilePicture ? [artist.profilePicture, ...gallery.filter((i: string) => i !== artist.profilePicture)] : gallery
@@ -136,12 +146,12 @@ const PublicArtistProfile: React.FC = () => {
       <SEOHead
         title={
           artist
-            ? `${artist.stageName || artist.user?.name} — Travel Art`
+            ? `${displayName} — Travel Art`
             : 'Artiste — Travel Art'
         }
         description={
           artist
-            ? `${artist.stageName || artist.user?.name}, ${artist.discipline ?? 'artiste'} en résidence avec Travel Art.`
+            ? `${displayName}, ${artist.discipline ?? 'artiste'} en résidence avec Travel Art.`
             : t('Un artiste en résidence avec Travel Art.')
         }
       />
@@ -192,12 +202,13 @@ const PublicArtistProfile: React.FC = () => {
             {/* Artist Info */}
             <div className="flex-1">
               <h1 className="text-3xl md:text-4xl font-serif font-bold text-content mb-2">
-                {artist.stageName || artist.user?.name || 'Artiste'}
+                {displayName}
               </h1>
               {artist.stageName && artist.user?.name && (
                 <p className="text-sm text-content-secondary mb-2">({artist.user.name})</p>
               )}
-              <p className="text-lg text-gold font-medium mb-3">{artist.discipline || 'Artist'}</p>
+              {!artist.namesHidden && <p className="text-lg text-gold font-medium mb-3">{artist.discipline || t('Artiste')}</p>}
+              <SocialLinks instagramUrl={artist.instagramUrl} tiktokUrl={artist.tiktokUrl} className="mb-4" />
 
               {artist.user?.country && (
                 <div className="flex items-center text-content-secondary mb-4">
@@ -236,14 +247,17 @@ const PublicArtistProfile: React.FC = () => {
           {/* Action Buttons for Hotels */}
           {user && user.role === 'HOTEL' && (
             <div className="mt-8 pt-6 border-t border-line flex gap-3">
+              {/* The real request, with the convention's terms - the same form as
+                  on the artists list. This used to be a "contact" button that
+                  only showed a confirmation and sent nothing. */}
               <button
-                onClick={() => {
-                  toast.success(t('Demande de contact envoyée à l’artiste'))
-                }}
-                className="flex-1 bg-navy hover:bg-navy/90 text-white px-6 py-3 rounded-card font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                onClick={openBooking}
+                disabled={!canBook}
+                className="flex-1 bg-navy hover:bg-navy/90 text-white px-6 py-3 rounded-card font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
+                data-testid="profile-book"
               >
-                <MessageCircle className="w-5 h-5" />
-                {t('Contacter l’artiste')}
+                <CalendarPlus className="w-5 h-5" />
+                {t('Faire une demande de booking')}
               </button>
               {hotelId && (
                 <button
@@ -266,10 +280,10 @@ const PublicArtistProfile: React.FC = () => {
         {/* About Section */}
         <ScrollAnimationWrapper animation="fade-up" delay={0.1}>
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('À propos de')} {artist.stageName || artist.user?.name}</h2>
+            <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('À propos')}</h2>
             <div className="prose prose-lg max-w-none">
               <p className="text-content-secondary leading-relaxed text-base mb-4">
-                {artist.bio || `${artist.stageName || artist.user?.name} est un artiste professionnel${artist.discipline ? ` — ${artist.discipline}` : ''} qui se produit dans les lieux d’exception du monde entier, avec le goût des moments dont on se souvient.`}
+                {artist.bio || `${displayName} : un artiste professionnel${artist.discipline ? ` — ${artist.discipline}` : ''} qui se produit dans les lieux d’exception du monde entier, avec le goût des moments dont on se souvient.`}
               </p>
               {!artist.bio && (
                 <>
@@ -278,7 +292,7 @@ const PublicArtistProfile: React.FC = () => {
                     ce qui en fait un artiste recherché par les hôtels d’exception et les événements privés.
                   </p>
                   <p className="text-content-secondary leading-relaxed text-base">
-                    Des réunions intimistes aux grandes célébrations, {artist.stageName || artist.user?.name} apporte
+                    Des réunions intimistes aux grandes célébrations, {artist.namesHidden ? t('cet artiste') : displayName} apporte
                     rigueur, créativité et un vrai talent pour créer le lien avec tous les publics.
                   </p>
                 </>
@@ -602,7 +616,7 @@ const PublicArtistProfile: React.FC = () => {
                     <h3 className="text-lg font-semibold text-content mb-2">{t('Excellence professionnelle')}</h3>
                     <p className="text-content-secondary text-sm leading-relaxed">
                       Avec {artist.bookingCount || 0} {(artist.bookingCount || 0) >= 2 ? t('engagements menés à bien') : t('engagement mené à bien')} et {artist.avgRating ? `une note de ${artist.avgRating.toFixed(1)}/5` : t('d’excellents retours')},
-                      {artist.stageName || artist.user?.name} s’est construit une réputation de fiabilité et d’exigence.
+                      {artist.namesHidden ? t('cet artiste') : displayName} s’est construit une réputation de fiabilité et d’exigence.
                     </p>
                   </div>
                 </div>
@@ -633,6 +647,12 @@ const PublicArtistProfile: React.FC = () => {
             <p className="text-content-secondary mb-6">{t('Disponibilités pour les prochaines dates')}</p>
 
             {artist.availability && artist.availability.length > 0 ? (
+              <>
+              {canBook && (
+                <button onClick={openBooking} className="btn-primary mb-6" data-testid="availability-book">
+                  {t('Faire une demande de booking')}
+                </button>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {artist.availability.map((avail: any, index: number) => (
                   <div key={index} className="p-5 bg-[var(--surface-raised)] border-2 border-line rounded-card hover:border-gold hover:shadow-md transition-all duration-200">
@@ -656,6 +676,7 @@ const PublicArtistProfile: React.FC = () => {
                   </div>
                 ))}
               </div>
+              </>
             ) : (
               <div className="p-8 bg-[var(--surface-warm)] rounded-card border-2 border-dashed border-line text-center">
                 <div className="w-16 h-16 rounded-control bg-surface-sunken flex items-center justify-center mx-auto mb-4">
@@ -663,14 +684,15 @@ const PublicArtistProfile: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-semibold text-content mb-2">{t('Disponibilités bientôt publiées')}</h3>
                 <p className="text-content-secondary mb-4">
-                  Contactez {artist.stageName || artist.user?.name} directement pour échanger sur les dates et les disponibilités.
+                  {t('Proposez vos dates dans une demande de booking : l’artiste les accepte, en propose d’autres ou décline.')}
                 </p>
                 {user && user.role === 'HOTEL' && (
                   <button
-                    onClick={() => toast.success(t('Demande de contact envoyée'))}
+                    onClick={openBooking}
+                    disabled={!canBook}
                     className="btn-primary mx-auto"
                   >
-                    {t('Demander les disponibilités')}
+                    {t('Faire une demande de booking')}
                   </button>
                 )}
               </div>
@@ -683,7 +705,7 @@ const PublicArtistProfile: React.FC = () => {
           <ScrollAnimationWrapper animation="fade-up" delay={0.7}>
             <div className="mb-12">
               <h2 className="text-2xl font-serif font-bold text-content mb-4">{t('Témoignages')}</h2>
-              <p className="text-content-secondary mb-6">Ce que les lieux disent de leur collaboration avec {artist.stageName || artist.user?.name}</p>
+              <p className="text-content-secondary mb-6">{t('Ce que les lieux disent de leur collaboration avec cet artiste')}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Placeholder testimonials */}
@@ -731,6 +753,17 @@ const PublicArtistProfile: React.FC = () => {
           </ScrollAnimationWrapper>
         )}
       </div>
+
+      {booking && hotelId && (
+        <BookingRequestModal
+          hotelId={hotelId}
+          artistId={artist.id}
+          artistName={displayName}
+          creditCost={artist.bookingCreditCost}
+          seasonFrom={seasonFrom}
+          onClose={() => setBooking(false)}
+        />
+      )}
 
       <Footer />
     </div>

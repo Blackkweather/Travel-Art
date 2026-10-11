@@ -296,10 +296,10 @@ const HotelDashboard: React.FC = () => {
                   className="group bg-surface-raised p-5 transition-colors hover:bg-surface-sunken"
                 >
                   <h3 className="truncate font-serif text-base text-content">
-                    {artist.user?.name || artist.name || 'Artiste'}
+                    {artist.headline || artist.discipline || t('Artiste')}
                   </h3>
                   <p className="mt-1 text-[0.8125rem] text-content-secondary">
-                    {artist.discipline || 'Artiste'}
+                    {artist.specificCategory ? t(artist.specificCategory) : ''}
                   </p>
                   {artist.averageRating && (
                     <p className="mt-3 flex items-center gap-1.5 text-sm text-content">

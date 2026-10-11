@@ -60,7 +60,7 @@ router.get('/', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   if (q.search) {
     where.AND.push({
       OR: [
-        { stageName: { contains: q.search, mode: 'insensitive' } },
+        ...(req.user!.role === 'HOTEL' ? [] : [{ stageName: { contains: q.search, mode: 'insensitive' } }]),
         { discipline: { contains: q.search, mode: 'insensitive' } },
         { tributeTo: { contains: q.search, mode: 'insensitive' } },
       ],
@@ -123,6 +123,8 @@ router.put('/me', authenticate, authorize('ARTIST'), asyncHandler(async (req: Au
   if (input.languages !== undefined) artistData.languages = input.languages;
   if (input.otherLanguages !== undefined) artistData.otherLanguages = input.otherLanguages;
   if (input.secondaryCategory !== undefined) artistData.secondaryCategory = input.secondaryCategory || null;
+  if (input.instagramUrl !== undefined) artistData.instagramUrl = input.instagramUrl;
+  if (input.tiktokUrl !== undefined) artistData.tiktokUrl = input.tiktokUrl;
 
   // Category: validate the selection as a whole, against what is stored.
   const touchesCategory = ['mainCategory', 'categoryType', 'specificCategory', 'tributeTo'].some((k) => (input as any)[k] !== undefined);

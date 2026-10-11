@@ -123,7 +123,8 @@ const HotelArtists: React.FC = () => {
 
     return {
       id: artist.id,
-      name: artist.stageName || artist.user?.name || artist.name || t('Artiste'),
+      // To hotels the API sends no names: the card is titled by the category.
+      name: artist.namesHidden ? artist.headline || artist.discipline || t('Artiste') : artist.stageName || artist.user?.name || artist.name || t('Artiste'),
       discipline: artist.discipline || 'Performer',
       location,
       rating,
@@ -542,7 +543,7 @@ const HotelArtists: React.FC = () => {
               <Search className="search-icon" />
               <input
                 type="text"
-                placeholder={t('Rechercher par nom, discipline ou ville…')}
+                placeholder={t('Rechercher par discipline, spécialité ou ville…')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -698,7 +699,7 @@ const HotelArtists: React.FC = () => {
                          <VerifiedBadge type="artist" size="sm" />
                        )}
                      </div>
-                     <p className="text-gold font-medium mb-3">{artist.discipline}</p>
+                     {artist.discipline !== artist.name && <p className="text-gold font-medium mb-3">{artist.discipline}</p>}
               <p className="text-content-secondary text-sm mb-4 flex items-center">
                 <MapPin className="w-4 h-4 mr-2" />
                 {artist.location}

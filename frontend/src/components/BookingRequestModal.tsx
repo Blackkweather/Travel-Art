@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { BOARD_LABELS, BOARD_TYPES, TRANSPORT_LABELS, TRANSPORT_TERMS, bookingCreateSchema, fieldErrors } from '@shared/validation'
+import { BOARD_LABELS, BOARD_TYPES, BOOKABLE_TRANSPORT_TERMS, TRANSPORT_LABELS, bookingCreateSchema, fieldErrors } from '@shared/validation'
 import { bookingsApi } from '@/utils/api'
 import { t } from '@/i18n'
 
@@ -159,7 +159,7 @@ const BookingRequestModal: React.FC<Props> = ({ hotelId, artistId, artistName, c
             <label className="form-label" htmlFor="bk-transport">{t('Transport')}</label>
             <select id="bk-transport" className="form-input w-full" value={form.transportTerms} onChange={set('transportTerms')}>
               <option value="">{t('Choisir…')}</option>
-              {TRANSPORT_TERMS.map((tt) => (
+              {BOOKABLE_TRANSPORT_TERMS.map((tt) => (
                 <option key={tt} value={tt}>{t(TRANSPORT_LABELS[tt])}</option>
               ))}
             </select>

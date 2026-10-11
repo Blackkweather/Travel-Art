@@ -46,6 +46,11 @@ export interface Artist {
   languages?: string[]
   otherLanguages?: string | null
   profilePicture?: string | null
+  instagramUrl?: string | null
+  tiktokUrl?: string | null
+  /** What a card is titled: the category. To hotels, names are not sent. */
+  headline?: string
+  namesHidden?: boolean
   membershipStatus: 'ACTIVE' | 'INACTIVE' | 'EXPIRED' | 'PENDING'
   images?: string[]
   videos?: string[]
@@ -96,8 +101,6 @@ export interface HotelProgramme {
   hasCrew: boolean
   collaborationTypes: string[]
   conditions?: string | null
-  durationType?: string | null
-  residenceDuration?: string | null
   openDates?: string | null
   offersLodging: boolean
   offersMeals: boolean
@@ -110,7 +113,8 @@ export interface HotelProgramme {
   artistTypesNeeded?: string | null
   flowDescription?: string | null
   perWeek?: number | null
-  perMonth?: number | null
+  /** How long the hotel would like a collaboration to last, 7 to 28 days. */
+  desiredStayDays?: number | null
   responseDelay?: string | null
   validationProcess?: string | null
   decisionMaker?: string | null
@@ -135,6 +139,7 @@ export interface Hotel {
   roomCount?: number | null
   website?: string | null
   instagramUrl?: string | null
+  tiktokUrl?: string | null
   facebookUrl?: string | null
   youtubeUrl?: string | null
   profilePicture?: string | null

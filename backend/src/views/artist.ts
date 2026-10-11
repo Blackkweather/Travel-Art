@@ -41,6 +41,8 @@ export const artistCardSelect = () =>
     languages: true,
     otherLanguages: true,
     profilePicture: true,
+    instagramUrl: true,
+    tiktokUrl: true,
     membershipStatus: true,
     bookingCreditCost: true,
     createdAt: true,
@@ -77,13 +79,26 @@ interface CardOptions {
   viewerRole?: string;
 }
 
+/**
+ * What a card is titled. Hotels discover artists by what they do, not by who
+ * they are (client's rule, 2026-10): to a hotel the stage name and the real
+ * name are not sent at all, and the card leads with the category. The names
+ * stay stored, and reach the hotel through its bookings.
+ */
+export function artistHeadline(row: { discipline: string; specificCategory: string | null; mainCategory: string | null }): string {
+  return row.discipline || row.specificCategory || row.mainCategory || 'Artiste';
+}
+
 export function toArtistCard(row: ArtistCardRow, opts: CardOptions = {}) {
   const ratings = opts.ratings ?? { average: null, count: 0 };
   const showCost = opts.viewerRole === 'HOTEL' || opts.viewerRole === 'ADMIN';
+  const hideNames = opts.viewerRole === 'HOTEL';
   return {
     id: row.id,
     userId: row.userId,
-    stageName: row.stageName,
+    stageName: hideNames ? null : row.stageName,
+    headline: artistHeadline(row),
+    namesHidden: hideNames,
     bio: row.bio,
     discipline: row.discipline,
     mainCategory: row.mainCategory,
@@ -95,9 +110,11 @@ export function toArtistCard(row: ArtistCardRow, opts: CardOptions = {}) {
     languages: row.languages,
     otherLanguages: row.otherLanguages,
     profilePicture: row.profilePicture,
+    instagramUrl: row.instagramUrl,
+    tiktokUrl: row.tiktokUrl,
     membershipStatus: row.membershipStatus,
     createdAt: row.createdAt,
-    user: { name: row.user.name, country: row.user.country },
+    user: { name: hideNames ? null : row.user.name, country: row.user.country },
     availability: row.availability,
     ...splitMedia(row.media),
     ...(showCost ? { bookingCreditCost: row.bookingCreditCost } : {}),

@@ -49,6 +49,7 @@ interface General {
   description: string
   website: string
   instagramUrl: string
+  tiktokUrl: string
   facebookUrl: string
   youtubeUrl: string
   contactName: string
@@ -70,7 +71,7 @@ const INITIAL: Draft = {
   step: 1,
   general: {
     name: '', country: '', city: '', address: '', hotelType: '', roomCount: '', description: '',
-    website: '', instagramUrl: '', facebookUrl: '', youtubeUrl: '',
+    website: '', instagramUrl: '', tiktokUrl: '', facebookUrl: '', youtubeUrl: '',
     contactName: '', email: '', phone: '', password: '', confirmPassword: '',
   },
   spaces: [],
@@ -78,13 +79,13 @@ const INITIAL: Draft = {
   acceptTerms: false,
 }
 
-const GENERAL_FIELDS = ['name', 'country', 'city', 'address', 'hotelType', 'roomCount', 'description', 'website', 'instagramUrl', 'facebookUrl', 'youtubeUrl', 'contactName', 'email', 'phone', 'password', 'confirmPassword', 'programme.audiences']
+const GENERAL_FIELDS = ['name', 'country', 'city', 'address', 'hotelType', 'roomCount', 'description', 'website', 'instagramUrl', 'tiktokUrl', 'facebookUrl', 'youtubeUrl', 'contactName', 'email', 'phone', 'password', 'confirmPassword', 'programme.audiences']
 const PROGRAMME_STEP: Record<string, number> = {
   styles: 2, eventTypes: 2, appreciated: 2, disliked: 2,
   hasStage: 3, stageDimensions: 3, hasSound: 3, soundDetails: 3, lighting: 3, hasScreens: 3, hasCrew: 3,
-  collaborationTypes: 4, conditions: 4, durationType: 4, residenceDuration: 4, openDates: 4,
+  collaborationTypes: 4, conditions: 4, openDates: 4,
   offersLodging: 5, offersMeals: 5, offersTransport: 5, facilities: 5,
-  freedomLevel: 6, expectations: 6, possibilities: 6, otherDetails: 6, artistTypesNeeded: 6, flowDescription: 6, perWeek: 6, perMonth: 6,
+  freedomLevel: 6, expectations: 6, possibilities: 6, otherDetails: 6, artistTypesNeeded: 6, flowDescription: 6, perWeek: 6, desiredStayDays: 6,
   responseDelay: 7, validationProcess: 7, decisionMaker: 7,
 }
 
@@ -134,6 +135,7 @@ const HotelRegistrationFlow: React.FC = () => {
     description: g.description || null,
     website: g.website || null,
     instagramUrl: g.instagramUrl || null,
+    tiktokUrl: g.tiktokUrl || null,
     facebookUrl: g.facebookUrl || null,
     youtubeUrl: g.youtubeUrl || null,
     email: g.email,
@@ -266,6 +268,7 @@ const HotelRegistrationFlow: React.FC = () => {
               <FormField inputMode="url" label={t('Site web')} placeholder="https://" value={g.website} onChange={setGeneral('website')} error={err('website')} />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <FormField inputMode="url" label="Instagram" placeholder="https://instagram.com/…" value={g.instagramUrl} onChange={setGeneral('instagramUrl')} error={err('instagramUrl')} />
+                <FormField inputMode="url" label="TikTok" placeholder="https://tiktok.com/@…" value={g.tiktokUrl ?? ''} onChange={setGeneral('tiktokUrl')} error={err('tiktokUrl')} />
                 <FormField inputMode="url" label="Facebook" placeholder="https://facebook.com/…" value={g.facebookUrl} onChange={setGeneral('facebookUrl')} error={err('facebookUrl')} />
                 <FormField inputMode="url" label="YouTube" placeholder="https://youtube.com/…" value={g.youtubeUrl} onChange={setGeneral('youtubeUrl')} error={err('youtubeUrl')} />
               </div>
@@ -327,7 +330,7 @@ const HotelRegistrationFlow: React.FC = () => {
 
           {draft.step === 4 && (
             <div className="space-y-6">
-              {heading('Conditions de collaboration', 'Le séjour pour deux est la contrepartie de la prestation ; précisez le cadre.')}
+              {heading('Conditions de collaboration', 'Précisez ce que vous proposez à l’artiste et ce que vous attendez en contrepartie.')}
               <CollaborationSection value={draft.programme} onChange={setProgramme} errors={errors} />
               {nav}
             </div>

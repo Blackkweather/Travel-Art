@@ -22,8 +22,11 @@ interface TopArtist {
   ratingBadge?: string | null
   averageRating?: number | null
   ratingCount?: number
+  stageName?: string | null
+  headline?: string
+  namesHidden?: boolean
   user: {
-    name: string
+    name: string | null
     country?: string
   }
 }
@@ -301,7 +304,7 @@ const TopArtistsPage: React.FC = () => {
                   <div className="editorial-card__body">
                     <h3 className="font-serif text-xl text-content">
                       <Link to={`/artist/${artist.id}`} className="editorial-card__link">
-                        {artist.user.name}
+                        {artist.namesHidden ? artist.headline || artist.discipline : artist.stageName || artist.user.name || artist.headline}
                       </Link>
                     </h3>
 

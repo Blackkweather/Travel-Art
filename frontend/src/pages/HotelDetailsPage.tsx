@@ -6,6 +6,7 @@ import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper'
 import HotelContactButtons from '../components/HotelContactButtons'
+import SocialLinks from '@/components/SocialLinks'
 import { hotelsApi, bookingsApi } from '@/utils/api'
 import type { PartyContact } from '@/types'
 import { useAuthStore } from '@/store/authStore'
@@ -176,11 +177,12 @@ const HotelDetailsPage: React.FC = () => {
             <ScrollAnimationWrapper animation="fade-up">
               <div className="panel p-6 mb-8">
               <h2 className="text-3xl font-serif font-bold text-content mb-4 gold-underline">
-                About {hotel.name}
+                {t('À propos de')} {hotel.name}
               </h2>
               <p className="text-content-secondary text-lg leading-relaxed mb-6">
-                {hotel.description || 'No description available.'}
+                {hotel.description || t('Description à venir.')}
               </p>
+              <SocialLinks instagramUrl={hotel.instagramUrl} tiktokUrl={hotel.tiktokUrl} className="mb-6" />
 
               <div className="grid grid-cols-2 gap-6 mb-6">
                 {rating > 0 && (

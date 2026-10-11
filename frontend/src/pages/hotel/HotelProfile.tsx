@@ -47,6 +47,7 @@ interface Details {
   roomCount: string
   website: string
   instagramUrl: string
+  tiktokUrl: string
   facebookUrl: string
   youtubeUrl: string
   contactPhone: string
@@ -65,6 +66,7 @@ const detailsFrom = (h: Hotel): Details => ({
   roomCount: h.roomCount ? String(h.roomCount) : '',
   website: h.website ?? '',
   instagramUrl: h.instagramUrl ?? '',
+  tiktokUrl: h.tiktokUrl ?? '',
   facebookUrl: h.facebookUrl ?? '',
   youtubeUrl: h.youtubeUrl ?? '',
   contactPhone: h.contactPhone ?? '',
@@ -254,6 +256,7 @@ const HotelProfile: React.FC = () => {
           <div className="grid gap-6 md:grid-cols-2">
             <FormField inputMode="url" label={t('Site web')} placeholder="https://" value={details.website} onChange={set('website')} error={e('website')} disabled={disabled} />
             <FormField inputMode="url" label="Instagram" placeholder="https://instagram.com/…" value={details.instagramUrl} onChange={set('instagramUrl')} error={e('instagramUrl')} disabled={disabled} />
+            <FormField inputMode="url" label="TikTok" placeholder="https://tiktok.com/@…" value={details.tiktokUrl} onChange={set('tiktokUrl')} error={e('tiktokUrl')} disabled={disabled} />
             <FormField inputMode="url" label="Facebook" placeholder="https://facebook.com/…" value={details.facebookUrl} onChange={set('facebookUrl')} error={e('facebookUrl')} disabled={disabled} />
             <FormField inputMode="url" label="YouTube" placeholder="https://youtube.com/…" value={details.youtubeUrl} onChange={set('youtubeUrl')} error={e('youtubeUrl')} disabled={disabled} />
           </div>

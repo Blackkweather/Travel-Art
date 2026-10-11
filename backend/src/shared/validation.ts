@@ -362,6 +362,9 @@ const socialUrl = (domain: string, label: string) =>
     })
     .transform((v) => (v ? v : null))
 
+export const instagramUrlSchema = socialUrl('instagram.com', 'Instagram')
+export const tiktokUrlSchema = socialUrl('tiktok.com', 'TikTok')
+
 export const MAX_SIGNUP_VIDEOS = 3
 
 export const videoUrlSchema = z
@@ -424,6 +427,8 @@ export const artistRegistrationSchema = z
       .min(1, 'Sélectionnez au moins une langue')
       .refine((list) => list.every((l) => LANGUAGES.includes(l)), 'Langue inconnue'),
     otherLanguages: optionalText(100),
+    instagramUrl: instagramUrlSchema,
+    tiktokUrl: tiktokUrlSchema,
     /** Proof of practice from day one: links to the artist's own performances. */
     videoUrls: z
       .array(videoUrlSchema)
@@ -481,6 +486,32 @@ export type HotelSpaceInput = z.output<typeof hotelSpaceSchema>
 
 const shortList = (max = 12) => z.array(z.string().transform(tidy).pipe(z.string().min(1).max(80))).max(max).optional().default([])
 
+/** Performances a week: six at most, because one day of rest a week is required. */
+export const MAX_PERFORMANCES_PER_WEEK = 6
+export const MIN_STAY_DAYS = 7
+export const MAX_COLLAB_DAYS = 28
+
+const boundedCount = (min: number, max: number, message: string) =>
+  z
+    .union([z.number(), z.string()])
+    .optional()
+    .nullable()
+    .transform((v, ctx) => {
+      if (v === undefined || v === null || v === '') return null
+      const n = typeof v === 'number' ? v : Number(String(v).trim())
+      if (!Number.isInteger(n) || n < min || n > max) {
+        ctx.addIssue({ code: 'custom', message })
+        return z.NEVER
+      }
+      return n
+    })
+
+/** The kinds of collaboration a hotel can offer (multiple choice). */
+export const COLLABORATION_TYPES = [
+  'Rémunération',
+  'All inclusive (hébergement, restauration, boissons et activités proposées par le lieu)',
+] as const
+
 const smallCount = z
   .union([z.number(), z.string()])
   .optional()
@@ -517,9 +548,8 @@ export const hotelProgrammeSchema = z
     hasCrew: z.boolean().optional().default(false),
     collaborationTypes: shortList(),
     conditions: optionalText(1000),
-    durationType: optionalText(40),
-    residenceDuration: optionalText(80),
     openDates: optionalText(300),
+    desiredStayDays: boundedCount(MIN_STAY_DAYS, MAX_COLLAB_DAYS, `Entre ${MIN_STAY_DAYS} et ${MAX_COLLAB_DAYS} jours`),
     offersLodging: z.boolean().optional().default(false),
     offersMeals: z.boolean().optional().default(false),
     offersTransport: z.boolean().optional().default(false),
@@ -530,8 +560,7 @@ export const hotelProgrammeSchema = z
     otherDetails: optionalText(500),
     artistTypesNeeded: optionalText(300),
     flowDescription: optionalText(1000),
-    perWeek: smallCount,
-    perMonth: smallCount,
+    perWeek: boundedCount(0, MAX_PERFORMANCES_PER_WEEK, `${MAX_PERFORMANCES_PER_WEEK} prestations par semaine au maximum : un jour de repos est obligatoire`),
     responseDelay: optionalText(40),
     validationProcess: optionalText(60),
     decisionMaker: optionalText(100),
@@ -554,7 +583,8 @@ export const hotelRegistrationSchema = z
     roomCount: capacitySchema,
     description: optionalText(2000),
     website: optionalUrl,
-    instagramUrl: socialUrl('instagram.com', 'Instagram'),
+    instagramUrl: instagramUrlSchema,
+    tiktokUrl: tiktokUrlSchema,
     facebookUrl: socialUrl('facebook.com', 'Facebook'),
     youtubeUrl: socialUrl('youtube.com', 'YouTube'),
     spaces: z.array(hotelSpaceSchema).max(20, '20 espaces maximum').optional().default([]),
@@ -586,6 +616,8 @@ export const artistProfileUpdateSchema = z
     audienceTypes: z.array(z.string()).optional(),
     languages: z.array(z.string()).optional(),
     otherLanguages: optionalText(100),
+    instagramUrl: instagramUrlSchema,
+    tiktokUrl: tiktokUrlSchema,
   })
   .strict()
 
@@ -601,7 +633,8 @@ export const hotelProfileUpdateSchema = z
     latitude: z.number().min(-90).max(90).optional().nullable(),
     longitude: z.number().min(-180).max(180).optional().nullable(),
     website: optionalUrl,
-    instagramUrl: socialUrl('instagram.com', 'Instagram'),
+    instagramUrl: instagramUrlSchema,
+    tiktokUrl: tiktokUrlSchema,
     facebookUrl: socialUrl('facebook.com', 'Facebook'),
     youtubeUrl: socialUrl('youtube.com', 'YouTube'),
     contactPhone: z.string().trim().max(40).optional().nullable(),
@@ -633,6 +666,8 @@ export const availabilitySchema = z
 
 export const BOARD_TYPES = ['ROOM_ONLY', 'BREAKFAST', 'HALF_BOARD', 'FULL_BOARD', 'ALL_INCLUSIVE'] as const
 export const TRANSPORT_TERMS = ['HOTEL_PAYS', 'ARTIST_PAYS', 'SHARED', 'NOT_NEEDED'] as const
+/** What a new booking may choose: 100 % by the hotel or 0 %, no 50/50. */
+export const BOOKABLE_TRANSPORT_TERMS = ['HOTEL_PAYS', 'ARTIST_PAYS', 'NOT_NEEDED'] as const
 
 /** French labels, as the convention and the screens write them. */
 export const BOARD_LABELS: Record<(typeof BOARD_TYPES)[number], string> = {
@@ -644,9 +679,9 @@ export const BOARD_LABELS: Record<(typeof BOARD_TYPES)[number], string> = {
 }
 
 export const TRANSPORT_LABELS: Record<(typeof TRANSPORT_TERMS)[number], string> = {
-  HOTEL_PAYS: 'Pris en charge par l’hôtel',
-  ARTIST_PAYS: 'À la charge de l’artiste',
-  SHARED: 'Partagé',
+  HOTEL_PAYS: 'Pris en charge à 100 % par l’hôtel',
+  ARTIST_PAYS: 'À la charge de l’artiste (0 % par l’hôtel)',
+  SHARED: 'Partagé (ancienne réservation)',
   NOT_NEEDED: 'Pas de transport',
 }
 
@@ -676,7 +711,7 @@ export const bookingCreateSchema = z
     notes: optionalText(1000),
     companionName: optionalText(100),
     boardType: z.enum(BOARD_TYPES, { errorMap: () => ({ message: 'Choisissez la formule de repas' }) }),
-    transportTerms: z.enum(TRANSPORT_TERMS, { errorMap: () => ({ message: 'Indiquez qui prend en charge le transport' }) }),
+    transportTerms: z.enum(BOOKABLE_TRANSPORT_TERMS, { errorMap: () => ({ message: 'Indiquez qui prend en charge le transport' }) }),
     transportNotes: optionalText(500),
     performanceDescription: z
       .string({ required_error: 'Décrivez la prestation attendue' })

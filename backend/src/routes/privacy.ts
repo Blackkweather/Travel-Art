@@ -50,7 +50,7 @@ router.get('/export', authenticate, asyncHandler(async (req: AuthRequest, res) =
       },
       artist: {
         select: {
-          id: true, stageName: true, birthDate: true, bio: true,
+          id: true, stageName: true, birthDate: true, bio: true, instagramUrl: true, tiktokUrl: true,
           discipline: true, mainCategory: true, secondaryCategory: true, categoryType: true,
           specificCategory: true, tributeTo: true, audienceTypes: true, languages: true,
           otherLanguages: true, priceRange: true, membershipStatus: true,
@@ -63,7 +63,7 @@ router.get('/export', authenticate, asyncHandler(async (req: AuthRequest, res) =
       hotel: {
         select: {
           id: true, name: true, description: true, city: true, country: true, address: true,
-          hotelType: true, roomCount: true, website: true, instagramUrl: true, facebookUrl: true,
+          hotelType: true, roomCount: true, website: true, instagramUrl: true, tiktokUrl: true, facebookUrl: true,
           youtubeUrl: true, contactPhone: true, profilePicture: true, repName: true,
           responsibleName: true, responsibleEmail: true, responsiblePhone: true,
           createdAt: true,
@@ -208,7 +208,7 @@ router.delete('/account', authenticate, asyncHandler(async (req: AuthRequest, re
       prisma.artist.update({
         where: { id: user.artist.id },
         data: {
-          stageName: null, stageNameKey: null, birthDate: null, bio: null, profilePicture: null,
+          stageName: null, stageNameKey: null, birthDate: null, bio: null, profilePicture: null, instagramUrl: null, tiktokUrl: null,
           tributeTo: null, otherLanguages: null, discipline: '', membershipStatus: 'INACTIVE',
         },
       })
@@ -224,7 +224,7 @@ router.delete('/account', authenticate, asyncHandler(async (req: AuthRequest, re
         where: { id: user.hotel.id },
         data: {
           name: 'Hôtel supprimé', nameKey: null, description: null, address: null,
-          website: null, instagramUrl: null, facebookUrl: null, youtubeUrl: null,
+          website: null, instagramUrl: null, tiktokUrl: null, facebookUrl: null, youtubeUrl: null,
           contactPhone: null, profilePicture: null, repName: null, responsibleName: null,
           responsibleEmail: null, responsiblePhone: null,
         },
