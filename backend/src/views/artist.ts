@@ -22,7 +22,7 @@ export const listableArtistWhere: Prisma.ArtistWhereInput = {
 const futureAvailability = () => ({
   where: { dateTo: { gte: new Date() } },
   orderBy: { dateFrom: 'asc' as const },
-  select: { id: true, dateFrom: true, dateTo: true },
+  select: { id: true, dateFrom: true, dateTo: true, preferredZones: true, preferredHotelIds: true },
 });
 
 export const artistCardSelect = () =>

@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { BOARD_LABELS, BOARD_TYPES, BOOKABLE_TRANSPORT_TERMS, TRANSPORT_LABELS, bookingCreateSchema, fieldErrors } from '@shared/validation'
+import { BOOKABLE_TRANSPORT_TERMS, TRANSPORT_LABELS, bookingCreateSchema, fieldErrors } from '@shared/validation'
 import { bookingsApi } from '@/utils/api'
 import { t } from '@/i18n'
 
 /**
  * A hotel asks an artist for a residency, with the terms the exchange
- * convention will carry: dates, the stay for two (and the companion's name
- * if known), the board, who pays the journey, the performance expected, and
- * what each side's contribution is worth. Nobody is paid; the stay is the
- * counterpart of the performance.
+ * convention will carry: dates, the all-inclusive stay for two (and the
+ * companion's name if known), who pays the journey and the performance
+ * expected. The stay is always all inclusive and the form no longer asks what
+ * each side's contribution is worth (client, 2026-10).
  *
  * Checked with the same schema the API uses, so a mistake is shown under its
  * field before anything is sent.
@@ -39,14 +39,11 @@ const BookingRequestModal: React.FC<Props> = ({ hotelId, artistId, artistName, c
   const [form, setForm] = useState({
     start: isoDay(initialStart),
     end: isoDay(new Date(initialStart.getTime() + 5 * 86400000)),
-    boardType: '',
     transportTerms: '',
     transportNotes: '',
     companionName: '',
     performanceDescription: '',
     performanceSchedule: '',
-    stayValue: '',
-    performanceValue: '',
     notes: '',
     roomType: '',
     includedServices: '',
@@ -75,14 +72,12 @@ const BookingRequestModal: React.FC<Props> = ({ hotelId, artistId, artistName, c
     // Arrival in the afternoon, departure in the morning, as hotels count nights.
     startDate: form.start ? new Date(`${form.start}T15:00:00`).toISOString() : '',
     endDate: form.end ? new Date(`${form.end}T11:00:00`).toISOString() : '',
-    boardType: form.boardType || undefined,
+    boardType: 'ALL_INCLUSIVE',
     transportTerms: form.transportTerms || undefined,
     transportNotes: form.transportNotes,
     companionName: form.companionName,
     performanceDescription: form.performanceDescription,
     performanceSchedule: form.performanceSchedule,
-    stayValue: form.stayValue,
-    performanceValue: form.performanceValue,
     notes: form.notes,
     roomType: form.roomType,
     includedServices: form.includedServices,
@@ -129,7 +124,7 @@ const BookingRequestModal: React.FC<Props> = ({ hotelId, artistId, artistName, c
           {t('Proposer une résidence à {name}', { name: artistName })}
         </h3>
         <p className="mt-1 text-sm text-content-secondary">
-          {t('Séjour pour deux personnes, sans rémunération : le séjour est la contrepartie de la prestation.')}
+          {t('Séjour all inclusive pour deux personnes, en contrepartie de la prestation.')}
           {creditCost ? ` ${t('Cette demande utilise {n} crédits, restitués si l’artiste refuse.', { n: String(creditCost) })}` : ''}
         </p>
 
@@ -146,14 +141,8 @@ const BookingRequestModal: React.FC<Props> = ({ hotelId, artistId, artistName, c
           </div>
 
           <div>
-            <label className="form-label" htmlFor="bk-board">{t('Formule de repas')}</label>
-            <select id="bk-board" className="form-input w-full" value={form.boardType} onChange={set('boardType')}>
-              <option value="">{t('Choisir…')}</option>
-              {BOARD_TYPES.map((b) => (
-                <option key={b} value={b}>{t(BOARD_LABELS[b])}</option>
-              ))}
-            </select>
-            {field('boardType')}
+            <span className="form-label">{t('Formule')}</span>
+            <p className="form-input w-full bg-surface-sunken" data-testid="board-all-inclusive">{t('All inclusive')}</p>
           </div>
           <div>
             <label className="form-label" htmlFor="bk-transport">{t('Transport')}</label>
@@ -189,17 +178,6 @@ const BookingRequestModal: React.FC<Props> = ({ hotelId, artistId, artistName, c
             <label className="form-label" htmlFor="bk-companion">{t('Accompagnant (facultatif)')}</label>
             <input id="bk-companion" className="form-input w-full" maxLength={100} placeholder={t('Nom, si connu')} value={form.companionName} onChange={set('companionName')} />
             {field('companionName')}
-          </div>
-
-          <div>
-            <label className="form-label" htmlFor="bk-stay">{t('Valeur du séjour (€)')}</label>
-            <input id="bk-stay" inputMode="decimal" className="form-input w-full" value={form.stayValue} onChange={set('stayValue')} />
-            {field('stayValue')}
-          </div>
-          <div>
-            <label className="form-label" htmlFor="bk-value">{t('Valeur de la prestation (€)')}</label>
-            <input id="bk-value" inputMode="decimal" className="form-input w-full" value={form.performanceValue} onChange={set('performanceValue')} />
-            {field('performanceValue')}
           </div>
 
           <div>

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { prisma } from '../db';
+import { prisma, prismaAdmin } from '../db';
 import { config } from '../config';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
@@ -165,10 +165,20 @@ router.post('/credits/purchase', authenticate, authorize('HOTEL'), asyncHandler(
  * Priced here, never from the request: a tier is two words on the wire and the
  * amount charged must not be one of them.
  */
-const MEMBERSHIP_TIERS = {
-  ARTIST: { priceCents: 5000, label: 'Formule Artiste' },
-  PROFESSIONAL: { priceCents: 10000, label: 'Formule Artiste confirme' },
+export const MEMBERSHIP_TIERS = {
+  ARTIST: { priceCents: 5000, firstYearCents: 0, label: 'Formule Artiste' },
+  PROFESSIONAL: { priceCents: 10000, firstYearCents: 5000, label: 'Formule Artiste confirme' },
 } as const;
+
+/**
+ * Launch pricing (client, 2026-10): the Artiste plan is free for its first
+ * year, Artiste confirmé costs 50 € instead of 100 € for its first year.
+ * "First year" is per artist and per plan: the price drops once, for an
+ * artist who has never held that plan.
+ */
+export function membershipPriceCents(tier: keyof typeof MEMBERSHIP_TIERS, firstYear: boolean): number {
+  return firstYear ? MEMBERSHIP_TIERS[tier].firstYearCents : MEMBERSHIP_TIERS[tier].priceCents;
+}
 
 router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
   const { artistId, membershipType } = req.body;
@@ -200,6 +210,29 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
     throw new CustomError('Vous avez déjà cette formule.', 409, { code: 'ALREADY_ON_PLAN' });
   }
 
+  const heldBefore = await prisma.membership.findFirst({
+    where: { artistId: artist.id, tier: membershipType, startsAt: { not: null } },
+    select: { id: true },
+  });
+  const firstYear = !heldBefore;
+  const amountCents = membershipPriceCents(membershipType, firstYear);
+
+  // A free first year needs no payment: the plan starts now.
+  if (amountCents === 0) {
+    const startsAt = new Date();
+    const endsAt = new Date(startsAt);
+    endsAt.setFullYear(endsAt.getFullYear() + 1);
+    const created = await prismaAdmin.$transaction(async (tx) => {
+      await tx.membership.updateMany({ where: { artistId: artist.id, status: 'ACTIVE' }, data: { status: 'CANCELLED' } });
+      const m = await tx.membership.create({
+        data: { artistId: artist.id, tier: membershipType, priceCents: 0, currency: 'EUR', status: 'ACTIVE', startsAt, endsAt },
+      });
+      await tx.artist.update({ where: { id: artist.id }, data: { membershipStatus: 'ACTIVE', membershipRenewal: endsAt } });
+      return m;
+    });
+    return res.json({ success: true, data: { activated: true, membershipId: created.id, endsAt, firstYear } });
+  }
+
   if (!isStripeConfigured() || !stripe) {
     console.warn(
       `Blocked membership purchase: ${stripeUnavailableReason()} (artist ${artistId}, tier ${membershipType})`
@@ -217,7 +250,7 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
     data: {
       artistId: artist.id,
       tier: membershipType as 'ARTIST' | 'PROFESSIONAL',
-      priceCents: tier.priceCents,
+      priceCents: amountCents,
       currency: 'EUR',
       status: 'PENDING',
     },
@@ -226,7 +259,7 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
   const payment = await prisma.payment.create({
     data: {
       actorUserId: req.user!.id,
-      amountCents: tier.priceCents,
+      amountCents,
       currency: 'EUR',
       status: 'PENDING',
       membershipId: membership.id,
@@ -249,10 +282,10 @@ router.post('/membership', authenticate, authorize('ARTIST'), asyncHandler(async
         quantity: 1,
         price_data: {
           currency: 'eur',
-          unit_amount: tier.priceCents,
+          unit_amount: amountCents,
           product_data: {
             name: tier.label,
-            description: 'Adhesion annuelle Travel Art',
+            description: firstYear ? 'Adhesion Travel Art - premiere annee' : 'Adhesion annuelle Travel Art',
           },
         },
       },

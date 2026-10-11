@@ -506,6 +506,13 @@ const boundedCount = (min: number, max: number, message: string) =>
       return n
     })
 
+export const TRANSPORT_COVERAGES = ['FULL', 'NONE', 'HALF'] as const
+export const TRANSPORT_COVERAGE_LABELS: Record<(typeof TRANSPORT_COVERAGES)[number], string> = {
+  FULL: 'Oui',
+  NONE: 'Non',
+  HALF: 'Partagé 50/50',
+}
+
 /** The kinds of collaboration a hotel can offer (multiple choice). */
 export const COLLABORATION_TYPES = [
   'Rémunération',
@@ -553,7 +560,11 @@ export const hotelProgrammeSchema = z
     offersLodging: z.boolean().optional().default(false),
     offersMeals: z.boolean().optional().default(false),
     offersTransport: z.boolean().optional().default(false),
+    /** FULL (oui), NONE (non), HALF (partagé 50/50). */
+    transportCoverage: z.enum(TRANSPORT_COVERAGES).optional().nullable(),
     facilities: optionalText(300),
+    /** The fee, in euros, when the collaboration includes Rémunération. */
+    remunerationAmount: boundedCount(1, 1_000_000, 'Indiquez le tarif en euros'),
     freedomLevel: optionalText(40),
     expectations: shortList(),
     possibilities: shortList(),
@@ -567,6 +578,8 @@ export const hotelProgrammeSchema = z
   })
   .partial()
   .strict()
+  // offersTransport follows the three-way answer, for the screens that read it.
+  .transform((v) => (v.transportCoverage ? { ...v, offersTransport: v.transportCoverage !== 'NONE' } : v))
 
 export type HotelProgrammeInput = z.output<typeof hotelProgrammeSchema>
 
@@ -650,10 +663,22 @@ export const hotelProfileUpdateSchema = z
   })
   .strict()
 
+export const AVAILABILITY_ZONES = ['Maroc', 'Europe', 'Afrique', 'Moyen-Orient', 'Asie', 'Amériques', 'Caraïbes', 'Océan Indien'] as const
+export const MAX_AVAILABILITY_CHOICES = 3
+
 export const availabilitySchema = z
   .object({
     dateFrom: z.string().datetime({ message: 'Date invalide' }),
     dateTo: z.string().datetime({ message: 'Date invalide' }),
+    preferredZones: z
+      .array(z.enum(AVAILABILITY_ZONES, { errorMap: () => ({ message: 'Zone inconnue' }) }))
+      .optional()
+      .default([]),
+    preferredHotelIds: z.array(z.string().min(1).max(40)).optional().default([]),
+  })
+  .refine((v) => new Set(v.preferredZones).size + new Set(v.preferredHotelIds).size <= MAX_AVAILABILITY_CHOICES, {
+    path: ['preferredZones'],
+    message: `${MAX_AVAILABILITY_CHOICES} choix au maximum (zones et hôtels confondus)`,
   })
   .refine((v) => new Date(v.dateTo) > new Date(v.dateFrom), {
     path: ['dateTo'],
@@ -666,8 +691,8 @@ export const availabilitySchema = z
 
 export const BOARD_TYPES = ['ROOM_ONLY', 'BREAKFAST', 'HALF_BOARD', 'FULL_BOARD', 'ALL_INCLUSIVE'] as const
 export const TRANSPORT_TERMS = ['HOTEL_PAYS', 'ARTIST_PAYS', 'SHARED', 'NOT_NEEDED'] as const
-/** What a new booking may choose: 100 % by the hotel or 0 %, no 50/50. */
-export const BOOKABLE_TRANSPORT_TERMS = ['HOTEL_PAYS', 'ARTIST_PAYS', 'NOT_NEEDED'] as const
+/** What a new booking may choose: paid by the hotel, by the artist, or 50/50. */
+export const BOOKABLE_TRANSPORT_TERMS = ['HOTEL_PAYS', 'SHARED', 'ARTIST_PAYS', 'NOT_NEEDED'] as const
 
 /** French labels, as the convention and the screens write them. */
 export const BOARD_LABELS: Record<(typeof BOARD_TYPES)[number], string> = {
@@ -680,8 +705,8 @@ export const BOARD_LABELS: Record<(typeof BOARD_TYPES)[number], string> = {
 
 export const TRANSPORT_LABELS: Record<(typeof TRANSPORT_TERMS)[number], string> = {
   HOTEL_PAYS: 'Pris en charge à 100 % par l’hôtel',
-  ARTIST_PAYS: 'À la charge de l’artiste (0 % par l’hôtel)',
-  SHARED: 'Partagé (ancienne réservation)',
+  ARTIST_PAYS: 'À la charge de l’artiste',
+  SHARED: 'Partagé 50/50',
   NOT_NEEDED: 'Pas de transport',
 }
 
@@ -710,7 +735,8 @@ export const bookingCreateSchema = z
     endDate: z.string().datetime({ message: 'Date de départ invalide' }),
     notes: optionalText(1000),
     companionName: optionalText(100),
-    boardType: z.enum(BOARD_TYPES, { errorMap: () => ({ message: 'Choisissez la formule de repas' }) }),
+    // The stay is all inclusive (client, 2026-10): the form no longer asks.
+    boardType: z.enum(BOARD_TYPES).optional().default('ALL_INCLUSIVE'),
     transportTerms: z.enum(BOOKABLE_TRANSPORT_TERMS, { errorMap: () => ({ message: 'Indiquez qui prend en charge le transport' }) }),
     transportNotes: optionalText(500),
     performanceDescription: z

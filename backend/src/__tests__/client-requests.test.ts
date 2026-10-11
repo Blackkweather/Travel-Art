@@ -1,6 +1,7 @@
 /**
  * The client's October changes: social links, collaboration terms, transport
- * paid in full or not at all, and artists shown to hotels by category.
+ * (oui / non / 50/50), all-inclusive requests, availability choices, launch
+ * prices, and artists shown to hotels by category.
  */
 import { api, auth, bookingBody, makeAdmin, makeArtist, makeHotel, prismaAdmin, resetDb } from './helpers';
 import { hotelProgrammeSchema, bookingCreateSchema, fieldErrors } from '../shared/validation';
@@ -41,11 +42,79 @@ describe('collaboration terms', () => {
 });
 
 describe('transport', () => {
-  it('can be paid in full by the hotel or not at all, never shared', () => {
-    const base = { ...bookingBody('h', 'a'), transportTerms: 'SHARED' };
-    expect(bookingCreateSchema.safeParse(base).success).toBe(false);
-    expect(bookingCreateSchema.safeParse({ ...base, transportTerms: 'HOTEL_PAYS' }).success).toBe(true);
-    expect(bookingCreateSchema.safeParse({ ...base, transportTerms: 'ARTIST_PAYS' }).success).toBe(true);
+  it('can be paid by the hotel, by the artist, or shared 50/50', () => {
+    const base = bookingBody('h', 'a');
+    for (const transportTerms of ['HOTEL_PAYS', 'SHARED', 'ARTIST_PAYS']) {
+      expect(bookingCreateSchema.safeParse({ ...base, transportTerms }).success).toBe(true);
+    }
+  });
+
+  it('the hotel answers oui, non or 50/50, and the fee goes with Rémunération', async () => {
+    const hotel = await makeHotel();
+    const res = await api()
+      .put('/api/hotels/me')
+      .set(auth(hotel.token))
+      .send({ programme: { transportCoverage: 'HALF', collaborationTypes: ['Rémunération'], remunerationAmount: '450' } });
+    expect(res.status).toBe(200);
+    const row = await prismaAdmin.hotelProgramme.findFirst({ where: { hotelId: hotel.hotelId } });
+    expect(row).toMatchObject({ transportCoverage: 'HALF', offersTransport: true, remunerationAmount: 450 });
+    expect(hotelProgrammeSchema.safeParse({ transportCoverage: 'MAYBE' }).success).toBe(false);
+    expect(hotelProgrammeSchema.safeParse({ remunerationAmount: 0 }).success).toBe(false);
+  });
+});
+
+describe('booking request', () => {
+  it('is all inclusive and no longer needs the two values', async () => {
+    const artist = await makeArtist();
+    const hotel = await makeHotel();
+    const { boardType, stayValue, performanceValue, ...body } = bookingBody(hotel.hotelId, artist.artistId) as any;
+    const created = await api().post('/api/bookings').set(auth(hotel.token)).send(body);
+    expect(created.status).toBe(201);
+    const row = await prismaAdmin.booking.findUnique({ where: { id: created.body.data.id } });
+    expect(row!.boardType).toBe('ALL_INCLUSIVE');
+  });
+});
+
+describe('availability choices', () => {
+  it('an artist picks up to three zones or hotels for a period', async () => {
+    const artist = await makeArtist();
+    const hotel = await makeHotel();
+    const dateFrom = new Date(Date.now() + 30 * 86400000).toISOString();
+    const dateTo = new Date(Date.now() + 45 * 86400000).toISOString();
+    const url = `/api/artists/${artist.artistId}/availability`;
+
+    const ok = await api().post(url).set(auth(artist.token)).send({ dateFrom, dateTo, preferredZones: ['Maroc', 'Europe'], preferredHotelIds: [hotel.hotelId] });
+    expect(ok.status).toBe(201);
+    expect(ok.body.data).toMatchObject({ preferredZones: ['Maroc', 'Europe'], preferredHotelIds: [hotel.hotelId] });
+
+    const four = await api().post(url).set(auth(artist.token)).send({ dateFrom, dateTo, preferredZones: ['Maroc', 'Europe', 'Asie', 'Afrique'] });
+    expect(four.status).toBe(400);
+    const unknownHotel = await api().post(url).set(auth(artist.token)).send({ dateFrom, dateTo, preferredHotelIds: ['nope'] });
+    expect(unknownHotel.status).toBe(400);
+
+    // The profile hotels open names the chosen hotel.
+    const seen = await api().get(`/api/artists/${artist.artistId}`).set(auth(hotel.token));
+    const period = seen.body.data.availability.find((p: any) => p.id === ok.body.data.id);
+    expect(period.preferredHotels[0].id).toBe(hotel.hotelId);
+  });
+});
+
+describe('membership launch prices', () => {
+  it('the Artiste plan is free for its first year and starts at once', async () => {
+    const artist = await makeArtist();
+    const res = await api().post('/api/payments/membership').set(auth(artist.token)).send({ artistId: artist.artistId, membershipType: 'ARTIST' });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ activated: true, firstYear: true });
+    const m = await prismaAdmin.membership.findFirst({ where: { artistId: artist.artistId } });
+    expect(m).toMatchObject({ tier: 'ARTIST', priceCents: 0, status: 'ACTIVE' });
+  });
+
+  it('first year 0 € then 50 €; Artiste confirmé 50 € then 100 €', () => {
+    const { membershipPriceCents } = require('../routes/payments');
+    expect(membershipPriceCents('ARTIST', true)).toBe(0);
+    expect(membershipPriceCents('ARTIST', false)).toBe(5000);
+    expect(membershipPriceCents('PROFESSIONAL', true)).toBe(5000);
+    expect(membershipPriceCents('PROFESSIONAL', false)).toBe(10000);
   });
 });
 

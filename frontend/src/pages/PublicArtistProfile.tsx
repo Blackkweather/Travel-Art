@@ -14,6 +14,7 @@ import VideoCard from '@/components/VideoCard'
 import SocialLinks from '@/components/SocialLinks'
 import BookingRequestModal from '@/components/BookingRequestModal'
 import type { MediaItem } from '@/types'
+import { availabilityChoices } from '@/utils/availability'
 
 const PublicArtistProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -669,8 +670,11 @@ const PublicArtistProfile: React.FC = () => {
                           {new Date(avail.dateFrom).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </p>
                         <p className="text-sm text-content-secondary">
-                          to {new Date(avail.dateTo).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          {t('au')} {new Date(avail.dateTo).toLocaleDateString('fr-FR', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </p>
+                        {availabilityChoices(avail) && (
+                          <p className="mt-2 text-sm text-content" data-testid="availability-choice">{availabilityChoices(avail)}</p>
+                        )}
                       </div>
                     </div>
                   </div>

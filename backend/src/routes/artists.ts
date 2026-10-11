@@ -301,7 +301,12 @@ async function assertOwnArtist(req: AuthRequest, artistId: string) {
 
 router.post('/:id/availability', authenticate, authorize('ARTIST'), asyncHandler(async (req: AuthRequest, res) => {
   await assertOwnArtist(req, req.params.id);
-  const { dateFrom, dateTo } = availabilitySchema.parse(req.body);
+  const { dateFrom, dateTo, preferredZones, preferredHotelIds } = availabilitySchema.parse(req.body);
+  const hotelIds = [...new Set(preferredHotelIds)];
+  if (hotelIds.length) {
+    const found = await prismaAdmin.hotel.count({ where: { id: { in: hotelIds }, user: { approvalStatus: 'APPROVED', isActive: true } } });
+    if (found !== hotelIds.length) throw new CustomError('Un des hôtels choisis est introuvable.', 400, { fields: { preferredHotelIds: 'Hôtel introuvable.' } });
+  }
   const from = new Date(dateFrom);
   const to = new Date(dateTo);
 
@@ -319,8 +324,8 @@ router.post('/:id/availability', authenticate, authorize('ARTIST'), asyncHandler
   }
 
   const availability = await prisma.artistAvailability.create({
-    data: { artistId: req.params.id, dateFrom: from, dateTo: to },
-    select: { id: true, artistId: true, dateFrom: true, dateTo: true },
+    data: { artistId: req.params.id, dateFrom: from, dateTo: to, preferredZones: [...new Set(preferredZones)], preferredHotelIds: hotelIds },
+    select: { id: true, artistId: true, dateFrom: true, dateTo: true, preferredZones: true, preferredHotelIds: true },
   });
   res.status(201).json({ success: true, data: availability });
 }));
@@ -353,10 +358,16 @@ router.get('/:id', authenticate, asyncHandler(async (req: AuthRequest, res) => {
   // A count only - never a booking row - read across tenants on purpose.
   const bookingCount = await prismaAdmin.booking.count({ where: { artistId: row.id, status: { in: ['CONFIRMED', 'COMPLETED'] } } });
 
-  res.json({
-    success: true,
-    data: toArtistCard(row, { ratings: ratings(row.id), bookingCount, viewerRole: viewer.role }),
-  });
+  const card = toArtistCard(row, { ratings: ratings(row.id), bookingCount, viewerRole: viewer.role });
+  res.json({ success: true, data: { ...card, availability: await withHotelNames(card.availability) } });
 }));
+
+/** Availability periods with the chosen hotels named, for the screens. */
+async function withHotelNames<T extends { preferredHotelIds: string[] }>(periods: T[]) {
+  const ids = [...new Set(periods.flatMap((p) => p.preferredHotelIds))];
+  if (!ids.length) return periods.map((p) => ({ ...p, preferredHotels: [] as { id: string; name: string; city: string }[] }));
+  const hotels = await prismaAdmin.hotel.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, city: true } });
+  return periods.map((p) => ({ ...p, preferredHotels: hotels.filter((h) => p.preferredHotelIds.includes(h.id)) }));
+}
 
 export { router as artistRoutes };

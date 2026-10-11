@@ -6,7 +6,7 @@ import RadioGroup from '../registration/RadioGroup'
 import SelectWithSearch from '../registration/SelectWithSearch'
 import type { HotelProgramme, PerformanceSpot } from '@/types'
 import { t } from '@/i18n'
-import { COLLABORATION_TYPES, MAX_COLLAB_DAYS, MAX_PERFORMANCES_PER_WEEK, MIN_STAY_DAYS } from '@shared/validation'
+import { COLLABORATION_TYPES, MAX_COLLAB_DAYS, MAX_PERFORMANCES_PER_WEEK, MIN_STAY_DAYS, TRANSPORT_COVERAGES, TRANSPORT_COVERAGE_LABELS } from '@shared/validation'
 
 /**
  * The questions a hotel answers about its spaces and its programme, in one
@@ -33,13 +33,20 @@ const POSSIBILITIES = ['Concepts originaux', 'Collaborations avec d’autres art
 // -------------------------------------------------------------------- types
 
 /** The programme as the form edits it: numbers are typed as text. */
-export type ProgrammeForm = Omit<HotelProgramme, 'perWeek' | 'desiredStayDays'> & { perWeek: string; desiredStayDays: string }
+export type ProgrammeForm = Omit<HotelProgramme, 'perWeek' | 'desiredStayDays' | 'remunerationAmount' | 'transportCoverage'> & {
+  perWeek: string
+  desiredStayDays: string
+  remunerationAmount: string
+  transportCoverage: string
+}
+
+const REMUNERATION = COLLABORATION_TYPES[0]
 
 export const emptyProgramme = (): ProgrammeForm => ({
   audiences: [], styles: [], eventTypes: [], appreciated: '', disliked: '',
   hasStage: false, stageDimensions: '', hasSound: false, soundDetails: '', lighting: '', hasScreens: false, hasCrew: false,
   collaborationTypes: [], conditions: '', openDates: '',
-  offersLodging: true, offersMeals: false, offersTransport: false, facilities: '',
+  offersLodging: true, offersMeals: false, offersTransport: false, transportCoverage: 'NONE', facilities: '', remunerationAmount: '',
   freedomLevel: '', expectations: [], possibilities: [], otherDetails: '', artistTypesNeeded: '', flowDescription: '',
   perWeek: '', desiredStayDays: '', responseDelay: '', validationProcess: '', decisionMaker: '',
 })
@@ -52,6 +59,8 @@ export const programmeFromApi = (p?: HotelProgramme | null): ProgrammeForm => {
     const v = (p as any)[key]
     if (v !== null && v !== undefined) out[key] = typeof v === 'number' ? String(v) : v
   }
+  // Answers given before the 50/50 option existed were a yes or a no.
+  if (!p.transportCoverage) out.transportCoverage = p.offersTransport ? 'FULL' : 'NONE'
   return out
 }
 
@@ -68,6 +77,8 @@ export const programmePayload = (p: ProgrammeForm) => {
     if (!known.has(k)) continue
     out[k] = typeof v === 'string' ? (v.trim() ? v.trim() : null) : v
   }
+  // The fee goes only with Rémunération.
+  if (!(p.collaborationTypes ?? []).includes(REMUNERATION)) out.remunerationAmount = null
   return out
 }
 
@@ -187,6 +198,20 @@ export const EquipmentSection: React.FC<SectionProps> = (props) => (
 export const CollaborationSection: React.FC<SectionProps> = (props) => (
   <div className="space-y-6">
     {many(props, 'collaborationTypes', 'Type de collaboration acceptée', COLLABORATION_TYPES)}
+    {(props.value.collaborationTypes ?? []).includes(REMUNERATION) && (
+      <FormField
+        type="number"
+        inputMode="numeric"
+        min={1}
+        label={t('Tarif proposé (€)')}
+        placeholder={t('Ex. : 500')}
+        hint={t('Montant de la rémunération proposée à l’artiste, en euros.')}
+        value={props.value.remunerationAmount ?? ''}
+        onChange={(e) => props.onChange({ remunerationAmount: (e.target as HTMLInputElement).value })}
+        error={err(props.errors, 'remunerationAmount')}
+        disabled={props.disabled}
+      />
+    )}
     {text(props, 'conditions', 'Conditions pour l’artiste', 'Ce que vous offrez et ce que vous attendez en contrepartie', 1000)}
     {text(props, 'openDates', 'Dates ou périodes ouvertes', 'Ex. : avril à juin, vacances scolaires', 300)}
   </div>
@@ -195,8 +220,15 @@ export const CollaborationSection: React.FC<SectionProps> = (props) => (
 export const LogisticsSection: React.FC<SectionProps> = (props) => (
   <div className="space-y-4">
     {yesNo(props, 'offersLodging', 'Hébergement fourni (pour deux personnes)')}
-    {yesNo(props, 'offersMeals', 'Repas inclus')}
-    {yesNo(props, 'offersTransport', 'Transport pris en charge')}
+    {yesNo(props, 'offersMeals', 'All inclusive (2 personnes)')}
+    <RadioGroup
+      name="programme-transportCoverage"
+      label={t('Transport pris en charge')}
+      options={TRANSPORT_COVERAGES.map((c) => ({ value: c, label: t(TRANSPORT_COVERAGE_LABELS[c]) }))}
+      value={props.value.transportCoverage || 'NONE'}
+      onChange={(v) => props.onChange({ transportCoverage: v, offersTransport: v !== 'NONE' })}
+      disabled={props.disabled}
+    />
     {text(props, 'facilities', 'Accès aux installations de l’hôtel', 'Piscine, salle de sport, spa, etc.', 300)}
   </div>
 )

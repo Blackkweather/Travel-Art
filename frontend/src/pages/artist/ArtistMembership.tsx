@@ -111,6 +111,12 @@ const ArtistMembership: React.FC = () => {
       // Stripe confirms the payment. This used to drop the link and say
       // "Adhésion mise à jour", so nobody ever reached the payment step.
       const res = await paymentsApi.membership(artistId, membershipType, 'CARD')
+      // A free first year is granted at once, without a payment page.
+      if (res.data?.data?.activated) {
+        showToast(t('Formule activée : votre première année est offerte.'))
+        await fetchArtistProfile()
+        return
+      }
       const checkoutUrl = res.data?.data?.checkoutUrl
       if (checkoutUrl) {
         window.location.href = checkoutUrl
@@ -143,8 +149,9 @@ const ArtistMembership: React.FC = () => {
   const plans = [
     {
       name: 'Artiste',
-      price: '€50',
-      period: t('/an'),
+      price: t('Gratuit'),
+      period: t('la première année'),
+      then: t('puis {price}/an', { price: '€50' }),
       description: t('Pensé pour les artistes qui se lancent'),
       features: [
         t('Un profil d’artiste détaillé'),
@@ -161,8 +168,9 @@ const ArtistMembership: React.FC = () => {
     },
     {
       name: t('Artiste confirmé'),
-      price: '€100',
-      period: t('/an'),
+      price: '€50',
+      period: t('la première année'),
+      then: t('puis {price}/an', { price: '€100' }),
       description: t('Pour les artistes confirmés qui veulent plus de dates'),
       features: [
         t('Tout ce que comprend la formule Artiste'),
@@ -351,6 +359,7 @@ const ArtistMembership: React.FC = () => {
                     <span className="text-4xl font-bold text-content">{plan.price}</span>
                     <span className="text-content-secondary ml-2 text-sm">{plan.period}</span>
                   </div>
+                  <p className="mt-1 text-sm text-content-secondary">{plan.then}</p>
                 </div>
 
                 <ul className="space-y-3 mb-6">

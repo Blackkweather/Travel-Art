@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Save, Edit3, MapPin, Calendar, X, Upload, User, Plus, Trash2 } from 'lucide-react'
-import { artistsApi, apiClient } from '@/utils/api'
+import { artistsApi, apiClient, commonApi } from '@/utils/api'
+import { availabilityChoices } from '@/utils/availability'
 import { normalizeImageUrl } from '@/utils/imageUrl'
 import toast from 'react-hot-toast'
 import ProfilePictureUpload from '@/components/ProfilePictureUpload'
@@ -19,7 +20,7 @@ import PrivacyControls from '@/components/PrivacyControls'
 import type { Artist, ArtistAvailability, MediaItem } from '@/types'
 import { AUDIENCE_TYPES, LANGUAGES, categoryErrors } from '@shared/categories'
 import { COUNTRY_NAMES } from '@shared/countries'
-import { artistProfileUpdateSchema, fieldErrors, normalizePhone } from '@shared/validation'
+import { AVAILABILITY_ZONES, MAX_AVAILABILITY_CHOICES, artistProfileUpdateSchema, fieldErrors, normalizePhone } from '@shared/validation'
 import { parseVideoUrl } from '@shared/media'
 
 const MAX_VIDEOS = 10
@@ -100,7 +101,21 @@ const ArtistProfile: React.FC = () => {
   }
   const [addingVideo, setAddingVideo] = useState(false)
 
-  const [newAvailability, setNewAvailability] = useState({ dateFrom: '', dateTo: '' })
+  const [newAvailability, setNewAvailability] = useState<{ dateFrom: string; dateTo: string; zones: string[]; hotelIds: string[] }>({ dateFrom: '', dateTo: '', zones: [], hotelIds: [] })
+  const [hotelChoices, setHotelChoices] = useState<{ id: string; name: string; city: string }[]>([])
+  useEffect(() => {
+    commonApi
+      .getTopHotels()
+      .then((res) => setHotelChoices(((res.data?.data ?? []) as any[]).map((h) => ({ id: h.id, name: h.name, city: h.city ?? '' }))))
+      .catch(() => setHotelChoices([]))
+  }, [])
+  const choiceCount = newAvailability.zones.length + newAvailability.hotelIds.length
+  const toggleChoice = (kind: 'zones' | 'hotelIds', value: string) =>
+    setNewAvailability((n) => {
+      const has = n[kind].includes(value)
+      if (!has && n.zones.length + n.hotelIds.length >= MAX_AVAILABILITY_CHOICES) return n
+      return { ...n, [kind]: has ? n[kind].filter((v) => v !== value) : [...n[kind], value] }
+    })
   const [savingAvailability, setSavingAvailability] = useState(false)
 
   const countries = useMemo(() => countryOptions(COUNTRY_NAMES as string[]), [])
@@ -242,9 +257,11 @@ const ArtistProfile: React.FC = () => {
       const res = await artistsApi.setAvailability(artist.id, {
         dateFrom: new Date(newAvailability.dateFrom).toISOString(),
         dateTo: new Date(`${newAvailability.dateTo}T23:59:59`).toISOString(),
+        preferredZones: newAvailability.zones,
+        preferredHotelIds: newAvailability.hotelIds,
       })
       setArtist((a) => (a ? { ...a, availability: [...(a.availability ?? []), res.data.data] } : a))
-      setNewAvailability({ dateFrom: '', dateTo: '' })
+      setNewAvailability({ dateFrom: '', dateTo: '', zones: [], hotelIds: [] })
       toast.success(t('Disponibilité ajoutée'))
     } catch (e) {
       toast.error(apiError(e, t('Impossible d’ajouter cette disponibilité')))
@@ -576,6 +593,54 @@ const ArtistProfile: React.FC = () => {
             onEndDateChange={(date) => setNewAvailability((n) => ({ ...n, dateTo: date }))}
             minDate={new Date().toISOString().split('T')[0]}
           />
+          <div data-testid="availability-choices">
+            <p className="form-label">
+              {t('Où souhaitez-vous aller ? ({n}/{max} choix)', { n: String(choiceCount), max: String(MAX_AVAILABILITY_CHOICES) })}
+            </p>
+            <p className="mb-2 text-sm text-content-secondary">{t('Choisissez jusqu’à {max} zones ou hôtels.', { max: String(MAX_AVAILABILITY_CHOICES) })}</p>
+            <div className="flex flex-wrap gap-2">
+              {AVAILABILITY_ZONES.map((z) => {
+                const on = newAvailability.zones.includes(z)
+                return (
+                  <button
+                    key={z}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleChoice('zones', z)}
+                    disabled={!on && choiceCount >= MAX_AVAILABILITY_CHOICES}
+                    className={`rounded-control border px-3 py-1.5 text-sm ${on ? 'border-gold bg-gold/15 text-content' : 'border-line bg-surface text-content-secondary'} disabled:opacity-40`}
+                  >
+                    {t(z)}
+                  </button>
+                )
+              })}
+            </div>
+            {hotelChoices.length > 0 && (
+              <select
+                className="form-input mt-3 w-full"
+                aria-label={t('Ajouter un hôtel')}
+                value=""
+                disabled={choiceCount >= MAX_AVAILABILITY_CHOICES}
+                onChange={(e) => e.target.value && toggleChoice('hotelIds', e.target.value)}
+              >
+                <option value="">{t('Ajouter un hôtel…')}</option>
+                {hotelChoices
+                  .filter((h) => !newAvailability.hotelIds.includes(h.id))
+                  .map((h) => (
+                    <option key={h.id} value={h.id}>{h.city ? `${h.name} — ${h.city}` : h.name}</option>
+                  ))}
+              </select>
+            )}
+            {newAvailability.hotelIds.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {newAvailability.hotelIds.map((id) => (
+                  <button key={id} type="button" onClick={() => toggleChoice('hotelIds', id)} className="rounded-control border border-gold bg-gold/15 px-3 py-1.5 text-sm text-content">
+                    {hotelChoices.find((h) => h.id === id)?.name ?? id} ✕
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex justify-end">
             <button
               onClick={addAvailability}
@@ -596,9 +661,12 @@ const ArtistProfile: React.FC = () => {
                 <div key={p.id} className="flex items-center justify-between rounded-card border border-line bg-surface p-4">
                   <div className="flex items-center gap-4">
                     <Calendar className="h-5 w-5 text-gold" />
-                    <p className="font-medium text-content">
-                      {new Date(p.dateFrom).toLocaleDateString('fr-FR')} – {new Date(p.dateTo).toLocaleDateString('fr-FR')}
-                    </p>
+                    <div>
+                      <p className="font-medium text-content">
+                        {new Date(p.dateFrom).toLocaleDateString('fr-FR')} – {new Date(p.dateTo).toLocaleDateString('fr-FR')}
+                      </p>
+                      {availabilityChoices(p, hotelChoices) && <p className="text-sm text-content-secondary">{availabilityChoices(p, hotelChoices)}</p>}
+                    </div>
                   </div>
                   <button onClick={() => removeAvailability(p.id)} className="flex items-center gap-2 rounded-card px-3 py-2 text-[var(--state-critical)] hover:bg-[var(--state-critical-wash)]">
                     <Trash2 className="h-4 w-4" />

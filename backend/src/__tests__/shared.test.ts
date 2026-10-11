@@ -157,7 +157,8 @@ describe('booking rules', () => {
   it('requires the convention terms', () => {
     const result = bookingCreateSchema.safeParse({ ...bookingBody('h', 'a'), boardType: undefined, performanceDescription: 'court' });
     const fields = fieldErrors((result as any).error);
-    expect(fields.boardType).toBeDefined();
+    // The stay is always all inclusive now (client, 2026-10): no board to choose.
+    expect(fields.boardType).toBeUndefined();
     expect(fields.performanceDescription).toBeDefined();
     const ok = bookingCreateSchema.safeParse(bookingBody('h', 'a'));
     expect((ok as any).data.stayValue).toBe(120000);

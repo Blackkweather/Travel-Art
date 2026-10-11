@@ -105,6 +105,10 @@ export interface HotelProgramme {
   offersLodging: boolean
   offersMeals: boolean
   offersTransport: boolean
+  /** FULL (oui), NONE (non), HALF (partagé 50/50); null on older answers. */
+  transportCoverage?: 'FULL' | 'NONE' | 'HALF' | null
+  /** Fee in euros when the collaboration includes Rémunération. */
+  remunerationAmount?: number | null
   facilities?: string | null
   freedomLevel?: string | null
   expectations: string[]
@@ -177,6 +181,11 @@ export interface ArtistAvailability {
   artistId?: string
   dateFrom: string
   dateTo: string
+  /** Up to three choices in all: zones and/or hotels. */
+  preferredZones?: string[]
+  preferredHotelIds?: string[]
+  /** The chosen hotels, named (on the artist detail). */
+  preferredHotels?: { id: string; name: string; city: string }[]
 }
 
 export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED'

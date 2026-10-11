@@ -184,7 +184,7 @@ export function nightsBetween(start: Date, end: Date): number {
 const TRANSPORT_OPTIONS: Record<(typeof TRANSPORT_TERMS)[number], string> = {
   ARTIST_PAYS: 'À la charge du Participant',
   HOTEL_PAYS: 'Pris en charge intégralement par l’Hôtel',
-  SHARED: 'Pris en charge partiellement par l’Hôtel',
+  SHARED: 'Partagé à 50/50 entre l’Hôtel et le Participant',
   NOT_NEEDED: 'Autre : aucun transport nécessaire',
 };
 
@@ -278,8 +278,9 @@ export function buildConvention(input: ConventionInput, signatures: SignatureInp
     .filter(Boolean);
   const participantLabel = participant.stageName ? `${participant.stageName} (${participant.fullName})` : participant.fullName;
   const category = input.artist.discipline || 'Prestation créative';
-  const stayValue = formatMoney(input.stayValueCents, input.currency);
-  const performanceValue = formatMoney(input.performanceValueCents, input.currency);
+  // The request form no longer asks the two values (client, 2026-10).
+  const stayValue = input.stayValueCents === null ? 'Non précisée' : formatMoney(input.stayValueCents, input.currency);
+  const performanceValue = input.performanceValueCents === null ? 'Non précisée' : formatMoney(input.performanceValueCents, input.currency);
   const fee = formatMoney(config.hotelCancellationFeeCents, 'EUR');
   const reference = `TA-${input.id.slice(-8).toUpperCase()}`;
 
@@ -436,12 +437,10 @@ export function buildConvention(input: ConventionInput, signatures: SignatureInp
 
   h('ARTICLE 12 — FRAIS DE TRANSPORT');
   p('Les frais de transport du Participant et de son accompagnant sont :');
-  // Transport is paid in full by the hotel or not at all (client, 2026-10):
-  // the partial option appears only on an older booking that chose it.
   list(
-    (Object.keys(TRANSPORT_OPTIONS) as (keyof typeof TRANSPORT_OPTIONS)[])
-      .filter((k) => k !== 'SHARED' || input.transportTerms === 'SHARED')
-      .map((k) => `[${input.transportTerms === k ? 'X' : ' '}] ${TRANSPORT_OPTIONS[k]}`)
+    (Object.keys(TRANSPORT_OPTIONS) as (keyof typeof TRANSPORT_OPTIONS)[]).map(
+      (k) => `[${input.transportTerms === k ? 'X' : ' '}] ${TRANSPORT_OPTIONS[k]}`
+    )
   );
   if (input.transportNotes) f('Modalités', input.transportNotes);
   p('Lorsque les frais sont pris en charge par l’Hôtel, les modalités doivent être précisées dans l’annexe.');

@@ -84,7 +84,7 @@ const PROGRAMME_STEP: Record<string, number> = {
   styles: 2, eventTypes: 2, appreciated: 2, disliked: 2,
   hasStage: 3, stageDimensions: 3, hasSound: 3, soundDetails: 3, lighting: 3, hasScreens: 3, hasCrew: 3,
   collaborationTypes: 4, conditions: 4, openDates: 4,
-  offersLodging: 5, offersMeals: 5, offersTransport: 5, facilities: 5,
+  offersLodging: 5, offersMeals: 5, offersTransport: 5, transportCoverage: 5, facilities: 5, remunerationAmount: 4,
   freedomLevel: 6, expectations: 6, possibilities: 6, otherDetails: 6, artistTypesNeeded: 6, flowDescription: 6, perWeek: 6, desiredStayDays: 6,
   responseDelay: 7, validationProcess: 7, decisionMaker: 7,
 }

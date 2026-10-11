@@ -304,6 +304,10 @@ model ArtistAvailability {
   artistId String
   dateFrom DateTime
   dateTo   DateTime
+  /// Where the artist wants to go in this period: up to three choices in all,
+  /// zones (Maroc, Europe...) and/or specific hotels.
+  preferredZones    String[] @default([])
+  preferredHotelIds String[] @default([])
 
   artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
 
@@ -415,9 +419,15 @@ model HotelProgramme {
 
   // Logistics
   offersLodging   Boolean @default(false)
+  /// "All inclusive (2 personnes)" on the form.
   offersMeals     Boolean @default(false)
+  /// True when the hotel pays all or half of the journey (see transportCoverage).
   offersTransport Boolean @default(false)
+  /// FULL (oui), NONE (non) or HALF (partagé 50/50).
+  transportCoverage String?
   facilities      String?
+  /// The fee offered, in euros, when the collaboration type includes Rémunération.
+  remunerationAmount Int?
 
   // Artistic freedom
   freedomLevel      String?

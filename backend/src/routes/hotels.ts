@@ -32,6 +32,7 @@ const programmeSelect = {
   openDates: true, offersLodging: true, offersMeals: true, offersTransport: true,
   facilities: true, freedomLevel: true, expectations: true, possibilities: true, otherDetails: true,
   artistTypesNeeded: true, flowDescription: true, perWeek: true, desiredStayDays: true, responseDelay: true,
+  transportCoverage: true, remunerationAmount: true,
   validationProcess: true, decisionMaker: true,
 } as const;
 
