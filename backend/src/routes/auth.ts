@@ -1,6 +1,7 @@
 import { Router, Request } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import { CONSENT, LEGAL_VERSION, clientIp, hashIp } from '../config/legal';
 import { config } from '../config';
@@ -12,6 +13,7 @@ import { generateUniqueReferralCode } from '../utils/referralCode';
 import { tokens, passwordFingerprint } from '../services/tokens';
 import { domainAcceptsMail } from '../services/emailDomain';
 import { verifyCaptcha } from '../services/captcha';
+import { verifyGoogleCredential } from '../services/google';
 import { conflictFromUniqueError, findIdentityConflicts, hotelKey } from '../services/identity';
 import { sessionUserSelect } from '../views/user';
 import {
@@ -71,8 +73,33 @@ function mediaRow(url: string, position: number) {
 
 // ---------------------------------------------------------------- register
 
+/**
+ * The address Google vouched for, when the form came through "Continue with
+ * Google". Such an account has no password of its own: it gets a random one
+ * nobody knows (the reset link sets a real one) and its address is confirmed.
+ */
+function googleSignupEmail(body: any): string | null {
+  if (!body?.googleToken) return null;
+  try {
+    return tokens.googleSignup.verify(String(body.googleToken)).email;
+  } catch {
+    throw new CustomError('La connexion avec Google a expiré. Recommencez avec le bouton Google.', 400, {
+      code: 'GOOGLE_EXPIRED',
+    });
+  }
+}
+
 router.post('/register', asyncHandler(async (req: Request, res) => {
+  const googleEmail = googleSignupEmail(req.body);
+  if (googleEmail) {
+    req.body.password = `Gg1!${randomBytes(24).toString('base64url')}`;
+  }
   const data = parseRegistration(req.body);
+  if (googleEmail && data.email !== googleEmail) {
+    throw new CustomError('L’adresse e-mail doit rester celle de votre compte Google.', 400, {
+      fields: { email: 'L’adresse e-mail doit rester celle de votre compte Google.' },
+    });
+  }
 
   if (!(await verifyCaptcha(data.captchaToken, req.ip))) {
     throw new CustomError('La vérification anti-robot a échoué. Rechargez la page et réessayez.', 400, {
@@ -144,6 +171,7 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
           country: data.country,
           acceptedTermsAt: now,
           acceptedTermsVersion: LEGAL_VERSION,
+          ...(googleEmail ? { emailVerified: true, emailVerifiedAt: now } : {}),
         },
         select: { id: true, email: true, name: true, role: true },
       });
@@ -245,10 +273,12 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
 
   // After the commit, and not awaited: an account with an unsent e-mail is
   // recoverable (resend-verification), a registration reported as failed
-  // when it succeeded is not.
-  background(verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
-    console.error('verification email failed for user', user.id, err)
-  ), 'verificationEmail');
+  // when it succeeded is not. Google already confirmed its address.
+  if (!googleEmail) {
+    background(verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
+      console.error('verification email failed for user', user.id, err)
+    ), 'verificationEmail');
+  }
   background(newRegistrationAdminAlert({
     name: user.name,
     email: user.email,
@@ -260,10 +290,11 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
   res.status(201).json({
     success: true,
     data: {
-      user: { id: user.id, role: user.role, name: user.name, email: user.email, approvalStatus: 'PENDING', emailVerified: false },
+      user: { id: user.id, role: user.role, name: user.name, email: user.email, approvalStatus: 'PENDING', emailVerified: Boolean(googleEmail) },
       status: 'PENDING_REVIEW',
-      message:
-        'Votre demande a bien été enregistrée. Confirmez votre adresse e-mail, puis attendez la validation de votre compte par notre équipe.',
+      message: googleEmail
+        ? 'Votre demande a bien été enregistrée. Attendez la validation de votre compte par notre équipe.'
+        : 'Votre demande a bien été enregistrée. Confirmez votre adresse e-mail, puis attendez la validation de votre compte par notre équipe.',
     },
   });
 }));
@@ -353,6 +384,23 @@ router.post('/login', asyncHandler(async (req, res) => {
     throw new CustomError('E-mail ou mot de passe incorrect.', 401, { code: 'BAD_CREDENTIALS' });
   }
 
+  assertCanSignIn(user);
+
+  const profile = await prisma.user.findUnique({ where: { id: user.id }, select: sessionUserSelect });
+
+  res.json({
+    success: true,
+    data: { user: profile, token: tokens.session.sign(user) },
+  });
+}));
+
+/** Refuses, with the reason, an account that may not open a session yet or any more. */
+function assertCanSignIn(user: {
+  approvalStatus: string;
+  approvalNote: string | null;
+  isActive: boolean;
+  emailVerified: boolean;
+}) {
   if (user.approvalStatus === 'PENDING') {
     if (!user.emailVerified) {
       throw new CustomError(
@@ -387,13 +435,49 @@ router.post('/login', asyncHandler(async (req, res) => {
       { code: 'SUSPENDED' }
     );
   }
+}
+
+// ------------------------------------------------------- sign in with Google
+
+/**
+ * An existing account with the Google address signs straight in, under the
+ * same rules as a password. No account yet: the answer carries a signup token
+ * and the names Google knows, and the registration form takes it from there -
+ * the account still needs its profile and an administrator's approval.
+ */
+router.post('/google', asyncHandler(async (req, res) => {
+  const { credential } = z.object({ credential: z.string().min(1).max(4096) }).parse(req.body);
+  const google = await verifyGoogleCredential(credential);
+
+  const user = await prisma.user.findUnique({
+    where: { email: google.email },
+    select: { id: true, role: true, approvalStatus: true, approvalNote: true, isActive: true, emailVerified: true },
+  });
+
+  if (!user) {
+    return res.json({
+      success: true,
+      data: {
+        status: 'NEEDS_REGISTRATION',
+        signupToken: tokens.googleSignup.sign(google),
+        email: google.email,
+        firstName: google.givenName,
+        lastName: google.familyName,
+        name: google.name,
+      },
+    });
+  }
+
+  // Google has just proved the inbox, which is all the confirmation link does.
+  if (!user.emailVerified) {
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true, emailVerifiedAt: new Date() } });
+    user.emailVerified = true;
+  }
+
+  assertCanSignIn(user);
 
   const profile = await prisma.user.findUnique({ where: { id: user.id }, select: sessionUserSelect });
-
-  res.json({
-    success: true,
-    data: { user: profile, token: tokens.session.sign(user) },
-  });
+  res.json({ success: true, data: { status: 'SIGNED_IN', user: profile, token: tokens.session.sign(user) } });
 }));
 
 // ---------------------------------------------------------- session upkeep

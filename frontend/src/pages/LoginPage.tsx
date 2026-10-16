@@ -10,6 +10,7 @@ import SimpleNavbar from '../components/SimpleNavbar'
 import Footer from '../components/Footer'
 import BrandWordmark from '@/components/BrandWordmark'
 import ResendVerification from '@/components/ResendVerification'
+import GoogleSignIn, { OrDivider } from '@/components/GoogleSignIn'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 
@@ -110,7 +111,12 @@ const LoginPage: React.FC = () => {
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <div className="mt-8 space-y-6">
+          <GoogleSignIn text="signin_with" />
+          <OrDivider />
+        </div>
+
+        <form className="mt-6 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="form-label">

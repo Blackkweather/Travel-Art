@@ -61,6 +61,10 @@ export const config = {
   // migration, unread by anything, which left render.yaml and the docs
   // describing SMTP_HOST/SMTP_USER/SMTP_PASS as how to configure email
   // when setting them would have done nothing at all.
+  // "Continue with Google". The browser button needs the same client id at
+  // build time as VITE_GOOGLE_CLIENT_ID, so that one variable is enough; with
+  // neither set, Google sign-in is off and /auth/google answers 503.
+  googleClientId: process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID,
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   // Regex matching additional allowed CORS origins, e.g. Vercel preview URLs:

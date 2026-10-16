@@ -59,12 +59,16 @@ app.use(helmet({
      that travel-art.vercel.app made the request and never which page - no
      artist id, no booking id - which is the part worth protecting. */
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  // Google's sign-in popup reports back to this window; plain `same-origin`
+  // (helmet's default) cuts that link and the button never answers.
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      // Cloudflare Turnstile, the registration captcha (off unless configured).
-      scriptSrc: ["'self'", "https://challenges.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com/gsi/style"],
+      // Cloudflare Turnstile, the registration captcha (off unless configured),
+      // and Google's sign-in button (off unless GOOGLE_CLIENT_ID is set).
+      scriptSrc: ["'self'", "https://challenges.cloudflare.com", "https://accounts.google.com/gsi/client"],
       // This policy now applies to the app's own HTML, which it did not when a
       // CDN served the SPA and Express only answered /api. Uploaded images come
       // back from routes/upload.ts as absolute Blob URLs, so that host has to be
@@ -90,7 +94,7 @@ app.use(helmet({
            geocoding APIs would need connectSrc as well, and neither is used. */
         "https://static-map-tiles-api.arcgis.com",
       ],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "https://accounts.google.com/gsi/"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
       /* Performance videos on an artist profile. This was "'self'", which
@@ -118,6 +122,7 @@ app.use(helmet({
       frameSrc: [
         "'self'",
         "https://challenges.cloudflare.com",
+        "https://accounts.google.com/gsi/",
         "https://www.youtube-nocookie.com",
         "https://www.youtube.com",
         "https://player.vimeo.com",
@@ -219,6 +224,7 @@ const credentialLimiter = limit('credentials', {
 });
 app.use('/api/auth/login', credentialLimiter);
 app.use('/api/auth/reset-password', credentialLimiter);
+app.use('/api/auth/google', credentialLimiter);
 
 // The same, per account: guessing one person's password from many addresses
 // meets this one even when no single address meets the one above.

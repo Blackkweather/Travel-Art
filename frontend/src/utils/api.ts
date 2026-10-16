@@ -107,6 +107,13 @@ export const authApi = {
   login: (credentials: LoginCredentials) =>
     apiClient.post<{ user: User; token: string }>('/auth/login', credentials),
 
+  /** The ID token from Google's button: signs in, or says the account does not exist yet. */
+  google: (credential: string) =>
+    apiClient.post<
+      | { status: 'SIGNED_IN'; user: User; token: string }
+      | { status: 'NEEDS_REGISTRATION'; signupToken: string; email: string; firstName: string; lastName: string; name: string }
+    >('/auth/google', { credential }),
+
   register: (data: RegisterData) =>
     apiClient.post<{ user: User }>('/auth/register', data, {
       timeout: 45000,

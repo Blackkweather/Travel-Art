@@ -28,6 +28,7 @@ import {
   spacesPayload,
 } from '../hotel/HotelFormSections'
 import { Captcha, EmailSuggestion, apiFieldErrors, apiMessage, captchaEnabled, useAvailabilityCheck, useDraft } from './registrationKit'
+import { GOOGLE_PLACEHOLDER_PASSWORD, clearGoogleSignup, readGoogleSignup } from '@/components/GoogleSignIn'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 
@@ -111,10 +112,14 @@ const HotelRegistrationFlow: React.FC = () => {
   const [secrets, setSecrets] = useState({ password: '', confirmPassword: '' })
 
   const g = draft.general
+  // Came through "Continue with Google": the address is Google's and there is no password to choose.
+  const [google] = useState(readGoogleSignup)
 
   // Passwords are never kept in the saved draft (see the artist flow).
   useEffect(() => {
-    if (draft.step > 1) {
+    if (google) {
+      setDraft((d) => ({ ...d, general: { ...d.general, email: google.email, contactName: d.general.contactName || google.name } }))
+    } else if (draft.step > 1) {
       setDraft((d) => ({ ...d, step: 1 }))
       toast(t('Votre saisie a été conservée. Pour votre sécurité, ressaisissez votre mot de passe.'))
     }
@@ -138,9 +143,10 @@ const HotelRegistrationFlow: React.FC = () => {
     tiktokUrl: g.tiktokUrl || null,
     facebookUrl: g.facebookUrl || null,
     youtubeUrl: g.youtubeUrl || null,
-    email: g.email,
+    email: google ? google.email : g.email,
     phone: g.phone,
-    password: secrets.password,
+    password: google ? GOOGLE_PLACEHOLDER_PASSWORD : secrets.password,
+    googleToken: google?.signupToken,
     spaces: spacesPayload(draft.spaces),
     programme: programmePayload(draft.programme),
     acceptTerms: draft.acceptTerms,
@@ -151,7 +157,7 @@ const HotelRegistrationFlow: React.FC = () => {
   const allErrors = () => {
     const result = hotelRegistrationSchema.safeParse(payload())
     const errs: Record<string, string> = result.success ? {} : fieldErrors(result.error)
-    if (secrets.password && secrets.password !== secrets.confirmPassword) errs.confirmPassword = 'Les deux mots de passe ne correspondent pas'
+    if (!google && secrets.password && secrets.password !== secrets.confirmPassword) errs.confirmPassword = 'Les deux mots de passe ne correspondent pas'
     if (captchaEnabled && !captchaToken) errs.captchaToken = 'Cochez la vérification anti-robot'
     return errs
   }
@@ -197,7 +203,8 @@ const HotelRegistrationFlow: React.FC = () => {
     try {
       await register(payload() as any)
       clearDraft()
-      navigate('/inscription-envoyee', { state: { role: 'HOTEL', email: g.email.trim().toLowerCase() } })
+      clearGoogleSignup()
+      navigate('/inscription-envoyee', { state: { role: 'HOTEL', email: (google?.email ?? g.email).trim().toLowerCase(), google: Boolean(google) } })
     } catch (error: any) {
       setCaptchaReset((n) => n + 1)
       const fields = apiFieldErrors(error)
@@ -280,10 +287,10 @@ const HotelRegistrationFlow: React.FC = () => {
                   <FormField type="tel" autoComplete="tel" label={t('Téléphone')} placeholder="05 24 …" value={g.phone} onChange={setGeneral('phone')} error={err('phone')} required />
                 </div>
                 <div className="mt-4">
-                  <FormField type="email" autoComplete="email" label={t('E-mail de connexion')} placeholder="contact@votre-hotel.com" value={g.email} onChange={setGeneral('email')} error={err('email')} required />
+                  <FormField type="email" autoComplete="email" label={t('E-mail de connexion')} placeholder="contact@votre-hotel.com" value={google ? google.email : g.email} onChange={setGeneral('email')} error={err('email')} readOnly={Boolean(google)} hint={google ? t('Adresse de votre compte Google, déjà confirmée') : undefined} required />
                   <EmailSuggestion suggestion={live.suggestion} onAccept={(email) => setDraft((d) => ({ ...d, general: { ...d.general, email } }))} />
                 </div>
-                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                {!google && <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <FormField
                     type="password"
                     autoComplete="new-password"
@@ -305,7 +312,7 @@ const HotelRegistrationFlow: React.FC = () => {
                     error={err('confirmPassword') || undefined}
                     required
                   />
-                </div>
+                </div>}
               </div>
               {nav}
             </div>

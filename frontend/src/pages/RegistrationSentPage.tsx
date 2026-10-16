@@ -18,15 +18,18 @@ import { t } from '@/i18n'
  */
 const RegistrationSentPage: React.FC = () => {
   const location = useLocation()
-  const state = (location.state ?? {}) as { email?: string; role?: string }
+  const state = (location.state ?? {}) as { email?: string; role?: string; google?: boolean }
 
   const steps = [
-    {
+    // Signed up through Google: the address is already confirmed.
+    state.google
+      ? { title: t('Adresse confirmée'), body: t('Votre adresse {email} a été confirmée par Google.', { email: state.email ?? '' }) }
+      : {
       title: t('Confirmez votre adresse'),
       body: state.email
         ? t('Nous avons envoyé un lien de confirmation à {email}. Ouvrez-le pour valider votre adresse : votre candidature n’est examinée qu’une fois l’adresse confirmée.', { email: state.email })
         : t('Nous vous avons envoyé un lien de confirmation par e-mail. Ouvrez-le pour valider votre adresse.'),
-    },
+      },
     {
       title: t('Nous examinons votre demande'),
       body:
@@ -78,12 +81,14 @@ const RegistrationSentPage: React.FC = () => {
           <Link to="/login" className="btn-ghost">
             {t('Se connecter')}
           </Link>
-          {state.email && <ResendVerification email={state.email} />}
+          {state.email && !state.google && <ResendVerification email={state.email} />}
         </div>
 
-        <p className="mt-10 max-w-prose text-[0.8125rem] leading-relaxed text-content-secondary">
-          {t('Vous n’avez rien reçu ? Vérifiez vos indésirables. Le lien de confirmation expire après 48 heures ; vous pouvez en demander un nouveau ici ou depuis la page de connexion.')}
-        </p>
+        {!state.google && (
+          <p className="mt-10 max-w-prose text-[0.8125rem] leading-relaxed text-content-secondary">
+            {t('Vous n’avez rien reçu ? Vérifiez vos indésirables. Le lien de confirmation expire après 48 heures ; vous pouvez en demander un nouveau ici ou depuis la page de connexion.')}
+          </p>
+        )}
       </main>
 
       <Footer />

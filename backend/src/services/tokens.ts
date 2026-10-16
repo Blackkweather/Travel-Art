@@ -18,13 +18,23 @@ import { config } from '../config';
 
 const ALGORITHM = 'HS256' as const;
 
-export type TokenType = 'session' | 'email-verification' | 'password-reset';
+export type TokenType = 'session' | 'email-verification' | 'password-reset' | 'google-signup';
 
 interface BasePayload {
   typ: TokenType;
   userId: string;
   iat?: number;
   exp?: number;
+}
+
+/**
+ * Handed out when someone signs in with Google and has no account yet: proof
+ * that Google vouched for this address, carried through the registration
+ * form. There is no user yet, so `userId` is the Google account id.
+ */
+export interface GoogleSignupPayload extends BasePayload {
+  typ: 'google-signup';
+  email: string;
 }
 
 export interface SessionPayload extends BasePayload {
@@ -44,7 +54,7 @@ export interface EmailVerificationPayload extends BasePayload {
   email: string;
 }
 
-type AnyPayload = SessionPayload | PasswordResetPayload | EmailVerificationPayload;
+type AnyPayload = SessionPayload | PasswordResetPayload | EmailVerificationPayload | GoogleSignupPayload;
 
 function sign(payload: { typ: TokenType; userId: string; [claim: string]: unknown }, expiresIn: string): string {
   return jwt.sign(payload, config.jwtSecret, { algorithm: ALGORITHM, expiresIn } as jwt.SignOptions);
@@ -77,5 +87,11 @@ export const tokens = {
     sign: (user: { id: string; email: string }) =>
       sign({ typ: 'email-verification', userId: user.id, email: user.email }, '48h'),
     verify: (token: string) => verify<EmailVerificationPayload>(token, 'email-verification'),
+  },
+  // Long enough to fill in the registration form, which is three steps.
+  googleSignup: {
+    sign: (google: { sub: string; email: string }) =>
+      sign({ typ: 'google-signup', userId: google.sub, email: google.email }, '2h'),
+    verify: (token: string) => verify<GoogleSignupPayload>(token, 'google-signup'),
   },
 };

@@ -2094,4 +2094,10 @@ export const en: Record<string, string> = {
   "Concepts originaux": "Original concepts",
   "Espaces & équipement technique": "Spaces & technical equipment",
   "Décrivez les espaces où l’artiste se produira et ce qui est mis à disposition.": "Describe the spaces where the artist will perform and what is provided.",
+  "Aucun compte pour {email}. Terminez votre inscription : votre e-mail est déjà confirmé.": "No account for {email} yet. Finish signing up: your e-mail is already confirmed.",
+  "La connexion avec Google a échoué. Réessayez.": "Google sign-in failed. Please try again.",
+  "Connecté avec Google : {email}. Choisissez votre rôle pour terminer l’inscription.": "Signed in with Google: {email}. Choose your role to finish signing up.",
+  "Utiliser une autre adresse": "Use another address",
+  "Adresse de votre compte Google, déjà confirmée": "Your Google account address, already confirmed",
+  "Votre adresse {email} a été confirmée par Google.": "Your address {email} was confirmed by Google.",
 }

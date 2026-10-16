@@ -20,6 +20,7 @@ import { MAX_SIGNUP_VIDEOS, artistRegistrationSchema, fieldErrors } from '@share
 import { parseVideoUrl } from '@shared/media'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
+import { GOOGLE_PLACEHOLDER_PASSWORD, clearGoogleSignup, readGoogleSignup } from '@/components/GoogleSignIn'
 
 /**
  * Artist registration: who you are, what you do, and a last look.
@@ -100,12 +101,25 @@ const ArtistRegistrationFlow: React.FC = () => {
   const [captchaReset, setCaptchaReset] = useState(0)
 
   const countries = useMemo(() => countryOptions(COUNTRY_NAMES as string[]), [])
+  // Came through "Continue with Google": the address is Google's and there is no password to choose.
+  const [google] = useState(readGoogleSignup)
+
+  useEffect(() => {
+    if (!google) return
+    setDraft((d) => ({
+      ...d,
+      email: google.email,
+      firstName: d.firstName || google.firstName,
+      lastName: d.lastName || google.lastName,
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Passwords are never kept in the saved draft. A draft restored past step 1
   // therefore has none: say so and go back to where they are typed, instead
   // of failing at the very end.
   useEffect(() => {
-    if (draft.step > 1 && !draft.password) {
+    if (!google && draft.step > 1 && !draft.password) {
       setDraft((d) => ({ ...d, step: 1 }))
       toast(t('Votre saisie a été conservée. Pour votre sécurité, ressaisissez votre mot de passe.'))
     }
@@ -125,8 +139,9 @@ const ArtistRegistrationFlow: React.FC = () => {
     birthDate: draft.birthDate,
     country: draft.country,
     phone: draft.phone,
-    email: draft.email,
-    password: draft.password,
+    email: google ? google.email : draft.email,
+    password: google ? GOOGLE_PLACEHOLDER_PASSWORD : draft.password,
+    googleToken: google?.signupToken,
     mainCategory: draft.mainCategory,
     categoryType: draft.categoryType,
     specificCategory: draft.specificCategory || null,
@@ -148,7 +163,7 @@ const ArtistRegistrationFlow: React.FC = () => {
   const allErrors = (): Record<string, string> => {
     const result = artistRegistrationSchema.safeParse(payload())
     const errs = result.success ? {} : fieldErrors(result.error)
-    if (draft.password && draft.password !== draft.confirmPassword) errs.confirmPassword = 'Les deux mots de passe ne correspondent pas'
+    if (!google && draft.password && draft.password !== draft.confirmPassword) errs.confirmPassword = 'Les deux mots de passe ne correspondent pas'
     if (captchaEnabled && !captchaToken) errs.captchaToken = 'Cochez la vérification anti-robot'
     return errs
   }
@@ -194,8 +209,9 @@ const ArtistRegistrationFlow: React.FC = () => {
     try {
       await register(payload() as any)
       clearDraft()
+      clearGoogleSignup()
       try { sessionStorage.removeItem('referralCode') } catch { /* ignore */ }
-      navigate('/inscription-envoyee', { state: { role: 'ARTIST', email: draft.email.trim().toLowerCase() } })
+      navigate('/inscription-envoyee', { state: { role: 'ARTIST', email: (google?.email ?? draft.email).trim().toLowerCase(), google: Boolean(google) } })
     } catch (error: any) {
       setCaptchaReset((n) => n + 1)
       const fields = apiFieldErrors(error)
@@ -264,10 +280,10 @@ const ArtistRegistrationFlow: React.FC = () => {
                 <FormField type="tel" autoComplete="tel" label={t('Téléphone')} placeholder="06 12 34 56 78" value={draft.phone} onChange={(e) => set('phone', e.target.value)} error={err('phone')} hint={t('Format local ou international (+212…)')} required />
               </div>
               <div>
-                <FormField type="email" autoComplete="email" label="E-mail" value={draft.email} onChange={(e) => set('email', e.target.value)} error={err('email')} required />
+                <FormField type="email" autoComplete="email" label="E-mail" value={google ? google.email : draft.email} onChange={(e) => set('email', e.target.value)} error={err('email')} readOnly={Boolean(google)} hint={google ? t('Adresse de votre compte Google, déjà confirmée') : undefined} required />
                 <EmailSuggestion suggestion={live.suggestion} onAccept={(email) => set('email', email)} />
               </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {!google && <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   type="password"
                   autoComplete="new-password"
@@ -280,7 +296,7 @@ const ArtistRegistrationFlow: React.FC = () => {
                   required
                 />
                 <FormField type="password" autoComplete="new-password" showPasswordToggle label={t('Confirmer le mot de passe')} value={draft.confirmPassword} onChange={(e) => set('confirmPassword', e.target.value)} error={err('confirmPassword')} required />
-              </div>
+              </div>}
               <div className="flex justify-end pt-4">
                 <button type="button" onClick={next} className="btn-primary w-full md:w-auto">{t('Continuer')}</button>
               </div>

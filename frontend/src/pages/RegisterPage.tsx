@@ -8,6 +8,7 @@ import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
+import GoogleSignIn, { GoogleSignup, clearGoogleSignup, readGoogleSignup } from '@/components/GoogleSignIn'
 
 const ROLE_FROM_PARAM: Record<string, 'ARTIST' | 'HOTEL'> = {
   artist: 'ARTIST',
@@ -28,6 +29,8 @@ const RegisterPage: React.FC = () => {
     () => ROLE_FROM_PARAM[(searchParams.get('role') || '').trim().toLowerCase()] || null
   )
   const [hoveredRole, setHoveredRole] = useState<'ARTIST' | 'HOTEL' | null>(null)
+  // Set when the visitor came through "Continue with Google" with no account yet.
+  const [google, setGoogle] = useState<GoogleSignup | null>(readGoogleSignup)
 
   // If role is selected, show the appropriate registration flow with smooth transition
   if (selectedRole === 'ARTIST') {
@@ -96,6 +99,18 @@ const RegisterPage: React.FC = () => {
             <p className="text-lg md:text-xl text-content-secondary max-w-2xl mx-auto">
               {t('Choisissez votre rôle et commencez l’aventure')}
             </p>
+            {google ? (
+              <div role="status" className="mx-auto mt-6 max-w-xl rounded-card border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-content">
+                {t('Connecté avec Google : {email}. Choisissez votre rôle pour terminer l’inscription.', { email: google.email })}{' '}
+                <button type="button" className="text-gold underline" onClick={() => { clearGoogleSignup(); setGoogle(null) }}>
+                  {t('Utiliser une autre adresse')}
+                </button>
+              </div>
+            ) : (
+              <div className="mx-auto mt-6 max-w-sm">
+                <GoogleSignIn text="signup_with" onSignup={setGoogle} />
+              </div>
+            )}
           </motion.div>
 
           {/* Role Selection Cards */}
