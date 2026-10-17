@@ -36,6 +36,7 @@ const STATUS: Record<string, StatusMeta> = {
   SUCCESS: { label: t('Réussi'), tone: 'positive' },
 
   PENDING: { label: 'En attente', tone: 'caution' },
+  INCOMPLETE: { label: t('Profil incomplet'), tone: 'caution' },
   DRAFT: { label: 'Brouillon', tone: 'caution' },
   UNPAID: { label: t('Impayée'), tone: 'caution' },
   EXPIRED: { label: t('Expiré'), tone: 'caution' },

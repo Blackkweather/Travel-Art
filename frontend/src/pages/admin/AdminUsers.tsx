@@ -17,6 +17,7 @@ interface UserData {
   country?: string
   language: string
   isActive: boolean
+  approvalStatus?: 'INCOMPLETE' | 'PENDING' | 'APPROVED' | 'REJECTED'
   createdAt: string
   artist?: {
     discipline: string
@@ -239,7 +240,17 @@ const AdminUsers: React.FC = () => {
                     )}
                   </td>
                   <td>
-                    <StatusBadge status={user.isActive ? 'ACTIVE' : 'SUSPENDED'} />
+                    {/* Not suspended is not the same as admitted: an application
+                        still waiting showed "Actif" while its owner could not sign in. */}
+                    <StatusBadge
+                      status={
+                        !user.isActive
+                          ? 'SUSPENDED'
+                          : user.role !== 'ADMIN' && user.approvalStatus && user.approvalStatus !== 'APPROVED'
+                            ? user.approvalStatus
+                            : 'ACTIVE'
+                      }
+                    />
                   </td>
                   <td className="text-content-secondary">
                     {formatShortDate(user.createdAt)}

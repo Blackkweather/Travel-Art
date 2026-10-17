@@ -2097,6 +2097,7 @@ export const en: Record<string, string> = {
   "Aucun compte pour {email}. Choisissez artiste ou hôtel pour le créer.": "No account for {email} yet. Choose artist or hotel to create it.",
   "La connexion avec Google a échoué. Réessayez.": "Google sign-in failed. Please try again.",
   "Connecté avec Google : {email}. Choisissez votre rôle : votre compte est créé tout de suite, et vous complétez votre profil ensuite.": "Signed in with Google: {email}. Choose your role: your account is created right away, and you complete your profile next.",
+  "Profil incomplet": "Profile incomplete",
   "Acceptez les conditions générales et la politique de confidentialité pour continuer.": "Accept the terms and the privacy policy to continue.",
   "J’accepte les": "I accept the",
   "Utiliser une autre adresse": "Use another address",
