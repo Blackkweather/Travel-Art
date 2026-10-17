@@ -132,8 +132,9 @@ const ArtistRegistrationFlow: React.FC<Props> = ({ account }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // A Google account already owns its address: checking it would only say "taken".
   const live = useAvailabilityCheck(
-    { email: draft.email, phone: draft.phone, country: draft.country, stageName: draft.stageName },
+    { email: google ? undefined : draft.email, phone: draft.phone, country: draft.country, stageName: draft.stageName },
     draft.step === 1
   )
 

@@ -132,7 +132,8 @@ const HotelRegistrationFlow: React.FC<Props> = ({ account }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const countries = useMemo(() => countryOptions(COUNTRY_NAMES as string[]), [])
-  const live = useAvailabilityCheck({ email: g.email, phone: g.phone, country: g.country, hotelName: g.name, city: g.city }, draft.step === 1)
+  // A Google account already owns its address: checking it would only say "taken".
+  const live = useAvailabilityCheck({ email: google ? undefined : g.email, phone: g.phone, country: g.country, hotelName: g.name, city: g.city }, draft.step === 1)
 
   const payload = () => ({
     role: 'HOTEL' as const,
