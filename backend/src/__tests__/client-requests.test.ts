@@ -4,6 +4,7 @@
  * prices, and artists shown to hotels by category.
  */
 import { api, auth, bookingBody, makeAdmin, makeArtist, makeHotel, prismaAdmin, resetDb } from './helpers';
+import { membershipPriceCents } from '../routes/payments';
 import { hotelProgrammeSchema, bookingCreateSchema, fieldErrors } from '../shared/validation';
 
 beforeEach(resetDb);
@@ -110,7 +111,6 @@ describe('membership launch prices', () => {
   });
 
   it('first year 0 € then 50 €; Artiste confirmé 50 € then 100 €', () => {
-    const { membershipPriceCents } = require('../routes/payments');
     expect(membershipPriceCents('ARTIST', true)).toBe(0);
     expect(membershipPriceCents('ARTIST', false)).toBe(5000);
     expect(membershipPriceCents('PROFESSIONAL', true)).toBe(5000);

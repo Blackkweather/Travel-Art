@@ -519,20 +519,6 @@ export const COLLABORATION_TYPES = [
   'All inclusive (hébergement, restauration, boissons et activités proposées par le lieu)',
 ] as const
 
-const smallCount = z
-  .union([z.number(), z.string()])
-  .optional()
-  .nullable()
-  .transform((v, ctx) => {
-    if (v === undefined || v === null || v === '') return null
-    const n = typeof v === 'number' ? v : Number(String(v).replace(/[^\d]/g, ''))
-    if (!Number.isInteger(n) || n < 0 || n > 100) {
-      ctx.addIssue({ code: 'custom', message: 'Indiquez un nombre entre 0 et 100' })
-      return z.NEVER
-    }
-    return n
-  })
-
 /**
  * What a hotel tells us about the programme it wants: audience, atmosphere,
  * equipment, terms, freedom and how it decides. Every answer is optional - the
