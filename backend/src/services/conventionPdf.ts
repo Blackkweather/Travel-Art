@@ -26,7 +26,7 @@ interface Fonts {
 function sanitizer(font: PDFFont) {
   const supported = new Set(font.getCharacterSet());
   return (text: string) =>
-    Array.from(text.replace(/[  ]/g, ' '))
+    Array.from(text.replace(/[\u202F\u00A0]/g, ' '))
       .map((ch) => {
         if (ch === '\n') return ch;
         if (supported.has(ch.codePointAt(0)!)) return ch;

@@ -174,7 +174,7 @@ export function formatDay(d: Date): string {
 export function formatMoney(cents: number | null | undefined, currency = 'EUR'): string {
   if (cents === null || cents === undefined) return BLANK;
   const amount = (cents / 100).toLocaleString('fr-FR', { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 });
-  return `${amount.replace(/ | /g, ' ')} ${currency === 'EUR' ? '€' : currency}`;
+  return `${amount.replace(/\u202F|\u00A0/g, ' ')} ${currency === 'EUR' ? '€' : currency}`;
 }
 
 export function nightsBetween(start: Date, end: Date): number {
