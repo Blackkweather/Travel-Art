@@ -114,6 +114,14 @@ export const authApi = {
       | { status: 'NEEDS_REGISTRATION'; signupToken: string; email: string; firstName: string; lastName: string; name: string }
     >('/auth/google', { credential }),
 
+  /** Open the account Google vouched for, as an artist or a hotel. It starts INCOMPLETE. */
+  googleStart: (data: { signupToken: string; role: 'ARTIST' | 'HOTEL'; acceptTerms: boolean; locale?: string }) =>
+    apiClient.post<{ user: User; token: string }>('/auth/google/start', data),
+
+  /** The profile of an INCOMPLETE account: sent to the admin, after which the session ends. */
+  completeProfile: (data: Record<string, unknown>) =>
+    apiClient.post<{ user: User }>('/auth/complete-profile', data, { timeout: 45000 }),
+
   register: (data: RegisterData) =>
     apiClient.post<{ user: User }>('/auth/register', data, {
       timeout: 45000,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { motion } from 'framer-motion'
 import { User, Building, ArrowRight } from 'lucide-react'
 import { ArtistRegistrationFlow, HotelRegistrationFlow } from '@/components/registration'
@@ -8,7 +9,7 @@ import SimpleNavbar from '@/components/SimpleNavbar'
 import Footer from '@/components/Footer'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
-import GoogleSignIn, { GoogleSignup, clearGoogleSignup, readGoogleSignup } from '@/components/GoogleSignIn'
+import GoogleSignIn, { GoogleSignup, clearGoogleSignup, readGoogleSignup, startWithGoogle } from '@/components/GoogleSignIn'
 
 const ROLE_FROM_PARAM: Record<string, 'ARTIST' | 'HOTEL'> = {
   artist: 'ARTIST',
@@ -31,6 +32,32 @@ const RegisterPage: React.FC = () => {
   const [hoveredRole, setHoveredRole] = useState<'ARTIST' | 'HOTEL' | null>(null)
   // Set when the visitor came through "Continue with Google" with no account yet.
   const [google, setGoogle] = useState<GoogleSignup | null>(readGoogleSignup)
+  const [googleTerms, setGoogleTerms] = useState(false)
+  const [starting, setStarting] = useState(false)
+  const navigate = useNavigate()
+
+  /* With Google, choosing a role opens the account straight away; the
+     profile is filled in next, on /complete-profile. */
+  const pick = async (role: 'ARTIST' | 'HOTEL') => {
+    if (!google) return setSelectedRole(role)
+    if (!googleTerms) {
+      toast.error(t('Acceptez les conditions générales et la politique de confidentialité pour continuer.'))
+      return
+    }
+    setStarting(true)
+    try {
+      await startWithGoogle(google, role)
+      navigate('/complete-profile', { replace: true })
+    } catch (error: any) {
+      if (error?.response?.data?.error?.code === 'GOOGLE_EXPIRED') {
+        clearGoogleSignup()
+        setGoogle(null)
+      }
+      toast.error(error?.response?.data?.error?.message || t('La connexion avec Google a échoué. Réessayez.'))
+    } finally {
+      setStarting(false)
+    }
+  }
 
   // If role is selected, show the appropriate registration flow with smooth transition
   if (selectedRole === 'ARTIST') {
@@ -101,10 +128,19 @@ const RegisterPage: React.FC = () => {
             </p>
             {google ? (
               <div role="status" className="mx-auto mt-6 max-w-xl rounded-card border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-content">
-                {t('Connecté avec Google : {email}. Choisissez votre rôle pour terminer l’inscription.', { email: google.email })}{' '}
+                {t('Connecté avec Google : {email}. Choisissez votre rôle : votre compte est créé tout de suite, et vous complétez votre profil ensuite.', { email: google.email })}{' '}
                 <button type="button" className="text-gold underline" onClick={() => { clearGoogleSignup(); setGoogle(null) }}>
                   {t('Utiliser une autre adresse')}
                 </button>
+                <label className="mt-3 flex items-start justify-center gap-2 text-left">
+                  <input type="checkbox" className="mt-1 h-4 w-4" checked={googleTerms} onChange={(e) => setGoogleTerms(e.target.checked)} />
+                  <span>
+                    {t('J’accepte les')}{' '}
+                    <Link to="/terms" target="_blank" className="text-gold underline">{t('conditions générales')}</Link>{' '}
+                    {t('et la')}{' '}
+                    <Link to="/privacy" target="_blank" className="text-gold underline">{t('politique de confidentialité')}</Link>
+                  </span>
+                </label>
               </div>
             ) : (
               <div className="mx-auto mt-6 max-w-sm">
@@ -127,7 +163,8 @@ const RegisterPage: React.FC = () => {
               onHoverEnd={() => setHoveredRole(null)}
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setSelectedRole('ARTIST')}
+              onClick={() => pick('ARTIST')}
+              disabled={starting}
               className="group relative block w-full text-left overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}
@@ -187,7 +224,8 @@ const RegisterPage: React.FC = () => {
               onHoverEnd={() => setHoveredRole(null)}
               whileHover={{ y: -8, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setSelectedRole('HOTEL')}
+              onClick={() => pick('HOTEL')}
+              disabled={starting}
               className="group relative block w-full text-left overflow-hidden rounded-card border-2 border-line bg-[var(--surface-raised)] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
             >
               {/* Gradient Overlay on Hover */}

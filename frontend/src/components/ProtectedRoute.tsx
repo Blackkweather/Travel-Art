@@ -27,6 +27,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
+  // Opened with Google and not filled in yet: the profile form is the only page.
+  if (user.approvalStatus === 'INCOMPLETE') {
+    return <Navigate to="/complete-profile" replace />
+  }
+
   if (requiredRole && user.role !== requiredRole) {
     // Redirect to user's dashboard if they try to access wrong role's route
     const dashboardPath = `/dashboard`

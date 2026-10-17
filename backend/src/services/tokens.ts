@@ -29,12 +29,14 @@ interface BasePayload {
 
 /**
  * Handed out when someone signs in with Google and has no account yet: proof
- * that Google vouched for this address, carried through the registration
- * form. There is no user yet, so `userId` is the Google account id.
+ * that Google vouched for this address, carried until they choose artist or
+ * hotel and the account is opened. There is no user yet, so `userId` is the
+ * Google account id.
  */
 export interface GoogleSignupPayload extends BasePayload {
   typ: 'google-signup';
   email: string;
+  name: string;
 }
 
 export interface SessionPayload extends BasePayload {
@@ -90,8 +92,8 @@ export const tokens = {
   },
   // Long enough to fill in the registration form, which is three steps.
   googleSignup: {
-    sign: (google: { sub: string; email: string }) =>
-      sign({ typ: 'google-signup', userId: google.sub, email: google.email }, '2h'),
+    sign: (google: { sub: string; email: string; name: string }) =>
+      sign({ typ: 'google-signup', userId: google.sub, email: google.email, name: google.name }, '2h'),
     verify: (token: string) => verify<GoogleSignupPayload>(token, 'google-signup'),
   },
 };

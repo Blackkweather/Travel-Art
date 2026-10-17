@@ -215,10 +215,14 @@ router.get('/admissions', authenticate, authorize('ADMIN'), asyncHandler(async (
 router.post('/admissions/:id/approve', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.params.id },
-    select: { id: true, role: true, email: true, name: true, emailVerified: true },
+    select: { id: true, role: true, email: true, name: true, emailVerified: true, approvalStatus: true },
   });
   if (!user) throw new CustomError('Utilisateur introuvable.', 404);
   if (user.role === 'ADMIN') throw new CustomError('Un administrateur n’a pas à être admis.', 400);
+  // Opened with Google and never filled in: there is no profile to admit.
+  if (user.approvalStatus === 'INCOMPLETE') {
+    throw new CustomError('Ce compte n’a pas encore rempli son profil.', 409, { code: 'PROFILE_INCOMPLETE' });
+  }
   if (!user.emailVerified) {
     throw new CustomError(
       'Ce candidat n’a pas encore confirmé son adresse e-mail. Renvoyez-lui le lien de confirmation, puis admettez-le une fois l’adresse confirmée.',

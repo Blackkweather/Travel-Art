@@ -20,7 +20,8 @@ import { MAX_SIGNUP_VIDEOS, artistRegistrationSchema, fieldErrors } from '@share
 import { parseVideoUrl } from '@shared/media'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
-import { GOOGLE_PLACEHOLDER_PASSWORD, clearGoogleSignup, readGoogleSignup } from '@/components/GoogleSignIn'
+import { GOOGLE_PLACEHOLDER_PASSWORD, ProfileAccount } from '@/components/GoogleSignIn'
+import { authApi } from '@/utils/api'
 
 /**
  * Artist registration: who you are, what you do, and a last look.
@@ -90,7 +91,12 @@ const STEP_FIELDS: Record<number, string[]> = {
 
 const stepOf = (field: string) => Number(Object.keys(STEP_FIELDS).find((s) => STEP_FIELDS[Number(s)].includes(field.split('.')[0])) ?? 3)
 
-const ArtistRegistrationFlow: React.FC = () => {
+interface Props {
+  /** An account opened with Google, filling in its profile: no address or password to choose. */
+  account?: ProfileAccount
+}
+
+const ArtistRegistrationFlow: React.FC<Props> = ({ account }) => {
   const navigate = useNavigate()
   const { register } = useAuthStore()
   const [draft, setDraft, clearDraft] = useDraft<Draft>('travel-art:register:artist', INITIAL, ['password', 'confirmPassword'])
@@ -101,8 +107,8 @@ const ArtistRegistrationFlow: React.FC = () => {
   const [captchaReset, setCaptchaReset] = useState(0)
 
   const countries = useMemo(() => countryOptions(COUNTRY_NAMES as string[]), [])
-  // Came through "Continue with Google": the address is Google's and there is no password to choose.
-  const [google] = useState(readGoogleSignup)
+  // Completing an account opened with Google: the address is Google's and there is no password to choose.
+  const google = account ?? null
 
   useEffect(() => {
     if (!google) return
@@ -141,7 +147,6 @@ const ArtistRegistrationFlow: React.FC = () => {
     phone: draft.phone,
     email: google ? google.email : draft.email,
     password: google ? GOOGLE_PLACEHOLDER_PASSWORD : draft.password,
-    googleToken: google?.signupToken,
     mainCategory: draft.mainCategory,
     categoryType: draft.categoryType,
     specificCategory: draft.specificCategory || null,
@@ -207,9 +212,14 @@ const ArtistRegistrationFlow: React.FC = () => {
     }
     setSubmitting(true)
     try {
-      await register(payload() as any)
+      if (google) {
+        await authApi.completeProfile(payload())
+        // In review now: the session that sent it opens nothing any more.
+        useAuthStore.getState().logout()
+      } else {
+        await register(payload() as any)
+      }
       clearDraft()
-      clearGoogleSignup()
       try { sessionStorage.removeItem('referralCode') } catch { /* ignore */ }
       navigate('/inscription-envoyee', { state: { role: 'ARTIST', email: (google?.email ?? draft.email).trim().toLowerCase(), google: Boolean(google) } })
     } catch (error: any) {

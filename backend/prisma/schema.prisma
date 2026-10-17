@@ -33,6 +33,9 @@ enum Role {
 }
 
 enum ApprovalStatus {
+  /// Opened with Google, profile not filled in yet: may sign in only to
+  /// complete it, is never shown to anyone and never reaches the review queue.
+  INCOMPLETE
   PENDING
   APPROVED
   REJECTED

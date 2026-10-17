@@ -28,7 +28,8 @@ import {
   spacesPayload,
 } from '../hotel/HotelFormSections'
 import { Captcha, EmailSuggestion, apiFieldErrors, apiMessage, captchaEnabled, useAvailabilityCheck, useDraft } from './registrationKit'
-import { GOOGLE_PLACEHOLDER_PASSWORD, clearGoogleSignup, readGoogleSignup } from '@/components/GoogleSignIn'
+import { GOOGLE_PLACEHOLDER_PASSWORD, ProfileAccount } from '@/components/GoogleSignIn'
+import { authApi } from '@/utils/api'
 import { t } from '@/i18n'
 import SEOHead from '@/components/SEOHead'
 
@@ -99,7 +100,12 @@ const stepOf = (field: string): number => {
 
 const STEP_TITLES = ['Établissement', 'Ambiance', 'Espaces & équipement', 'Collaboration', 'Logistique', 'Liberté artistique', 'Validation']
 
-const HotelRegistrationFlow: React.FC = () => {
+interface Props {
+  /** An account opened with Google, filling in its profile: no address or password to choose. */
+  account?: ProfileAccount
+}
+
+const HotelRegistrationFlow: React.FC<Props> = ({ account }) => {
   const navigate = useNavigate()
   const { register } = useAuthStore()
   const [draft, setDraft, clearDraft] = useDraft<Draft>('travel-art:register:hotel', INITIAL)
@@ -112,8 +118,8 @@ const HotelRegistrationFlow: React.FC = () => {
   const [secrets, setSecrets] = useState({ password: '', confirmPassword: '' })
 
   const g = draft.general
-  // Came through "Continue with Google": the address is Google's and there is no password to choose.
-  const [google] = useState(readGoogleSignup)
+  // Completing an account opened with Google: the address is Google's and there is no password to choose.
+  const google = account ?? null
 
   // Passwords are never kept in the saved draft (see the artist flow).
   useEffect(() => {
@@ -146,7 +152,6 @@ const HotelRegistrationFlow: React.FC = () => {
     email: google ? google.email : g.email,
     phone: g.phone,
     password: google ? GOOGLE_PLACEHOLDER_PASSWORD : secrets.password,
-    googleToken: google?.signupToken,
     spaces: spacesPayload(draft.spaces),
     programme: programmePayload(draft.programme),
     acceptTerms: draft.acceptTerms,
@@ -201,9 +206,14 @@ const HotelRegistrationFlow: React.FC = () => {
     }
     setSubmitting(true)
     try {
-      await register(payload() as any)
+      if (google) {
+        await authApi.completeProfile(payload())
+        // In review now: the session that sent it opens nothing any more.
+        useAuthStore.getState().logout()
+      } else {
+        await register(payload() as any)
+      }
       clearDraft()
-      clearGoogleSignup()
       navigate('/inscription-envoyee', { state: { role: 'HOTEL', email: (google?.email ?? g.email).trim().toLowerCase(), google: Boolean(google) } })
     } catch (error: any) {
       setCaptchaReset((n) => n + 1)

@@ -32,7 +32,7 @@ function bearer(req: Request): string | undefined {
  * or signed-out-everywhere token still counted as signed in on the routes
  * that use it.
  */
-async function resolveSession(token: string) {
+async function resolveSession(token: string, allowIncomplete = false) {
   let payload;
   try {
     payload = tokens.session.verify(token);
@@ -53,8 +53,10 @@ async function resolveSession(token: string) {
   }
 
   // An account admitted and then rejected loses access immediately, not when
-  // its token happens to expire.
-  if (user.approvalStatus !== 'APPROVED') {
+  // its token happens to expire. An INCOMPLETE account (opened with Google,
+  // no profile yet) passes only where the route asked for it.
+  const admitted = user.approvalStatus === 'APPROVED' || (allowIncomplete && user.approvalStatus === 'INCOMPLETE');
+  if (!admitted) {
     throw new CustomError('Ce compte n’est pas actif.', 401, { code: 'ACCOUNT_INACTIVE' });
   }
 
@@ -69,20 +71,30 @@ async function resolveSession(token: string) {
   return { id: user.id, role: user.role, email: user.email };
 }
 
-export const authenticate = async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const token = bearer(req);
-    if (!token) {
-      throw new CustomError('Connectez-vous pour continuer.', 401, { code: 'SESSION_MISSING' });
+const authenticateWith = (allowIncomplete: boolean) =>
+  async (req: AuthRequest, _res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const token = bearer(req);
+      if (!token) {
+        throw new CustomError('Connectez-vous pour continuer.', 401, { code: 'SESSION_MISSING' });
+      }
+      req.user = await resolveSession(token, allowIncomplete);
+      // Everything downstream runs inside this store, so queries against the
+      // RLS-protected tables carry the caller's identity automatically.
+      requestContext.run({ userId: req.user.id, role: req.user.role }, () => next());
+    } catch (error) {
+      next(error);
     }
-    req.user = await resolveSession(token);
-    // Everything downstream runs inside this store, so queries against the
-    // RLS-protected tables carry the caller's identity automatically.
-    requestContext.run({ userId: req.user.id, role: req.user.role }, () => next());
-  } catch (error) {
-    next(error);
-  }
-};
+  };
+
+/** An admitted account. Every route but the few below uses this. */
+export const authenticate = authenticateWith(false);
+
+/**
+ * Also lets in an INCOMPLETE account, for the routes it needs to finish its
+ * profile (who am I, keep my session, submit the profile) and nothing else.
+ */
+export const authenticateApplicant = authenticateWith(true);
 
 export const authorize = (...roles: string[]) => {
   return (req: AuthRequest, _res: Response, next: NextFunction): void => {

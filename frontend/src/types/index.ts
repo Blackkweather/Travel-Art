@@ -8,7 +8,7 @@ export interface User {
   language: string
   createdAt: string
   isActive: boolean
-  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED'
+  approvalStatus?: 'INCOMPLETE' | 'PENDING' | 'APPROVED' | 'REJECTED'
   emailVerified?: boolean
   artist?: Partial<Artist> | null
   hotel?: Partial<Hotel> | null

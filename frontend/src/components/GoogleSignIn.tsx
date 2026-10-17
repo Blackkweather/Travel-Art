@@ -9,10 +9,10 @@ import { t, getLocale } from '@/i18n'
  * "Continue with Google", on the sign-in page and the registration picker.
  *
  * Google's button hands us an ID token; the API checks it. An existing
- * account signs straight in. A new address is sent to the registration form
- * with its name and e-mail filled in and no password to choose - the profile
- * and the admin's approval are still required, so Google alone never makes
- * an account.
+ * account signs straight in. A new address chooses artist or hotel on the
+ * registration page, which opens an INCOMPLETE account: signed in, but only
+ * to fill in its profile (/complete-profile). The profile then goes to an
+ * administrator, so Google alone never makes an account anyone can see.
  */
 
 declare global {
@@ -72,9 +72,35 @@ function saveGoogleSignup(signup: GoogleSignup) {
 
 /**
  * Satisfies the shared password rule in the browser's own check. The API
- * ignores it for a Google sign-up and stores a random password instead.
+ * ignores it for a Google account and keeps its random password.
  */
 export const GOOGLE_PLACEHOLDER_PASSWORD = 'Google-signup-1'
+
+/** Where a signed-in account belongs: its profile form until it is filled in. */
+export const homeFor = (user: { approvalStatus?: string } | null) =>
+  user?.approvalStatus === 'INCOMPLETE' ? '/complete-profile' : '/dashboard'
+
+/** Open the account as an artist or a hotel and sign it in. */
+export async function startWithGoogle(signup: GoogleSignup, role: 'ARTIST' | 'HOTEL') {
+  const res = await authApi.googleStart({ signupToken: signup.signupToken, role, acceptTerms: true, locale: getLocale() })
+  const { user, token } = res.data.data
+  clearGoogleSignup()
+  useAuthStore.setState({ user, token, isAuthenticated: true, sessionEndReason: null })
+  return user
+}
+
+/** The name and address a profile form starts from, for an account opened with Google. */
+export interface ProfileAccount {
+  email: string
+  name: string
+  firstName: string
+  lastName: string
+}
+
+export function profileAccount(user: { email: string; name: string }): ProfileAccount {
+  const [firstName, ...rest] = user.name.trim().split(/\s+/)
+  return { email: user.email, name: user.name, firstName: firstName ?? '', lastName: rest.join(' ') }
+}
 
 // ------------------------------------------------------------------ button
 
@@ -121,10 +147,10 @@ const GoogleSignIn: React.FC<Props> = ({ text = 'continue_with', onSignup }) => 
           clearGoogleSignup()
           useAuthStore.setState({ user: data.user, token: data.token, isAuthenticated: true, sessionEndReason: null })
           toast.success(t('Bon retour'))
-          navigate('/dashboard', { replace: true })
+          navigate(homeFor(data.user), { replace: true })
         } else {
           saveGoogleSignup(data)
-          toast(t('Aucun compte pour {email}. Terminez votre inscription : votre e-mail est déjà confirmé.', { email: data.email }))
+          toast(t('Aucun compte pour {email}. Choisissez artiste ou hôtel pour le créer.', { email: data.email }))
           if (onSignup) onSignup(data)
           else navigate('/register')
         }

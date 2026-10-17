@@ -57,6 +57,7 @@ const AdminLogs = lazyRoute(() => import('@/pages/admin/AdminLogs'))
 const TravelerExperiencesPage = lazyRoute(() => import('@/pages/TravelerExperiencesPage'))
 const ExperienceDetailsPage = lazyRoute(() => import('@/pages/ExperienceDetailsPage'))
 const RegistrationSentPage = lazyRoute(() => import('@/pages/RegistrationSentPage'))
+const CompleteProfilePage = lazyRoute(() => import('@/pages/CompleteProfilePage'))
 const VerifyEmailPage = lazyRoute(() => import('@/pages/VerifyEmailPage'))
 const NotFoundPage = lazyRoute(() => import('@/pages/NotFoundPage'))
 
@@ -165,6 +166,7 @@ function App() {
       <Route path="/experience/:id" element={<ProtectedRoute><PageTransition><ExperienceDetailsPage /></PageTransition></ProtectedRoute>} />
       <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
       <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+      <Route path="/complete-profile" element={<PageTransition><CompleteProfilePage /></PageTransition>} />
       <Route path="/inscription-envoyee" element={<PageTransition><RegistrationSentPage /></PageTransition>} />
       <Route path="/verify-email" element={<PageTransition><VerifyEmailPage /></PageTransition>} />
       <Route path="/ref/:code" element={<PageTransition><ReferralRedirectPage /></PageTransition>} />

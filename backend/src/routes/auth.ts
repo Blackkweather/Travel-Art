@@ -3,10 +3,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { CONSENT, LEGAL_VERSION, clientIp, hashIp } from '../config/legal';
 import { config } from '../config';
 import { verificationEmail, passwordResetEmail, newRegistrationAdminAlert } from '../services/email';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { authenticate, authenticateApplicant, AuthRequest } from '../middleware/auth';
 import { asyncHandler, CustomError } from '../middleware/errorHandler';
 import { prisma, prismaAdmin } from '../db';
 import { generateUniqueReferralCode } from '../utils/referralCode';
@@ -74,48 +75,26 @@ function mediaRow(url: string, position: number) {
 // ---------------------------------------------------------------- register
 
 /**
- * The address Google vouched for, when the form came through "Continue with
- * Google". Such an account has no password of its own: it gets a random one
- * nobody knows (the reset link sets a real one) and its address is confirmed.
+ * Everything about a profile that needs the network or the database, shared
+ * by a registration and by an account opened with Google completing its
+ * profile. `ownEmail` skips the address checks for an account that already
+ * holds it.
  */
-function googleSignupEmail(body: any): string | null {
-  if (!body?.googleToken) return null;
-  try {
-    return tokens.googleSignup.verify(String(body.googleToken)).email;
-  } catch {
-    throw new CustomError('La connexion avec Google a expiré. Recommencez avec le bouton Google.', 400, {
-      code: 'GOOGLE_EXPIRED',
-    });
-  }
-}
-
-router.post('/register', asyncHandler(async (req: Request, res) => {
-  const googleEmail = googleSignupEmail(req.body);
-  if (googleEmail) {
-    req.body.password = `Gg1!${randomBytes(24).toString('base64url')}`;
-  }
-  const data = parseRegistration(req.body);
-  if (googleEmail && data.email !== googleEmail) {
-    throw new CustomError('L’adresse e-mail doit rester celle de votre compte Google.', 400, {
-      fields: { email: 'L’adresse e-mail doit rester celle de votre compte Google.' },
-    });
-  }
-
+async function checkProfile(data: ArtistRegistration | HotelRegistration, req: Request, ownEmail = false) {
   if (!(await verifyCaptcha(data.captchaToken, req.ip))) {
     throw new CustomError('La vérification anti-robot a échoué. Rechargez la page et réessayez.', 400, {
       code: 'CAPTCHA_FAILED',
     });
   }
 
-  await assertMailableDomain(data.email);
+  if (!ownEmail) await assertMailableDomain(data.email);
 
   const phoneE164 = normalizePhone(data.phone, data.country)!;
-  const isArtist = data.role === 'ARTIST';
-  const artist = isArtist ? (data as ArtistRegistration) : null;
-  const hotel = !isArtist ? (data as HotelRegistration) : null;
+  const artist = data.role === 'ARTIST' ? (data as ArtistRegistration) : null;
+  const hotel = data.role === 'HOTEL' ? (data as HotelRegistration) : null;
 
   const conflicts = await findIdentityConflicts({
-    email: data.email,
+    email: ownEmail ? undefined : data.email,
     phoneE164,
     stageName: artist?.stageName,
     hotelName: hotel?.name,
@@ -145,12 +124,127 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
       })
     : null;
 
-  const passwordHash = await bcrypt.hash(data.password, 12);
-  const displayName = artist ? `${artist.firstName} ${artist.lastName}` : hotel!.name;
-  const referralCode = artist ? await generateUniqueReferralCode(artist.stageName) : undefined;
-  const now = new Date();
+  return {
+    artist,
+    hotel,
+    phoneE164,
+    signupVideos,
+    inviter,
+    displayName: artist ? `${artist.firstName} ${artist.lastName}` : hotel!.name,
+    referralCode: artist ? await generateUniqueReferralCode(artist.stageName) : undefined,
+  };
+}
+
+type CheckedProfile = Awaited<ReturnType<typeof checkProfile>>;
+
+/** The artist or hotel row, and the referral, for an account that has none yet. */
+async function createProfile(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  data: ArtistRegistration | HotelRegistration,
+  checked: CheckedProfile
+) {
+  const { artist, hotel, signupVideos, inviter, referralCode } = checked;
+  if (artist) {
+    await tx.artist.create({
+      data: {
+        userId,
+        stageName: artist.stageName,
+        stageNameKey: nameKey(artist.stageName),
+        birthDate: artist.birthDate,
+        referralCode: referralCode!,
+        mainCategory: artist.mainCategory,
+        categoryType: artist.categoryType,
+        specificCategory: artist.specificCategory || null,
+        tributeTo: artist.tributeTo,
+        secondaryCategory: artist.secondaryCategory,
+        discipline: disciplineLabel(artist),
+        audienceTypes: artist.audienceTypes,
+        languages: artist.languages,
+        otherLanguages: artist.otherLanguages,
+        instagramUrl: artist.instagramUrl,
+        tiktokUrl: artist.tiktokUrl,
+        verificationCode: newVerificationCode(),
+        media: {
+          create: signupVideos.map((video, position) => ({
+            kind: 'VIDEO' as const,
+            provider: video.provider,
+            url: video.url,
+            externalId: video.externalId,
+            position,
+          })),
+        },
+      },
+    });
+  } else if (hotel) {
+    await tx.hotel.create({
+      data: {
+        userId,
+        name: hotel.name,
+        nameKey: hotelKey(hotel.name, hotel.city),
+        description: hotel.description,
+        city: hotel.city,
+        country: hotel.country,
+        address: hotel.address,
+        hotelType: hotel.hotelType,
+        roomCount: hotel.roomCount,
+        website: hotel.website,
+        instagramUrl: hotel.instagramUrl,
+        tiktokUrl: hotel.tiktokUrl,
+        facebookUrl: hotel.facebookUrl,
+        youtubeUrl: hotel.youtubeUrl,
+        contactPhone: data.phone.trim(),
+        repName: hotel.contactName,
+        responsibleName: hotel.contactName,
+        responsibleEmail: data.email,
+        responsiblePhone: data.phone.trim(),
+        programme: { create: hotel.programme ?? {} },
+        spaces: {
+          create: hotel.spaces.map((space, index) => ({
+            name: space.name,
+            type: space.type,
+            setting: space.setting,
+            capacity: space.capacity,
+            description: space.description,
+            hours: space.hours,
+            noiseLevel: space.noiseLevel,
+            position: index,
+            media: { create: space.media.map((url, i) => mediaRow(url, i)) },
+          })),
+        },
+      },
+    });
+  }
+
+  if (inviter) {
+    // Points are credited when this account is admitted (see admin.ts).
+    await tx.referral.create({ data: { inviterUserId: inviter.userId, inviteeUserId: userId } });
+  }
+}
+
+function consentRows(userId: string, req: Request) {
   const ipHash = hashIp(clientIp(req as never));
   const userAgent = String(req.headers['user-agent'] || '').slice(0, 255) || null;
+  return [CONSENT.TERMS, CONSENT.PRIVACY].map((kind) => ({ userId, kind, version: LEGAL_VERSION, granted: true, ipHash, userAgent }));
+}
+
+/** A password nobody knows, for an account opened with Google (the reset link sets a real one). */
+const unusablePassword = () => `Gg1!${randomBytes(24).toString('base64url')}`;
+
+function alertAdmins(user: { id: string; name: string; email: string; role: string }, country: string) {
+  background(newRegistrationAdminAlert({
+    name: user.name,
+    email: user.email,
+    role: user.role as 'ARTIST' | 'HOTEL',
+    country,
+  }).catch((err) => console.error('admin registration alert failed for user', user.id, err)), 'newRegistrationAdminAlert');
+}
+
+router.post('/register', asyncHandler(async (req: Request, res) => {
+  const data = parseRegistration(req.body);
+  const checked = await checkProfile(data, req);
+  const passwordHash = await bcrypt.hash(data.password, 12);
+  const now = new Date();
 
   /* One transaction: the account, its profile, its consent and its referral
      either all exist or none do. Profile creation used to be best-effort,
@@ -162,107 +256,20 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
       const created = await tx.user.create({
         data: {
           email: data.email,
-          name: displayName,
+          name: checked.displayName,
           passwordHash,
           role: data.role,
           language: data.locale,
           phone: data.phone.trim(),
-          phoneE164,
+          phoneE164: checked.phoneE164,
           country: data.country,
           acceptedTermsAt: now,
           acceptedTermsVersion: LEGAL_VERSION,
-          ...(googleEmail ? { emailVerified: true, emailVerifiedAt: now } : {}),
         },
         select: { id: true, email: true, name: true, role: true },
       });
-
-      await tx.consentRecord.createMany({
-        data: [CONSENT.TERMS, CONSENT.PRIVACY].map((kind) => ({
-          userId: created.id,
-          kind,
-          version: LEGAL_VERSION,
-          granted: true,
-          ipHash,
-          userAgent,
-        })),
-      });
-
-      if (artist) {
-        await tx.artist.create({
-          data: {
-            userId: created.id,
-            stageName: artist.stageName,
-            stageNameKey: nameKey(artist.stageName),
-            birthDate: artist.birthDate,
-            referralCode: referralCode!,
-            mainCategory: artist.mainCategory,
-            categoryType: artist.categoryType,
-            specificCategory: artist.specificCategory || null,
-            tributeTo: artist.tributeTo,
-            secondaryCategory: artist.secondaryCategory,
-            discipline: disciplineLabel(artist),
-            audienceTypes: artist.audienceTypes,
-            languages: artist.languages,
-            otherLanguages: artist.otherLanguages,
-            instagramUrl: artist.instagramUrl,
-            tiktokUrl: artist.tiktokUrl,
-            verificationCode: newVerificationCode(),
-            media: {
-              create: signupVideos.map((video, position) => ({
-                kind: 'VIDEO' as const,
-                provider: video.provider,
-                url: video.url,
-                externalId: video.externalId,
-                position,
-              })),
-            },
-          },
-        });
-      } else if (hotel) {
-        await tx.hotel.create({
-          data: {
-            userId: created.id,
-            name: hotel.name,
-            nameKey: hotelKey(hotel.name, hotel.city),
-            description: hotel.description,
-            city: hotel.city,
-            country: hotel.country,
-            address: hotel.address,
-            hotelType: hotel.hotelType,
-            roomCount: hotel.roomCount,
-            website: hotel.website,
-            instagramUrl: hotel.instagramUrl,
-            tiktokUrl: hotel.tiktokUrl,
-            facebookUrl: hotel.facebookUrl,
-            youtubeUrl: hotel.youtubeUrl,
-            contactPhone: data.phone.trim(),
-            repName: hotel.contactName,
-            responsibleName: hotel.contactName,
-            responsibleEmail: data.email,
-            responsiblePhone: data.phone.trim(),
-            programme: { create: hotel.programme ?? {} },
-            spaces: {
-              create: hotel.spaces.map((space, index) => ({
-                name: space.name,
-                type: space.type,
-                setting: space.setting,
-                capacity: space.capacity,
-                description: space.description,
-                hours: space.hours,
-                noiseLevel: space.noiseLevel,
-                position: index,
-                media: { create: space.media.map((url, i) => mediaRow(url, i)) },
-              })),
-            },
-          },
-        });
-      }
-
-      if (inviter) {
-        // Points are credited when this account is admitted (see admin.ts).
-        await tx.referral.create({ data: { inviterUserId: inviter.userId, inviteeUserId: created.id } });
-      }
-
+      await tx.consentRecord.createMany({ data: consentRows(created.id, req) });
+      await createProfile(tx, created.id, data, checked);
       return created;
     });
   } catch (error) {
@@ -273,28 +280,76 @@ router.post('/register', asyncHandler(async (req: Request, res) => {
 
   // After the commit, and not awaited: an account with an unsent e-mail is
   // recoverable (resend-verification), a registration reported as failed
-  // when it succeeded is not. Google already confirmed its address.
-  if (!googleEmail) {
-    background(verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
-      console.error('verification email failed for user', user.id, err)
-    ), 'verificationEmail');
-  }
-  background(newRegistrationAdminAlert({
-    name: user.name,
-    email: user.email,
-    role: user.role as 'ARTIST' | 'HOTEL',
-    country: data.country,
-  }).catch((err) => console.error('admin registration alert failed for user', user.id, err)), 'newRegistrationAdminAlert');
+  // when it succeeded is not.
+  background(verificationEmail(user.email, user.name, verifyLinkFor(user)).catch((err) =>
+    console.error('verification email failed for user', user.id, err)
+  ), 'verificationEmail');
+  alertAdmins(user, data.country);
 
   // No session: the account cannot act until it is confirmed and admitted.
   res.status(201).json({
     success: true,
     data: {
-      user: { id: user.id, role: user.role, name: user.name, email: user.email, approvalStatus: 'PENDING', emailVerified: Boolean(googleEmail) },
+      user: { id: user.id, role: user.role, name: user.name, email: user.email, approvalStatus: 'PENDING', emailVerified: false },
       status: 'PENDING_REVIEW',
-      message: googleEmail
-        ? 'Votre demande a bien été enregistrée. Attendez la validation de votre compte par notre équipe.'
-        : 'Votre demande a bien été enregistrée. Confirmez votre adresse e-mail, puis attendez la validation de votre compte par notre équipe.',
+      message: 'Votre demande a bien été enregistrée. Confirmez votre adresse e-mail, puis attendez la validation de votre compte par notre équipe.',
+    },
+  });
+}));
+
+// -------------------------------------------------- complete a Google account
+
+/**
+ * The profile of an account opened with Google. The form is the registration
+ * form; the address and the role are the account's own and cannot change
+ * here. Once it is in, the account waits for an administrator like any other
+ * application, and the session that sent it stops working.
+ */
+router.post('/complete-profile', authenticateApplicant, asyncHandler(async (req: AuthRequest, res) => {
+  const account = await prismaAdmin.user.findUnique({
+    where: { id: req.user!.id },
+    select: { id: true, email: true, role: true, approvalStatus: true },
+  });
+  if (!account || account.approvalStatus !== 'INCOMPLETE') {
+    throw new CustomError('Ce profil a déjà été envoyé.', 409, { code: 'PROFILE_ALREADY_SENT' });
+  }
+
+  const data = parseRegistration({ ...req.body, role: account.role, email: account.email, password: unusablePassword() });
+  const checked = await checkProfile(data, req, true);
+
+  let user: { id: string; email: string; name: string; role: string };
+  try {
+    user = await prismaAdmin.$transaction(async (tx) => {
+      // Guarded on the status, so two submits cannot both create a profile.
+      const moved = await tx.user.updateMany({
+        where: { id: account.id, approvalStatus: 'INCOMPLETE' },
+        data: {
+          name: checked.displayName,
+          language: data.locale,
+          phone: data.phone.trim(),
+          phoneE164: checked.phoneE164,
+          country: data.country,
+          approvalStatus: 'PENDING',
+        },
+      });
+      if (moved.count !== 1) throw new CustomError('Ce profil a déjà été envoyé.', 409, { code: 'PROFILE_ALREADY_SENT' });
+      await createProfile(tx, account.id, data, checked);
+      return { id: account.id, email: account.email, name: checked.displayName, role: account.role };
+    });
+  } catch (error) {
+    const fields = conflictFromUniqueError(error);
+    if (fields) throw new CustomError(Object.values(fields)[0], 409, { fields, code: 'IDENTITY_TAKEN' });
+    throw error;
+  }
+
+  alertAdmins(user, data.country);
+
+  res.status(201).json({
+    success: true,
+    data: {
+      user: { id: user.id, role: user.role, name: user.name, email: user.email, approvalStatus: 'PENDING', emailVerified: true },
+      status: 'PENDING_REVIEW',
+      message: 'Votre profil a bien été envoyé. Attendez la validation de votre compte par notre équipe.',
     },
   });
 }));
@@ -442,8 +497,8 @@ function assertCanSignIn(user: {
 /**
  * An existing account with the Google address signs straight in, under the
  * same rules as a password. No account yet: the answer carries a signup token
- * and the names Google knows, and the registration form takes it from there -
- * the account still needs its profile and an administrator's approval.
+ * and the names Google knows, and /google/start opens the account once they
+ * have chosen artist or hotel.
  */
 router.post('/google', asyncHandler(async (req, res) => {
   const { credential } = z.object({ credential: z.string().min(1).max(4096) }).parse(req.body);
@@ -480,13 +535,82 @@ router.post('/google', asyncHandler(async (req, res) => {
   res.json({ success: true, data: { status: 'SIGNED_IN', user: profile, token: tokens.session.sign(user) } });
 }));
 
+/**
+ * Open the account Google vouched for, as an artist or a hotel. It starts
+ * INCOMPLETE: it can sign in, but only to fill in its profile (see
+ * authenticateApplicant). Nobody sees it and it cannot be booked; the profile
+ * then goes to an administrator, because anyone can open a Google account.
+ */
+router.post('/google/start', asyncHandler(async (req, res) => {
+  const body = z
+    .object({
+      signupToken: z.string().min(1).max(4096),
+      role: z.enum(['ARTIST', 'HOTEL'], { errorMap: () => ({ message: 'Choisissez un type de compte.' }) }),
+      acceptTerms: z.literal(true, {
+        errorMap: () => ({ message: 'Vous devez accepter les conditions générales et la politique de confidentialité' }),
+      }),
+      locale: z.enum(['fr', 'en']).optional().default('fr'),
+    })
+    .parse(req.body);
+
+  let google;
+  try {
+    google = tokens.googleSignup.verify(body.signupToken);
+  } catch {
+    throw new CustomError('La connexion avec Google a expiré. Recommencez avec le bouton Google.', 400, {
+      code: 'GOOGLE_EXPIRED',
+    });
+  }
+
+  const taken = await prisma.user.findUnique({ where: { email: google.email }, select: { id: true } });
+  if (taken) {
+    throw new CustomError('Un compte existe déjà pour cette adresse. Connectez-vous avec Google.', 409, {
+      code: 'IDENTITY_TAKEN',
+    });
+  }
+
+  const now = new Date();
+  let user;
+  try {
+    user = await prismaAdmin.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: google.email,
+          name: google.name || google.email.split('@')[0],
+          passwordHash: await bcrypt.hash(unusablePassword(), 12),
+          role: body.role,
+          language: body.locale,
+          approvalStatus: 'INCOMPLETE',
+          emailVerified: true,
+          emailVerifiedAt: now,
+          acceptedTermsAt: now,
+          acceptedTermsVersion: LEGAL_VERSION,
+        },
+        select: { id: true, role: true },
+      });
+      await tx.consentRecord.createMany({ data: consentRows(created.id, req) });
+      return created;
+    });
+  } catch (error) {
+    if (conflictFromUniqueError(error)) {
+      throw new CustomError('Un compte existe déjà pour cette adresse. Connectez-vous avec Google.', 409, {
+        code: 'IDENTITY_TAKEN',
+      });
+    }
+    throw error;
+  }
+
+  const profile = await prisma.user.findUnique({ where: { id: user.id }, select: sessionUserSelect });
+  res.status(201).json({ success: true, data: { user: profile, token: tokens.session.sign(user) } });
+}));
+
 // ---------------------------------------------------------- session upkeep
 
-router.post('/refresh', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+router.post('/refresh', authenticateApplicant, asyncHandler(async (req: AuthRequest, res) => {
   res.json({ success: true, data: { token: tokens.session.sign(req.user!) } });
 }));
 
-router.get('/me', authenticate, asyncHandler(async (req: AuthRequest, res) => {
+router.get('/me', authenticateApplicant, asyncHandler(async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user!.id }, select: sessionUserSelect });
   if (!user) throw new CustomError('Compte introuvable.', 404);
   res.json({ success: true, data: { user } });
