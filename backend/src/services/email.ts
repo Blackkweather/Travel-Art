@@ -482,6 +482,26 @@ export function adminAlertEmail(subject: string, lines: string[], url: string) {
   return send(ADMIN_NOTIFY_EMAIL, { subject, heading: subject, body: lines.map(esc), action: { label: 'Ouvrir', url } });
 }
 
+/**
+ * To the coordinator: a message reached the shared inbox (services/mail.ts).
+ * The sender and subject were typed by a stranger, so both are escaped in the
+ * body; the caller has already flattened them to one line for the header.
+ */
+export function newMailAlertEmail(from: string, subject: string, preview: string, url: string) {
+  if (!ADMIN_NOTIFY_EMAIL) return Promise.resolve<SendResult>({ sent: false });
+  return send(ADMIN_NOTIFY_EMAIL, {
+    subject: `Nouveau message de ${from} : ${subject}`.slice(0, 200),
+    heading: 'Un message vous attend',
+    body: [
+      `<strong>${esc(from)}</strong> a écrit à la messagerie de Travel Art.`,
+      `<strong>Objet :</strong> ${esc(subject)}`,
+      ...(preview ? [`« ${esc(preview)} »`] : []),
+    ],
+    action: { label: 'Répondre depuis la console', url },
+    footnote: 'Répondez depuis la console : la réponse part de l’adresse du domaine et reste dans l’historique de la conversation.',
+  });
+}
+
 /** The coordinator's copy of a signed convention. */
 export function conventionSignedAdminEmail(hotelName: string, artistName: string, stay: string, url: string, pdf: Buffer, reference: string) {
   if (!ADMIN_NOTIFY_EMAIL) return Promise.resolve<SendResult>({ sent: false });

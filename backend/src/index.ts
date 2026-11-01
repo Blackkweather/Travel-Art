@@ -22,6 +22,8 @@ import { maintenanceRoutes } from './routes/maintenance';
 import { privacyRoutes } from './routes/privacy';
 import { uploadRoutes } from './routes/upload';
 import { webhookRoutes } from './routes/webhooks';
+import { mailRoutes } from './routes/mail';
+import { mailWebhookRoutes } from './routes/mailWebhook';
 import { pingDatabase } from './db';
 import { PostgresRateLimitStore } from './services/rateLimitStore';
 
@@ -275,6 +277,8 @@ app.use('/api/auth/check-availability', limit('availability', {
 // with the raw parser ahead of express.json(). Parsing first would re-serialise
 // the body and every signature check would fail.
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), webhookRoutes);
+// Resend's inbox webhook, raw for the same reason: its signature covers the bytes.
+app.use('/api/mail/inbound', express.raw({ type: 'application/json', limit: '1mb' }), mailWebhookRoutes);
 
 // Body parsing middleware
 app.use(express.json({ limit: '1mb' }));
@@ -348,6 +352,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/privacy', privacyRoutes);
 app.use('/api/artists', artistRoutes);
 app.use('/api/hotels', hotelRoutes);
+app.use('/api/admin/mail', mailRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/bookings', conventionRoutes);

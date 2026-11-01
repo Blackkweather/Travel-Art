@@ -97,6 +97,28 @@ RESEND_FROM=Travel Art <noreply@travelart.com>
 ADMIN_NOTIFY_EMAIL=admissions@travelart.com
 ```
 
+### Shared Inbox (Optional)
+
+The admin console's **Messagerie** reads and answers the business's own mail
+(`backend/src/services/mail.ts`). Resend receives and delivers; every message is
+stored in the database. It needs `RESEND_API_KEY` from the Resend team that owns
+the domain, with **full access** - the inbox reads received mail and
+attachments, not only sends - and the domain set up for receiving in Resend
+(its MX record pointing at Resend).
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `MAIL_ADDRESSES` | No | `contact@` the domain of `FRONTEND_URL` | Addresses the console writes from, comma-separated; the first is the default. A reply always comes from the address the other party wrote to, when it is on one of these domains. |
+| `RESEND_WEBHOOK_SECRET` | No | - | Signing secret of the Resend webhook pointed at `https://<site>/api/mail/inbound`, subscribed to `email.received`, `email.delivered`, `email.bounced` and `email.failed`. Without it mail still arrives - the console pulls it from Resend when opened - but not instantly, and sent messages show no delivery status. |
+| `MAIL_ALERTS` | No | on | `0` stops the "new message" alert sent to `ADMIN_NOTIFY_EMAIL`. |
+| `MAIL_TIMEZONE` | No | `Africa/Casablanca` | Time zone of the date line above a quoted reply. |
+
+**Example:**
+```env
+MAIL_ADDRESSES=Travel Art <contact@travelarts.live>
+RESEND_WEBHOOK_SECRET=whsec_...
+```
+
 ### Payment Configuration (Stripe)
 
 | Variable | Required | Default | Description |

@@ -1,6 +1,16 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/store/authStore'
-import { ApiResponse, LoginCredentials, RegisterData, User } from '@/types'
+import {
+  ApiResponse,
+  LoginCredentials,
+  MailFolder,
+  MailMessage,
+  MailSetup,
+  MailThread,
+  Mailbox,
+  RegisterData,
+  User,
+} from '@/types'
 
 class ApiClient {
   private client: AxiosInstance
@@ -318,6 +328,46 @@ export const adminApi = {
 
     return { response, filename }
   },
+}
+
+/**
+ * The shared inbox (admin console > Messagerie). Sends go as FormData so files
+ * can ride along; the server reads the same fields from a JSON body too.
+ */
+export const mailApi = {
+  setup: () => apiClient.get<MailSetup>('/admin/mail/setup'),
+
+  /** The sidebar badge. Cheap enough to poll. */
+  unread: () => apiClient.get<{ unread: number }>('/admin/mail/unread'),
+
+  threads: (params: { folder?: MailFolder; q?: string; unread?: '1'; page?: number }) =>
+    apiClient.get<{ threads: MailThread[]; pagination: { page: number; pages: number; total: number }; unread: number }>(
+      '/admin/mail/threads',
+      params
+    ),
+
+  /** Opening a conversation marks it read on the server. */
+  thread: (id: string) =>
+    apiClient.get<{ thread: MailThread; messages: MailMessage[]; reply: { to: Mailbox; from: Mailbox | null; subject: string }; unread: number }>(
+      `/admin/mail/threads/${id}`
+    ),
+
+  update: (id: string, change: { archived?: boolean; unread?: boolean }) =>
+    apiClient.patch<{ thread: MailThread; unread: number }>(`/admin/mail/threads/${id}`, change),
+
+  reply: (id: string, form: FormData) =>
+    apiClient.post<{ threadId: string; message: MailMessage }>(`/admin/mail/threads/${id}/reply`, form, { timeout: 60000 }),
+
+  send: (form: FormData) =>
+    apiClient.post<{ threadId: string; message: MailMessage }>('/admin/mail/send', form, { timeout: 60000 }),
+
+  /** Pull from Resend whatever the webhook has not delivered. `force` skips the server's 15s throttle. */
+  sync: (force = true) =>
+    apiClient.post<{ imported: number; more: boolean; unread: number; error?: string }>('/admin/mail/sync', { force }, { timeout: 45000 }),
+
+  /** A short-lived link to the file, which Resend keeps. */
+  attachment: (id: string) =>
+    apiClient.get<{ url: string; filename: string; expiresAt: string | null }>(`/admin/mail/attachments/${id}`),
 }
 
 // Common API

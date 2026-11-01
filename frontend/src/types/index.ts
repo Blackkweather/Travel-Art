@@ -283,6 +283,66 @@ export interface CancellationClaim {
   createdAt: string
 }
 
+/** One of the addresses the shared inbox writes from, or a correspondent. */
+export interface Mailbox {
+  name: string | null
+  address: string
+}
+
+export type MailFolder = 'inbox' | 'sent' | 'archived' | 'all'
+
+/** A conversation in the shared inbox, as the list returns it. */
+export interface MailThread {
+  id: string
+  subject: string
+  counterpart: string
+  counterpartName: string | null
+  mailbox: string
+  snippet: string
+  hasAttachments: boolean
+  unreadCount: number
+  lastMessageAt: string
+  lastInboundAt: string | null
+  lastOutboundAt: string | null
+  archived: boolean
+  messageCount: number
+}
+
+export interface MailAttachment {
+  id: string
+  filename: string
+  contentType: string
+  size: number
+  inline: boolean
+}
+
+export interface MailMessage {
+  id: string
+  direction: 'INBOUND' | 'OUTBOUND'
+  status: 'RECEIVED' | 'SENT' | 'DELIVERED' | 'BOUNCED' | 'FAILED'
+  fromAddress: string
+  fromName: string | null
+  to: string[]
+  cc: string[]
+  replyTo: string[]
+  subject: string
+  text: string | null
+  /** A stranger's HTML: render it only through MailBody's sandbox. */
+  html: string | null
+  error: string | null
+  sentAt: string
+  readAt: string | null
+  sentBy: { id: string; name: string } | null
+  attachments: MailAttachment[]
+}
+
+export interface MailSetup {
+  configured: boolean
+  webhook: boolean
+  mailboxes: Mailbox[]
+  unread: number
+}
+
 export interface PartyContact {
   email: string | null
   phone: string | null

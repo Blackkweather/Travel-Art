@@ -10,9 +10,11 @@ import {
   Gift,
   TrendingUp,
   Activity,
-  Receipt
+  Receipt,
+  Mail
 } from 'lucide-react'
 import { t } from '@/i18n'
+import { useMailUnread } from '@/hooks/useMailUnread'
 
 interface SidebarProps {
   user: User
@@ -21,8 +23,9 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ user }) => {
   const location = useLocation()
+  const unreadMail = useMailUnread(user.role === 'ADMIN')
 
-  const getNavItems = () => {
+  const getNavItems = (): { path: string; label: string; icon: typeof Home; badge?: number }[] => {
     switch (user.role) {
       case 'ARTIST':
         return [
@@ -43,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       case 'ADMIN':
         return [
           { path: '/dashboard', label: t('Tableau de bord'), icon: Home },
+          { path: '/dashboard/mail', label: t('Messagerie'), icon: Mail, badge: unreadMail },
           { path: '/dashboard/users', label: t('Utilisateurs'), icon: Users },
           { path: '/dashboard/bookings', label: t('Réservations'), icon: Calendar },
           { path: '/dashboard/analytics', label: t('Statistiques'), icon: TrendingUp },
@@ -86,6 +90,14 @@ const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                 <span className={`font-medium text-sm ${
                   isActive ? 'text-content-inverse' : 'text-content-secondary group-hover:text-content'
                 }`}>{item.label}</span>
+                {item.badge ? (
+                  <span
+                    className="ml-auto grid min-w-[1.25rem] place-items-center rounded-full bg-gold px-1.5 text-[0.7rem] font-semibold leading-5 text-off-black"
+                    aria-label={t('{n} non lus', { n: item.badge })}
+                  >
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                ) : null}
               </Link>
             )
           })}

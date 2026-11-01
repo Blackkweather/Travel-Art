@@ -157,6 +157,26 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum MailDirection {
+  /// Written to us, delivered by Resend's inbound webhook or the sync.
+  INBOUND
+  /// Written from the admin inbox and handed to Resend.
+  OUTBOUND
+}
+
+/// Where a message stands. An outbound message moves on from SENT only when
+/// Resend's webhook reports what the receiving server did with it.
+enum MailStatus {
+  RECEIVED
+  /// Accepted by Resend, not yet confirmed delivered.
+  SENT
+  DELIVERED
+  /// The receiving server refused it; `error` carries its reason.
+  BOUNCED
+  /// Resend could not send it at all; `error` carries the reason.
+  FAILED
+}
+
 // ============================================================================
 // Accounts
 // ============================================================================
@@ -210,6 +230,7 @@ model User {
   payments          Payment[]
   adminLogs         AdminLog[]
   consents          ConsentRecord[]
+  mailSent          MailMessage[]
 
   @@index([role, approvalStatus])
   @@map("users")
@@ -928,4 +949,110 @@ model NewsletterSubscriber {
   unsubscribedAt DateTime?
 
   @@index([createdAt])
+}
+
+// ============================================================================
+// Shared inbox
+// ============================================================================
+//
+// The business's own mail (contact@ and any other address on the domain),
+// read and answered from the admin console. Resend receives and delivers;
+// these tables are the copy that matters, so the history stays here whichever
+// provider carries it. See services/mail.ts.
+
+/// One conversation: a first message and every reply to it. Messages join a
+/// thread by their In-Reply-To and References headers, not by subject alone,
+/// so two unrelated "Question" mails from one sender stay apart.
+model MailThread {
+  id              String    @id @default(cuid())
+  subject         String
+  /// The other party's address, lower-cased: who the conversation is with.
+  counterpart     String
+  counterpartName String?
+  /// Our address the conversation runs through, as the other party wrote it.
+  mailbox         String
+  /// The latest message's opening words, so the list needs no message bodies.
+  snippet         String    @default("")
+  hasAttachments  Boolean   @default(false)
+  /// Inbound messages nobody has opened. The sidebar badge is the sum.
+  unreadCount     Int       @default(0)
+  lastMessageAt   DateTime
+  /// Null until the other party has written: such a thread is in Sent only.
+  lastInboundAt   DateTime?
+  lastOutboundAt  DateTime?
+  /// Set by archiving; cleared again when a new message arrives on the thread.
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  messages MailMessage[]
+
+  @@index([archivedAt, lastInboundAt])
+  @@index([lastOutboundAt])
+  @@index([counterpart])
+  @@map("mail_threads")
+}
+
+model MailMessage {
+  id        String        @id @default(cuid())
+  threadId  String
+  direction MailDirection
+  status    MailStatus
+  /// Resend's id for the email, received or sent. Unique: a webhook redelivery
+  /// and the sync can both meet the same message, and it is stored once.
+  resendId  String?       @unique
+  /// The RFC 5322 Message-ID, without angle brackets, case kept: what a
+  /// reply's In-Reply-To and References point at.
+  messageId  String?
+  inReplyTo  String?
+  references String[]     @default([])
+
+  fromAddress String
+  fromName    String?
+  to          String[]
+  cc          String[]    @default([])
+  replyTo     String[]    @default([])
+  subject     String
+  text        String?
+  /// Rendered only inside a sandboxed iframe: it is written by strangers.
+  html        String?
+  snippet     String      @default("")
+
+  /// The administrator who sent it, for an outbound message.
+  sentById String?
+  /// Why a BOUNCED or FAILED message did not arrive, in the provider's words.
+  error    String?
+  readAt   DateTime?
+  /// When it was sent or received - the date the conversation shows.
+  sentAt    DateTime
+  createdAt DateTime      @default(now())
+
+  thread      MailThread       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sentBy      User?            @relation(fields: [sentById], references: [id], onDelete: SetNull)
+  attachments MailAttachment[]
+
+  @@index([threadId, sentAt])
+  @@index([messageId])
+  @@index([sentById])
+  @@map("mail_messages")
+}
+
+/// A file attached to a message. The bytes stay with Resend, which hands out a
+/// short-lived download link on request; only the description is kept here.
+model MailAttachment {
+  id            String  @id @default(cuid())
+  mailMessageId String
+  /// Resend's attachment id, when Resend gave one.
+  resendId      String?
+  filename      String
+  contentType   String
+  size          Int     @default(0)
+  /// Referenced from the HTML body as cid:..., for an inline image.
+  contentId     String?
+  inline        Boolean @default(false)
+
+  message MailMessage @relation(fields: [mailMessageId], references: [id], onDelete: Cascade)
+
+  @@index([mailMessageId])
+  @@map("mail_attachments")
 }
