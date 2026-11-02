@@ -14,9 +14,13 @@ import { mediaOrder, mediaSelect, splitMedia } from './media';
  * Routes never spread a Prisma row into a response; they call one of these.
  */
 
-/** Only admitted, active accounts appear anywhere another user can find them. */
+/**
+ * Only admitted, active accounts appear anywhere another user can find them,
+ * and only while they are artists: an account made administrator keeps its
+ * profile row, which must not stay listed or bookable.
+ */
 export const listableArtistWhere: Prisma.ArtistWhereInput = {
-  user: { approvalStatus: 'APPROVED', isActive: true },
+  user: { approvalStatus: 'APPROVED', isActive: true, role: 'ARTIST' },
 };
 
 const futureAvailability = () => ({

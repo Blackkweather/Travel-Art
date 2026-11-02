@@ -11,6 +11,7 @@ import {
   toArtistCard,
   toOwnArtist,
 } from '../views/artist';
+import { listableHotelWhere } from '../views/hotel';
 import { mediaSelect, toMediaDTO } from '../views/media';
 import { artistProfileUpdateSchema, availabilitySchema, nameKey, normalizePhone, videoUrlSchema } from '../shared/validation';
 import { categoryErrors, disciplineLabel } from '../shared/categories';
@@ -304,7 +305,7 @@ router.post('/:id/availability', authenticate, authorize('ARTIST'), asyncHandler
   const { dateFrom, dateTo, preferredZones, preferredHotelIds } = availabilitySchema.parse(req.body);
   const hotelIds = [...new Set(preferredHotelIds)];
   if (hotelIds.length) {
-    const found = await prismaAdmin.hotel.count({ where: { id: { in: hotelIds }, user: { approvalStatus: 'APPROVED', isActive: true } } });
+    const found = await prismaAdmin.hotel.count({ where: { id: { in: hotelIds }, ...listableHotelWhere } });
     if (found !== hotelIds.length) throw new CustomError('Un des hôtels choisis est introuvable.', 400, { fields: { preferredHotelIds: 'Hôtel introuvable.' } });
   }
   const from = new Date(dateFrom);

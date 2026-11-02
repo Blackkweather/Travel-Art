@@ -267,6 +267,12 @@ export const adminApi = {
   activateUser: (id: string) =>
     apiClient.post(`/admin/users/${id}/activate`),
 
+  grantAdmin: (id: string) =>
+    apiClient.post(`/admin/users/${id}/grant-admin`),
+
+  revokeAdmin: (id: string) =>
+    apiClient.post(`/admin/users/${id}/revoke-admin`),
+
   getAdmissions: (status: 'PENDING' | 'APPROVED' | 'REJECTED' = 'PENDING') =>
     apiClient.get('/admin/admissions', { status }),
 

@@ -10,8 +10,9 @@ import { mediaOrder, mediaSelect, splitMedia, toMediaDTO } from './media';
  * built from the real columns and the hotel_spaces table.
  */
 
+/** As for artists: admitted, active, and still a hotel (not an administrator). */
 export const listableHotelWhere: Prisma.HotelWhereInput = {
-  user: { approvalStatus: 'APPROVED', isActive: true },
+  user: { approvalStatus: 'APPROVED', isActive: true, role: 'HOTEL' },
 };
 
 const spaceSelect = {

@@ -152,6 +152,94 @@ router.post('/users/:id/activate', authenticate, authorize('ADMIN'), asyncHandle
   });
 }));
 
+/*
+ * Administrator rights, given and taken back from Utilisateurs.
+ *
+ * The role is read from the database on every request (middleware/auth.ts),
+ * so a change applies at once. Sessions are cut anyway: the person signs in
+ * again and lands on the dashboard of their new role, instead of a page whose
+ * every call now answers 403.
+ */
+
+// Make an account an administrator
+router.post('/users/:id/grant-admin', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.id },
+    select: {
+      id: true, role: true, isActive: true, emailVerified: true,
+      artist: { select: { _count: { select: { bookings: true } } } },
+      hotel: { select: { _count: { select: { bookings: true } } } },
+    },
+  });
+  if (!user) throw new CustomError('Utilisateur introuvable.', 404);
+  if (user.role === 'ADMIN') throw new CustomError('Ce compte est déjà administrateur.', 409, { code: 'ALREADY_ADMIN' });
+  if (!user.isActive) throw new CustomError('Ce compte est suspendu. Réactivez-le d’abord.', 409, { code: 'ACCOUNT_SUSPENDED' });
+  // The address is what ties the account to a person; an unconfirmed one may
+  // have been typed by anybody.
+  if (!user.emailVerified) {
+    throw new CustomError('Cette personne doit d’abord confirmer son adresse e-mail.', 409, { code: 'EMAIL_NOT_VERIFIED' });
+  }
+  // An administrator has no artist or hotel dashboard: residencies booked under
+  // the profile would be left with nobody to answer for them.
+  if ((user.artist?._count.bookings ?? 0) + (user.hotel?._count.bookings ?? 0) > 0) {
+    throw new CustomError('Ce compte a des réservations : il ne peut pas devenir administrateur.', 409, { code: 'HAS_BOOKINGS' });
+  }
+
+  const updated = await prismaAdmin.$transaction(async (tx) => {
+    const row = await tx.user.update({
+      where: { id: user.id },
+      // An administrator still has to be admitted to sign in at all.
+      data: { role: 'ADMIN', approvalStatus: 'APPROVED', approvalNote: null, sessionsValidFrom: new Date() },
+      select: adminUserSelect,
+    });
+    await tx.adminLog.create({ data: { action: 'GRANT_ADMIN', actorUserId: req.user!.id, targetId: user.id } });
+    return row;
+  });
+
+  res.json({ success: true, data: updated });
+}));
+
+// Take administrator rights back
+router.post('/users/:id/revoke-admin', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
+  // Whoever asks stays an administrator, so the platform always keeps one.
+  if (req.params.id === req.user!.id) {
+    throw new CustomError('Vous ne pouvez pas retirer vos propres droits d’administrateur.', 409, { code: 'SELF' });
+  }
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.id },
+    select: { id: true, role: true, artist: { select: { id: true } }, hotel: { select: { id: true } } },
+  });
+  if (!user) throw new CustomError('Utilisateur introuvable.', 404);
+  if (user.role !== 'ADMIN') throw new CustomError('Ce compte n’est pas administrateur.', 409, { code: 'NOT_ADMIN' });
+
+  const updated = await prismaAdmin.$transaction(async (tx) => {
+    // Two administrators removing each other at the same moment would both
+    // succeed and leave nobody who can open this panel. Holding the caller's
+    // own row first makes the second request wait, then find that its caller
+    // is no longer an administrator.
+    const caller = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "users" WHERE id = ${req.user!.id} AND role = 'ADMIN' FOR UPDATE`;
+    if (!caller.length) throw new CustomError('Accès refusé.', 403);
+
+    const row = await tx.user.update({
+      where: { id: user.id },
+      // Back to its own profile, which goes through admission again rather
+      // than reappearing in the listings by itself. Without one, it may sign
+      // in only to fill one in, like an account opened with Google.
+      data: {
+        role: user.hotel ? 'HOTEL' : 'ARTIST',
+        approvalStatus: user.artist || user.hotel ? 'PENDING' : 'INCOMPLETE',
+        sessionsValidFrom: new Date(),
+      },
+      select: adminUserSelect,
+    });
+    await tx.adminLog.create({ data: { action: 'REVOKE_ADMIN', actorUserId: req.user!.id, targetId: user.id } });
+    return row;
+  });
+
+  res.json({ success: true, data: updated });
+}));
+
 // Export data
 /**
  * Applications awaiting review, oldest first.

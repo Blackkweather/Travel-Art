@@ -8,6 +8,11 @@ import SEOHead from '@/components/SEOHead'
 import toast from 'react-hot-toast'
 import { formatShortDate } from '@/utils/i18n'
 import ExportButtons from '@/components/ExportButtons'
+import { useAuthStore } from '@/store/authStore'
+
+// The server sends its reason as error.message; reading data.message showed
+// the generic fallback every time.
+const errorMessage = (err: any, fallback: string) => err?.response?.data?.error?.message || fallback
 
 interface UserData {
   id: string
@@ -38,7 +43,11 @@ const AdminUsers: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [processing, setProcessing] = useState<string | null>(null)
+  // Which row is busy, and with what: a row now has more than one action, and
+  // only the one clicked should read "En cours…".
+  const [processing, setProcessing] = useState<{ id: string; action: string } | null>(null)
+  const working = (id: string, action: string) => processing?.id === id && processing.action === action
+  const { user: me } = useAuthStore()
 
   const fetchUsers = async () => {
     try {
@@ -61,7 +70,7 @@ const AdminUsers: React.FC = () => {
       setUsers(response.data.data.users)
       setTotalPages(response.data.data.pagination.pages)
     } catch (err: any) {
-      setError(err.response?.data?.message || t('Impossible de charger les utilisateurs'))
+      setError(errorMessage(err, t('Impossible de charger les utilisateurs')))
     } finally {
       setLoading(false)
     }
@@ -89,11 +98,11 @@ const AdminUsers: React.FC = () => {
     }
 
     try {
-      setProcessing(userId)
+      setProcessing({ id: userId, action: 'suspend' })
       await adminApi.suspendUser(userId, { reason: reason.trim() })
       fetchUsers()
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Impossible de suspendre cet utilisateur')
+      toast.error(errorMessage(err, 'Impossible de suspendre cet utilisateur'))
     } finally {
       setProcessing(null)
     }
@@ -101,11 +110,43 @@ const AdminUsers: React.FC = () => {
 
   const handleActivateUser = async (userId: string) => {
     try {
-      setProcessing(userId)
+      setProcessing({ id: userId, action: 'activate' })
       await adminApi.activateUser(userId)
       fetchUsers()
     } catch (err: any) {
-      toast.error(err.response?.data?.message || t('Impossible de réactiver cet utilisateur'))
+      toast.error(errorMessage(err, t('Impossible de réactiver cet utilisateur')))
+    } finally {
+      setProcessing(null)
+    }
+  }
+
+  // The question names the person: access to everything, the inbox included,
+  // is not something to grant by habit.
+  const handleGrantAdmin = async (target: UserData) => {
+    if (!window.confirm(t('Donner à {name} un accès administrateur ? Cette personne pourra tout voir et tout modifier, y compris la messagerie.', { name: target.name }))) return
+
+    try {
+      setProcessing({ id: target.id, action: 'grant' })
+      await adminApi.grantAdmin(target.id)
+      toast.success(t('{name} a maintenant un accès administrateur. Cette personne doit se reconnecter.', { name: target.name }))
+      fetchUsers()
+    } catch (err: any) {
+      toast.error(errorMessage(err, t('Impossible de changer le rôle de ce compte')))
+    } finally {
+      setProcessing(null)
+    }
+  }
+
+  const handleRevokeAdmin = async (target: UserData) => {
+    if (!window.confirm(t('Retirer l’accès administrateur de {name} ? Cette personne sera déconnectée et n’aura plus accès à ce panneau.', { name: target.name }))) return
+
+    try {
+      setProcessing({ id: target.id, action: 'revoke' })
+      await adminApi.revokeAdmin(target.id)
+      toast.success(t('{name} n’a plus d’accès administrateur.', { name: target.name }))
+      fetchUsers()
+    } catch (err: any) {
+      toast.error(errorMessage(err, t('Impossible de changer le rôle de ce compte')))
     } finally {
       setProcessing(null)
     }
@@ -256,27 +297,45 @@ const AdminUsers: React.FC = () => {
                     {formatShortDate(user.createdAt)}
                   </td>
                   <td className="numeric">
-                    {user.role !== 'ADMIN' && (
-                      <div className="flex justify-end space-x-2">
-                        {user.isActive ? (
-                          <button
-                            onClick={() => handleSuspendUser(user.id)}
-                            disabled={processing === user.id}
-                            className="text-[var(--state-critical)] underline-offset-4 hover:underline disabled:opacity-50"
-                          >
-                            {processing === user.id ? t('En cours…') : t('Suspendre')}
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleActivateUser(user.id)}
-                            disabled={processing === user.id}
-                            className="text-[var(--state-positive)] underline-offset-4 hover:underline disabled:opacity-50"
-                          >
-                            {processing === user.id ? t('En cours…') : t('Réactiver')}
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex justify-end gap-4">
+                      {/* Not for a suspended account: it is reactivated first. */}
+                      {user.role !== 'ADMIN' && user.isActive && (
+                        <button
+                          onClick={() => handleGrantAdmin(user)}
+                          disabled={processing?.id === user.id}
+                          className="text-content underline-offset-4 hover:underline disabled:opacity-50"
+                        >
+                          {working(user.id, 'grant') ? t('En cours…') : t('Rendre admin')}
+                        </button>
+                      )}
+                      {user.role !== 'ADMIN' && (user.isActive ? (
+                        <button
+                          onClick={() => handleSuspendUser(user.id)}
+                          disabled={processing?.id === user.id}
+                          className="text-[var(--state-critical)] underline-offset-4 hover:underline disabled:opacity-50"
+                        >
+                          {working(user.id, 'suspend') ? t('En cours…') : t('Suspendre')}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleActivateUser(user.id)}
+                          disabled={processing?.id === user.id}
+                          className="text-[var(--state-positive)] underline-offset-4 hover:underline disabled:opacity-50"
+                        >
+                          {working(user.id, 'activate') ? t('En cours…') : t('Réactiver')}
+                        </button>
+                      ))}
+                      {/* Never on your own row, so the platform always keeps an administrator. */}
+                      {user.role === 'ADMIN' && user.id !== me?.id && (
+                        <button
+                          onClick={() => handleRevokeAdmin(user)}
+                          disabled={processing?.id === user.id}
+                          className="text-[var(--state-critical)] underline-offset-4 hover:underline disabled:opacity-50"
+                        >
+                          {working(user.id, 'revoke') ? t('En cours…') : t('Retirer l’accès admin')}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
