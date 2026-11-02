@@ -9,6 +9,8 @@ process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_secret_for_tests_only';
 const { api, makeArtist, prismaAdmin, resetDb } = require('./helpers') as typeof import('./helpers');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { stripe } = require('../stripe') as typeof import('../stripe');
+// A module, not a script: see ratelimit.test.ts.
+export {};
 
 beforeEach(resetDb);
 afterAll(() => prismaAdmin.$disconnect());

@@ -5,6 +5,9 @@ process.env.AUTH_FAILURE_LIMIT = '3';
 // A require, not an import: imports are hoisted above the lines setting the limits.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { api, artistRegistration, prismaAdmin, resetDb } = require('./helpers') as typeof import('./helpers');
+// A module, not a script: as scripts, the suites that require their helpers
+// share one scope, declare the same names, and fail to compile against each other.
+export {};
 
 beforeEach(resetDb);
 afterAll(() => prismaAdmin.$disconnect());

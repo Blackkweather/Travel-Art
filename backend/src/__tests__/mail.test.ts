@@ -17,6 +17,8 @@ const { api, auth, makeAdmin, makeArtist, prismaAdmin, resetDb } = require('./he
 const { Webhook } = require('standardwebhooks') as {
   Webhook: new (secret: string) => { sign(id: string, at: Date, payload: string): string };
 };
+// A module, not a script: see ratelimit.test.ts.
+export {};
 
 // ------------------------------------------------------------- fake Resend
 
