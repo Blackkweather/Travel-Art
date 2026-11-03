@@ -311,11 +311,39 @@ describe('answering', () => {
     expect(sentFolder.body.data.threads).toEqual([expect.objectContaining({ counterpart: 'resa@riad-mogador.ma', counterpartName: 'Riad Mogador, Essaouira' })]);
   });
 
-  it('refuses a sender off the domain and a malformed recipient, and sends nothing', async () => {
+  it('writes from any address on the domain, and its conversation stays there', async () => {
+    const admin = await makeAdmin();
+    const res = await api().post('/api/admin/mail/send').set(auth(admin.token))
+      .send({ from: 'Support@TravelArts.live', to: 'resa@riad-mogador.ma', subject: 'Votre réservation', body: 'Bonjour' });
+    expect(res.status).toBe(201);
+    expect(sent[0].body.from).toBe('Travel Art <support@travelarts.live>');
+    const thread = await prismaAdmin.mailThread.findUniqueOrThrow({ where: { id: res.body.data.threadId } });
+    expect(thread.mailbox).toBe('support@travelarts.live');
+
+    // Followed up from the console, it still goes out from support@.
+    const followUp = await api().post(`/api/admin/mail/threads/${thread.id}/reply`).set(auth(admin.token))
+      .field('body', 'Une précision.');
+    expect(followUp.status).toBe(201);
+    expect(sent[1].body.from).toBe('Travel Art <support@travelarts.live>');
+
+    // Mail written to it arrives like the rest, and is answered from it.
+    await deliver(receivedEvent(receivedEmail({
+      id: 'rcv_support', from: 'salma@hotel-atlas.ma', to: ['support@travelarts.live'], subject: 'Aide', text: 'Bonjour', message_id: '<aide@atlas.ma>',
+    })));
+    const asked = await prismaAdmin.mailThread.findFirstOrThrow({ where: { counterpart: 'salma@hotel-atlas.ma' } });
+    expect(asked.mailbox).toBe('support@travelarts.live');
+  });
+
+  it('refuses a sender off the domain, a malformed one and a malformed recipient, and sends nothing', async () => {
     const admin = await makeAdmin();
     const offDomain = await api().post('/api/admin/mail/send').set(auth(admin.token))
       .send({ from: 'someone@gmail.com', to: 'resa@riad-mogador.ma', subject: 'x', body: 'y' });
     expect(offDomain.status).toBe(400);
+
+    const badFrom = await api().post('/api/admin/mail/send').set(auth(admin.token))
+      .send({ from: 'sup port@travelarts.live', to: 'resa@riad-mogador.ma', subject: 'x', body: 'y' });
+    expect(badFrom.status).toBe(400);
+    expect(badFrom.body.error.fields.from).toMatch(/sup port/);
 
     const badTo = await api().post('/api/admin/mail/send').set(auth(admin.token))
       .send({ to: 'resa@riad-mogador.ma, not-an-address', subject: 'x', body: 'y' });

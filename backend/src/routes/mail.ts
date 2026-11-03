@@ -20,6 +20,7 @@ import {
   OutgoingAttachment,
   attachmentLink,
   mailSetup,
+  parseAddress,
   parseAddressList,
   replyEnvelope,
   sendMail,
@@ -70,6 +71,17 @@ function recipients(raw: string | undefined, field: string): Mailbox[] {
     throw new CustomError(message, 400, { fields: { [field]: message } });
   }
   return list;
+}
+
+/** The address a new message goes out from, checked like a recipient; sendMail checks it is on our domain. */
+function sender(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const { address } = parseAddress(raw);
+  if (!emailCheck.safeParse(address).success) {
+    const message = `Adresse invalide : ${address}`;
+    throw new CustomError(message, 400, { fields: { from: message } });
+  }
+  return address;
 }
 
 /** GET /setup - what is configured, the addresses to write from, and the unread count. */
@@ -240,7 +252,7 @@ router.post('/send', upload.array('attachments', 10), handleUploadError, asyncHa
   const input = composeSchema.parse(req.body);
   const result = await sendMail({
     senderId: req.user!.id,
-    from: input.from,
+    from: sender(input.from),
     to: recipients(input.to, 'to'),
     cc: recipients(input.cc, 'cc'),
     subject: input.subject,

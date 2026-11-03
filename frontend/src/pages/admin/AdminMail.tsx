@@ -75,6 +75,14 @@ function listDate(iso: string): string {
 
 const formatMailbox = (m: Mailbox) => (m.name ? `${m.name} <${m.address}>` : m.address)
 
+/** Offered as a new message's sender beside the configured mailboxes. Any other name on the domain works as well. */
+const SUGGESTED_SENDERS = ['contact', 'support']
+
+const splitAddress = (address: string) => {
+  const at = address.lastIndexOf('@')
+  return { name: address.slice(0, at), domain: address.slice(at + 1).toLowerCase() }
+}
+
 function sizeLabel(bytes: number): string {
   if (!bytes) return ''
   if (bytes < 1024 * 1024) return t('{n} Ko', { n: Math.max(1, Math.round(bytes / 1024)) })
@@ -279,7 +287,25 @@ function ReplyBox({ detail, onSent }: { detail: Detail; onSent: () => void }) {
 // ---------------------------------------------------------------- compose
 
 function ComposeDialog({ mailboxes, onClose, onSent }: { mailboxes: Mailbox[]; onClose: () => void; onSent: (threadId: string) => void }) {
-  const [from, setFrom] = useState(mailboxes[0]?.address ?? '')
+  // Any address on the mailboxes' domains: the name before @ is typed or picked,
+  // and answers to it land in this inbox like the rest.
+  const domains = [...new Set(mailboxes.map((m) => splitAddress(m.address).domain))]
+  const defaultName = mailboxes[0] ? splitAddress(mailboxes[0].address).name : ''
+  const [fromName, setFromName] = useState(defaultName)
+  const [fromDomain, setFromDomain] = useState(domains[0] ?? '')
+  const from = fromName && fromDomain ? `${fromName}@${fromDomain}` : ''
+  const senderNames = [
+    ...new Set([
+      ...mailboxes.map((m) => splitAddress(m.address)).filter((a) => a.domain === fromDomain).map((a) => a.name),
+      ...SUGGESTED_SENDERS,
+    ]),
+  ]
+  // A whole address typed or pasted is split: its domain, when it is one of ours, goes to the domain part.
+  const typeFromName = (value: string) => {
+    const [name, domain = ''] = value.replace(/\s+/g, '').toLowerCase().split('@')
+    setFromName(name)
+    if (domains.includes(domain)) setFromDomain(domain)
+  }
   const [to, setTo] = useState('')
   const [cc, setCc] = useState('')
   const [showCc, setShowCc] = useState(false)
@@ -370,19 +396,62 @@ function ComposeDialog({ mailboxes, onClose, onSent }: { mailboxes: Mailbox[]; o
           </button>
         </div>
 
-        {mailboxes.length > 1 ? (
-          <label className="block">
-            <span className="form-label">{t('De')}</span>
-            <select className="form-input" value={from} onChange={(e) => setFrom(e.target.value)} disabled={sending}>
-              {mailboxes.map((m) => (
-                <option key={m.address} value={m.address}>
-                  {formatMailbox(m)}
-                </option>
+        {mailboxes[0] && (
+          <div>
+            <label htmlFor="compose-from" className="form-label">
+              {t('De')}
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="compose-from"
+                type="text"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                className="form-input min-w-0 flex-1"
+                placeholder={defaultName}
+                value={fromName}
+                onChange={(e) => typeFromName(e.target.value)}
+                disabled={sending}
+                aria-describedby="compose-from-hint"
+              />
+              {domains.length > 1 ? (
+                <select
+                  className="form-input !w-auto shrink-0"
+                  value={fromDomain}
+                  onChange={(e) => setFromDomain(e.target.value)}
+                  disabled={sending}
+                  aria-label={t('Domaine de l’adresse d’expédition')}
+                >
+                  {domains.map((domain) => (
+                    <option key={domain} value={domain}>
+                      @{domain}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="shrink-0 text-content-secondary">@{fromDomain}</span>
+              )}
+            </div>
+            <div id="compose-from-hint" className="mt-2 flex flex-wrap items-center gap-2 text-xs text-content-secondary">
+              {senderNames.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setFromName(name)}
+                  disabled={sending}
+                  aria-pressed={fromName === name}
+                  className={`inline-flex items-center rounded-control border px-2.5 py-1 transition-colors hover:border-gold hover:text-gold ${
+                    fromName === name ? 'border-gold text-gold' : 'border-line text-content'
+                  }`}
+                >
+                  {name}@
+                </button>
               ))}
-            </select>
-          </label>
-        ) : (
-          mailboxes[0] && <p className="text-sm text-content-secondary">{t('De : {address}', { address: formatMailbox(mailboxes[0]) })}</p>
+              <span>{t('ou tout autre nom. Les réponses arrivent ici.')}</span>
+            </div>
+            {fieldError('from')}
+          </div>
         )}
 
         <label className="block">
