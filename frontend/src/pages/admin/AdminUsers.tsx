@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { adminApi } from '@/utils/api'
-import { User, Search, Filter } from 'lucide-react'
+import { User, Search, Filter, UserPlus, X } from 'lucide-react'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import StatusBadge from '@/components/StatusBadge'
 import { t } from '@/i18n'
@@ -35,6 +35,139 @@ interface UserData {
   }
 }
 
+/**
+ * A login of its own for an address - support@, billing@ - with the password
+ * it will sign in with. An address that was blocked is reopened the same way.
+ */
+function AddAdminDialog({ email: initialEmail, onClose, onAdded }: { email: string; onClose: () => void; onAdded: () => void }) {
+  const [email, setEmail] = useState(initialEmail)
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const firstRef = useRef<HTMLInputElement>(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+
+  useEffect(() => {
+    firstRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeRef.current()
+    }
+    document.addEventListener('keydown', onKey)
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
+    }
+  }, [])
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (saving) return
+    setSaving(true)
+    setFieldErrors({})
+    try {
+      const res = await adminApi.addAdmin({ email, password })
+      toast.success(t('{email} peut maintenant se connecter au panneau admin.', { email: res.data.data.email }))
+      onAdded()
+    } catch (err: any) {
+      setFieldErrors(err?.response?.data?.error?.fields ?? {})
+      toast.error(errorMessage(err, t('Impossible d’ajouter cet administrateur')))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const fieldError = (name: string) =>
+    fieldErrors[name] ? <p className="mt-1 text-xs font-medium text-[var(--state-critical)]">{fieldErrors[name]}</p> : null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(11,31,63,0.55)] sm:items-center sm:p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <form
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-admin-title"
+        onSubmit={submit}
+        className="max-h-[100dvh] w-full max-w-md space-y-4 overflow-y-auto rounded-t-card border border-line bg-surface-raised p-5 shadow-2xl sm:rounded-card"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="add-admin-title" className="text-lg font-semibold text-content">
+            {t('Ajouter un administrateur')}
+          </h2>
+          <button type="button" onClick={onClose} className="text-content-secondary hover:text-content" aria-label={t('Fermer')}>
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <label className="block">
+          <span className="form-label">{t('E-mail')}</span>
+          <input
+            ref={firstRef}
+            type="email"
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            className="form-input"
+            placeholder="support@travelarts.live"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={saving}
+            required
+          />
+          {fieldError('email')}
+        </label>
+
+        <div>
+          <label htmlFor="add-admin-password" className="form-label">
+            {t('Mot de passe')}
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              id="add-admin-password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              className="form-input min-w-0 flex-1"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={saving}
+              required
+              aria-describedby="add-admin-password-hint"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="shrink-0 text-sm text-content underline-offset-4 hover:underline"
+              aria-pressed={showPassword}
+            >
+              {showPassword ? t('Masquer') : t('Afficher')}
+            </button>
+          </div>
+          <p id="add-admin-password-hint" className="mt-1 text-xs text-content-secondary">
+            {t('8 caractères au moins, avec une minuscule, une majuscule, un chiffre et un caractère spécial.')}
+          </p>
+          {fieldError('password')}
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="btn-secondary" disabled={saving}>
+            {t('Annuler')}
+          </button>
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? t('En cours…') : t('Créer l’accès')}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<UserData[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,6 +181,8 @@ const AdminUsers: React.FC = () => {
   const [processing, setProcessing] = useState<{ id: string; action: string } | null>(null)
   const working = (id: string, action: string) => processing?.id === id && processing.action === action
   const { user: me } = useAuthStore()
+  // The address the "Ajouter un administrateur" dialog opens with; null while it is closed.
+  const [adding, setAdding] = useState<string | null>(null)
 
   const fetchUsers = async () => {
     try {
@@ -152,6 +287,21 @@ const AdminUsers: React.FC = () => {
     }
   }
 
+  const handleBlockAdmin = async (target: UserData) => {
+    if (!window.confirm(t('Bloquer {email} ? Plus personne ne pourra se connecter avec cette adresse. Pour la rouvrir, il faudra lui donner un nouveau mot de passe.', { email: target.email }))) return
+
+    try {
+      setProcessing({ id: target.id, action: 'block' })
+      await adminApi.blockAdmin(target.id)
+      toast.success(t('{email} est bloqué.', { email: target.email }))
+      fetchUsers()
+    } catch (err: any) {
+      toast.error(errorMessage(err, t('Impossible de bloquer cet accès')))
+    } finally {
+      setProcessing(null)
+    }
+  }
+
   /* A role is not a status. Painting ADMIN in the critical red reserved for
      failures said an administrator account was a problem; all three roles are
      now the neutral chip, and the label carries the distinction. */
@@ -188,8 +338,25 @@ const AdminUsers: React.FC = () => {
             {t('Gérer les utilisateurs, vérifier les comptes et traiter les demandes d’assistance.')}
           </p>
         </div>
-        <ExportButtons type="users" />
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => setAdding('')} className="btn-primary inline-flex items-center gap-2 whitespace-nowrap">
+            <UserPlus className="h-4 w-4" aria-hidden="true" />
+            {t('Ajouter un administrateur')}
+          </button>
+          <ExportButtons type="users" />
+        </div>
       </div>
+
+      {adding !== null && (
+        <AddAdminDialog
+          email={adding}
+          onClose={() => setAdding(null)}
+          onAdded={() => {
+            setAdding(null)
+            fetchUsers()
+          }}
+        />
+      )}
 
       {/* Filters */}
       <div className="search-container">
@@ -326,15 +493,33 @@ const AdminUsers: React.FC = () => {
                         </button>
                       ))}
                       {/* Never on your own row, so the platform always keeps an administrator. */}
-                      {user.role === 'ADMIN' && user.id !== me?.id && (
+                      {user.role === 'ADMIN' && user.id !== me?.id && (user.isActive ? (
+                        <>
+                          <button
+                            onClick={() => handleRevokeAdmin(user)}
+                            disabled={processing?.id === user.id}
+                            className="text-content underline-offset-4 hover:underline disabled:opacity-50"
+                          >
+                            {working(user.id, 'revoke') ? t('En cours…') : t('Retirer l’accès admin')}
+                          </button>
+                          <button
+                            onClick={() => handleBlockAdmin(user)}
+                            disabled={processing?.id === user.id}
+                            className="text-[var(--state-critical)] underline-offset-4 hover:underline disabled:opacity-50"
+                          >
+                            {working(user.id, 'block') ? t('En cours…') : t('Bloquer')}
+                          </button>
+                        </>
+                      ) : (
+                        // Blocked: its password is one nobody knows, so it opens again only with a new one.
                         <button
-                          onClick={() => handleRevokeAdmin(user)}
+                          onClick={() => setAdding(user.email)}
                           disabled={processing?.id === user.id}
-                          className="text-[var(--state-critical)] underline-offset-4 hover:underline disabled:opacity-50"
+                          className="text-[var(--state-positive)] underline-offset-4 hover:underline disabled:opacity-50"
                         >
-                          {working(user.id, 'revoke') ? t('En cours…') : t('Retirer l’accès admin')}
+                          {t('Rouvrir')}
                         </button>
-                      )}
+                      ))}
                     </div>
                   </td>
                 </tr>

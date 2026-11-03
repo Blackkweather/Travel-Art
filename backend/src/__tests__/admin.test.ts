@@ -148,3 +148,80 @@ describe('administrator rights', () => {
     expect((await prismaAdmin.user.findUnique({ where: { id: artist.user.id } }))!.role).toBe('ARTIST');
   });
 });
+
+describe('administrator logins', () => {
+  const PASSWORD = 'Support!2026';
+  const add = (body: object, token: string) => api().post('/api/admin/admins').set(auth(token)).send(body);
+  const block = (id: string, token: string) => api().post(`/api/admin/users/${id}/block-admin`).set(auth(token));
+  const login = (email: string, password: string) => api().post('/api/auth/login').send({ email, password });
+
+  it('opens a login that signs in with the password it was given', async () => {
+    const admin = await makeAdmin();
+    const res = await add({ email: ' Support@TravelArts.live ', password: PASSWORD }, admin.token);
+    expect(res.status).toBe(201);
+    expect(res.body.data).toMatchObject({ email: 'support@travelarts.live', name: 'support', role: 'ADMIN', isActive: true });
+    expect(JSON.stringify(res.body)).not.toMatch(/passwordHash|\$2[aby]\$/);
+
+    const signedIn = await login('support@travelarts.live', PASSWORD);
+    expect(signedIn.status).toBe(200);
+    expect(signedIn.body.data.user.role).toBe('ADMIN');
+    expect(await prismaAdmin.adminLog.count({ where: { action: 'CREATE_ADMIN', actorUserId: admin.user.id } })).toBe(1);
+  });
+
+  it('refuses a weak password, an address already an administrator and an artist’s address', async () => {
+    const admin = await makeAdmin();
+    const weak = await add({ email: 'billing@travelarts.live', password: 'billing' }, admin.token);
+    expect(weak.status).toBe(400);
+    expect(weak.body.error.fields.password).toBeTruthy();
+
+    const taken = await add({ email: admin.user.email, password: PASSWORD }, admin.token);
+    expect(taken.status).toBe(409);
+    expect(taken.body.error.code).toBe('ALREADY_ADMIN');
+
+    const artist = await makeArtist();
+    const theirs = await add({ email: artist.user.email, password: PASSWORD }, admin.token);
+    expect(theirs.body.error.code).toBe('ACCOUNT_EXISTS');
+    expect((await prismaAdmin.user.findUnique({ where: { id: artist.user.id } }))!.role).toBe('ARTIST');
+    expect(await prismaAdmin.user.count({ where: { email: 'billing@travelarts.live' } })).toBe(0);
+  });
+
+  it('blocks another administrator for good, never yourself, and reopens it only with a new password', async () => {
+    const admin = await makeAdmin();
+    await add({ email: 'old@travelart.test', password: PASSWORD }, admin.token);
+    const old = await prismaAdmin.user.findUniqueOrThrow({ where: { email: 'old@travelart.test' } });
+    const oldSession = (await login('old@travelart.test', PASSWORD)).body.data.token;
+    expect((await api().get('/api/admin/users').set(auth(oldSession))).status).toBe(200);
+
+    expect((await block(admin.user.id, admin.token)).body.error.code).toBe('SELF');
+
+    const res = await block(old.id, admin.token);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ role: 'ADMIN', isActive: false });
+    expect((await api().get('/api/admin/users').set(auth(oldSession))).status).toBe(401);
+    expect((await login('old@travelart.test', PASSWORD)).status).toBe(401);
+    expect(await prismaAdmin.adminLog.count({ where: { action: 'BLOCK_ADMIN', targetId: old.id } })).toBe(1);
+
+    // Reactivated from the panel, the old password still opens nothing.
+    await api().post(`/api/admin/users/${old.id}/activate`).set(auth(admin.token));
+    expect((await login('old@travelart.test', PASSWORD)).status).toBe(401);
+
+    // Opened again with a new password, it signs in with that one.
+    await block(old.id, admin.token);
+    const reopened = await add({ email: 'old@travelart.test', password: 'Nouveau!2026' }, admin.token);
+    expect(reopened.status).toBe(200);
+    expect((await login('old@travelart.test', 'Nouveau!2026')).status).toBe(200);
+    expect(await prismaAdmin.user.count({ where: { email: 'old@travelart.test' } })).toBe(1);
+
+    const artist = await makeArtist();
+    expect((await block(artist.user.id, admin.token)).body.error.code).toBe('NOT_ADMIN');
+  });
+
+  it('is closed to everyone but admins', async () => {
+    const artist = await makeArtist();
+    const admin = await makeAdmin();
+    expect((await add({ email: 'x@travelarts.live', password: PASSWORD }, artist.token)).status).toBe(403);
+    expect((await api().post('/api/admin/admins').send({ email: 'x@travelarts.live', password: PASSWORD })).status).toBe(401);
+    expect((await block(admin.user.id, artist.token)).status).toBe(403);
+    expect(await prismaAdmin.user.count({ where: { email: 'x@travelarts.live' } })).toBe(0);
+  });
+});

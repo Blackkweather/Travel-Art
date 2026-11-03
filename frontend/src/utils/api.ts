@@ -273,6 +273,13 @@ export const adminApi = {
   revokeAdmin: (id: string) =>
     apiClient.post(`/admin/users/${id}/revoke-admin`),
 
+  /** A new administrator login, or a blocked one reopened with this password. */
+  addAdmin: (data: { email: string; password: string }) =>
+    apiClient.post('/admin/admins', data),
+
+  blockAdmin: (id: string) =>
+    apiClient.post(`/admin/users/${id}/block-admin`),
+
   getAdmissions: (status: 'PENDING' | 'APPROVED' | 'REJECTED' = 'PENDING') =>
     apiClient.get('/admin/admissions', { status }),
 

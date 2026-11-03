@@ -21,6 +21,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import SEOHead from '@/components/SEOHead'
 import MailBody from '@/components/mail/MailBody'
 import { announceMailUnread } from '@/hooks/useMailUnread'
+import { useAuthStore } from '@/store/authStore'
 import { t } from '@/i18n'
 import { LOCALE, formatDate, formatTime } from '@/utils/i18n'
 
@@ -76,7 +77,7 @@ function listDate(iso: string): string {
 const formatMailbox = (m: Mailbox) => (m.name ? `${m.name} <${m.address}>` : m.address)
 
 /** Offered as a new message's sender beside the configured mailboxes. Any other name on the domain works as well. */
-const SUGGESTED_SENDERS = ['contact', 'support']
+const SUGGESTED_SENDERS = ['contact', 'admin', 'support', 'billing']
 
 const splitAddress = (address: string) => {
   const at = address.lastIndexOf('@')
@@ -290,9 +291,13 @@ function ComposeDialog({ mailboxes, onClose, onSent }: { mailboxes: Mailbox[]; o
   // Any address on the mailboxes' domains: the name before @ is typed or picked,
   // and answers to it land in this inbox like the rest.
   const domains = [...new Set(mailboxes.map((m) => splitAddress(m.address).domain))]
-  const defaultName = mailboxes[0] ? splitAddress(mailboxes[0].address).name : ''
+  // Signed in as billing@ on our domain, a new message starts from billing@.
+  const { user: me } = useAuthStore()
+  const mine = me?.email?.includes('@') ? splitAddress(me.email.toLowerCase()) : null
+  const own = mine && domains.includes(mine.domain) ? mine : null
+  const defaultName = own?.name ?? (mailboxes[0] ? splitAddress(mailboxes[0].address).name : '')
   const [fromName, setFromName] = useState(defaultName)
-  const [fromDomain, setFromDomain] = useState(domains[0] ?? '')
+  const [fromDomain, setFromDomain] = useState(own?.domain ?? domains[0] ?? '')
   const from = fromName && fromDomain ? `${fromName}@${fromDomain}` : ''
   const senderNames = [
     ...new Set([
