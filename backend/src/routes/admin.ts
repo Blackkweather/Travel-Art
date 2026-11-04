@@ -1,6 +1,4 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
-import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import { prisma, prismaAdmin } from '../db';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
@@ -14,7 +12,7 @@ import { mediaOrder, mediaSelect, splitMedia, toMediaDTO } from '../views/media'
 import { fetchVideoFacts, verifyOtherVideosFromChannel } from '../services/videoVerification';
 import { notify } from '../services/notifications';
 import { verifyLinkFor } from './auth';
-import { BOARD_LABELS, TRANSPORT_LABELS, passwordSchema } from '../shared/validation';
+import { BOARD_LABELS, TRANSPORT_LABELS } from '../shared/validation';
 import { BOOKING_STATUSES } from '../shared/status';
 import { background } from '../services/background';
 
@@ -236,85 +234,6 @@ router.post('/users/:id/revoke-admin', authenticate, authorize('ADMIN'), asyncHa
       select: adminUserSelect,
     });
     await tx.adminLog.create({ data: { action: 'REVOKE_ADMIN', actorUserId: req.user!.id, targetId: user.id } });
-    return row;
-  });
-
-  res.json({ success: true, data: updated });
-}));
-
-/*
- * Administrator logins of their own - support@, billing@ - opened from
- * Utilisateurs with the password they will use, and blocked from there once
- * nobody should use them any more. Until now the only way to open or close one
- * was a script run against the production database.
- */
-
-const newAdminSchema = z.object({
-  email: z.string().trim().toLowerCase().email('Adresse e-mail invalide'),
-  password: passwordSchema,
-});
-
-// Open an administrator login, or reopen a blocked one with a new password
-router.post('/admins', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  const { email, password } = newAdminSchema.parse(req.body);
-  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true, role: true, isActive: true } });
-  if (existing && existing.role !== 'ADMIN') {
-    throw new CustomError('Un compte artiste ou hôtel utilise déjà cette adresse : utilisez « Rendre admin » sur sa ligne.', 409, {
-      code: 'ACCOUNT_EXISTS',
-      fields: { email: 'Adresse déjà utilisée par un compte artiste ou hôtel.' },
-    });
-  }
-  if (existing?.isActive) {
-    throw new CustomError('Cette adresse est déjà administrateur.', 409, { code: 'ALREADY_ADMIN', fields: { email: 'Déjà administrateur.' } });
-  }
-
-  const now = new Date();
-  const access = {
-    passwordHash: await bcrypt.hash(password, 12),
-    isActive: true,
-    approvalStatus: 'APPROVED' as const,
-    approvalNote: null,
-    // Chosen by an administrator, not typed by a stranger: nothing to confirm.
-    emailVerified: true,
-    emailVerifiedAt: now,
-    // Whatever a blocked login still held stays dead.
-    sessionsValidFrom: now,
-  };
-  const row = await prismaAdmin.$transaction(async (tx) => {
-    const user = existing
-      ? await tx.user.update({ where: { id: existing.id }, data: access, select: adminUserSelect })
-      : await tx.user.create({ data: { ...access, email, name: email.split('@')[0], role: 'ADMIN' }, select: adminUserSelect });
-    await tx.adminLog.create({ data: { action: existing ? 'REOPEN_ADMIN' : 'CREATE_ADMIN', actorUserId: req.user!.id, targetId: user.id } });
-    return user;
-  });
-
-  res.status(existing ? 200 : 201).json({ success: true, data: row });
-}));
-
-// Block an administrator login: suspended, signed out, and its password replaced by one nobody knows
-router.post('/users/:id/block-admin', authenticate, authorize('ADMIN'), asyncHandler(async (req: AuthRequest, res) => {
-  if (req.params.id === req.user!.id) {
-    throw new CustomError('Vous ne pouvez pas bloquer votre propre accès.', 409, { code: 'SELF' });
-  }
-  const user = await prisma.user.findUnique({ where: { id: req.params.id }, select: { id: true, role: true } });
-  if (!user) throw new CustomError('Utilisateur introuvable.', 404);
-  if (user.role !== 'ADMIN') throw new CustomError('Ce compte n’est pas administrateur.', 409, { code: 'NOT_ADMIN' });
-
-  // Reactivating it later still lets nobody in; only a new password reopens it.
-  const passwordHash = await bcrypt.hash(randomBytes(32).toString('base64'), 12);
-  const updated = await prismaAdmin.$transaction(async (tx) => {
-    // As for revoke-admin: two administrators blocking each other at once must
-    // not leave the platform with none.
-    const caller = await tx.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM "users" WHERE id = ${req.user!.id} AND role = 'ADMIN' AND "isActive" = true FOR UPDATE`;
-    if (!caller.length) throw new CustomError('Accès refusé.', 403);
-
-    const row = await tx.user.update({
-      where: { id: user.id },
-      data: { isActive: false, passwordHash, sessionsValidFrom: new Date() },
-      select: adminUserSelect,
-    });
-    await tx.adminLog.create({ data: { action: 'BLOCK_ADMIN', actorUserId: req.user!.id, targetId: user.id } });
     return row;
   });
 
